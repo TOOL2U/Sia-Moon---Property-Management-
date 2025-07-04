@@ -64,10 +64,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mb-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
             <LogIn className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">
             Sign In
           </h1>
           <p className="mt-3 text-base text-neutral-400">
@@ -76,10 +76,10 @@ export default function LoginPage() {
         </div>
 
         {/* Login Form */}
-        <Card>
+        <Card className="shadow-xl border-neutral-800 bg-neutral-950">
           <CardHeader>
-            <CardTitle>Sign in to your account</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-white">Sign in to your account</CardTitle>
+            <CardDescription className="text-neutral-400">
               Enter your email and password to access your dashboard
             </CardDescription>
           </CardHeader>
@@ -107,7 +107,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -119,8 +119,8 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                <div className="p-3 bg-red-950/50 border border-red-800 rounded-lg">
+                  <p className="text-sm text-red-400 font-medium">{error}</p>
                 </div>
               )}
 
@@ -128,7 +128,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 fullWidth
-                className="flex items-center justify-center"
+                className="flex items-center justify-center h-11"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
@@ -140,29 +140,29 @@ export default function LoginPage() {
             </form>
 
             {/* Demo Accounts */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Demo Accounts</h4>
+            <div className="mt-6 p-4 bg-neutral-900 border border-neutral-800 rounded-lg">
+              <h4 className="text-sm font-medium text-white mb-3">Demo Accounts</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Client:</span>
-                  <span className="font-mono text-gray-800">john.smith@example.com</span>
+                  <span className="text-neutral-400">Client:</span>
+                  <span className="font-mono text-neutral-300">john.smith@example.com</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Staff:</span>
-                  <span className="font-mono text-gray-800">sarah.johnson@siamoon.com</span>
+                  <span className="text-neutral-400">Staff:</span>
+                  <span className="font-mono text-neutral-300">sarah.johnson@siamoon.com</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Password:</span>
-                  <span className="font-mono text-gray-800">password123</span>
+                  <span className="text-neutral-400">Password:</span>
+                  <span className="font-mono text-neutral-300">password123</span>
                 </div>
               </div>
             </div>
 
             {/* Sign Up Link */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-400">
                 Don't have an account?{' '}
-                <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link href="/auth/signup" className="font-medium text-primary-400 hover:text-primary-300 transition-colors duration-200">
                   Sign up here
                 </Link>
               </p>
@@ -170,7 +170,7 @@ export default function LoginPage() {
 
             {/* Back to Home */}
             <div className="mt-4 text-center">
-              <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
+              <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-400 transition-colors duration-200">
                 ← Back to Home
               </Link>
             </div>

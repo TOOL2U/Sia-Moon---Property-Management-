@@ -6,11 +6,10 @@ const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     <div
       ref={ref}
       className={cn(
-        // Augment dark card styling with enhanced micro-interactions
-        'rounded-lg border border-neutral-850 bg-neutral-950 text-white shadow-lg',
+        // Linear-inspired dark card styling with enhanced micro-interactions
+        'rounded-lg border border-neutral-800 bg-neutral-950 text-white shadow-lg',
         'transition-all duration-200 ease-out',
-        'hover:shadow-xl hover:border-neutral-800 hover:scale-[1.01]',
-        'hover:bg-neutral-900',
+        'hover:shadow-xl hover:border-neutral-700 hover:bg-neutral-900',
         'w-full', // Full width by default for mobile
         className
       )}
@@ -40,7 +39,7 @@ const CardTitle = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLHeadingEle
     <h3
       ref={ref}
       className={cn(
-        // Augment dark typography
+        // Linear dark typography
         'text-lg font-semibold leading-tight tracking-tight',
         'text-white',
         className
@@ -56,7 +55,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLPara
     <p
       ref={ref}
       className={cn(
-        // Augment dark description styling
+        // Linear dark description styling
         'text-sm text-neutral-400 leading-relaxed',
         className
       )}

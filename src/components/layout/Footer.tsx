@@ -17,10 +17,9 @@ function FooterLink({ href, children, external = false }: FooterLinkProps) {
       href={href}
       {...linkProps}
       className={cn(
-        'text-sm text-neutral-500 hover:text-neutral-700 transition-colors duration-150',
-        'dark:text-neutral-400 dark:hover:text-neutral-200',
+        'text-sm text-neutral-400 hover:text-white transition-colors duration-200',
         'relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-full',
-        'after:origin-left after:scale-x-0 after:bg-neutral-400 after:transition-transform after:duration-200',
+        'after:origin-left after:scale-x-0 after:bg-neutral-300 after:transition-transform after:duration-200',
         'hover:after:scale-x-100'
       )}
     >
@@ -45,18 +44,18 @@ export function Footer() {
   ]
 
   return (
-    <footer className="border-t border-neutral-200 bg-black dark:border-black-800 dark:bg-black-900">
+    <footer className="border-t border-neutral-800 bg-black">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Company Info */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              <h3 className="text-lg font-semibold text-white">
                 Sia Moon Property Management
               </h3>
             </div>
-            <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-400 max-w-md">
+            <p className="mt-4 text-sm text-neutral-400 max-w-md">
               Premium villa management platform designed for luxury property owners and managers. 
               Streamline operations, maximize revenue, and deliver exceptional guest experiences.
             </p>
@@ -64,7 +63,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            <h4 className="text-sm font-semibold text-white mb-4">
               Quick Links
             </h4>
             <ul className="space-y-3">
@@ -85,7 +84,7 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            <h4 className="text-sm font-semibold text-white mb-4">
               Support
             </h4>
             <ul className="space-y-3">
@@ -106,11 +105,11 @@ export function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-12 border-t border-neutral-200 pt-8 dark:border-neutral-800">
+        <div className="mt-12 border-t border-neutral-800 pt-8">
           <div className="flex flex-col items-center justify-between space-y-4 sm:flex-row sm:space-y-0">
             {/* Copyright */}
             <div className="flex items-center space-x-4">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-neutral-400">
                 © {currentYear} Sia Moon Company Limited. All rights reserved.
               </p>
             </div>

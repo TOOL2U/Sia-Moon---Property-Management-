@@ -23,11 +23,11 @@ function NavLink({ href, children, className }: NavLinkProps) {
     <Link
       href={href}
       className={cn(
-        'relative px-3 py-2 text-sm font-medium transition-colors duration-150',
+        'relative px-3 py-2 text-sm font-medium transition-all duration-200',
         'hover:text-white',
         isActive
           ? 'text-white'
-          : 'text-neutral-400 dark:text-neutral-300',
+          : 'text-neutral-400',
         'after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-primary-400 after:transition-transform after:duration-200',
         isActive && 'after:scale-x-100',
         'hover:after:scale-x-100',
@@ -66,37 +66,37 @@ function UserDropdown({ user, onSignOut }: UserDropdownProps) {
         aria-haspopup="true"
         aria-expanded={isOpen}
         className={cn(
-          'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150',
-          'hover:bg-neutral-100 dark:hover:bg-neutral-800',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2'
+          'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
+          'hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black'
         )}
       >
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-500 text-xs font-semibold text-white">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-xs font-semibold text-white">
           {user.email?.[0]?.toUpperCase() || 'U'}
         </div>
-        <span className="hidden sm:block text-neutral-700 dark:text-neutral-100">
+        <span className="hidden sm:block text-white">
           {user.email}
         </span>
         <ChevronDown className={cn(
-          'h-4 w-4 text-neutral-500 dark:text-neutral-300 transition-transform duration-150',
+          'h-4 w-4 text-neutral-400 transition-transform duration-200',
           isOpen && 'rotate-180'
         )} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 py-2 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
-          <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-neutral-800 bg-neutral-950 py-2 shadow-xl animate-scale-in">
+          <div className="px-4 py-2 border-b border-neutral-800">
+            <p className="text-sm font-medium text-white">
               {user.email}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">
+            <p className="text-xs text-neutral-400 capitalize">
               {user.role} Account
             </p>
           </div>
 
           <Link
             href="/profile"
-            className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-150"
+            className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-900 hover:text-white transition-all duration-200"
             onClick={() => setIsOpen(false)}
           >
             <User className="h-4 w-4" />
@@ -105,20 +105,20 @@ function UserDropdown({ user, onSignOut }: UserDropdownProps) {
 
           <Link
             href="/settings"
-            className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-150"
+            className="flex items-center gap-3 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-900 hover:text-white transition-all duration-200"
             onClick={() => setIsOpen(false)}
           >
             <Settings className="h-4 w-4" />
             Settings
           </Link>
 
-          <div className="border-t border-neutral-200 dark:border-neutral-700 mt-2 pt-2">
+          <div className="border-t border-neutral-800 mt-2 pt-2">
             <button
               onClick={() => {
                 setIsOpen(false)
                 onSignOut()
               }}
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-150"
+              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-900 hover:text-white transition-all duration-200"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
@@ -166,15 +166,15 @@ export function Navbar() {
 
   return (
     <header className={cn(
-      'sticky top-0 z-50 border-b bg-black/90 backdrop-blur-md transition-all duration-200',
-      scrolled ? 'border-neutral-800 shadow-lg' : 'border-transparent'
+      'sticky top-0 z-50 border-b bg-black/95 backdrop-blur-md transition-all duration-200',
+      scrolled ? 'border-neutral-800 shadow-xl' : 'border-transparent'
     )}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link
               href="/"
-              className="text-xl font-semibold text-white hover:text-primary-400 transition-colors duration-150"
+              className="text-xl font-semibold text-white hover:text-primary-400 transition-colors duration-200"
             >
               Sia Moon
             </Link>
@@ -209,7 +209,7 @@ export function Navbar() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden rounded-md p-2 text-neutral-400 hover:bg-neutral-900 hover:text-white"
+              className="md:hidden rounded-md p-2 text-neutral-400 hover:bg-neutral-900 hover:text-white transition-all duration-200"
               aria-label="Toggle Menu"
               aria-expanded={mobileMenuOpen}
             >
@@ -223,30 +223,30 @@ export function Navbar() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-neutral-300 dark:border-neutral-600 py-4">
+          <div className="md:hidden border-t border-neutral-800 py-4 animate-slide-in-top">
             <div className="space-y-1">
               {navigationLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="block rounded-md px-3 py-2 text-base font-medium text-neutral-700 dark:text-neutral-100 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                  className="block rounded-md px-3 py-2 text-base font-medium text-neutral-300 hover:bg-neutral-900 hover:text-white transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
               {!user && (
-                <div className="space-y-2 pt-4 border-t border-neutral-300 dark:border-neutral-600">
+                <div className="space-y-2 pt-4 border-t border-neutral-800">
                   <Link
                     href="/auth/login"
-                    className="block rounded-md px-3 py-2 text-base font-medium text-neutral-700 dark:text-neutral-100 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                    className="block rounded-md px-3 py-2 text-base font-medium text-neutral-300 hover:bg-neutral-900 hover:text-white transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/auth/signup"
-                    className="block rounded-md px-3 py-2 text-base font-medium bg-primary-500 text-white hover:bg-primary-600"
+                    className="block rounded-md px-3 py-2 text-base font-medium bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Get Started
@@ -254,13 +254,13 @@ export function Navbar() {
                 </div>
               )}
               {user && (
-                <div className="space-y-2 pt-4 border-t border-neutral-300 dark:border-neutral-600">
+                <div className="space-y-2 pt-4 border-t border-neutral-800">
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false)
                       handleSignOut()
                     }}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-neutral-700 dark:text-neutral-100 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-neutral-300 hover:bg-neutral-900 hover:text-white transition-all duration-200"
                   >
                     <LogOut className="h-4 w-4" />
                     Sign Out

@@ -77,10 +77,10 @@ export default function SignUpPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mb-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
             <UserPlus className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">
             Create Account
           </h1>
           <p className="mt-3 text-base text-neutral-400">
@@ -89,10 +89,10 @@ export default function SignUpPage() {
         </div>
 
         {/* Sign Up Form */}
-        <Card>
+        <Card className="shadow-xl border-neutral-800 bg-neutral-950">
           <CardHeader>
-            <CardTitle>Create your account</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-white">Create your account</CardTitle>
+            <CardDescription className="text-neutral-400">
               Fill in your details to get started
             </CardDescription>
           </CardHeader>
@@ -120,20 +120,20 @@ export default function SignUpPage() {
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white mb-2">
                   Account Type
                 </label>
                 <select
                   name="role"
                   value={formData.role}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 border border-neutral-700 bg-neutral-900 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                   required
                 >
                   <option value="client">Property Owner (Client)</option>
                   <option value="staff">Staff Member</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   Choose "Property Owner" if you want to list and manage properties
                 </p>
               </div>
@@ -152,7 +152,7 @@ export default function SignUpPage() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -176,7 +176,7 @@ export default function SignUpPage() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
@@ -188,8 +188,8 @@ export default function SignUpPage() {
               </div>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                <div className="p-3 bg-red-950/50 border border-red-800 rounded-lg">
+                  <p className="text-sm text-red-400 font-medium">{error}</p>
                 </div>
               )}
 
@@ -197,7 +197,7 @@ export default function SignUpPage() {
                 type="submit"
                 disabled={loading}
                 fullWidth
-                className="flex items-center justify-center"
+                className="flex items-center justify-center h-11"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
@@ -210,9 +210,9 @@ export default function SignUpPage() {
 
             {/* Sign In Link */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-neutral-400">
                 Already have an account?{' '}
-                <Link href="/auth/login" className="font-medium text-green-600 hover:text-green-500">
+                <Link href="/auth/login" className="font-medium text-primary-400 hover:text-primary-300 transition-colors duration-200">
                   Sign in here
                 </Link>
               </p>
@@ -220,7 +220,7 @@ export default function SignUpPage() {
 
             {/* Back to Home */}
             <div className="mt-4 text-center">
-              <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
+              <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-400 transition-colors duration-200">
                 ← Back to Home
               </Link>
             </div>

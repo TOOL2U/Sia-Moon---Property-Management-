@@ -165,26 +165,26 @@
 }
 
 :root {
-  /* Augment Dark Design System - Default Dark Mode */
-  --background: #000000;
-  --background-secondary: #0a0a0a;
-  --background-tertiary: #111111;
+  /* Linear-inspired Dark Design System */
+  --background: #0a0a0a;
+  --background-secondary: #111111;
+  --background-tertiary: #1a1a1a;
 
   --foreground: #ffffff;
-  --foreground-secondary: #a3a3a3;
-  --foreground-tertiary: #737373;
+  --foreground-secondary: #e5e5e5;
+  --foreground-tertiary: #a3a3a3;
 
-  --border: #1a1a1a;
-  --border-light: #222222;
-  --border-strong: #333333;
+  --border: #262626;
+  --border-light: #333333;
+  --border-strong: #404040;
 
   --primary: #8b5cf6;
   --primary-foreground: #ffffff;
-  --primary-hover: #a78bfa;
+  --primary-hover: #7c3aed;
 
   --secondary: #1a1a1a;
   --secondary-foreground: #ffffff;
-  --secondary-hover: #222222;
+  --secondary-hover: #262626;
 
   --accent: #1f1f1f;
   --accent-foreground: #ffffff;
@@ -193,60 +193,14 @@
   --muted: #111111;
   --muted-foreground: #737373;
 
-  --card: #0a0a0a;
+  --card: #111111;
   --card-foreground: #ffffff;
 
-  --popover: #111111;
+  --popover: #1a1a1a;
   --popover-foreground: #ffffff;
 
-  --input: #111111;
-  --input-border: #1a1a1a;
-  --input-focus: #8b5cf6;
-
-  --ring: #8b5cf6;
-
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
-}
-
-/* Augment Light Mode (Optional - for theme toggle) */
-.light {
-  --background: #ffffff;
-  --background-secondary: #fafafa;
-  --background-tertiary: #f5f5f5;
-
-  --foreground: #0a0a0a;
-  --foreground-secondary: #525252;
-  --foreground-tertiary: #737373;
-
-  --border: #e5e5e5;
-  --border-light: #f0f0f0;
-  --border-strong: #d4d4d4;
-
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
-  --primary-hover: #7c3aed;
-
-  --secondary: #f5f5f5;
-  --secondary-foreground: #0a0a0a;
-  --secondary-hover: #e5e5e5;
-
-  --accent: #f0f0f0;
-  --accent-foreground: #0a0a0a;
-  --accent-hover: #e5e5e5;
-
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-
-  --input: #ffffff;
-  --input-border: #e5e5e5;
+  --input: #1a1a1a;
+  --input-border: #262626;
   --input-focus: #8b5cf6;
 
   --ring: #8b5cf6;
@@ -306,7 +260,7 @@
   --font-display: 'Inter var';
 }
 
-/* Mobile-first global styles */
+/* Global styles - Linear-inspired dark theme */
 * {
   box-sizing: border-box;
 }
@@ -389,7 +343,7 @@ button,
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground);
+  background: var(--foreground-secondary);
 }
 
 /* Linear-style animations */
@@ -484,4 +438,167 @@ a:not(.no-underline):hover {
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
   transition: text-decoration-color 0.15s ease;
+}
+
+/* Linear-inspired gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* Subtle glow effects for premium feel */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+}
+
+.glow-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Linear-style card hover effects */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Premium button styles */
+.btn-premium {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-premium:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+/* Text selection styling */
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: var(--foreground);
+}
+
+/* Placeholder text styling */
+::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+/* Form elements dark theme */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+textarea,
+select {
+  background: var(--input);
+  border: 1px solid var(--input-border);
+  color: var(--foreground);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+/* Checkbox and radio dark theme */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--primary);
+}
+
+/* Linear-inspired loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    var(--muted) 25%, 
+    var(--accent) 50%, 
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Status indicators */
+.status-success {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.status-warning {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.status-error {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --foreground: #ffffff;
+    --background: #000000;
+    --border: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
