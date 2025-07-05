@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
     try {
       // Get user profile to check role
       const { data: profile } = await supabase
-        .from('users')
+        .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single()
@@ -103,7 +103,7 @@ export async function updateSession(request: NextRequest) {
     console.log('🔄 Middleware - Redirecting authenticated user from auth page to dashboard')
     try {
       const { data: profile } = await supabase
-        .from('users')
+        .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single()

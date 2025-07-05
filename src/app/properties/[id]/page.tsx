@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-// TODO: Switch back to Supabase for production
-// import { createClient } from '@/lib/supabase/client'
-import DatabaseService from '@/lib/dbService'
+import SupabaseService from '@/lib/supabaseService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building } from 'lucide-react'
@@ -66,7 +64,7 @@ export default function PropertyDetailsPage() {
       console.log('🔍 Fetching property details from local database...')
 
       // Fetch property details
-      const { data: propertyData, error: propertyError } = await DatabaseService.getProperty(propertyId)
+      const { data: propertyData, error: propertyError } = await SupabaseService.getProperty(propertyId)
 
       if (propertyError) {
         throw new Error(`Failed to fetch property: ${propertyError.message}`)
@@ -77,7 +75,7 @@ export default function PropertyDetailsPage() {
       }
 
       // Fetch owner details
-      const { data: ownerData } = await DatabaseService.getUser(propertyData.owner_id)
+      const { data: ownerData } = await SupabaseService.getUser(propertyData.owner_id)
 
       setProperty({
         ...propertyData,
@@ -108,7 +106,7 @@ export default function PropertyDetailsPage() {
     try {
       console.log('🗑️ Deleting property from local database...')
 
-      const { error } = await DatabaseService.deleteProperty(propertyId)
+      const { error } = await SupabaseService.deleteProperty(propertyId)
 
       if (error) {
         throw new Error(`Failed to delete property: ${error.message}`)

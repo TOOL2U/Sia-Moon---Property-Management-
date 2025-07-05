@@ -22,19 +22,19 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-black">
       <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
-        {/* Header - Linear style */}
+        {/* Header - Linear style with animations */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
+            <div className="animate-fade-in-up will-change-transform">
               <h1 className="text-2xl font-semibold text-white sm:text-3xl">Owner Dashboard</h1>
               <p className="mt-2 text-neutral-400">Welcome back, {user.email}</p>
             </div>
-            <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3">
-              <Button className="w-full sm:w-auto h-10">
+            <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3 animate-fade-in-up animate-delay-150">
+              <Button className="w-full sm:w-auto h-10 btn-hover-lift will-change-transform">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Property
               </Button>
-              <Button variant="outline" className="w-full sm:w-auto h-10">
+              <Button variant="outline" className="w-full sm:w-auto h-10 btn-hover-scale will-change-transform">
                 <Eye className="mr-2 h-4 w-4" />
                 View All
               </Button>
@@ -42,78 +42,78 @@ export default function OwnerDashboard() {
           </div>
         </div>
 
-        {/* Stats Grid - Linear design */}
+        {/* Stats Grid - Linear design with staggered animations */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+          <Card className="group hover:shadow-xl transition-all duration-300 hover-lift bg-neutral-950 border-neutral-800 animate-stagger-fade-in animate-delay-75 will-change-transform">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-neutral-400">Total Properties</p>
                   <p className="text-2xl font-semibold text-white mt-2">12</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600 hover-glow">
                   <Building className="h-5 w-5 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1" />
+                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1 icon-hover" />
                 <span className="text-emerald-400 font-medium">+2</span>
                 <span className="text-neutral-400 ml-1">from last month</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+          <Card className="group hover:shadow-xl transition-all duration-300 hover-lift bg-neutral-950 border-neutral-800 animate-stagger-fade-in animate-delay-150 will-change-transform">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-neutral-400">Active Bookings</p>
                   <p className="text-2xl font-semibold text-white mt-2">24</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 hover-glow">
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1" />
+                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1 icon-hover" />
                 <span className="text-emerald-400 font-medium">+12%</span>
                 <span className="text-neutral-400 ml-1">from last month</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+          <Card className="group hover:shadow-xl transition-all duration-300 hover-lift bg-neutral-950 border-neutral-800 animate-stagger-fade-in animate-delay-225 will-change-transform">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-neutral-400">Monthly Revenue</p>
                   <p className="text-2xl font-semibold text-white mt-2">$45,231</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500 hover-glow">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1" />
+                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1 icon-hover" />
                 <span className="text-emerald-400 font-medium">+20.1%</span>
                 <span className="text-neutral-400 ml-1">from last month</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+          <Card className="group hover:shadow-xl transition-all duration-300 hover-lift bg-neutral-950 border-neutral-800 animate-stagger-fade-in animate-delay-300 will-change-transform">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-neutral-400">Occupancy Rate</p>
                   <p className="text-2xl font-semibold text-white mt-2">78%</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 hover-glow">
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1" />
+                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1 icon-hover" />
                 <span className="text-emerald-400 font-medium">+5%</span>
                 <span className="text-neutral-400 ml-1">from last month</span>
               </div>
@@ -121,16 +121,16 @@ export default function OwnerDashboard() {
           </Card>
         </div>
 
-        {/* Recent Activity - Linear layout */}
+        {/* Recent Activity - Linear layout with animations */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+          <Card className="group hover:shadow-xl transition-all duration-300 hover-lift bg-neutral-950 border-neutral-800 animate-fade-in-up animate-delay-375 will-change-transform">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-semibold text-white">Recent Bookings</CardTitle>
                   <CardDescription className="text-neutral-400">Latest reservations for your properties</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" className="text-primary-400 hover:text-primary-300">
+                <Button variant="ghost" size="sm" className="text-primary-400 hover:text-primary-300 btn-hover-scale will-change-transform">
                   View All
                 </Button>
               </div>
@@ -171,14 +171,14 @@ export default function OwnerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+          <Card className="group hover:shadow-xl transition-all duration-300 hover-lift bg-neutral-950 border-neutral-800 animate-fade-in-up animate-delay-450 will-change-transform">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-semibold text-white">Property Performance</CardTitle>
                   <CardDescription className="text-neutral-400">Top performing properties this month</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" className="text-primary-400 hover:text-primary-300">
+                <Button variant="ghost" size="sm" className="text-primary-400 hover:text-primary-300 btn-hover-scale will-change-transform">
                   View All
                 </Button>
               </div>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -11,6 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { createClient } from '@/lib/supabase/client'
 import { validateVillaOnboarding, validateField } from '@/lib/validations/villa-onboarding'
+import SupabaseService from '@/lib/supabaseService'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
+import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -87,6 +90,16 @@ interface VillaOnboardingData {
 }
 
 export default function OnboardYourVilla() {
+  const { profile: user } = useAuth()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('edit')
+
+  const [isEditing, setIsEditing] = useState(!!editId)
+
+  // Webhook submission hook for Make.com integration
+  const { submitOnboarding: submitToMake } = useOnboardingSubmit()
+
   const [formData, setFormData] = useState<VillaOnboardingData>({
     // Owner Details
     ownerFullName: '',
@@ -170,7 +183,128 @@ export default function OnboardYourVilla() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
-  const router = useRouter()
+  const [loadingExisting, setLoadingExisting] = useState(false)
+
+  // Load existing data when editing
+  useEffect(() => {
+    if (editId && user) {
+      loadExistingData(editId)
+    }
+  }, [editId, user])
+
+  const loadExistingData = async (id: string) => {
+    if (!user) return
+
+    try {
+      setLoadingExisting(true)
+      const result = await SupabaseService.getVillaOnboarding(id)
+      const { data, error } = { data: result.data, error: result.success ? null : result.error }
+
+      if (error) {
+        toast.error('Failed to load villa data for editing')
+        router.push('/dashboard/client/onboarding')
+        return
+      }
+
+      // Check if this onboarding belongs to the current user
+      if (data && data.user_id !== user.id) {
+        toast.error('Access denied. You can only edit your own submissions.')
+        router.push('/dashboard/client/onboarding')
+        return
+      }
+
+      if (data) {
+        // Map database data to form data
+        setFormData({
+          // Owner Details
+          ownerFullName: data.owner_full_name || '',
+          ownerNationality: data.owner_nationality || '',
+          ownerContactNumber: data.owner_contact_number || '',
+          ownerEmail: data.owner_email || '',
+          preferredContactMethod: data.preferred_contact_method || '',
+          bankDetails: data.bank_details || '',
+
+          // Property Details
+          propertyName: data.property_name || '',
+          propertyAddress: data.property_address || '',
+          googleMapsUrl: data.google_maps_url || '',
+          bedrooms: data.bedrooms || 0,
+          bathrooms: data.bathrooms || 0,
+          landSizeSqm: data.land_size_sqm || 0,
+          villaSizeSqm: data.villa_size_sqm || 0,
+          yearBuilt: data.year_built || 0,
+
+          // Amenities
+          hasPool: data.has_pool || false,
+          hasGarden: data.has_garden || false,
+          hasAirConditioning: data.has_air_conditioning || false,
+          internetProvider: data.internet_provider || '',
+          hasParking: data.has_parking || false,
+          hasLaundry: data.has_laundry || false,
+          hasBackupPower: data.has_backup_power || false,
+
+          // Access & Staff
+          accessDetails: data.access_details || '',
+          hasSmartLock: data.has_smart_lock || false,
+          gateRemoteDetails: data.gate_remote_details || '',
+          onsiteStaff: data.onsite_staff || '',
+
+          // Utilities
+          electricityProvider: data.electricity_provider || '',
+          waterSource: data.water_source || '',
+          internetPackage: data.internet_package || '',
+
+          // Rental & Marketing
+          rentalRates: data.rental_rates || '',
+          platformsListed: data.platforms_listed || [],
+          averageOccupancyRate: data.average_occupancy_rate || '',
+          minimumStayRequirements: data.minimum_stay_requirements || '',
+          targetGuests: data.target_guests || '',
+          ownerBlackoutDates: data.owner_blackout_dates || '',
+
+          // Preferences & Rules
+          petsAllowed: data.pets_allowed || false,
+          partiesAllowed: data.parties_allowed || false,
+          smokingAllowed: data.smoking_allowed || false,
+          maintenanceAutoApprovalLimit: data.maintenance_auto_approval_limit || '',
+
+          // Current Condition
+          repairsNeeded: data.repairs_needed || '',
+          lastSepticService: data.last_septic_service || '',
+          pestControlSchedule: data.pest_control_schedule || '',
+
+          // Photos & Media
+          professionalPhotosStatus: data.professional_photos_status || '',
+          floorPlanImagesAvailable: data.floor_plan_images_available || false,
+          videoWalkthroughAvailable: data.video_walkthrough_available || false,
+
+          // Emergency Contact
+          emergencyContactName: data.emergency_contact_name || '',
+          emergencyContactPhone: data.emergency_contact_phone || '',
+
+          // File uploads (empty for now)
+          furnitureAppliances: [],
+          floorPlans: [],
+          titleDeed: [],
+          houseRegistration: [],
+          insurancePolicy: [],
+          licenses: [],
+
+          // Confirmation
+          informationConfirmed: false // Reset this for editing
+        })
+
+        setIsEditing(true)
+        toast.success('Villa data loaded for editing')
+      }
+    } catch (error) {
+      console.error('Error loading existing data:', error)
+      toast.error('Failed to load villa data for editing')
+      router.push('/dashboard/client/onboarding')
+    } finally {
+      setLoadingExisting(false)
+    }
+  }
 
   // Only initialize Supabase if not in bypass mode and env vars are available
   const supabase = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? null : (() => {
@@ -191,6 +325,30 @@ export default function OnboardYourVilla() {
       ...prev,
       [name]: newValue
     }))
+
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
+    }
+  }
+
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    const newValue = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+
+    // Required fields validation
+    const requiredFields = ['ownerFullName', 'ownerContactNumber', 'ownerEmail', 'propertyName', 'propertyAddress', 'bedrooms', 'bathrooms', 'emergencyContactName', 'emergencyContactPhone']
+
+    if (requiredFields.includes(name) && (!newValue || (typeof newValue === 'string' && newValue.trim() === ''))) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: `${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`
+      }))
+      return
+    }
 
     // Real-time validation with Zod
     const validation = validateField(name, newValue)
@@ -235,13 +393,90 @@ export default function OnboardYourVilla() {
 
   const validateForm = () => {
     const validation = validateVillaOnboarding(formData)
+    const newErrors: {[key: string]: string} = {}
 
+    // Only check required fields for new submissions, not when editing
+    if (!isEditing) {
+      // Check for required fields that are empty (only for new submissions)
+      const requiredFields = {
+        ownerFullName: 'Owner full name is required',
+        ownerContactNumber: 'Owner contact number is required',
+        ownerEmail: 'Owner email is required',
+        propertyName: 'Property name is required',
+        propertyAddress: 'Property address is required',
+        bedrooms: 'Number of bedrooms is required',
+        bathrooms: 'Number of bathrooms is required',
+        emergencyContactName: 'Emergency contact name is required',
+        emergencyContactPhone: 'Emergency contact phone is required',
+        informationConfirmed: 'You must confirm the information is accurate'
+      }
+
+      // Debug: Log form data to see what's missing
+      console.log('🔍 Form validation - Current form data:', formData)
+
+      // Check each required field
+      Object.entries(requiredFields).forEach(([field, message]) => {
+        const value = formData[field as keyof typeof formData]
+        console.log(`🔍 Checking field ${field}:`, value, typeof value)
+
+        if (field === 'informationConfirmed') {
+          // Special handling for boolean checkbox
+          if (!value) {
+            newErrors[field] = message
+            console.log(`❌ ${field} is not checked`)
+          }
+        } else if (field === 'bedrooms' || field === 'bathrooms') {
+          // Special handling for number fields
+          if (!value || value === 0 || value === '0' || value === '') {
+            newErrors[field] = message
+            console.log(`❌ ${field} is empty or zero`)
+          }
+        } else {
+          // Handle string fields
+          if (!value || (typeof value === 'string' && value.trim() === '')) {
+            newErrors[field] = message
+            console.log(`❌ ${field} is empty or invalid`)
+          }
+        }
+      })
+    } else {
+      // When editing, only validate the confirmation checkbox if it's unchecked
+      if (!formData.informationConfirmed) {
+        newErrors.informationConfirmed = 'You must confirm the information is accurate'
+        console.log('❌ Information confirmation required for updates')
+      }
+      console.log('🔍 Form validation - Editing mode: skipping required field validation')
+    }
+
+    // Add validation errors from Zod schema
     if (!validation.success && validation.errors) {
-      setValidationErrors(validation.errors)
+      console.log('🔍 Zod validation errors:', validation.errors)
+      Object.assign(newErrors, validation.errors)
+    }
 
-      // Show toast for validation errors
-      const errorCount = Object.keys(validation.errors).length
-      toast.error(`Please fix ${errorCount} validation error${errorCount > 1 ? 's' : ''} before submitting`)
+    console.log('🔍 Final validation errors:', newErrors)
+
+    if (Object.keys(newErrors).length > 0) {
+      setValidationErrors(newErrors)
+
+      // Create detailed error message
+      const errorCount = Object.keys(newErrors).length
+      const firstError = Object.entries(newErrors)[0]
+      const fieldName = firstError[0].replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+
+      toast.error(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}. First error: ${firstError[1]}`)
+
+      // Scroll to first error field and highlight it
+      const firstErrorField = Object.keys(newErrors)[0]
+      const errorElement = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Add temporary highlight
+        errorElement.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.5)'
+        setTimeout(() => {
+          errorElement.style.boxShadow = ''
+        }, 3000)
+      }
 
       return false
     }
@@ -306,7 +541,10 @@ export default function OnboardYourVilla() {
     e.preventDefault()
 
     if (!validateForm()) {
-      setError('Please fill in all required fields correctly')
+      setError(isEditing
+        ? 'Please confirm the information is accurate to save changes'
+        : 'Please fill in all required fields correctly'
+      )
       return
     }
 
@@ -319,12 +557,13 @@ export default function OnboardYourVilla() {
 
       // Prepare data for insertion
       const villaData = {
+        user_id: user.id,
         // Owner Details
         owner_full_name: formData.ownerFullName,
         owner_nationality: formData.ownerNationality,
         owner_contact_number: formData.ownerContactNumber,
         owner_email: formData.ownerEmail,
-        preferred_contact_method: formData.preferredContactMethod || null,
+        preferred_contact_method: formData.preferredContactMethod === '' ? null : formData.preferredContactMethod,
         bank_details: formData.bankDetails || null,
 
         // Property Details
@@ -377,7 +616,7 @@ export default function OnboardYourVilla() {
         pest_control_schedule: formData.pestControlSchedule || null,
 
         // Photos & Media
-        professional_photos_status: formData.professionalPhotosStatus || null,
+        professional_photos_status: formData.professionalPhotosStatus === '' ? null : formData.professionalPhotosStatus,
         floor_plan_images_available: formData.floorPlanImagesAvailable,
         video_walkthrough_available: formData.videoWalkthroughAvailable,
 
@@ -398,26 +637,67 @@ export default function OnboardYourVilla() {
         status: 'pending'
       }
 
-      // Insert villa onboarding data
-      if (supabase) {
-        const { error } = await supabase
-          .from('villa_onboarding')
-          .insert([villaData])
-          .select()
+      // Create or update villa onboarding data
+      let savedVilla, dbError
 
-        if (error) {
-          throw error
+      if (isEditing && editId) {
+        // Update existing onboarding
+        const updateResult = await SupabaseService.updateVillaOnboarding(editId, villaData)
+        savedVilla = updateResult.data
+        dbError = updateResult.error
+
+        if (!dbError) {
+          console.log('✅ Villa onboarding updated successfully:', editId)
+          toast.success('Villa onboarding updated successfully! Our team will review your changes.')
         }
       } else {
-        // Development mode - simulate database insertion
-        console.log('Development mode: Villa data would be inserted:', villaData)
-        toast.success('Development mode: Villa submission simulated successfully!')
+        // Create new onboarding
+        const createResult = await SupabaseService.createVillaOnboarding(villaData)
+        savedVilla = createResult.data
+        dbError = createResult.error
+
+        if (!dbError) {
+          console.log('✅ Villa onboarding created successfully:', savedVilla?.id)
+          toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
+        }
+      }
+
+      if (dbError) {
+        throw new Error(dbError.message)
+      }
+
+      // Send basic information to Make.com for confirmation email (only for new submissions)
+      if (!isEditing) {
+        try {
+          const makeData: OnboardingSubmissionData = {
+            name: formData.ownerFullName,
+            email: formData.ownerEmail,
+            phone: formData.ownerContactNumber,
+            property_address: formData.propertyAddress,
+            notes: `Property: ${formData.propertyName}${formData.bedrooms ? ` | Bedrooms: ${formData.bedrooms}` : ''}${formData.bathrooms ? ` | Bathrooms: ${formData.bathrooms}` : ''}`
+          }
+
+          await submitToMake(makeData)
+          console.log('✅ Basic information sent to Make.com for confirmation email')
+        } catch (makeError) {
+          // Don't fail the entire submission if Make.com webhook fails
+          console.warn('⚠️ Failed to send confirmation email via Make.com:', makeError)
+          toast.error('Villa submitted successfully, but confirmation email may be delayed.')
+        }
       }
 
       setSubmitted(true)
+
+      // Redirect to client onboarding page after successful submission
+      setTimeout(() => {
+        router.push('/dashboard/client/onboarding')
+      }, 2000)
     } catch (err: unknown) {
       console.error('Submission error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error submitting villa information. Please try again.'
+      const errorMessage = err instanceof Error ? err.message : (isEditing
+        ? 'Error updating villa information. Please try again.'
+        : 'Error submitting villa information. Please try again.'
+      )
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -445,13 +725,13 @@ export default function OnboardYourVilla() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-6">
-        <Card className="w-full max-w-lg text-center group hover:shadow-xl transition-all duration-200">
+        <Card className="w-full max-w-lg text-center group hover:shadow-xl transition-all duration-200 animate-scale-in-subtle will-change-transform">
           <CardHeader className="pb-6">
-            <div className="mx-auto w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-6 animate-scale-in animate-delay-150 hover-glow">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl font-semibold text-white">Villa Submitted Successfully!</CardTitle>
-            <CardDescription className="text-neutral-400 mt-3">
+            <CardTitle className="text-2xl font-semibold text-white animate-fade-in-up animate-delay-300">Villa Submitted Successfully!</CardTitle>
+            <CardDescription className="text-neutral-400 mt-3 animate-fade-in-up animate-delay-450">
               Thank you for choosing Sia Moon Property Management. We'll review your comprehensive villa information and contact you within 24-48 hours to discuss next steps.
             </CardDescription>
           </CardHeader>
@@ -493,33 +773,97 @@ export default function OnboardYourVilla() {
     )
   }
 
+  // Show loading state when loading existing data
+  if (loadingExisting) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent mx-auto mb-4"></div>
+          <p className="text-neutral-400">Loading villa data for editing...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black">
-      {/* Back to home link - Augment dark style */}
-      <div className="absolute top-6 left-6 z-10">
+      {/* Back to home link - Enhanced with animation */}
+      <div className="absolute top-6 left-6 z-10 animate-fade-in-left">
         <Link
           href="/"
-          className="inline-flex items-center text-sm font-medium text-neutral-400 hover:text-white transition-colors duration-150"
+          className="inline-flex items-center text-sm font-medium text-neutral-400 hover:text-white transition-all duration-200 hover-scale-sm will-change-transform"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4 icon-hover" />
           Back to Home
         </Link>
       </div>
 
       <div className="px-6 py-16 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header - Augment dark design */}
+          {/* Header - Enhanced with Linear animations */}
           <div className="text-center mb-12">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-6 animate-scale-in hover-glow will-change-transform">
               <Building className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-semibold text-white sm:text-4xl">
-              Villa Owner Onboarding
+            <h1 className="text-3xl font-semibold text-white sm:text-4xl animate-fade-in-up animate-delay-150 will-change-transform">
+              {isEditing ? 'Edit Villa Information' : 'Villa Owner Onboarding'}
             </h1>
-            <p className="mt-4 text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-              Please provide comprehensive information about your villa and preferences. This detailed survey helps us deliver the best property management service tailored to your needs.
+            <p className="mt-4 text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animate-delay-300 will-change-transform">
+              {isEditing
+                ? 'Update your villa information below. Changes will be reviewed by our team.'
+                : 'Please provide comprehensive information about your villa and preferences. This detailed survey helps us deliver the best property management service tailored to your needs.'
+              }
             </p>
+
+            {/* Required Fields Notice */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mt-6 max-w-2xl mx-auto animate-fade-in-up animate-delay-450 will-change-transform">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div>
+                  <h3 className="text-blue-400 font-medium mb-1">Required Information</h3>
+                  <p className="text-sm text-neutral-300">
+                    Fields marked with <span className="text-red-400 font-medium">*</span> are required.
+                    Please fill in all required fields to submit your villa for onboarding.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* Error Summary */}
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 animate-fade-in-up">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="flex-1">
+                  <h3 className="text-red-400 font-medium mb-2">Please fix the following errors:</h3>
+                  <ul className="space-y-1">
+                    {Object.entries(validationErrors).map(([field, error]) => {
+                      const fieldLabel = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+                      return (
+                        <li key={field} className="text-sm text-red-300 flex items-center gap-2">
+                          <span className="w-1 h-1 bg-red-400 rounded-full flex-shrink-0"></span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const element = document.querySelector(`[name="${field}"]`) as HTMLElement
+                              if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                element.focus()
+                              }
+                            }}
+                            className="text-left hover:text-red-200 underline"
+                          >
+                            {error}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Form - Linear design */}
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -537,6 +881,7 @@ export default function OnboardYourVilla() {
                     name="ownerFullName"
                     value={formData.ownerFullName}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     placeholder="John Smith"
                     error={validationErrors.ownerFullName}
@@ -557,6 +902,7 @@ export default function OnboardYourVilla() {
                     type="tel"
                     value={formData.ownerContactNumber}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     placeholder="+66 81 234 5678"
                     error={validationErrors.ownerContactNumber}
@@ -567,6 +913,7 @@ export default function OnboardYourVilla() {
                     type="email"
                     value={formData.ownerEmail}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     placeholder="john@example.com"
                     error={validationErrors.ownerEmail}
@@ -612,6 +959,7 @@ export default function OnboardYourVilla() {
                     name="propertyName"
                     value={formData.propertyName}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     placeholder="Villa Paradise"
                     error={validationErrors.propertyName}
@@ -633,9 +981,14 @@ export default function OnboardYourVilla() {
                     name="propertyAddress"
                     value={formData.propertyAddress}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     rows={3}
-                    className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className={`flex w-full rounded-lg border bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 ${
+                      validationErrors.propertyAddress
+                        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                        : 'border-neutral-700 focus:ring-primary-500 focus:border-primary-500'
+                    }`}
                     placeholder="123/45 Moo 6, Choeng Thale, Thalang District, Phuket 83110"
                   />
                   {validationErrors.propertyAddress && (
@@ -651,6 +1004,7 @@ export default function OnboardYourVilla() {
                     min="1"
                     value={formData.bedrooms}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     placeholder="4"
                     error={validationErrors.bedrooms}
@@ -663,6 +1017,7 @@ export default function OnboardYourVilla() {
                     step="0.5"
                     value={formData.bathrooms}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     required
                     placeholder="3"
                     error={validationErrors.bathrooms}
@@ -1088,6 +1443,7 @@ export default function OnboardYourVilla() {
                   name="emergencyContactName"
                   value={formData.emergencyContactName}
                   onChange={handleInputChange}
+                  onBlur={handleInputBlur}
                   required
                   placeholder="Local contact person"
                   error={validationErrors.emergencyContactName}
@@ -1098,6 +1454,7 @@ export default function OnboardYourVilla() {
                   type="tel"
                   value={formData.emergencyContactPhone}
                   onChange={handleInputChange}
+                  onBlur={handleInputBlur}
                   required
                   placeholder="+66 81 234 5678"
                   error={validationErrors.emergencyContactPhone}
@@ -1114,8 +1471,15 @@ export default function OnboardYourVilla() {
             >
               <div className="space-y-8">
                 <Checkbox
-                  label="I confirm that the above information is accurate and authorize Sia Moon Property Management to start onboarding."
-                  description="By checking this box, you confirm that all provided information is accurate and complete, and you authorize Sia Moon Property Management to begin the villa onboarding process."
+                  name="informationConfirmed"
+                  label={isEditing
+                    ? "I confirm that the updated information is accurate and authorize the changes to be processed."
+                    : "I confirm that the above information is accurate and authorize Sia Moon Property Management to start onboarding."
+                  }
+                  description={isEditing
+                    ? "By checking this box, you confirm that all updated information is accurate and complete, and you authorize the changes to be processed."
+                    : "By checking this box, you confirm that all provided information is accurate and complete, and you authorize Sia Moon Property Management to begin the villa onboarding process."
+                  }
                   checked={formData.informationConfirmed}
                   onChange={(e) => handleCheckboxChange('informationConfirmed', e.target.checked)}
                   required
@@ -1132,19 +1496,19 @@ export default function OnboardYourVilla() {
                 <Button
                   type="submit"
                   fullWidth
-                  disabled={loading || !formData.informationConfirmed}
+                  disabled={loading}
                   className="h-12 text-base font-medium"
                   size="lg"
                 >
                   {loading ? (
                     <div className="flex items-center space-x-3">
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      <span>Submitting Villa Information...</span>
+                      <span>{isEditing ? 'Updating Villa Information...' : 'Submitting Villa Information...'}</span>
                     </div>
                   ) : (
                     <div className="flex items-center space-x-3">
                       <Upload className="h-5 w-5" />
-                      <span>Submit Villa Onboarding Survey</span>
+                      <span>{isEditing ? 'Update Villa Information' : 'Submit Villa Onboarding Survey'}</span>
                     </div>
                   )}
                 </Button>

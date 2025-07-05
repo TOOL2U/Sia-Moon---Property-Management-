@@ -100,22 +100,27 @@ export function LocalAuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string): Promise<{ data: AuthSession | null; error: Error | null }> => {
     try {
       console.log('🔄 Attempting sign in for:', email)
-      
-      // Check mock credentials
-      if (MOCK_CREDENTIALS[email as keyof typeof MOCK_CREDENTIALS] !== password) {
-        return {
-          data: null,
-          error: new Error('Invalid email or password')
-        }
-      }
 
-      // Get user from database
-      const { data: userData, error: dbError } = await db.getUserByEmail(email)
-      
+      // First try the new password verification system
+      const { data: userData, error: dbError } = await db.verifyUserPassword(email, password)
+
       if (dbError || !userData) {
-        return {
-          data: null,
-          error: new Error('User not found')
+        // Fallback to mock credentials for existing test users
+        if (MOCK_CREDENTIALS[email as keyof typeof MOCK_CREDENTIALS] === password) {
+          const { data: fallbackUser } = await db.getUserByEmail(email)
+          if (fallbackUser) {
+            userData = fallbackUser
+          } else {
+            return {
+              data: null,
+              error: new Error('Invalid email or password')
+            }
+          }
+        } else {
+          return {
+            data: null,
+            error: new Error('Invalid email or password')
+          }
         }
       }
 
@@ -131,7 +136,7 @@ export function LocalAuthProvider({ children }: { children: ReactNode }) {
 
       const session: AuthSession = {
         user: authUser,
-        access_token: `mock_token_${Date.now()}`,
+        access_token: `local_token_${userData.id}`,
         expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
       }
 
@@ -156,20 +161,29 @@ export function LocalAuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signUp = async (
-    email: string, 
-    password: string, 
-    role: 'client' | 'staff', 
+    email: string,
+    password: string,
+    role: 'client' | 'staff',
     name?: string
   ): Promise<{ data: AuthUser | null; error: Error | null }> => {
     try {
       console.log('🔄 Attempting sign up for:', email)
 
-      // Add user to database
-      const { data: userData, error: dbError } = await db.addUser({
+      // Validate password strength
+      if (password.length < 6) {
+        return {
+          data: null,
+          error: new Error('Password must be at least 6 characters long')
+        }
+      }
+
+      // Create user with password hashing
+      const { data: userData, error: dbError } = await db.createUserWithPassword(
         email,
-        name: name || 'New User',
+        password,
+        name || 'New User',
         role
-      })
+      )
 
       if (dbError || !userData) {
         return {
@@ -178,8 +192,32 @@ export function LocalAuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      console.log('✅ Sign up successful:', userData.email)
-      return { data: userData, error: null }
+      // Automatically sign in the user after successful sign up
+      const authUser: AuthUser = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at
+      }
+
+      const session: AuthSession = {
+        user: authUser,
+        access_token: `local_token_${userData.id}`,
+        expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      }
+
+      // Save to localStorage
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+      localStorage.setItem(USER_KEY, JSON.stringify(authUser))
+
+      // Update state
+      setUser(authUser)
+      setSession(session)
+
+      console.log('✅ Sign up and auto sign-in successful:', userData.email)
+      return { data: authUser, error: null }
 
     } catch (error) {
       console.error('❌ Sign up error:', error)

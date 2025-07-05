@@ -1,13 +1,13 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 // TODO: Re-enable for Supabase production deployment
 // import { updateSession } from '@/lib/supabase/middleware'
 
-export async function middleware(request: NextRequest) {
-  // TEMPORARILY DISABLED: Using local auth during development
+export async function middleware(_request: NextRequest) {
+  // TEMPORARILY DISABLED: Middleware disabled during development
   // TODO: Re-enable for Supabase production deployment
 
-  console.log('🔍 Middleware disabled - using local auth')
-  return
+  console.log('🔍 Middleware disabled - using Supabase auth without middleware')
+  return NextResponse.next()
 
   // Skip middleware if authentication is bypassed
   // if (process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true') {

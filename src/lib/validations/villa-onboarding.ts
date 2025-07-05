@@ -44,6 +44,7 @@ export const villaOnboardingSchema = z.object({
   ownerEmail: emailSchema,
   
   preferredContactMethod: z.enum(['phone', 'whatsapp', 'line', 'email'])
+    .or(z.literal(''))
     .optional(),
   
   bankDetails: z.string().max(1000, 'Bank details must be less than 1000 characters').optional(),
@@ -153,6 +154,7 @@ export const villaOnboardingSchema = z.object({
   
   // Photos & Media
   professionalPhotosStatus: z.enum(['available', 'not_available', 'need_photos'])
+    .or(z.literal(''))
     .optional(),
   floorPlanImagesAvailable: z.boolean(),
   videoWalkthroughAvailable: z.boolean(),

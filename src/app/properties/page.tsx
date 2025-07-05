@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-// TODO: Switch back to Supabase for production
-// import { createClient } from '@/lib/supabase/client'
-import DatabaseService from '@/lib/dbService'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import SupabaseService from '@/lib/supabaseService'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -21,22 +19,64 @@ interface Property {
   status: 'active' | 'inactive'
   created_at: string
   updated_at: string
-  owner?: {
-    name: string
-    email: string
-  }
 }
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
-  // TODO: Switch back to Supabase for production
-  const { user } = useLocalAuth()
+  const { profile: user, loading: authLoading } = useAuth()
 
   useEffect(() => {
-    fetchProperties()
-  }, [])
+    const fetchProperties = async () => {
+      try {
+        console.log('🔍 Fetching properties from Supabase...')
+
+        // Only fetch properties owned by the current user
+        if (!user?.id) {
+          console.error('❌ No user ID available')
+          return
+        }
+
+        const propertiesResult = await SupabaseService.getPropertiesByOwner(user.id)
+
+        if (!propertiesResult.success) {
+          console.error('❌ Error fetching properties:', propertiesResult.error)
+          toast.error('Failed to load properties')
+          return
+        }
+
+        // Map the Supabase data to match our Property interface
+        const mappedProperties = (propertiesResult.data || []).map(property => ({
+          id: property.id,
+          name: property.name,
+          description: property.description || '',
+          location: property.address || `${property.city || ''}, ${property.country || ''}`.trim(),
+          owner_id: property.owner_id,
+          status: 'active' as const,
+          created_at: property.created_at,
+          updated_at: property.updated_at
+        }))
+
+        console.log('✅ Properties loaded:', mappedProperties.length)
+        setProperties(mappedProperties)
+      } catch (error) {
+        console.error('❌ Error fetching properties:', error)
+        toast.error('Failed to load properties')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Only fetch properties when user is loaded and authenticated
+    if (!authLoading && user?.id) {
+      fetchProperties()
+    } else if (!authLoading && !user) {
+      // User is not authenticated
+      setLoading(false)
+      toast.error('Please sign in to view properties')
+    }
+  }, [user, authLoading])
 
   const handleDelete = async (propertyId: string, propertyName: string) => {
     if (!confirm(`Are you sure you want to delete "${propertyName}"? This action cannot be undone.`)) {
@@ -59,44 +99,13 @@ export default function PropertiesPage() {
     }
   }
 
-  const fetchProperties = async () => {
-    try {
-      console.log('🔍 Fetching properties from local database...')
 
-      const { data: propertiesData, error } = await DatabaseService.getAllProperties()
-
-      if (error) {
-        console.error('❌ Error fetching properties:', error)
-        toast.error('Failed to load properties')
-        return
-      }
-
-      // Fetch owner details for each property
-      const propertiesWithOwners = await Promise.all(
-        (propertiesData || []).map(async (property) => {
-          const { data: owner } = await DatabaseService.getUser(property.owner_id)
-          return {
-            ...property,
-            owner: owner ? { name: owner.name, email: owner.email } : undefined
-          }
-        })
-      )
-
-      console.log('✅ Properties loaded:', propertiesWithOwners.length)
-      setProperties(propertiesWithOwners)
-    } catch (error) {
-      console.error('❌ Error fetching properties:', error)
-      toast.error('Failed to load properties')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
           <p className="mt-4 text-gray-400">Loading properties...</p>
         </div>
       </div>
@@ -159,9 +168,6 @@ export default function PropertiesPage() {
                     </div>
 
                     <div className="space-y-3 pt-2">
-                      <div className="text-sm text-neutral-400">
-                        Owner: {property.owner?.name || 'Unknown'}
-                      </div>
                       <div className="flex gap-2">
                         <Link href={`/properties/${property.id}`}>
                           <Button size="sm" variant="outline" className="flex-1">
@@ -175,10 +181,10 @@ export default function PropertiesPage() {
                         </Link>
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="secondary"
                           onClick={() => handleDelete(property.id, property.name)}
                           disabled={deleting === property.id}
-                          className="px-3"
+                          className="px-3 bg-red-600 hover:bg-red-700 text-white"
                         >
                           {deleting === property.id ? (
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>

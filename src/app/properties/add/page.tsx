@@ -2,11 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-// TODO: Switch back to Supabase for production
-// import { createClient } from '@/lib/supabase/client'
-// import { useAuth } from '@/contexts/RealAuthContext'
-import DatabaseService from '@/lib/dbService'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import SupabaseService from '@/lib/supabaseService'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -28,8 +25,7 @@ export default function AddPropertyPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  // TODO: Switch back to Supabase for production
-  const { user } = useLocalAuth()
+  const { profile: user } = useAuth()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -70,19 +66,17 @@ export default function AddPropertyPage() {
         throw new Error('You must be logged in to create a property')
       }
 
-      // Create property using local database
-      const { data, error: insertError } = await DatabaseService.createProperty({
+      // Create property using Supabase
+      const { data, error: insertError } = await SupabaseService.createProperty({
         name: formData.name,
-        description: formData.description || '',
-        location: formData.address,
-        owner_id: user.id,
-        status: 'active'
+        address: formData.address,
+        owner_id: user.id
       })
 
       console.log('✅ Property created:', data)
 
       if (insertError) {
-        throw new Error(`Database error: ${insertError.message}`)
+        throw new Error(`Database error: ${insertError}`)
       }
 
       if (!data) {
@@ -173,7 +167,7 @@ export default function AddPropertyPage() {
               Add New Property
             </h1>
             <p className="mt-3 text-base text-neutral-400">
-              Add a villa property to your portfolio for management by Sia Moon.
+              Add a villa property to your portfolio for management by Sia Moon Property Managament Team.
             </p>
           </div>
 

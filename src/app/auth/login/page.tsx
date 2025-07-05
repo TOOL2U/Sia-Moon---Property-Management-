@@ -3,14 +3,14 @@
 import { useState } from 'react'
 // TODO: Switch back to Supabase auth for production
 // import { useAuth } from '@/contexts/RealAuthContext'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { LogIn, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -18,8 +18,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  // TODO: Switch back to Supabase auth for production
-  const { signIn } = useLocalAuth()
+  const { signIn } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,31 +28,23 @@ export default function LoginPage() {
 
     try {
       console.log('🔄 Attempting login with:', email)
-      const { data, error } = await signIn(email, password)
+      const success = await signIn(email, password)
 
-      if (error) {
-        setError(error.message)
-        toast.error(error.message)
-        return
-      }
+      if (success) {
+        console.log('✅ Login successful, redirecting to dashboard...')
 
-      if (data) {
-        console.log('✅ Login successful, redirecting...', data.user)
-        toast.success('Signed in successfully!')
-
-        // Redirect based on user role
-        const redirectPath = data.user.role === 'staff' ? '/dashboard/staff' : '/dashboard/client'
-        console.log('🔄 Redirecting to:', redirectPath)
-
-        // Use a small delay to ensure state is updated
+        // Small delay to ensure auth state is updated
         setTimeout(() => {
-          router.push(redirectPath)
+          console.log('🔄 Executing redirect to dashboard...')
+          router.push('/dashboard')
         }, 100)
+      } else {
+        console.log('❌ Login failed')
+        setError('Login failed. Please check your credentials.')
       }
     } catch (error: any) {
       console.error('❌ Login error:', error)
       setError(error.message || 'Failed to sign in')
-      toast.error(error.message || 'Failed to sign in')
     } finally {
       setLoading(false)
     }
@@ -71,7 +62,7 @@ export default function LoginPage() {
             Sign In
           </h1>
           <p className="mt-3 text-base text-neutral-400">
-            Welcome back to Villa Management
+            Welcome back to Sia Moon Property Management
           </p>
         </div>
 

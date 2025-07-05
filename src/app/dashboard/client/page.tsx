@@ -1,18 +1,231 @@
 'use client'
 
-// TODO: Switch back to Supabase auth for production
-// import { useAuth } from '@/contexts/RealAuthContext'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
+import SupabaseService from '@/lib/supabaseService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Building, Calendar, DollarSign, TrendingUp, Plus, Eye, ArrowUpRight, BarChart3 } from 'lucide-react'
-import Link from 'next/link'
+import { Badge } from '@/components/ui/Badge'
+import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseChart'
+import {
+  Wrench,
+  Calendar,
+  Home,
+  Clock,
+  User,
+  AlertCircle,
+  CheckCircle2
+} from 'lucide-react'
+import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
+import toast from 'react-hot-toast'
 
 export default function ClientDashboard() {
-  // TODO: Switch back to Supabase auth for production
-  const { user } = useLocalAuth()
+  const auth = useAuth()
+  const user = auth.profile
+  const authLoading = auth.loading
 
-  if (!user) {
+  const [properties, setProperties] = useState<any[]>([])
+  const [bookings, setBookings] = useState<any[]>([])
+  const [reports, setReports] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedMetric, setSelectedMetric] = useState('revenue')
+
+  const [showSettings, setShowSettings] = useState(false)
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData()
+    }
+  }, [user?.id])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch user's properties
+      const propertiesResult = await SupabaseService.getPropertiesByOwner(user!.id)
+      if (!propertiesResult.success) {
+        console.error('Error fetching properties:', propertiesResult.error)
+        toast.error('Failed to load properties')
+        return
+      }
+
+      const userProperties = propertiesResult.data || []
+      setProperties(userProperties)
+
+      if (userProperties.length === 0) {
+        setLoading(false)
+        return
+      }
+
+      // Fetch bookings for user's properties
+      const allBookingsPromises = userProperties.map(property =>
+        SupabaseService.getBookingsByProperty(property.id)
+      )
+      const bookingResults = await Promise.all(allBookingsPromises)
+      const allBookings = bookingResults.reduce((acc, result) => {
+        if (result.success && result.data) {
+          acc.push(...result.data)
+        }
+        return acc
+      }, [] as any[])
+      setBookings(allBookings)
+
+      // Fetch reports for user's properties
+      const allReportsPromises = userProperties.map(property =>
+        SupabaseService.getReportsByProperty(property.id)
+      )
+      const reportResults = await Promise.all(allReportsPromises)
+      const allReports = reportResults.reduce((acc, result) => {
+        if (result.success && result.data) {
+          acc.push(...result.data)
+        }
+        return acc
+      }, [] as any[])
+      setReports(allReports)
+
+      // Fetch tasks for user's properties
+      const allTasksPromises = userProperties.map(property =>
+        SupabaseService.getTasksByProperty(property.id)
+      )
+      const taskResults = await Promise.all(allTasksPromises)
+      const allTasks = taskResults.reduce((acc, result) => {
+        if (result.success && result.data) {
+          acc.push(...result.data)
+        }
+        return acc
+      }, [] as any[])
+      setTasks(allTasks)
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      toast.error('Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Calculate dashboard metrics
+  const calculateMetrics = () => {
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+
+    // Current month metrics
+    const currentMonthReports = reports.filter(r =>
+      r.month === currentMonth + 1 && r.year === currentYear
+    )
+
+    const totalIncome = currentMonthReports.reduce((sum, r) => sum + r.total_income, 0)
+    const totalExpenses = currentMonthReports.reduce((sum, r) => sum + r.total_expenses, 0)
+    const netIncome = totalIncome - totalExpenses
+    const avgOccupancy = currentMonthReports.length > 0
+      ? currentMonthReports.reduce((sum, r) => sum + r.occupancy_rate, 0) / currentMonthReports.length
+      : 0
+
+    // Upcoming bookings (next 30 days)
+    const upcomingBookings = bookings.filter(booking => {
+      const checkIn = new Date(booking.check_in)
+      return isAfter(checkIn, now) && isBefore(checkIn, addDays(now, 30))
+    })
+
+    // Active bookings (currently staying)
+    const activeBookings = bookings.filter(booking => {
+      const checkIn = new Date(booking.check_in)
+      const checkOut = new Date(booking.check_out)
+      return isBefore(checkIn, now) && isAfter(checkOut, now)
+    })
+
+    // Pending maintenance tasks
+    const pendingTasks = tasks.filter(task =>
+      task.status === 'pending' && task.task_type === 'maintenance'
+    )
+
+    return {
+      totalIncome,
+      totalExpenses,
+      netIncome,
+      avgOccupancy,
+      upcomingBookings,
+      activeBookings,
+      pendingTasks,
+      totalProperties: properties.length,
+      totalBookings: bookings.length
+    }
+  }
+
+  // Prepare chart data
+  const prepareChartData = () => {
+    const last6Months = []
+    const now = new Date()
+
+    for (let i = 5; i >= 0; i--) {
+      const date = subMonths(now, i)
+      const month = date.getMonth() + 1
+      const year = date.getFullYear()
+
+      const monthReports = reports.filter(r => r.month === month && r.year === year)
+      const income = monthReports.reduce((sum, r) => sum + r.total_income, 0)
+      const expenses = monthReports.reduce((sum, r) => sum + r.total_expenses, 0)
+
+      last6Months.push({
+        month: format(date, 'MMM yyyy'),
+        income,
+        expenses,
+        net: income - expenses
+      })
+    }
+
+    return last6Months
+  }
+
+  // Prepare upcoming bookings data
+  const prepareUpcomingBookings = () => {
+    const now = new Date()
+    const upcomingBookings = bookings
+      .filter(booking => {
+        const checkIn = new Date(booking.check_in)
+        return isAfter(checkIn, now) && booking.status !== 'cancelled'
+      })
+      .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
+      .slice(0, 10)
+      .map(booking => {
+        const property = properties.find(p => p.id === booking.property_id)
+        return {
+          ...booking,
+          property_name: property?.name || 'Unknown Property'
+        }
+      })
+
+    return upcomingBookings
+  }
+
+  // Prepare active maintenance tasks
+  const prepareMaintenanceTasks = () => {
+    const activeTasks = tasks
+      .filter(task =>
+        task.status === 'pending' || task.status === 'in_progress'
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 8)
+      .map(task => {
+        const property = properties.find(p => p.id === task.property_id)
+        return {
+          ...task,
+          property_name: property?.name || 'Unknown Property'
+        }
+      })
+
+    return activeTasks
+  }
+
+  const metrics = calculateMetrics()
+  const chartData = prepareChartData()
+  const upcomingBookings = prepareUpcomingBookings()
+  const maintenanceTasks = prepareMaintenanceTasks()
+
+  if (authLoading || loading || !user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -26,252 +239,464 @@ export default function ClientDashboard() {
   return (
     <div className="min-h-screen bg-black">
       <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
-        {/* Header - Linear style */}
+        {/* Header - Lightspeed Style */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Date Selector */}
+            <div className="flex items-center gap-2 text-neutral-400">
+              <span className="text-sm">
+                {format(new Date(), 'MMM yyyy')}
+              </span>
+            </div>
+            {/* Settings Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-neutral-400 hover:text-white"
+            >
+              <Wrench className="w-4 h-4" />
+              Settings
+            </Button>
+          </div>
+        </div>
+
+        {/* Metric Selector - Lightspeed Style */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedMetric}
+              onChange={(e) => setSelectedMetric(e.target.value)}
+              className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="revenue">Monthly Revenue</option>
+              <option value="bookings">Monthly Bookings</option>
+              <option value="occupancy">Monthly Occupancy</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Main Chart Area - Lightspeed Style */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-white sm:text-3xl">
-            Welcome back, {user.name || user.email}
-          </h1>
-          <p className="mt-2 text-neutral-400">
-            Manage your villa properties and track performance
-          </p>
-        </div>
-
-        {/* Stats Grid - Linear design */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-400">Total Properties</p>
-                  <p className="text-2xl font-semibold text-white mt-2">3</p>
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
-                  <Building className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-400 mr-1" />
-                <span className="text-emerald-400 font-medium">+1</span>
-                <span className="text-neutral-400 ml-1">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-400">Active Bookings</p>
-                  <p className="text-2xl font-semibold text-white mt-2">12</p>
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500">
-                  <Calendar className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-500 mr-1" />
-                <span className="text-emerald-400 font-medium">+3</span>
-                <span className="text-neutral-400 ml-1">from last week</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-400">Monthly Revenue</p>
-                  <p className="text-2xl font-semibold text-white mt-2">฿45,231</p>
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500">
-                  <DollarSign className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-500 mr-1" />
-                <span className="text-emerald-400 font-medium">+12%</span>
-                <span className="text-neutral-400 ml-1">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-400">Occupancy Rate</p>
-                  <p className="text-2xl font-semibold text-white mt-2">78%</p>
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm">
-                <ArrowUpRight className="h-4 w-4 text-emerald-500 mr-1" />
-                <span className="text-emerald-400 font-medium">+5%</span>
-                <span className="text-neutral-400 ml-1">from last month</span>
-              </div>
-            </CardContent>
+          <Card className="bg-neutral-950 border-neutral-800 p-6">
+            <div className="h-96">
+              <IncomeExpenseChart data={chartData} />
+            </div>
           </Card>
         </div>
 
-        {/* Quick Actions & Recent Activity - Linear layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-white">Quick Actions</CardTitle>
-              <CardDescription className="text-neutral-400">
-                Common tasks for property management
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/properties/add">
-                <Button className="w-full justify-start h-11" size="lg">
-                  <Plus className="mr-3 h-4 w-4" />
-                  Add New Property
-                </Button>
-              </Link>
-              <Link href="/properties">
-                <Button variant="outline" className="w-full justify-start h-11" size="lg">
-                  <Eye className="mr-3 h-4 w-4" />
-                  View All Properties
-                </Button>
-              </Link>
-              <Link href="/bookings">
-                <Button variant="outline" className="w-full justify-start h-11" size="lg">
-                  <Calendar className="mr-3 h-4 w-4" />
-                  Manage Bookings
-                </Button>
-              </Link>
-              <Link href="/onboard">
-                <Button variant="outline" className="w-full justify-start h-11" size="lg">
-                  <Building className="mr-3 h-4 w-4" />
-                  Villa Onboarding Survey
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-white">Recent Activity</CardTitle>
-              <CardDescription className="text-neutral-400">
-                Latest updates from your properties
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-neutral-900 transition-colors duration-200">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">
-                      New booking confirmed
-                    </p>
-                    <p className="text-sm text-neutral-400">
-                      Villa Paradise - 5 nights in March
-                    </p>
-                  </div>
-                  <div className="text-xs text-neutral-500 flex-shrink-0">2h ago</div>
-                </div>
-
-                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-neutral-900 transition-colors duration-200">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">
-                      Maintenance completed
-                    </p>
-                    <p className="text-sm text-neutral-400">
-                      Pool cleaning at Sunset Villa
-                    </p>
-                  </div>
-                  <div className="text-xs text-neutral-500 flex-shrink-0">1d ago</div>
-                </div>
-
-                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-neutral-900 transition-colors duration-200">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">
-                      Payment received
-                    </p>
-                    <p className="text-sm text-neutral-400">
-                      ฿15,000 from guest checkout
-                    </p>
-                  </div>
-                  <div className="text-xs text-neutral-500 flex-shrink-0">2d ago</div>
-                </div>
+        {/* Bottom Metrics - Lightspeed Style Circular Progress */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Revenue Target */}
+          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 text-center">
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  className="text-neutral-800"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(metrics.totalIncome / 50000, 1))}`}
+                  className="text-green-400 transition-all duration-1000"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-medium text-green-400">
+                  {Math.round((metrics.totalIncome / 50000) * 100)}%
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              ${metrics.totalIncome.toLocaleString()}
+            </div>
+            <div className="text-sm text-neutral-400 mb-1">
+              REVENUE TARGET
+            </div>
+            <div className="text-xs text-neutral-500">
+              Target: $50,000
+            </div>
+          </div>
+
+          {/* Bookings Target */}
+          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 text-center">
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  className="text-neutral-800"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(metrics.totalBookings / 100, 1))}`}
+                  className="text-orange-400 transition-all duration-1000"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-medium text-orange-400">
+                  {Math.round((metrics.totalBookings / 100) * 100)}%
+                </span>
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {metrics.totalBookings}
+            </div>
+            <div className="text-sm text-neutral-400 mb-1">
+              BOOKING TARGET
+            </div>
+            <div className="text-xs text-neutral-500">
+              Target: 100
+            </div>
+          </div>
+
+          {/* Occupancy Target */}
+          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 text-center">
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  className="text-neutral-800"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - metrics.avgOccupancy / 100)}`}
+                  className="text-red-400 transition-all duration-1000"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-medium text-red-400">
+                  {Math.round(metrics.avgOccupancy)}%
+                </span>
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {metrics.avgOccupancy.toFixed(1)}%
+            </div>
+            <div className="text-sm text-neutral-400 mb-1">
+              OCCUPANCY TARGET
+            </div>
+            <div className="text-xs text-neutral-500">
+              Target: 85%
+            </div>
+          </div>
         </div>
 
-        {/* Properties Overview - Linear design */}
-        <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-          <CardHeader className="pb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold text-white">Your Properties</CardTitle>
+        {/* Upcoming Bookings Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Upcoming Bookings
+            </h2>
+            <span className="text-sm text-neutral-400">
+              Next {upcomingBookings.length} bookings
+            </span>
+          </div>
+
+          {upcomingBookings.length === 0 ? (
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardContent className="p-6 text-center">
+                <Calendar className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
+                <p className="text-neutral-400">No upcoming bookings</p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  New bookings will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Card className="bg-neutral-900 border-neutral-800">
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-neutral-800">
+                            <th className="text-left p-4 text-sm font-medium text-neutral-400">Guest</th>
+                            <th className="text-left p-4 text-sm font-medium text-neutral-400">Property</th>
+                            <th className="text-left p-4 text-sm font-medium text-neutral-400">Check-in</th>
+                            <th className="text-left p-4 text-sm font-medium text-neutral-400">Check-out</th>
+                            <th className="text-left p-4 text-sm font-medium text-neutral-400">Source</th>
+                            <th className="text-left p-4 text-sm font-medium text-neutral-400">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {upcomingBookings.map((booking, index) => (
+                            <tr key={booking.id} className={`border-b border-neutral-800 ${index === upcomingBookings.length - 1 ? 'border-b-0' : ''}`}>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4 text-neutral-500" />
+                                  <span className="text-white font-medium">{booking.guest_name}</span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <Home className="w-4 h-4 text-neutral-500" />
+                                  <span className="text-neutral-300">{booking.property_name}</span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-neutral-300">
+                                  {format(new Date(booking.check_in), 'MMM dd, yyyy')}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-neutral-300">
+                                  {format(new Date(booking.check_out), 'MMM dd, yyyy')}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-neutral-400 text-sm">
+                                  {booking.source || 'Direct'}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <Badge
+                                  variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
+                                  className={`${
+                                    booking.status === 'confirmed'
+                                      ? 'bg-green-900 text-green-300 border-green-800'
+                                      : 'bg-yellow-900 text-yellow-300 border-yellow-800'
+                                  }`}
+                                >
+                                  {booking.status}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {upcomingBookings.map((booking) => (
+                  <Card key={booking.id} className="bg-neutral-900 border-neutral-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <User className="w-4 h-4 text-neutral-500" />
+                            <span className="text-white font-medium">{booking.guest_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Home className="w-4 h-4 text-neutral-500" />
+                            <span className="text-neutral-300 text-sm">{booking.property_name}</span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
+                          className={`${
+                            booking.status === 'confirmed'
+                              ? 'bg-green-900 text-green-300 border-green-800'
+                              : 'bg-yellow-900 text-yellow-300 border-yellow-800'
+                          }`}
+                        >
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-neutral-500">Check-in:</span>
+                          <div className="text-neutral-300">
+                            {format(new Date(booking.check_in), 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-neutral-500">Check-out:</span>
+                          <div className="text-neutral-300">
+                            {format(new Date(booking.check_out), 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                      </div>
+                      {booking.source && (
+                        <div className="mt-2 text-xs text-neutral-400">
+                          Source: {booking.source}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Active Maintenance Issues Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-orange-400" />
+              Active Maintenance
+            </h2>
+            <span className="text-sm text-neutral-400">
+              {maintenanceTasks.length} active {maintenanceTasks.length === 1 ? 'issue' : 'issues'}
+            </span>
+          </div>
+
+          {maintenanceTasks.length === 0 ? (
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardContent className="p-6 text-center">
+                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                <p className="text-neutral-400">No active maintenance issues</p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  All maintenance tasks are up to date
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {maintenanceTasks.map((task) => (
+                <Card key={task.id} className="bg-neutral-900 border-neutral-800 hover:border-neutral-700 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-white font-medium mb-1 line-clamp-2">
+                          {task.title || task.description}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-neutral-400 mb-2">
+                          <Home className="w-4 h-4" />
+                          <span>{task.property_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-neutral-500">
+                          <Clock className="w-4 h-4" />
+                          <span>Reported {format(new Date(task.created_at), 'MMM dd, yyyy')}</span>
+                        </div>
+                      </div>
+                      <div className="ml-3">
+                        {task.status === 'pending' ? (
+                          <div className="flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4 text-red-400" />
+                            <Badge variant="secondary" className="bg-red-900 text-red-300 border-red-800">
+                              Pending
+                            </Badge>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4 text-yellow-400" />
+                            <Badge variant="secondary" className="bg-yellow-900 text-yellow-300 border-yellow-800">
+                              In Progress
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {task.priority && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-neutral-500">
+                          Priority: {task.priority}
+                        </span>
+                        {task.assigned_to && (
+                          <span className="text-xs text-neutral-500">
+                            Assigned to staff
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="mt-8">
+            <Card className="bg-neutral-950 border-neutral-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Wrench className="w-5 h-5" />
+                  Dashboard Settings
+                </CardTitle>
                 <CardDescription className="text-neutral-400">
-                  Overview of your villa portfolio
+                  Configure your dashboard targets and preferences
                 </CardDescription>
-              </div>
-              <Link href="/properties">
-                <Button variant="outline" size="sm" className="h-9">
-                  View All
-                  <ArrowUpRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Property Cards - Linear style */}
-              <div className="group/card border border-neutral-800 rounded-lg p-5 hover:shadow-lg hover:border-neutral-700 hover:bg-neutral-900 transition-all duration-200">
-                <div className="aspect-video bg-neutral-800 rounded-lg mb-4 flex items-center justify-center">
-                  <Building className="h-8 w-8 text-neutral-500" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Monthly Revenue Target
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="50000"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
                 </div>
-                <h3 className="font-semibold text-white mb-2">Villa Paradise</h3>
-                <p className="text-sm text-neutral-400 mb-4">Phuket, Thailand</p>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-emerald-400">85% occupied</span>
-                  </div>
-                  <span className="text-sm font-medium text-white">฿18,500/month</span>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Monthly Booking Target
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="100"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
                 </div>
-              </div>
-
-              <div className="group/card border border-neutral-800 rounded-lg p-5 hover:shadow-lg hover:border-neutral-700 hover:bg-neutral-900 transition-all duration-200">
-                <div className="aspect-video bg-neutral-800 rounded-lg mb-4 flex items-center justify-center">
-                  <Building className="h-8 w-8 text-neutral-500" />
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Occupancy Target (%)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="85"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
                 </div>
-                <h3 className="font-semibold text-white mb-2">Sunset Villa</h3>
-                <p className="text-sm text-neutral-400 mb-4">Koh Samui, Thailand</p>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-emerald-400">72% occupied</span>
-                  </div>
-                  <span className="text-sm font-medium text-white">฿15,200/month</span>
+                <div className="flex justify-end pt-4">
+                  <Button>
+                    Save Settings
+                  </Button>
                 </div>
-              </div>
-
-              <div className="group/card border border-neutral-800 rounded-lg p-5 hover:shadow-lg hover:border-neutral-700 hover:bg-neutral-900 transition-all duration-200">
-                <div className="aspect-video bg-neutral-800 rounded-lg mb-4 flex items-center justify-center">
-                  <Building className="h-8 w-8 text-neutral-500" />
-                </div>
-                <h3 className="font-semibold text-white mb-2">Ocean Breeze</h3>
-                <p className="text-sm text-neutral-400 mb-4">Krabi, Thailand</p>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-amber-400">68% occupied</span>
-                  </div>
-                  <span className="text-sm font-medium text-white">฿12,800/month</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )

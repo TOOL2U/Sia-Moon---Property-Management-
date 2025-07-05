@@ -1,15 +1,13 @@
 'use client'
 
-// TODO: Switch back to Supabase auth for production
-// import { useAuth } from '@/contexts/RealAuthContext'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { CheckCircle, Clock, AlertTriangle, Users, Plus, Filter, ArrowUpRight } from 'lucide-react'
+import { CheckCircle, Clock, AlertTriangle, Users, Plus, Filter, ArrowUpRight, Settings, ClipboardList } from 'lucide-react'
+import Link from 'next/link'
 
 export default function StaffDashboard() {
-  // TODO: Switch back to Supabase auth for production
-  const { user } = useLocalAuth()
+  const { profile: user } = useAuth()
 
   if (!user) {
     return (
@@ -33,14 +31,18 @@ export default function StaffDashboard() {
               <p className="mt-2 text-neutral-400">Welcome back, {user.email}</p>
             </div>
             <div className="mt-6 sm:mt-0 flex flex-col sm:flex-row gap-3">
-              <Button className="w-full sm:w-auto h-10">
-                <Plus className="mr-2 h-4 w-4" />
-                New Task
-              </Button>
-              <Button variant="outline" className="w-full sm:w-auto h-10">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-              </Button>
+              <Link href="/dashboard/staff/tasks">
+                <Button className="w-full sm:w-auto h-10">
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  My Tasks
+                </Button>
+              </Link>
+              <Link href="/dashboard/admin">
+                <Button variant="outline" className="w-full sm:w-auto h-10">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin Panel
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

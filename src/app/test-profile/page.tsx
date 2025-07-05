@@ -3,13 +3,13 @@
 import { useState } from 'react'
 // TODO: Switch back to Supabase for production
 // import { createClient } from '@/lib/supabase/client'
-import DatabaseService from '@/lib/dbService'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import SupabaseService from '@/lib/supabaseService'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 
 export default function TestProfilePage() {
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const { user: authUser } = useLocalAuth()
+  const { profile: authUser } = useAuth()
 
   const testProfile = async () => {
     setLoading(true)
@@ -18,15 +18,15 @@ export default function TestProfilePage() {
       console.log('🔍 Testing local database...')
 
       // Test 1: Get all users
-      const { data: allUsers, error: allError } = await DatabaseService.getAllUsers()
+      const { data: allUsers, error: allError } = await SupabaseService.getAllUsers()
       console.log('All users:', allUsers, 'Error:', allError)
 
       // Test 2: Find by email
-      const { data: userByEmail, error: emailError } = await DatabaseService.getUserByEmail('test@example.com')
+      const { data: userByEmail, error: emailError } = await SupabaseService.getUserByEmail('test@example.com')
       console.log('User by email:', userByEmail, 'Error:', emailError)
 
       // Test 3: Test connection
-      const connectionTest = await DatabaseService.testConnection()
+      const connectionTest = await SupabaseService.testConnection()
       console.log('Connection test:', connectionTest)
 
       setResult({
@@ -55,7 +55,7 @@ export default function TestProfilePage() {
     try {
       console.log('🔄 Creating test profile...')
 
-      const { data, error } = await DatabaseService.createUser({
+      const { data, error } = await SupabaseService.createUser({
         email: 'newuser@example.com',
         name: 'New Test User',
         role: 'client'

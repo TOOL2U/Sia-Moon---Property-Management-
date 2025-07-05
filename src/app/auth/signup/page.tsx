@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-// TODO: Switch back to Supabase auth for production
-// import { useAuth } from '@/contexts/RealAuthContext'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { UserPlus, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 
 export default function SignUpPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,9 +22,67 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  // TODO: Switch back to Supabase auth for production
-  const { signUp } = useLocalAuth()
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const { signUp } = useAuth()
+
+  // Email validation
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  // Password strength validation
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 6
+    const hasUpperCase = /[A-Z]/.test(password)
+    const hasLowerCase = /[a-z]/.test(password)
+    const hasNumbers = /\d/.test(password)
+
+    return {
+      minLength,
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers,
+      isValid: minLength && (hasUpperCase || hasLowerCase || hasNumbers)
+    }
+  }
+
+  // Form validation
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required'
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required'
+    } else {
+      const passwordValidation = validatePassword(formData.password)
+      if (!passwordValidation.isValid) {
+        newErrors.password = 'Password must be at least 6 characters long'
+      }
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password'
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -31,42 +90,46 @@ export default function SignUpPage() {
       ...prev,
       [name]: value
     }))
-    setError('')
-  }
-
-  const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError('Name is required')
-      return false
+    // Clear errors for the field being edited
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
     }
-    if (!formData.email.trim()) {
-      setError('Email is required')
-      return false
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return false
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
-    }
-    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
-    setError('')
     setLoading(true)
 
     try {
-      await signUp(formData.email, formData.password, formData.role, formData.name)
-      // Success message is handled in the signUp function
-    } catch (error: any) {
-      setError(error.message || 'Failed to create account')
+      console.log('🔄 Starting sign up process...')
+      const success = await signUp(formData.email, formData.password, {
+        full_name: formData.name,
+        role: formData.role
+      })
+
+      if (success) {
+        console.log('✅ Signup successful, redirecting to dashboard...')
+        toast.success('Account created successfully! Welcome to Sia Moon!')
+
+        // Small delay to ensure auth state is updated
+        setTimeout(() => {
+          console.log('🔄 Executing redirect to dashboard...')
+          router.push('/dashboard')
+        }, 100)
+      } else {
+        console.log('❌ Signup failed')
+        toast.error('Failed to create account. Please try again.')
+      }
+    } catch (error: unknown) {
+      console.error('❌ Sign up error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create account'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -84,7 +147,7 @@ export default function SignUpPage() {
             Create Account
           </h1>
           <p className="mt-3 text-base text-neutral-400">
-            Join Villa Management today
+            Join Sia Moon Property Management today
           </p>
         </div>
 
@@ -98,26 +161,44 @@ export default function SignUpPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <Input
-                label="Full Name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                placeholder="John Smith"
-                autoComplete="name"
-              />
+              <div>
+                <Input
+                  label="Full Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="John Smith"
+                  autoComplete="name"
+                  className={errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                />
+                {errors.name && (
+                  <div className="flex items-center mt-1 text-red-400 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.name}
+                  </div>
+                )}
+              </div>
 
-              <Input
-                label="Email Address"
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                placeholder="john@example.com"
-                autoComplete="email"
-              />
+              <div>
+                <Input
+                  label="Email Address"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="john@example.com"
+                  autoComplete="email"
+                  className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                />
+                {errors.email && (
+                  <div className="flex items-center mt-1 text-red-400 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.email}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
@@ -138,66 +219,98 @@ export default function SignUpPage() {
                 </p>
               </div>
 
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Create a password"
-                  autoComplete="new-password"
-                  helperText="Must be at least 6 characters"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-
-              <div className="relative">
-                <Input
-                  label="Confirm Password"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Confirm your password"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-
-              {error && (
-                <div className="p-3 bg-red-950/50 border border-red-800 rounded-lg">
-                  <p className="text-sm text-red-400 font-medium">{error}</p>
+              <div>
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Create a password"
+                    autoComplete="new-password"
+                    className={errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
-              )}
+                {errors.password && (
+                  <div className="flex items-center mt-1 text-red-400 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.password}
+                  </div>
+                )}
+                {formData.password && !errors.password && (
+                  <div className="mt-2 space-y-1">
+                    {(() => {
+                      const validation = validatePassword(formData.password)
+                      return (
+                        <div className="text-xs space-y-1">
+                          <div className={`flex items-center ${validation.minLength ? 'text-green-400' : 'text-neutral-400'}`}>
+                            {validation.minLength ? <CheckCircle className="h-3 w-3 mr-1" /> : <div className="h-3 w-3 mr-1 rounded-full border border-neutral-600" />}
+                            At least 6 characters
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="relative">
+                  <Input
+                    label="Confirm Password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Confirm your password"
+                    autoComplete="new-password"
+                    className={errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-9 text-neutral-400 hover:text-white transition-colors duration-200"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <div className="flex items-center mt-1 text-red-400 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.confirmPassword}
+                  </div>
+                )}
+                {formData.confirmPassword && formData.password === formData.confirmPassword && !errors.confirmPassword && (
+                  <div className="flex items-center mt-1 text-green-400 text-sm">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Passwords match
+                  </div>
+                )}
+              </div>
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || Object.keys(errors).some(key => errors[key])}
                 fullWidth
-                className="flex items-center justify-center h-11"
+                className="flex items-center justify-center h-11 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>

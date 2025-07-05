@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-// TODO: Switch back to Supabase for production
-// import { createClient } from '@/lib/supabase/client'
-import DatabaseService from '@/lib/dbService'
-import { useLocalAuth } from '@/hooks/useLocalAuth'
+import SupabaseService from '@/lib/supabaseService'
+import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -31,8 +29,7 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all')
-  // TODO: Switch back to Supabase for production
-  const { user } = useLocalAuth()
+  const { profile: user } = useAuth()
 
   useEffect(() => {
     fetchBookings()
@@ -42,21 +39,54 @@ export default function BookingsPage() {
     try {
       console.log('🔍 Fetching bookings from local database...')
 
-      const { data: bookingsData, error } = await DatabaseService.getAllBookings()
-
-      if (error) {
-        console.error('❌ Error fetching bookings:', error)
-        toast.error('Failed to load bookings')
+      // Only fetch bookings for properties owned by the current user
+      if (!user?.id) {
+        console.error('❌ No user ID available')
+        toast.error('Please sign in to view bookings')
         return
       }
 
+      // First get user's properties, then get bookings for those properties
+      const propertiesResult = await SupabaseService.getPropertiesByOwner(user.id)
+
+      if (!propertiesResult.success) {
+        console.error('❌ Error fetching user properties:', propertiesResult.error)
+        toast.error('Failed to load user properties')
+        return
+      }
+
+      if (!propertiesResult.data || propertiesResult.data.length === 0) {
+        console.log('ℹ️ No properties found for user, no bookings to display')
+        setBookings([])
+        setLoading(false)
+        return
+      }
+
+      // Get all bookings for user's properties
+      const allBookingsPromises = propertiesResult.data.map(property =>
+        SupabaseService.getBookingsByProperty(property.id)
+      )
+
+      const bookingResults = await Promise.all(allBookingsPromises)
+
+      // Flatten and combine all bookings
+      const allBookings = bookingResults.reduce((acc, result) => {
+        if (result.success && result.data) {
+          acc.push(...result.data)
+        }
+        return acc
+      }, [] as any[])
+
       // Fetch property details for each booking
       const bookingsWithProperties = await Promise.all(
-        (bookingsData || []).map(async (booking) => {
-          const { data: property } = await DatabaseService.getProperty(booking.property_id)
+        allBookings.map(async (booking) => {
+          const propertyResult = await SupabaseService.getProperty(booking.property_id)
           return {
             ...booking,
-            property: property ? { name: property.name, location: property.location } : undefined
+            property: propertyResult.success && propertyResult.data ? {
+              name: propertyResult.data.name,
+              location: propertyResult.data.city || propertyResult.data.address || 'Unknown'
+            } : undefined
           }
         })
       )
