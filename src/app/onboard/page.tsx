@@ -171,7 +171,16 @@ export default function OnboardYourVilla() {
   const [error, setError] = useState('')
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const router = useRouter()
-  const supabase = createClient()
+
+  // Only initialize Supabase if not in bypass mode and env vars are available
+  const supabase = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? null : (() => {
+    try {
+      return createClient()
+    } catch (error) {
+      console.warn('Supabase not configured, running in development mode')
+      return null
+    }
+  })()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -249,6 +258,18 @@ export default function OnboardYourVilla() {
       return uploadedUrls
     }
 
+    // If Supabase is not available (development mode), simulate file uploads
+    if (!supabase) {
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const [category, files] = filesToUpload[i]!
+        const file = files[0]
+        // Simulate upload with a fake URL
+        uploadedUrls[category] = `https://example.com/uploads/${Date.now()}-${category}-${file.name}`
+        toast.success(`Simulated upload: ${category} (${i + 1}/${filesToUpload.length})`)
+      }
+      return uploadedUrls
+    }
+
     for (let i = 0; i < filesToUpload.length; i++) {
       const [category, files] = filesToUpload[i]!
       const file = files[0] // For now, take the first file
@@ -304,7 +325,7 @@ export default function OnboardYourVilla() {
         owner_contact_number: formData.ownerContactNumber,
         owner_email: formData.ownerEmail,
         preferred_contact_method: formData.preferredContactMethod || null,
-        bank_details: formData.bankDetails ? JSON.parse(formData.bankDetails) : null,
+        bank_details: formData.bankDetails || null,
 
         // Property Details
         property_name: formData.propertyName,
@@ -326,10 +347,10 @@ export default function OnboardYourVilla() {
         has_backup_power: formData.hasBackupPower,
 
         // Access & Staff
-        access_details: formData.accessDetails ? JSON.parse(formData.accessDetails) : null,
+        access_details: formData.accessDetails || null,
         has_smart_lock: formData.hasSmartLock,
         gate_remote_details: formData.gateRemoteDetails || null,
-        onsite_staff: formData.onsiteStaff ? JSON.parse(formData.onsiteStaff) : null,
+        onsite_staff: formData.onsiteStaff || null,
 
         // Utilities
         electricity_provider: formData.electricityProvider || null,
@@ -337,12 +358,12 @@ export default function OnboardYourVilla() {
         internet_package: formData.internetPackage || null,
 
         // Rental & Marketing
-        rental_rates: formData.rentalRates ? JSON.parse(formData.rentalRates) : null,
+        rental_rates: formData.rentalRates || null,
         platforms_listed: formData.platformsListed,
         average_occupancy_rate: formData.averageOccupancyRate ? Number(formData.averageOccupancyRate) : null,
         minimum_stay_requirements: formData.minimumStayRequirements || null,
         target_guests: formData.targetGuests || null,
-        owner_blackout_dates: formData.ownerBlackoutDates ? JSON.parse(formData.ownerBlackoutDates) : null,
+        owner_blackout_dates: formData.ownerBlackoutDates || null,
 
         // Preferences & Rules
         pets_allowed: formData.petsAllowed,
@@ -378,13 +399,19 @@ export default function OnboardYourVilla() {
       }
 
       // Insert villa onboarding data
-      const { error } = await supabase
-        .from('villa_onboarding')
-        .insert([villaData])
-        .select()
+      if (supabase) {
+        const { error } = await supabase
+          .from('villa_onboarding')
+          .insert([villaData])
+          .select()
 
-      if (error) {
-        throw error
+        if (error) {
+          throw error
+        }
+      } else {
+        // Development mode - simulate database insertion
+        console.log('Development mode: Villa data would be inserted:', villaData)
+        toast.success('Development mode: Villa submission simulated successfully!')
       }
 
       setSubmitted(true)
@@ -430,9 +457,9 @@ export default function OnboardYourVilla() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="p-6 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg text-left">
-                <h4 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-3">What happens next?</h4>
-                <ul className="text-sm text-emerald-800 dark:text-emerald-200 space-y-2">
+              <div className="p-6 bg-emerald-950/20 border border-emerald-800/30 rounded-lg text-left">
+                <h4 className="font-semibold text-emerald-100 mb-3">What happens next?</h4>
+                <ul className="text-sm text-emerald-200 space-y-2">
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
                     Our team will review your submission
@@ -483,7 +510,7 @@ export default function OnboardYourVilla() {
         <div className="max-w-4xl mx-auto">
           {/* Header - Augment dark design */}
           <div className="text-center mb-12">
-            <div className="mx-auto w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-6">
               <Building className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-semibold text-white sm:text-4xl">
@@ -1098,7 +1125,7 @@ export default function OnboardYourVilla() {
                 {error && (
                   <div className="flex items-center space-x-3 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg">
                     <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                    <p className="text-sm text-red-700 dark:text-red-400 font-medium">{error}</p>
+                    <p className="text-sm text-red-400 font-medium">{error}</p>
                   </div>
                 )}
 

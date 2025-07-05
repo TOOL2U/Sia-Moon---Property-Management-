@@ -123,14 +123,14 @@ export default function AddPropertyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4">
-        <Card className="w-full max-w-md text-center">
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <Card className="w-full max-w-md text-center bg-neutral-950 border-neutral-800">
           <CardHeader>
-            <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl text-green-800">Property Added Successfully!</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl text-white">Property Added Successfully!</CardTitle>
+            <CardDescription className="text-neutral-400">
               Your property has been added to your portfolio. You can now manage bookings and tasks for this property.
             </CardDescription>
           </CardHeader>
@@ -150,12 +150,12 @@ export default function AddPropertyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-black">
       {/* Back to properties link */}
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
-        <Link 
-          href="/properties" 
-          className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        <Link
+          href="/properties"
+          className="inline-flex items-center text-sm font-medium text-neutral-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Properties
@@ -164,24 +164,24 @@ export default function AddPropertyPage() {
 
       <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-2xl">
-          {/* Header */}
+          {/* Header - Linear style */}
           <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-6">
               <Building className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            <h1 className="text-2xl font-semibold text-white sm:text-3xl">
               Add New Property
             </h1>
-            <p className="mt-3 text-base text-gray-600">
+            <p className="mt-3 text-base text-neutral-400">
               Add a villa property to your portfolio for management by Sia Moon.
             </p>
           </div>
 
           {/* Form */}
-          <Card>
+          <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
             <CardHeader>
-              <CardTitle>Property Information</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-white">Property Information</CardTitle>
+              <CardDescription className="text-neutral-400">
                 Provide basic details about your villa property.
               </CardDescription>
             </CardHeader>
@@ -198,8 +198,8 @@ export default function AddPropertyPage() {
                 />
 
                 <div>
-                  <label className="block text-base font-medium text-gray-900 mb-2">
-                    Property Address <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    Property Address <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     name="address"
@@ -207,23 +207,23 @@ export default function AddPropertyPage() {
                     onChange={handleInputChange}
                     required
                     rows={3}
-                    className="flex w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white placeholder:text-neutral-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-neutral-600"
                     placeholder="123 Beach Road, Tambon Choeng Thale, Thalang District, Phuket 83110, Thailand"
                   />
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-neutral-400 mt-1">
                     Include full address with district, province, and postal code
                   </p>
                 </div>
 
                 {error && (
-                  <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700 font-medium">{error}</p>
+                  <div className="flex items-center space-x-2 p-3 bg-red-950/20 border border-red-800/30 rounded-lg">
+                    <p className="text-sm text-red-400 font-medium">{error}</p>
                   </div>
                 )}
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
+                <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-100 mb-2">What happens next?</h4>
+                  <ul className="text-sm text-blue-200 space-y-1">
                     <li>• Your property will be added to your portfolio</li>
                     <li>• You can manage bookings and view reports</li>
                     <li>• Staff can be assigned tasks for this property</li>

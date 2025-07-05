@@ -114,31 +114,33 @@ const categories = ['Main', 'Core', 'Onboarding', 'Admin', 'Dashboards', 'Authen
 
 export default function DevDashboardPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-black">
+      <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
+        {/* Header - Linear style */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
               <Settings className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Development Dashboard</h1>
-              <p className="text-gray-600">Quick access to all pages and features</p>
+              <h1 className="text-2xl font-semibold text-white sm:text-3xl">Development Dashboard</h1>
+              <p className="text-neutral-400">Quick access to all pages and features</p>
             </div>
           </div>
           
           {process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="bg-yellow-900 border border-yellow-800 rounded-lg p-4">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Settings className="h-5 w-5 text-yellow-400" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500">
+                    <Settings className="h-4 w-4 text-yellow-900" />
+                  </div>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
+                  <h3 className="text-sm font-medium text-yellow-300">
                     Development Mode Active
                   </h3>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <div className="mt-2 text-sm text-yellow-400">
                     <p>Authentication is bypassed. All pages are accessible without login.</p>
                   </div>
                 </div>
@@ -150,29 +152,29 @@ export default function DevDashboardPage() {
         {/* Pages by Category */}
         {categories.map((category) => {
           const categoryPages = developmentPages.filter(page => page.category === category)
-          
+
           return (
             <div key={category} className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">{category} Pages</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">{category} Pages</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categoryPages.map((page) => {
                   const Icon = page.icon
                   return (
-                    <Card key={page.href} className="hover:shadow-lg transition-shadow">
+                    <Card key={page.href} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
                       <CardHeader>
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Icon className="h-5 w-5 text-blue-600" />
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+                            <Icon className="h-5 w-5 text-white" />
                           </div>
                           <div>
-                            <CardTitle className="text-lg">{page.title}</CardTitle>
+                            <CardTitle className="text-lg text-white">{page.title}</CardTitle>
                           </div>
                         </div>
-                        <CardDescription>{page.description}</CardDescription>
+                        <CardDescription className="text-neutral-400">{page.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="flex items-center justify-between">
-                          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
+                          <code className="text-xs bg-neutral-900 border border-neutral-800 px-2 py-1 rounded text-neutral-400">
                             {page.href}
                           </code>
                           <Link href={page.href}>
@@ -191,35 +193,44 @@ export default function DevDashboardPage() {
         })}
 
         {/* Quick Actions */}
-        <div className="mt-12 bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/properties/add">
-              <Button fullWidth className="justify-start">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Property
-              </Button>
-            </Link>
-            <Link href="/test-db">
-              <Button variant="outline" fullWidth className="justify-start">
-                <Database className="h-4 w-4 mr-2" />
-                Test Database
-              </Button>
-            </Link>
-            <Link href="/debug-user">
-              <Button variant="outline" fullWidth className="justify-start">
-                <Bug className="h-4 w-4 mr-2" />
-                Debug User
-              </Button>
-            </Link>
-            <Link href="/onboard">
-              <Button variant="outline" fullWidth className="justify-start">
-                <FileText className="h-4 w-4 mr-2" />
-                Villa Survey
-              </Button>
-            </Link>
-          </div>
-        </div>
+        <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800 mt-12">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+                <Plus className="h-4 w-4 text-white" />
+              </div>
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/properties/add">
+                <Button className="w-full justify-start h-11" size="lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Property
+                </Button>
+              </Link>
+              <Link href="/test-db">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <Database className="h-4 w-4 mr-2" />
+                  Test Database
+                </Button>
+              </Link>
+              <Link href="/debug-user">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <Bug className="h-4 w-4 mr-2" />
+                  Debug User
+                </Button>
+              </Link>
+              <Link href="/onboard">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Villa Survey
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Environment Info */}
         <div className="mt-8 bg-neutral-900 rounded-lg p-4">

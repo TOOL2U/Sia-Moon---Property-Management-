@@ -174,9 +174,9 @@ export function Navbar() {
           <div className="flex items-center">
             <Link
               href="/"
-              className="text-xl font-semibold text-white hover:text-primary-400 transition-colors duration-200"
+              className="text-xl font-semibold text-white hover:text-primary-400 transition-colors duration-200 mt-3"
             >
-              Sia Moon
+              Sia Moon 
             </Link>
           </div>
 

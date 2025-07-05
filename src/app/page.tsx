@@ -3,28 +3,46 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
+import CloudinaryImage from '@/components/ui/CloudinaryImage'
 import { Building, Users, Calendar, BarChart3, ArrowRight, Star, CheckCircle, Shield, Globe } from 'lucide-react'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black">
-      {/* Hero Section - Linear-inspired dark design */}
-      <section className="relative overflow-hidden">
-        {/* Dark gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-neutral-950 to-neutral-900"></div>
+  <div className="min-h-screen bg-black">
+  {/* Hero Section - Linear-inspired dark design with Cloudinary background */}
+  <section className="relative overflow-hidden min-h-[85vh] flex items-center">
+    {/* Cloudinary Hero Image Background with 50% opacity */}
+    <div className="absolute inset-0">
+      <CloudinaryImage
+        publicId="e36eb55c-9c04-4d51-b1aa-8ce78e49ec97_s5opqn"
+        alt="Luxury villa hero background"
+        fill
+        priority
+        opacity={50}
+        quality="auto"
+        format="webp"
+        crop="fill"
+        gravity="center"
+        className="object-cover"
+        sizes="100vw"
+      />
+    </div>
 
-        {/* Subtle dot pattern for depth */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgb(255_255_255_/_0.03)_1px,transparent_0)] [background-size:24px_24px]"></div>
+    {/* Dark gradient overlay for better text readability */}
+    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60"></div>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-32 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            {/* Linear-style headline */}
-            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl animate-fade-in">
-              Premium villa management
-              <span className="block text-primary-400 bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
-                made simple
-              </span>
-            </h1>
+    {/* Subtle animated stars background for depth */}
+    <div className="absolute inset-0 bg-[url('data:image/svg+xml;utf8,<svg width=\'120\' height=\'120\' xmlns=\'http://www.w3.org/2000/svg\'><circle cx=\'20\' cy=\'30\' r=\'1.5\' fill=\'white\' fill-opacity=\'0.3\'/><circle cx=\'90\' cy=\'80\' r=\'1.2\' fill=\'white\' fill-opacity=\'0.25\'/><circle cx=\'50\' cy=\'20\' r=\'1\' fill=\'white\' fill-opacity=\'0.25\'/><circle cx=\'100\' cy=\'40\' r=\'1.3\' fill=\'white\' fill-opacity=\'0.25\'/><circle cx=\'70\' cy=\'60\' r=\'1.2\' fill=\'white\' fill-opacity=\'0.2\'/><circle cx=\'30\' cy=\'100\' r=\'1.4\' fill=\'white\' fill-opacity=\'0.2\'/></svg>')] [background-size:250px_250px] animate-[moveStars_180s_linear_infinite] opacity-20"></div>
+
+    <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-32 lg:px-8 w-full">
+      <div className="mx-auto max-w-4xl text-center">
+        {/* Linear-style headline */}
+        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl animate-fade-in">
+          Premium Property Management
+          <span className="block text-primary-400 bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent-50">
+            made simple
+          </span>
+        </h1>
 
             {/* Clean subtitle */}
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-neutral-300 animate-slide-in-bottom">
@@ -37,7 +55,7 @@ export default function Home() {
               <Link href="/auth/signup" className="group">
                 <Button
                   size="lg"
-                  className="h-12 px-8 text-sm font-medium btn-premium"
+                  className="h-12 px-8 text-sm font-medium"
                 >
                   Get started
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />

@@ -108,22 +108,22 @@ export default function BookingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-400">Loading bookings...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-neutral-400 text-sm">Loading bookings...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-black">
+      <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
+        {/* Header - Linear style */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-100">Bookings</h1>
-          <p className="mt-2 text-gray-400">Manage your property bookings</p>
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">Bookings</h1>
+          <p className="mt-2 text-neutral-400">Manage your property bookings</p>
         </div>
 
         {/* Filters */}
@@ -131,13 +131,13 @@ export default function BookingsPage() {
           {['all', 'pending', 'confirmed', 'cancelled'].map((status) => (
             <Button
               key={status}
-              variant={filter === status ? 'primary' : 'outline'}
+              variant={filter === status ? 'default' : 'outline'}
               onClick={() => setFilter(status as typeof filter)}
               size="sm"
             >
               {status.replace('_', ' ').toUpperCase()}
               {status !== 'all' && (
-                <span className="ml-2 bg-white bg-opacity-20 px-2 py-1 rounded-full text-xs">
+                <span className="ml-2 bg-neutral-800 px-2 py-1 rounded-full text-xs">
                   {bookings.filter(b => b.status === status).length}
                 </span>
               )}
@@ -149,67 +149,67 @@ export default function BookingsPage() {
         {bookings.length > 0 ? (
           <div className="space-y-4">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+              <Card key={booking.id} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <CardTitle className="text-lg">{booking.guest_name}</CardTitle>
-                      <CardDescription className="flex items-center mt-1">
+                      <CardTitle className="text-lg text-white">{booking.guest_name}</CardTitle>
+                      <CardDescription className="flex items-center mt-1 text-neutral-400">
                         <Building className="h-4 w-4 mr-1" />
                         {booking.property?.name || 'Property'}
                       </CardDescription>
                     </div>
                     <div className="mt-2 sm:mt-0 flex items-center gap-2">
                       {getStatusBadge(booking.status)}
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-neutral-400">
                         {formatDate(booking.created_at)}
                       </span>
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-neutral-400">
                       <Calendar className="h-4 w-4 mr-2" />
                       <div>
-                        <div className="font-medium">Check-in</div>
+                        <div className="font-medium text-neutral-300">Check-in</div>
                         <div>{formatDate(booking.check_in)}</div>
                       </div>
                     </div>
 
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-neutral-400">
                       <Calendar className="h-4 w-4 mr-2" />
                       <div>
-                        <div className="font-medium">Check-out</div>
+                        <div className="font-medium text-neutral-300">Check-out</div>
                         <div>{formatDate(booking.check_out)}</div>
                       </div>
                     </div>
 
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-neutral-400">
                       <User className="h-4 w-4 mr-2" />
                       <div>
-                        <div className="font-medium">Duration</div>
+                        <div className="font-medium text-neutral-300">Duration</div>
                         <div>{calculateNights(booking.check_in, booking.check_out)} nights</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="mt-4 pt-4 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center space-x-4 text-sm text-neutral-400">
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 mr-1" />
                         {booking.guest_email}
                       </div>
                     </div>
-                    
+
                     <div className="mt-2 sm:mt-0 flex gap-2">
                       {booking.status === 'pending' && (
                         <>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                             Confirm
                           </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50">
+                          <Button size="sm" variant="outline" className="text-red-400 border-red-800 hover:bg-red-900">
                             Cancel
                           </Button>
                         </>
@@ -225,11 +225,11 @@ export default function BookingsPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings found</h3>
-            <p className="text-gray-600">
-              {filter === 'all' 
-                ? 'No bookings have been made yet.' 
+            <Calendar className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No bookings found</h3>
+            <p className="text-neutral-400">
+              {filter === 'all'
+                ? 'No bookings have been made yet.'
                 : `No ${filter} bookings found.`
               }
             </p>

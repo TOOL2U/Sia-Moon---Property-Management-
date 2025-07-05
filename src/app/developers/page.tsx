@@ -164,10 +164,10 @@ const categories = ['Authentication', 'Testing', 'Dashboards', 'Core Features', 
 
 const getStatusColor = (status?: string) => {
   switch (status) {
-    case 'stable': return 'bg-green-100 text-green-800'
-    case 'beta': return 'bg-yellow-100 text-yellow-800'
-    case 'experimental': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
+    case 'stable': return 'bg-emerald-900 text-emerald-300 border border-emerald-800'
+    case 'beta': return 'bg-yellow-900 text-yellow-300 border border-yellow-800'
+    case 'experimental': return 'bg-red-900 text-red-300 border border-red-800'
+    default: return 'bg-neutral-900 text-neutral-300 border border-neutral-800'
   }
 }
 
@@ -179,45 +179,49 @@ export default function DevelopersPage() {
     : developerTools.filter(tool => tool.category === selectedCategory)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-black py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
+        {/* Header - Linear style */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <Code className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Developer Console</h1>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+              <Code className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="text-2xl font-semibold text-white sm:text-3xl">Developer Console</h1>
           </div>
-          <p className="text-lg text-gray-600 max-w-3xl">
-            Comprehensive development tools and testing utilities for Sia Moon Property Management. 
+          <p className="text-neutral-400 max-w-3xl">
+            Comprehensive development tools and testing utilities for Sia Moon Property Management.
             Access all application features, debug authentication, test database connections, and more.
           </p>
         </div>
 
         {/* Environment Status */}
-        <Card className="mb-8">
+        <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800 mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Server className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+                <Server className="h-4 w-4 text-white" />
+              </div>
               Environment Status
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium">Supabase URL</span>
-                <span className={process.env.NEXT_PUBLIC_SUPABASE_URL ? 'text-green-600' : 'text-red-600'}>
+              <div className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
+                <span className="font-medium text-neutral-300">Supabase URL</span>
+                <span className={process.env.NEXT_PUBLIC_SUPABASE_URL ? 'text-emerald-400' : 'text-red-400'}>
                   {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium">Anon Key</span>
-                <span className={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'text-green-600' : 'text-red-600'}>
+              <div className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
+                <span className="font-medium text-neutral-300">Anon Key</span>
+                <span className={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'text-emerald-400' : 'text-red-400'}>
                   {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}
                 </span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium">Auth Bypass</span>
-                <span className={process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? 'text-yellow-600' : 'text-green-600'}>
+              <div className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
+                <span className="font-medium text-neutral-300">Auth Bypass</span>
+                <span className={process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? 'text-yellow-400' : 'text-emerald-400'}>
                   {process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? '⚠️ Enabled' : '✅ Disabled'}
                 </span>
               </div>
@@ -256,17 +260,17 @@ export default function DevelopersPage() {
           {filteredTools.map((tool, index) => {
             const IconComponent = tool.icon
             return (
-              <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
+              <Card key={index} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <IconComponent className="h-5 w-5 text-blue-600" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+                        <IconComponent className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{tool.title}</CardTitle>
+                        <CardTitle className="text-lg text-white">{tool.title}</CardTitle>
                         {tool.status && (
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(tool.status)}`}>
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${getStatusColor(tool.status)}`}>
                             {tool.status}
                           </span>
                         )}
@@ -275,9 +279,9 @@ export default function DevelopersPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-gray-600 text-sm mb-4">{tool.description}</p>
+                  <p className="text-neutral-400 text-sm mb-4">{tool.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-xs text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-1 rounded">
                       {tool.category}
                     </span>
                     <Link href={tool.href}>
@@ -293,35 +297,37 @@ export default function DevelopersPage() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="mt-8">
+        <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800 mt-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-primary-600">
+                <Zap className="h-4 w-4 text-white" />
+              </div>
               Quick Actions
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Link href="/auth-debug">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <Bug className="mr-2 h-4 w-4" />
                   Debug Auth
                 </Button>
               </Link>
               <Link href="/test-connection">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <Database className="mr-2 h-4 w-4" />
                   Test DB
                 </Button>
               </Link>
               <Link href="/properties/add">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Property
                 </Button>
               </Link>
               <Link href="/onboard">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <FileText className="mr-2 h-4 w-4" />
                   Villa Survey
                 </Button>
@@ -331,7 +337,7 @@ export default function DevelopersPage() {
         </Card>
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-500">
+        <div className="mt-12 text-center text-sm text-neutral-400">
           <p>Sia Moon Property Management - Developer Console</p>
           <p className="mt-1">Use these tools to test, debug, and develop application features</p>
         </div>

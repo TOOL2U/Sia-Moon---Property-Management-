@@ -104,13 +104,13 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-black">
+      <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
+        {/* Header - Linear style */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-100">Properties</h1>
-            <p className="mt-2 text-gray-400">Manage your villa properties</p>
+            <h1 className="text-2xl font-semibold text-white sm:text-3xl">Properties</h1>
+            <p className="mt-2 text-neutral-400">Manage your villa properties</p>
           </div>
           <div className="mt-4 sm:mt-0">
             <Link href="/properties/add">
@@ -126,40 +126,40 @@ export default function PropertiesPage() {
         {properties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
-              <Card key={property.id} className="hover:shadow-lg transition-shadow">
+              <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">{property.name}</CardTitle>
-                      <CardDescription className="flex items-center mt-1">
+                      <CardTitle className="text-lg text-white">{property.name}</CardTitle>
+                      <CardDescription className="flex items-center mt-1 text-neutral-400">
                         <MapPin className="h-4 w-4 mr-1" />
                         <span className="truncate">{property.location}</span>
                       </CardDescription>
                     </div>
-                    <Badge variant="secondary" className={property.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                    <Badge variant="secondary" className={property.status === 'active' ? 'bg-emerald-900 text-emerald-300 border border-emerald-800' : 'bg-neutral-900 text-neutral-300 border border-neutral-800'}>
                       {property.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-neutral-400">
                       <div className="flex items-center mb-2">
                         <MapPin className="h-4 w-4 mr-1" />
                         <span className="truncate">{property.location}</span>
                       </div>
-                      <div className="text-sm text-gray-500 mb-2">
+                      <div className="text-sm text-neutral-400 mb-2">
                         {property.description}
                       </div>
                     </div>
 
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-neutral-500">
                       Added {new Date(property.created_at).toLocaleDateString()}
                     </div>
 
                     <div className="space-y-3 pt-2">
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-neutral-400">
                         Owner: {property.owner?.name || 'Unknown'}
                       </div>
                       <div className="flex gap-2">
@@ -195,9 +195,9 @@ export default function PropertiesPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
-            <p className="text-gray-600 mb-6">
+            <Building className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No properties found</h3>
+            <p className="text-neutral-400 mb-6">
               Get started by adding your first villa property.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

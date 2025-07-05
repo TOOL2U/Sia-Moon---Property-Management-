@@ -46,7 +46,7 @@ export const villaOnboardingSchema = z.object({
   preferredContactMethod: z.enum(['phone', 'whatsapp', 'line', 'email'])
     .optional(),
   
-  bankDetails: jsonStringSchema.optional(),
+  bankDetails: z.string().max(1000, 'Bank details must be less than 1000 characters').optional(),
   
   // Property Details
   propertyName: z.string()
@@ -107,10 +107,10 @@ export const villaOnboardingSchema = z.object({
   internetProvider: z.string().max(100).optional(),
   
   // Access & Staff
-  accessDetails: jsonStringSchema.optional(),
+  accessDetails: z.string().max(1000, 'Access details must be less than 1000 characters').optional(),
   hasSmartLock: z.boolean(),
   gateRemoteDetails: z.string().max(500).optional(),
-  onsiteStaff: jsonStringSchema.optional(),
+  onsiteStaff: z.string().max(1000, 'Onsite staff details must be less than 1000 characters').optional(),
   
   // Utilities
   electricityProvider: z.string().max(100).optional(),
@@ -118,7 +118,7 @@ export const villaOnboardingSchema = z.object({
   internetPackage: z.string().max(100).optional(),
   
   // Rental & Marketing
-  rentalRates: jsonStringSchema.optional(),
+  rentalRates: z.string().max(1000, 'Rental rates must be less than 1000 characters').optional(),
   platformsListed: z.array(z.string()).default([]),
   
   averageOccupancyRate: z.string()
@@ -131,7 +131,7 @@ export const villaOnboardingSchema = z.object({
   
   minimumStayRequirements: z.string().max(200).optional(),
   targetGuests: z.string().max(200).optional(),
-  ownerBlackoutDates: jsonStringSchema.optional(),
+  ownerBlackoutDates: z.string().max(500, 'Blackout dates must be less than 500 characters').optional(),
   
   // Preferences & Rules
   petsAllowed: z.boolean(),
