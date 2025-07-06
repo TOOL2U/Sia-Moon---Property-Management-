@@ -40,9 +40,17 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error: userError
   } = await supabase.auth.getUser()
 
   console.log('🔍 Middleware - User detected:', !!user, user?.email, 'Path:', request.nextUrl.pathname)
+  if (userError) {
+    console.log('❌ Middleware - Auth error:', userError.message)
+  }
+
+  // Check for session cookies as fallback
+  const sessionCookie = request.cookies.get('sb-alkogpgjxpshoqsfgqef-auth-token')
+  console.log('🍪 Middleware - Session cookie present:', !!sessionCookie)
 
   // Protected routes that require authentication
   const protectedRoutes = [
@@ -58,8 +66,17 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   )
 
+  // Development mode: More permissive auth for SSR session sync issues
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
   // If accessing a protected route without authentication, redirect to login
   if (isProtectedRoute && !user) {
+    // In development, check if this might be a session sync issue
+    if (isDevelopment) {
+      console.log('⚠️  Development mode: Session sync issue detected, redirecting to login')
+      console.log('   This is normal during development when client/server auth is out of sync')
+    }
+
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirectTo', request.nextUrl.pathname)

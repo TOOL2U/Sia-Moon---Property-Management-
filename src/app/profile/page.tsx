@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
-import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft } from 'lucide-react'
+import { User, Mail, Calendar, Save, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -21,7 +21,7 @@ export default function ProfilePage() {
     full_name: user?.full_name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    address: user?.address || ''
+    address: user?.address || '' // This is an optional field we're adding to the form
   })
 
   if (authLoading) {
@@ -54,7 +54,8 @@ export default function ProfilePage() {
         setIsEditing(false)
         toast.success('Profile updated successfully!')
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Profile update error:', error)
       toast.error('Failed to update profile')
     } finally {
       setSaving(false)
@@ -66,7 +67,7 @@ export default function ProfilePage() {
       full_name: user?.full_name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      address: user?.address || ''
+      address: '' // Reset address field since it's not stored in the profile yet
     })
     setIsEditing(false)
   }
@@ -174,7 +175,7 @@ export default function ProfilePage() {
                   {!isEditing ? (
                     <Button
                       onClick={() => setIsEditing(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-gray hover:bg-gray-700 text-white"
                     >
                       Edit Profile
                     </Button>

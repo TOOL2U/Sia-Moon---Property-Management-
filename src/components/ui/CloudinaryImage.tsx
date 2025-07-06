@@ -3,70 +3,6 @@
 import Image from 'next/image'
 import { cn } from '@/utils/cn'
 
-// Client-side only Cloudinary URL generation (no server dependencies)
-const getCloudinaryUrl = (
-  publicId: string,
-  options: {
-    width?: number
-    height?: number
-    quality?: string | number
-    format?: string
-    crop?: string
-    gravity?: string
-    opacity?: number
-    overlay?: string
-    transformation?: string[]
-  } = {}
-) => {
-  const {
-    width,
-    height,
-    quality = 'auto',
-    format = 'webp',
-    crop = 'fill',
-    gravity = 'center',
-    opacity,
-    overlay,
-    transformation = []
-  } = options
-
-  let transformations = []
-
-  // Add basic transformations
-  if (width || height) {
-    transformations.push(`c_${crop}`)
-    if (width) transformations.push(`w_${width}`)
-    if (height) transformations.push(`h_${height}`)
-    if (gravity) transformations.push(`g_${gravity}`)
-  }
-
-  // Add quality
-  transformations.push(`q_${quality}`)
-
-  // Add format
-  transformations.push(`f_${format}`)
-
-  // Add opacity if specified
-  if (opacity !== undefined) {
-    transformations.push(`o_${opacity}`)
-  }
-
-  // Add overlay if specified
-  if (overlay) {
-    transformations.push(`l_${overlay}`)
-  }
-
-  // Add custom transformations
-  transformations.push(...transformation)
-
-  const transformationString = transformations.join(',')
-
-  // Use environment variable or fallback to demo cloud
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'demo'
-
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformationString}/${publicId}`
-}
-
 interface CloudinaryImageProps {
   publicId: string
   alt: string
@@ -87,13 +23,13 @@ interface CloudinaryImageProps {
   blurDataURL?: string
 }
 
-export default function CloudinaryImage({
+function CloudinaryImage({
   publicId,
   alt,
   width,
   height,
   className,
-  quality = 'auto',
+  quality = 90,
   format = 'webp',
   crop = 'fill',
   gravity = 'center',
@@ -103,34 +39,36 @@ export default function CloudinaryImage({
   priority = false,
   fill = false,
   sizes,
-  placeholder,
+  placeholder = 'blur',
   blurDataURL,
   ...props
-}: CloudinaryImageProps) {
-  const imageUrl = getCloudinaryUrl(publicId, {
-    width,
-    height,
-    quality,
-    format,
-    crop,
-    gravity,
-    opacity,
-    overlay,
-    transformation
-  })
+}: CloudinaryImageProps & Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'>) {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 
-  // Generate a low-quality placeholder if blur is requested
-  const placeholderUrl = placeholder === 'blur' && !blurDataURL
-    ? getCloudinaryUrl(publicId, {
-        width: 20,
-        height: 20,
-        quality: 1,
-        format: 'webp',
-        crop,
-        gravity,
-        opacity,
-        transformation: [...transformation, 'e_blur:1000']
-      })
+  if (!cloudName) {
+    return (
+      <div className={cn('bg-neutral-800 flex items-center justify-center text-neutral-400 text-sm', className)}>
+        <span>Image not available</span>
+      </div>
+    )
+  }
+
+  // Simple Cloudinary URL generation
+  let transformations = []
+  if (width && !fill) transformations.push(`w_${width}`)
+  if (height && !fill) transformations.push(`h_${height}`)
+  if (crop) transformations.push(`c_${crop}`)
+  if (gravity) transformations.push(`g_${gravity}`)
+  if (quality) transformations.push(`q_${quality}`)
+  if (format) transformations.push(`f_${format}`)
+  if (opacity) transformations.push(`o_${opacity}`)
+  
+  const transformationString = transformations.length > 0 ? `${transformations.join(',')}/` : ''
+  const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${transformationString}${publicId}`
+
+  // Generate blur placeholder if needed
+  const blurPlaceholder = placeholder === 'blur' && !blurDataURL
+    ? `https://res.cloudinary.com/${cloudName}/image/upload/w_10,h_10,c_fill,f_webp,q_1,e_blur:1000/${publicId}`
     : blurDataURL
 
   if (fill) {
@@ -141,16 +79,20 @@ export default function CloudinaryImage({
         fill
         className={cn(className)}
         priority={priority}
-        sizes={sizes}
+        sizes={sizes || '100vw'}
         placeholder={placeholder}
-        blurDataURL={placeholderUrl}
+        blurDataURL={blurPlaceholder}
         {...props}
       />
     )
   }
 
   if (!width || !height) {
-    throw new Error('CloudinaryImage requires width and height when not using fill prop')
+    return (
+      <div className={cn('bg-neutral-800 flex items-center justify-center text-neutral-400 text-sm', className)}>
+        <span>Image dimensions required</span>
+      </div>
+    )
   }
 
   return (
@@ -163,8 +105,10 @@ export default function CloudinaryImage({
       priority={priority}
       sizes={sizes}
       placeholder={placeholder}
-      blurDataURL={placeholderUrl}
+      blurDataURL={blurPlaceholder}
       {...props}
     />
   )
 }
+
+export default CloudinaryImage

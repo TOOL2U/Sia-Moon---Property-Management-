@@ -29,11 +29,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // In development mode, set a mock user to bypass authentication
-    if (bypassAuth) {
+    // ONLY allow bypass in development with explicit env var and NOT in production
+    if (process.env.NODE_ENV === 'development' &&
+        process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' &&
+        process.env.NEXT_PUBLIC_VERCEL_ENV !== 'production' &&
+        bypassAuth) {
+      console.warn('🚨 AUTH BYPASS ENABLED - DEVELOPMENT ONLY')
       const mockUser: User = {
         id: '550e8400-e29b-41d4-a716-446655440001',
-        email: 'john.smith@example.com',
+        email: 'dev@example.com',
         role: 'client',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

@@ -31,20 +31,41 @@ export default function SignUpPage() {
     return emailRegex.test(email)
   }
 
-  // Password strength validation
+  // Strong password validation
   const validatePassword = (password: string) => {
-    const minLength = password.length >= 6
+    const minLength = password.length >= 12
     const hasUpperCase = /[A-Z]/.test(password)
     const hasLowerCase = /[a-z]/.test(password)
     const hasNumbers = /\d/.test(password)
+    const hasSpecialChars = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    const noCommonPatterns = !/^(password|123456|qwerty|admin|user|guest|villa|property)/i.test(password)
+    const noRepeatingChars = !/(.)\1{3,}/.test(password)
+    const noSequential = !/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|123|234|345|456|567|678|789)/i.test(password)
 
     return {
       minLength,
       hasUpperCase,
       hasLowerCase,
       hasNumbers,
-      isValid: minLength && (hasUpperCase || hasLowerCase || hasNumbers)
+      hasSpecialChars,
+      noCommonPatterns,
+      noRepeatingChars,
+      noSequential,
+      isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers &&
+               hasSpecialChars && noCommonPatterns && noRepeatingChars && noSequential
     }
+  }
+
+  // Password strength indicator
+  const getPasswordStrength = (password: string) => {
+    const validation = validatePassword(password)
+    const score = Object.values(validation).filter(v => v === true).length - 1 // Exclude isValid
+
+    if (score < 4) return { strength: 'Very Weak', color: 'red', percentage: 20 }
+    if (score < 6) return { strength: 'Weak', color: 'orange', percentage: 40 }
+    if (score < 7) return { strength: 'Medium', color: 'yellow', percentage: 60 }
+    if (score < 8) return { strength: 'Strong', color: 'green', percentage: 80 }
+    return { strength: 'Very Strong', color: 'green', percentage: 100 }
   }
 
   // Form validation
@@ -69,7 +90,17 @@ export default function SignUpPage() {
     } else {
       const passwordValidation = validatePassword(formData.password)
       if (!passwordValidation.isValid) {
-        newErrors.password = 'Password must be at least 6 characters long'
+        const requirements = []
+        if (!passwordValidation.minLength) requirements.push('at least 12 characters')
+        if (!passwordValidation.hasUpperCase) requirements.push('uppercase letter')
+        if (!passwordValidation.hasLowerCase) requirements.push('lowercase letter')
+        if (!passwordValidation.hasNumbers) requirements.push('number')
+        if (!passwordValidation.hasSpecialChars) requirements.push('special character')
+        if (!passwordValidation.noCommonPatterns) requirements.push('avoid common patterns')
+        if (!passwordValidation.noRepeatingChars) requirements.push('avoid repeating characters')
+        if (!passwordValidation.noSequential) requirements.push('avoid sequential characters')
+
+        newErrors.password = `Password must include: ${requirements.join(', ')}`
       }
     }
 
@@ -114,14 +145,13 @@ export default function SignUpPage() {
       })
 
       if (success) {
-        console.log('✅ Signup successful, redirecting to dashboard...')
-        toast.success('Account created successfully! Welcome to Sia Moon!')
+        console.log('✅ Signup successful, email verification required')
+        toast.success('Account created! Please check your email to verify your account before signing in.')
 
-        // Small delay to ensure auth state is updated
+        // Redirect to login page with verification message
         setTimeout(() => {
-          console.log('🔄 Executing redirect to dashboard...')
-          router.push('/dashboard')
-        }, 100)
+          router.push('/auth/login?message=verify-email')
+        }, 2000)
       } else {
         console.log('❌ Signup failed')
         toast.error('Failed to create account. Please try again.')

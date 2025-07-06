@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { useSupabaseReports } from '@/hooks/useSupabaseReports'
+import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import SupabaseService from '@/lib/supabaseService'
 import { Property, MonthlyReport } from '@/lib/db'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -35,17 +36,17 @@ export default function ClientReportsPage() {
     month: new Date().getMonth() + 1
   })
   
-  const { 
-    reports, 
-    loading, 
-    error, 
-    generateReport, 
-    loadReports, 
-    downloadPDF,
+  const {
+    reports,
+    loading,
+    error,
+    generateReport,
+    loadReports,
+    downloadReport,
     refreshReports
-  } = useReports({ 
+  } = useSupabaseReports({
     propertyId: selectedProperty,
-    autoLoad: false 
+    autoLoad: false
   })
   
   // Load user's properties
@@ -131,37 +132,32 @@ export default function ClientReportsPage() {
   }
   
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Monthly Reports</h1>
-              <p className="text-neutral-400">View and download comprehensive property reports</p>
-            </div>
-            
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setShowGenerateForm(!showGenerateForm)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Generate Report
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={refreshReports}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-          </div>
+    <DashboardLayout
+      title="Monthly Reports"
+      subtitle="View and download comprehensive property reports"
+      actions={
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setShowGenerateForm(!showGenerateForm)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Generate Report
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={refreshReports}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
+      }
+    >
+      <div className="max-w-7xl mx-auto">
         
         {/* Property Selection */}
         <Card className="bg-neutral-950 border-neutral-800 mb-8">
@@ -326,7 +322,7 @@ export default function ClientReportsPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadPDF(report.id)}
+                              onClick={() => downloadReport(report.id)}
                               className="flex items-center gap-2"
                             >
                               <Download className="h-3 w-3" />
@@ -385,6 +381,6 @@ export default function ClientReportsPage() {
           </Card>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

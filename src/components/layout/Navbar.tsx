@@ -40,7 +40,11 @@ function NavLink({ href, children, className }: NavLinkProps) {
 }
 
 interface UserDropdownProps {
-  user: any
+  user: {
+    email?: string
+    full_name?: string | null
+    role?: string
+  } | null
   onSignOut: () => void
 }
 
@@ -72,10 +76,10 @@ function UserDropdown({ user, onSignOut }: UserDropdownProps) {
         )}
       >
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-xs font-semibold text-white">
-          {user.email?.[0]?.toUpperCase() || 'U'}
+          {user?.email?.[0]?.toUpperCase() || 'U'}
         </div>
         <span className="hidden sm:block text-white">
-          {user.email}
+          {user?.email}
         </span>
         <ChevronDown className={cn(
           'h-4 w-4 text-neutral-400 transition-transform duration-200',
@@ -87,10 +91,10 @@ function UserDropdown({ user, onSignOut }: UserDropdownProps) {
         <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-neutral-800 bg-neutral-950 py-2 shadow-xl animate-scale-in">
           <div className="px-4 py-2 border-b border-neutral-800">
             <p className="text-sm font-medium text-white">
-              {user.email}
+              {user?.email}
             </p>
             <p className="text-xs text-neutral-400 capitalize">
-              {user.role} Account
+              {user?.role} Account
             </p>
           </div>
 
@@ -134,7 +138,11 @@ interface MobileDrawerProps {
   isOpen: boolean
   onClose: () => void
   navigationLinks: Array<{ href: string; label: string }>
-  user: any
+  user: {
+    email?: string
+    full_name?: string | null
+    role?: string
+  } | null
   onSignOut: () => void
 }
 
@@ -295,12 +303,7 @@ export function Navbar() {
     { href: '/bookings', label: 'Bookings' },
     { href: '/onboard', label: 'Onbourding Survey' },
     ...(user.role === 'staff' ? [{ href: '/admin', label: 'Admin Panel' }] : []),
-    // Temporary development link
-    { href: '/developers', label: '🔧 Dev Tools' },
-  ] : [
-    // Show developers page even when not logged in during development
-    { href: '/developers', label: '🔧 Dev Tools' },
-  ]
+  ] : []
 
   return (
     <>

@@ -199,6 +199,83 @@ CREATE TRIGGER on_auth_user_created
 -- 12. Set up storage policies for villa documents
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('villa-documents', 'villa-documents', true);
 
+-- 13. Add missing RLS policies for tasks
+CREATE POLICY "Property owners can view tasks for their properties" ON tasks FOR SELECT USING (
+  property_id IN (
+    SELECT id FROM properties WHERE owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Staff can view assigned tasks" ON tasks FOR SELECT USING (
+  assigned_to = auth.uid() OR
+  auth.uid() IN (
+    SELECT id FROM profiles WHERE id = auth.uid() AND role IN ('staff', 'admin')
+  )
+);
+
+CREATE POLICY "Staff can update assigned tasks" ON tasks FOR UPDATE USING (
+  assigned_to = auth.uid() OR
+  auth.uid() IN (
+    SELECT id FROM profiles WHERE id = auth.uid() AND role IN ('staff', 'admin')
+  )
+);
+
+CREATE POLICY "Property owners and staff can create tasks" ON tasks FOR INSERT WITH CHECK (
+  property_id IN (
+    SELECT id FROM properties WHERE owner_id = auth.uid()
+  ) OR
+  auth.uid() IN (
+    SELECT id FROM profiles WHERE id = auth.uid() AND role IN ('staff', 'admin')
+  )
+);
+
+-- 14. Add missing RLS policies for reports
+CREATE POLICY "Property owners can view own reports" ON reports FOR SELECT USING (
+  property_id IN (
+    SELECT id FROM properties WHERE owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Staff can view all reports" ON reports FOR SELECT USING (
+  auth.uid() IN (
+    SELECT id FROM profiles WHERE id = auth.uid() AND role IN ('staff', 'admin')
+  )
+);
+
+CREATE POLICY "Property owners can manage own reports" ON reports FOR ALL USING (
+  property_id IN (
+    SELECT id FROM properties WHERE owner_id = auth.uid()
+  ) OR
+  auth.uid() IN (
+    SELECT id FROM profiles WHERE id = auth.uid() AND role IN ('staff', 'admin')
+  )
+);
+
+-- 15. Add missing RLS policies for notifications
+CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT USING (
+  user_id = auth.uid()
+);
+
+CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE USING (
+  user_id = auth.uid()
+);
+
+CREATE POLICY "System can create notifications for users" ON notifications FOR INSERT WITH CHECK (
+  user_id = auth.uid() OR
+  auth.uid() IN (
+    SELECT id FROM profiles WHERE id = auth.uid() AND role IN ('staff', 'admin')
+  )
+);
+
+-- 16. Add missing RLS policies for notification preferences
+CREATE POLICY "Users can view own preferences" ON notification_preferences FOR SELECT USING (
+  user_id = auth.uid()
+);
+
+CREATE POLICY "Users can manage own preferences" ON notification_preferences FOR ALL USING (
+  user_id = auth.uid()
+);
+
 -- 13. Create storage policies
 -- CREATE POLICY "Anyone can upload villa documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'villa-documents');
 -- CREATE POLICY "Anyone can view villa documents" ON storage.objects FOR SELECT USING (bucket_id = 'villa-documents');

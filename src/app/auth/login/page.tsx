@@ -1,15 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-// TODO: Switch back to Supabase auth for production
-// import { useAuth } from '@/contexts/RealAuthContext'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { LogIn, Eye, EyeOff } from 'lucide-react'
+import { LogIn, Eye, EyeOff, Mail } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 
 export default function LoginPage() {
@@ -18,8 +16,17 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [verificationMessage, setVerificationMessage] = useState('')
   const { signIn } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const message = searchParams.get('message')
+    if (message === 'verify-email') {
+      setVerificationMessage('Please check your email and click the verification link before signing in.')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -109,6 +116,15 @@ export default function LoginPage() {
                 </button>
               </div>
 
+              {verificationMessage && (
+                <div className="p-3 bg-blue-950/50 border border-blue-800 rounded-lg">
+                  <div className="flex items-center">
+                    <Mail className="h-5 w-5 text-blue-400 mr-2" />
+                    <p className="text-sm text-blue-400 font-medium">{verificationMessage}</p>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div className="p-3 bg-red-950/50 border border-red-800 rounded-lg">
                   <p className="text-sm text-red-400 font-medium">{error}</p>
@@ -147,6 +163,13 @@ export default function LoginPage() {
                   <span className="font-mono text-neutral-300">password123</span>
                 </div>
               </div>
+            </div>
+
+            {/* Forgot Password Link */}
+            <div className="mt-4 text-center">
+              <Link href="/auth/reset-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors duration-200">
+                Forgot your password?
+              </Link>
             </div>
 
             {/* Sign Up Link */}

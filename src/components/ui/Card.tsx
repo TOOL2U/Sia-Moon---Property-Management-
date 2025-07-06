@@ -6,11 +6,10 @@ const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     <div
       ref={ref}
       className={cn(
-        // Linear-inspired dark card styling with enhanced micro-interactions
-        'rounded-lg border border-neutral-800 bg-neutral-950 text-white shadow-lg',
-        'transition-all duration-200 ease-out',
-        'hover:shadow-xl hover:border-neutral-700 hover:bg-neutral-900',
-        'w-full', // Full width by default for mobile
+        // Linear card styling with dark theme
+        'rounded-xl border border-neutral-800 bg-neutral-900/50 backdrop-blur-sm',
+        'shadow-lg hover:shadow-xl transition-all duration-200',
+        'hover:border-neutral-700',
         className
       )}
       {...props}
@@ -23,11 +22,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        // Linear padding system
-        'flex flex-col space-y-1.5 p-6',
-        className
-      )}
+      className={cn('flex flex-col space-y-1.5 p-6', className)}
       {...props}
     />
   )
@@ -39,9 +34,7 @@ const CardTitle = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLHeadingEle
     <h3
       ref={ref}
       className={cn(
-        // Linear dark typography
-        'text-lg font-semibold leading-tight tracking-tight',
-        'text-white',
+        'text-lg font-semibold leading-none tracking-tight text-white',
         className
       )}
       {...props}
@@ -54,11 +47,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLPara
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn(
-        // Linear dark description styling
-        'text-sm text-neutral-400 leading-relaxed',
-        className
-      )}
+      className={cn('text-sm text-neutral-400', className)}
       {...props}
     />
   )
@@ -67,15 +56,7 @@ CardDescription.displayName = 'CardDescription'
 
 const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        // Linear content padding
-        'p-6 pt-0',
-        className
-      )}
-      {...props}
-    />
+    <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
   )
 )
 CardContent.displayName = 'CardContent'
@@ -84,11 +65,7 @@ const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        // Mobile-first footer with better spacing
-        'flex flex-col space-y-2 p-4 pt-0 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2 sm:p-6 sm:pt-0',
-        className
-      )}
+      className={cn('flex items-center p-6 pt-0', className)}
       {...props}
     />
   )

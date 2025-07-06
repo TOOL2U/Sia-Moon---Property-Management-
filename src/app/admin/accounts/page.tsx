@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
 import SupabaseService from '@/lib/supabaseService'
-import { User } from '@/types/supabase'
+import type { Profile } from '@/types/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -12,8 +12,8 @@ import { Input } from '@/components/ui/Input'
 import { 
   ArrowLeft,
   User as UserIcon, 
-  Mail, 
-  Calendar,
+  // Mail, 
+  // Calendar,
   Shield,
   Users,
   Search,
@@ -27,7 +27,7 @@ import toast from 'react-hot-toast'
 export default function AccountsPage() {
   const { profile: user } = useAuth()
   const router = useRouter()
-  const [accounts, setAccounts] = useState<User[]>([])
+  const [accounts, setAccounts] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showPasswords, setShowPasswords] = useState(false)
@@ -48,7 +48,7 @@ export default function AccountsPage() {
   const fetchAccounts = async () => {
     try {
       setLoading(true)
-      const { data, error } = await DatabaseService.getAllUsers()
+      const { data, error } = await SupabaseService.getAllUsers()
       
       if (error) {
         console.error('Error fetching accounts:', error)
@@ -56,7 +56,11 @@ export default function AccountsPage() {
         return
       }
 
-      setAccounts(data || [])
+      // Patch missing address property for backward compatibility
+      setAccounts((data || []).map((acc: any) => ({
+        ...acc,
+        address: acc.address ?? null
+      })))
     } catch (error) {
       console.error('Error fetching accounts:', error)
       toast.error('Failed to load user accounts')
@@ -70,21 +74,20 @@ export default function AccountsPage() {
     toast.success(`${label} copied to clipboard`)
   }
 
-  const getRoleBadge = (role: User['role']) => {
-    const variants = {
+  const getRoleBadge = (role: Profile['role']) => {
+    const variants: Record<string, string> = {
       client: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-      staff: 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+      staff: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+      admin: 'bg-green-500/10 text-green-500 border-green-500/20'
     }
-
-    const icons = {
+    const icons: Record<string, React.ElementType> = {
       client: UserIcon,
-      staff: Shield
+      staff: Shield,
+      admin: Shield
     }
-
-    const Icon = icons[role]
-
+    const Icon = icons[role as keyof typeof icons] || UserIcon
     return (
-      <Badge className={`${variants[role]} flex items-center gap-1`}>
+      <Badge className={`${variants[role as keyof typeof variants] || ''} flex items-center gap-1`}>
         <Icon className="h-3 w-3" />
         {role}
       </Badge>
@@ -93,10 +96,9 @@ export default function AccountsPage() {
 
   const filteredAccounts = accounts.filter(account => {
     const matchesSearch = searchTerm === '' || 
-      account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (account.full_name && account.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.role.toLowerCase().includes(searchTerm.toLowerCase())
-    
     return matchesSearch
   })
 
@@ -234,7 +236,7 @@ export default function AccountsPage() {
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <UserIcon className="h-5 w-5" />
-                        {account.name}
+                        {account.full_name || account.email}
                       </CardTitle>
                       <CardDescription className="mt-1">
                         {account.email}
@@ -277,24 +279,7 @@ export default function AccountsPage() {
                       </div>
                     </div>
 
-                    {showPasswords && account.password_hash && (
-                      <div>
-                        <label className="text-xs text-neutral-400 uppercase tracking-wide">Password (Dev)</label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <code className="text-sm bg-red-900/20 text-red-400 px-2 py-1 rounded font-mono">
-                            password123
-                          </code>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyToClipboard('password123', 'Password')}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Password display removed for Supabase profiles */}
 
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
                       <div>

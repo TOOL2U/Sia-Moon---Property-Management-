@@ -32,13 +32,23 @@ export default function PropertiesPage() {
       try {
         console.log('🔍 Fetching properties from Supabase...')
 
+        // Development mode: Use demo user ID if no authenticated user
+        const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
+                                   process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
+
+        let userId = user?.id
+        if (!userId && isDevelopmentBypass) {
+          console.log('🔧 Development mode: Using demo user ID')
+          userId = 'demo-user-id' // Use a consistent demo user ID
+        }
+
         // Only fetch properties owned by the current user
-        if (!user?.id) {
+        if (!userId) {
           console.error('❌ No user ID available')
           return
         }
 
-        const propertiesResult = await SupabaseService.getPropertiesByOwner(user.id)
+        const propertiesResult = await SupabaseService.getPropertiesByOwner(userId)
 
         if (!propertiesResult.success) {
           console.error('❌ Error fetching properties:', propertiesResult.error)

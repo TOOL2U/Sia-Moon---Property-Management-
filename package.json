@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:turbo": "next dev --turbopack",
+    "dev": "next dev --port 3000",
+    "dev:turbo": "next dev --turbopack --port 3000",
     "build": "next build",
+    "build:production": "NODE_ENV=production next build",
+    "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
+    "start:production": "NODE_ENV=production next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next out node_modules/.cache",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
@@ -16,20 +22,10 @@
     "supabase:functions": "supabase functions deploy",
     "supabase:logs": "supabase functions logs",
     "setup:database": "node scripts/setup-database.js",
-    "test:supabase": "node scripts/test-supabase-connection.js",
-    "test:integration": "node scripts/test-full-integration.js",
-    "test:auth": "node scripts/test-auth-trigger.js",
-    "test:signup": "node scripts/test-signup-flow.js",
-    "test:trigger": "node scripts/test-trigger-simple.js",
-    "fix:auth": "node scripts/fix-auth-migration.js",
-    "test:signup-profile": "node scripts/test-signup-profile.js",
-    "test:auth-redirect": "node scripts/test-auth-redirect.js",
-    "cleanup:profiles": "node scripts/cleanup-duplicate-profiles.js",
-    "debug:profiles": "node scripts/debug-profile-issue.js",
-    "fix:profiles": "node scripts/fix-missing-profiles.js",
+
     "create:notifications": "node scripts/create-notification-tables.js",
     "create:notifications-table": "node scripts/create-notifications-table.js",
-    "test:supabase-local": "echo 'Testing Supabase setup...' && curl -X POST 'http://localhost:54321/functions/v1/generate-monthly-reports' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' -H 'Content-Type: application/json' -d '{}'",
+
     "db:seed": "supabase db reset --db-url postgresql://postgres:postgres@localhost:54322/postgres",
     "db:types": "supabase gen types typescript --local > src/types/supabase.ts"
   },
@@ -64,7 +60,7 @@
     "recharts": "^3.0.2",
     "supabase": "^2.30.4",
     "tailwind-merge": "^3.3.1",
-    "zod": "^3.25.67"
+    "zod": "^3.25.74"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

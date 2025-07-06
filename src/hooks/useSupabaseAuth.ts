@@ -1,20 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { User, Session, AuthError } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { Profile } from '@/types'
+import { logAuthError, logDatabaseError } from '@/lib/errorLogger'
 import toast from 'react-hot-toast'
-
-export interface Profile {
-  id: string
-  email: string
-  full_name: string | null
-  role: 'client' | 'staff' | 'admin'
-  avatar_url: string | null
-  phone: string | null
-  created_at: string
-  updated_at: string
-}
 
 export interface AuthState {
   user: User | null
@@ -28,6 +19,7 @@ export interface UseSupabaseAuthReturn extends AuthState {
   signIn: (email: string, password: string) => Promise<boolean>
   signUp: (email: string, password: string, userData?: Partial<Profile>) => Promise<boolean>
   signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<boolean>
   updateProfile: (updates: Partial<Profile>) => Promise<boolean>
   refreshProfile: () => Promise<void>
 }
@@ -39,13 +31,21 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Check if Supabase is configured
+  const isSupabaseConfigured = supabase !== null
+
   // Load user profile from database with retry logic
   const loadProfile = useCallback(async (userId: string, retries = 3): Promise<Profile | null> => {
     try {
       console.log(`🔍 Loading profile for user: ${userId}`)
 
-      // First, get all profiles for this user ID to check for duplicates
-      const { data: profiles, error: queryError } = await supabase
+      // Added a local supabaseClient assertion after ensuring supabase is configured
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+      const supabaseClient = supabase!
+
+      const { data: profiles, error: queryError } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -53,7 +53,6 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       if (queryError) {
         console.error('Error querying profiles:', queryError?.message || queryError)
 
-        // If profile not found and we have retries left, wait and try again
         if (queryError.code === 'PGRST116' && retries > 0) {
           console.log(`Profile not found, retrying... (${retries} attempts left)`)
           await new Promise(resolve => setTimeout(resolve, 1000))
@@ -65,6 +64,40 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
       if (!profiles || profiles.length === 0) {
         console.log(`⚠️ No profile found for user: ${userId}`)
+
+        // Try to create a profile for existing users who don't have one
+        console.log('🔧 Attempting to create missing profile...')
+        try {
+          // Get user info from auth
+          // Replaced direct usages of `supabase` with `supabaseClient`
+          const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+
+          if (!userError && user && user.id === userId) {
+            const profileData = {
+              id: userId,
+              email: user.email || '',
+              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+              role: (user.user_metadata?.role as 'client' | 'staff' | 'admin') || 'client'
+            }
+
+            console.log('📝 Creating profile with data:', profileData)
+
+            const { data: newProfile, error: createError } = await supabaseClient
+              .from('profiles')
+              .insert(profileData)
+              .select()
+              .single()
+
+            if (!createError && newProfile) {
+              console.log('✅ Profile created successfully:', newProfile)
+              return newProfile as Profile
+            } else {
+              console.error('❌ Failed to create profile:', createError?.message)
+            }
+          }
+        } catch (createErr) {
+          console.error('❌ Error creating profile:', createErr)
+        }
 
         if (retries > 0) {
           console.log(`Retrying profile load... (${retries} attempts left)`)
@@ -83,7 +116,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
         const duplicateIds = profiles.slice(1).map(p => p.id)
         if (duplicateIds.length > 0) {
           console.log('🧹 Cleaning up duplicate profiles...')
-          await supabase
+          await supabaseClient
             .from('profiles')
             .delete()
             .in('id', duplicateIds)
@@ -99,7 +132,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
       return profile
     } catch (err) {
-      console.error('Error loading profile:', err?.message || err)
+      console.error('Error loading profile:', err instanceof Error ? err.message : err)
       return null
     }
   }, [])
@@ -109,33 +142,44 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     let mounted = true
 
     const initializeAuth = async () => {
+      // Require Supabase configuration for production
+      if (!isSupabaseConfigured) {
+        setError('Authentication service not available')
+        setLoading(false)
+        return
+      }
+
       try {
         // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession()
+        if (!supabase) {
+          throw new Error('Supabase is not configured');
+        }
+        const supabaseClient = supabase;
+        const { data: { session }, error } = await supabaseClient.auth.getSession()
         
         if (error) {
           console.error('Error getting session:', error)
           setError(error.message)
         }
 
-        if (mounted) {
-          setSession(session)
-          setUser(session?.user ?? null)
+        if (!mounted) return
 
-          if (session?.user) {
-            console.log('🔄 Loading profile for user:', session.user.id)
-            const userProfile = await loadProfile(session.user.id)
-            if (userProfile) {
-              console.log('✅ Profile loaded in auth state change:', userProfile)
-              setProfile(userProfile)
-            } else {
-              console.log('⚠️ No profile found for user:', session.user.id)
-              setProfile(null)
-            }
+        setSession(session)
+        setUser(session?.user ?? null)
+
+        if (session?.user) {
+          console.log('🔄 Loading profile for user:', session.user.id)
+          const userProfile = await loadProfile(session.user.id)
+          if (userProfile) {
+            console.log('✅ Profile loaded in auth state change:', userProfile)
+            setProfile(userProfile)
+          } else {
+            console.log('⚠️ No profile found for user:', session.user.id)
+            setProfile(null)
           }
-
-          setLoading(false)
         }
+
+        setLoading(false)
       } catch (err) {
         console.error('Error initializing auth:', err)
         if (mounted) {
@@ -147,33 +191,40 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
     initializeAuth()
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
+    // Listen for auth changes (only if Supabase is configured)
+    let subscription: { unsubscribe: () => void } | null = null
+    if (isSupabaseConfigured && supabase) {
+      const supabaseClient = supabase;
+      const { data: { subscription: authSubscription } } = supabaseClient.auth.onAuthStateChange(
+        async (event, session) => {
+          console.log('Auth state changed:', event, session?.user?.email)
         
-        if (mounted) {
-          setSession(session)
-          setUser(session?.user ?? null)
-          setError(null)
+        if (!mounted) return
 
-          if (session?.user) {
-            const userProfile = await loadProfile(session.user.id)
-            setProfile(userProfile)
-          } else {
-            setProfile(null)
-          }
+        setSession(session)
+        setUser(session?.user ?? null)
+        setError(null)
 
-          setLoading(false)
+        if (session?.user) {
+          const userProfile = await loadProfile(session.user.id)
+          setProfile(userProfile)
+        } else {
+          setProfile(null)
         }
+
+        setLoading(false)
       }
-    )
+      )
+      subscription = authSubscription
+    }
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
-  }, [loadProfile])
+  }, [loadProfile, isSupabaseConfigured])
 
   // Sign in function
   const signIn = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -181,12 +232,18 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       setLoading(true)
       setError(null)
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+      const supabaseClient = supabase;
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       })
 
       if (error) {
+        console.error('Sign in error:', error)
+        logAuthError(error, 'signIn', email)
         setError(error.message)
         toast.error(error.message)
         return false
@@ -224,15 +281,19 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
   // Sign up function
   const signUp = useCallback(async (
-    email: string, 
-    password: string, 
+    email: string,
+    password: string,
     userData?: Partial<Profile>
   ): Promise<boolean> => {
     try {
       setLoading(true)
       setError(null)
 
-      const { data, error } = await supabase.auth.signUp({
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+      const supabaseClient = supabase;
+      const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -244,6 +305,8 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       })
 
       if (error) {
+        console.error('Sign up error:', error)
+        logAuthError(error, 'signUp', email)
         setError(error.message)
         toast.error(error.message)
         return false
@@ -262,7 +325,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
           }
 
           // First try to insert the profile
-          const { data: insertedProfile, error: insertError } = await supabase
+          const { data: insertedProfile, error: insertError } = await supabaseClient
             .from('profiles')
             .insert(profileData)
             .select()
@@ -270,6 +333,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
           if (insertError) {
             console.warn('Profile insert failed:', insertError.message)
+            logDatabaseError(insertError, 'insert', 'profiles')
 
             // If insert failed, try to load existing profile
             console.log('🔄 Attempting to load existing profile...')
@@ -285,7 +349,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
             } else {
               // If no existing profile, try upsert as last resort
               console.log('🔄 Trying upsert as fallback...')
-              const { data: upsertedProfile, error: upsertError } = await supabase
+              const { data: upsertedProfile, error: upsertError } = await supabaseClient
                 .from('profiles')
                 .upsert(profileData, { onConflict: 'id' })
                 .select()
@@ -338,7 +402,12 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
   const signOut = useCallback(async (): Promise<void> => {
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signOut()
+
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+      const supabaseClient = supabase;
+      const { error } = await supabaseClient.auth.signOut()
       
       if (error) {
         console.error('Error signing out:', error)
@@ -354,6 +423,37 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     }
   }, [])
 
+  // Reset password function
+  const resetPassword = useCallback(async (email: string): Promise<boolean> => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+      const supabaseClient = supabase;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/update-password`
+      })
+
+      if (error) {
+        console.error('Password reset error:', error)
+        setError(error.message)
+        return false
+      }
+
+      console.log('✅ Password reset email sent successfully')
+      return true
+    } catch (error) {
+      console.error('Password reset error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to send reset email')
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   // Update profile function
   const updateProfile = useCallback(async (updates: Partial<Profile>): Promise<boolean> => {
     if (!user) return false
@@ -362,7 +462,11 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       setLoading(true)
       setError(null)
 
-      const { data, error } = await supabase
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
+      const supabaseClient = supabase;
+      const { data, error } = await supabaseClient
         .from('profiles')
         .update(updates)
         .eq('id', user.id)
@@ -409,6 +513,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     signIn,
     signUp,
     signOut,
+    resetPassword,
     updateProfile,
     refreshProfile
   }

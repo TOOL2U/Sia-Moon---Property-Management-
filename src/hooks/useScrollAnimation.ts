@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useInView } from 'framer-motion'
 
 interface UseScrollAnimationOptions {
   threshold?: number
@@ -8,6 +9,7 @@ interface UseScrollAnimationOptions {
   triggerOnce?: boolean
 }
 
+// Original scroll animation hook for class-based animations
 export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
   const {
     threshold = 0.15,
@@ -62,7 +64,7 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
   return elementRef
 }
 
-// Hook for animating multiple elements with stagger - Ultra smooth
+// Original hook for animating multiple elements with stagger
 export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {}) {
   const {
     threshold = 0.15,
@@ -70,13 +72,12 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
     triggerOnce = true
   } = options
 
-  const containerRef = useRef<HTMLElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    // Check for reduced motion preference
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const elements = container.querySelectorAll('.scroll-animate, .scroll-animate-left, .scroll-animate-right, .scroll-animate-scale')
@@ -92,29 +93,18 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // Double requestAnimationFrame for smoother integration with Lenis
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
                 entry.target.classList.add('animate-in')
               })
             })
-            if (triggerOnce) {
-              observer.unobserve(entry.target)
-            }
-          } else if (!triggerOnce) {
-            entry.target.classList.remove('animate-in')
           }
         })
       },
-      {
-        threshold,
-        rootMargin
-      }
+      { threshold, rootMargin }
     )
 
-    elements.forEach((element) => {
-      observer.observe(element)
-    })
+    elements.forEach((element) => observer.observe(element))
 
     return () => {
       observer.disconnect()
@@ -122,4 +112,133 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
   }, [threshold, rootMargin, triggerOnce])
 
   return containerRef
+}
+
+/**
+ * Enhanced scroll animation hook for use with Framer Motion
+ * @param options - Animation options
+ * @returns An object containing the element ref and whether it's in view
+ * 
+ * Usage:
+ * const { ref, inView } = useFramerAnimation();
+ * 
+ * <motion.div 
+ *   ref={ref}
+ *   animate={inView ? "visible" : "hidden"}
+ *   variants={animationVariants}
+ * >
+ *   Content
+ * </motion.div>
+ */
+export function useFramerAnimation(options: {
+  threshold?: number;
+  triggerOnce?: boolean;
+  rootMargin?: string;
+} = {}) {
+  const {
+    threshold = 0.15,
+    triggerOnce = true,
+    rootMargin = "-100px"
+  } = options;
+
+  const ref = useRef(null);
+  const inView = useInView(ref, { 
+    once: triggerOnce, 
+    margin: rootMargin as any, // Type cast to resolve type mismatch
+    amount: threshold
+  });
+
+  return { ref, inView };
+}
+
+/**
+ * Hook to provide responsive animation variants based on device type
+ * Automatically detects mobile devices and adjusts animation parameters
+ */
+export function useResponsiveAnimation() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if the device is mobile based on screen width
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Check on mount
+    checkMobile();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkMobile);
+
+    // Clean up
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Standard animation variants
+  const fadeIn = {
+    hidden: { opacity: 0, y: isMobile ? 10 : 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: isMobile ? 0.3 : 0.6,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }
+    }
+  };
+
+  const scaleIn = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: {
+        duration: isMobile ? 0.3 : 0.5,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }
+    }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: isMobile ? 0.05 : 0.1
+      }
+    }
+  };
+
+  // Card hover animations - disabled on mobile
+  const cardHover = {
+    rest: { 
+      scale: 1, 
+      y: 0, 
+      transition: { 
+        duration: 0.3, 
+        ease: [0.25, 0.46, 0.45, 0.94]
+      } 
+    },
+    hover: isMobile ? 
+      { scale: 1, y: 0 } : 
+      { 
+        scale: 1.03, 
+        y: -5,
+        transition: { 
+          type: "spring", 
+          stiffness: 400, 
+          damping: 17 
+        } 
+      }
+  };
+
+  return {
+    isMobile,
+    variants: {
+      fadeIn,
+      scaleIn,
+      staggerContainer,
+      cardHover
+    }
+  };
 }

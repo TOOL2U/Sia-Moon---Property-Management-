@@ -16,10 +16,10 @@ import DatabaseService from '@/lib/dbService'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  context: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params
+    const { propertyId } = await context.params
     const body = await request.json()
     
     console.log(`🔄 Manual sync triggered for property: ${propertyId}`)
@@ -87,10 +87,10 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  context: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params
+    const { propertyId } = await context.params
 
     // Get property details
     const { data: property, error: propertyError } = await DatabaseService.getProperty(propertyId)

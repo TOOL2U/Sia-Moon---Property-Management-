@@ -1,6 +1,6 @@
 import { NotificationService } from './notificationService'
-import DatabaseService from '@/lib/dbService'
-import { MonthlyReport, Task, Property, User } from '@/lib/db'
+import SupabaseService from '@/lib/supabaseService'
+import { MonthlyReport, Task, User } from '@/lib/db'
 
 /**
  * Notification triggers for various system events
@@ -15,7 +15,7 @@ export class NotificationTriggers {
       console.log(`📊 Triggering report notification for report ${report.id}`)
       
       // Get property details
-      const propertyResult = await DatabaseService.getProperty(report.property_id)
+      const propertyResult = await SupabaseService.getProperty(report.property_id)
       if (propertyResult.error || !propertyResult.data) {
         console.error('Property not found for report notification')
         return
@@ -24,12 +24,12 @@ export class NotificationTriggers {
       const property = propertyResult.data
       
       // Get property owner
-      const ownerResult = await DatabaseService.getUser(property.owner_id)
+      const ownerResult = await SupabaseService.getUser(property.owner_id)
       if (ownerResult.error || !ownerResult.data) {
         console.error('Property owner not found for report notification')
         return
       }
-      
+
       const owner = ownerResult.data
       
       // Format report data for notification
@@ -75,7 +75,7 @@ export class NotificationTriggers {
       }
       
       // Get assigned staff member
-      const staffResult = await DatabaseService.getUser(task.assigned_to)
+      const staffResult = await SupabaseService.getUser(task.assigned_to)
       if (staffResult.error || !staffResult.data) {
         console.error('Assigned staff member not found for task notification')
         return
@@ -84,9 +84,9 @@ export class NotificationTriggers {
       const staff = staffResult.data
       
       // Get property details if available
-      let property: Property | null = null
+      let property: { name: string; owner_id: string } | null = null
       if (task.property_id) {
-        const propertyResult = await DatabaseService.getProperty(task.property_id)
+        const propertyResult = await SupabaseService.getProperty(task.property_id)
         if (propertyResult.data) {
           property = propertyResult.data
         }
@@ -94,7 +94,7 @@ export class NotificationTriggers {
       
       // Format task data for notification
       const taskData = {
-        staff_name: staff.name,
+        staff_name: staff.full_name || staff.email,
         task_title: task.title,
         task_description: task.description || 'No description provided',
         property_name: property?.name || 'N/A',
@@ -104,7 +104,7 @@ export class NotificationTriggers {
       }
       
       // Determine priority and channels based on task urgency
-      const isUrgent = task.priority === 'urgent' || task.category === 'maintenance'
+      const isUrgent = task.priority === 'urgent' || task.type === 'maintenance'
       const priority = isUrgent ? 'urgent' : 'normal'
       const channels = isUrgent ? ['email', 'push', 'in_app'] : ['email', 'in_app']
       
@@ -116,7 +116,7 @@ export class NotificationTriggers {
         message: `You have been assigned a new task: ${task.title}`,
         data: taskData,
         priority,
-        channels,
+        channels: (channels as ("email" | "push" | "in_app")[]),
         emailSubject: `New Task Assigned - ${task.title}`,
         emailTemplate: 'task_assigned',
         pushTitle: 'New Task Assigned',
@@ -139,9 +139,9 @@ export class NotificationTriggers {
       console.log(`✅ Triggering task completion notification for task ${task.id}`)
       
       // Get property details if available
-      let property: Property | null = null
+      let property: { name: string; owner_id: string } | null = null
       if (task.property_id) {
-        const propertyResult = await DatabaseService.getProperty(task.property_id)
+        const propertyResult = await SupabaseService.getProperty(task.property_id)
         if (propertyResult.data) {
           property = propertyResult.data
         }
@@ -149,13 +149,13 @@ export class NotificationTriggers {
       
       // Get property owner if property exists
       if (property) {
-        const ownerResult = await DatabaseService.getUser(property.owner_id)
+        const ownerResult = await SupabaseService.getUser(property.owner_id)
         if (ownerResult.data) {
           const owner = ownerResult.data
           
           // Format task data for notification
           const taskData = {
-            owner_name: owner.name,
+            owner_name: owner.full_name || owner.email,
             task_title: task.title,
             property_name: property.name,
             completed_date: new Date().toLocaleDateString(),
@@ -211,7 +211,7 @@ export class NotificationTriggers {
       console.log(`🔧 Triggering maintenance notification for property ${propertyId}`)
       
       // Get property details
-      const propertyResult = await DatabaseService.getProperty(propertyId)
+      const propertyResult = await SupabaseService.getProperty(propertyId)
       if (propertyResult.error || !propertyResult.data) {
         console.error('Property not found for maintenance notification')
         return
@@ -220,7 +220,7 @@ export class NotificationTriggers {
       const property = propertyResult.data
       
       // Get property owner
-      const ownerResult = await DatabaseService.getUser(property.owner_id)
+      const ownerResult = await SupabaseService.getUser(property.owner_id)
       if (ownerResult.data) {
         const owner = ownerResult.data
         
@@ -230,7 +230,7 @@ export class NotificationTriggers {
           title: 'Maintenance Required',
           message: `Maintenance is required for ${property.name}: ${issue}`,
           data: {
-            owner_name: owner.name,
+            owner_name: owner.full_name || owner.email,
             property_name: property.name,
             issue,
             priority
@@ -307,12 +307,12 @@ export class NotificationTriggers {
    */
   private static async getAdminUsers(): Promise<User[]> {
     try {
-      const usersResult = await DatabaseService.getAllUsers()
+      const usersResult = await SupabaseService.getAllUsers()
       if (usersResult.error || !usersResult.data) {
         return []
       }
       
-      return usersResult.data.filter(user => user.role === 'staff')
+      return usersResult.data.filter((user: { role?: string }) => user.role === 'staff') as User[]
     } catch (error) {
       console.error('Error getting admin users:', error)
       return []

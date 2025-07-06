@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
 import SupabaseService from '@/lib/supabaseService'
+import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -14,37 +15,50 @@ import {
   Clock,
   User,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Settings,
+  TrendingUp
 } from 'lucide-react'
 import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
+import { Property, Booking, Task, Report } from '@/types'
 
 export default function ClientDashboard() {
   const auth = useAuth()
   const user = auth.profile
   const authLoading = auth.loading
 
-  const [properties, setProperties] = useState<any[]>([])
-  const [bookings, setBookings] = useState<any[]>([])
-  const [reports, setReports] = useState<any[]>([])
-  const [tasks, setTasks] = useState<any[]>([])
+  const [properties, setProperties] = useState<Property[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [reports, setReports] = useState<Report[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState('revenue')
 
   const [showSettings, setShowSettings] = useState(false)
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchDashboardData()
-    }
-  }, [user?.id])
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
 
+      // Development mode: Use demo user ID if no authenticated user
+      const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
+                                 process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
+
+      let userId = user?.id
+      if (!userId && isDevelopmentBypass) {
+        console.log('🔧 Development mode: Using demo user ID for dashboard')
+        userId = 'demo-user-id' // Use a consistent demo user ID
+      }
+
+      if (!userId) {
+        console.error('❌ No user ID available for dashboard')
+        setLoading(false)
+        return
+      }
+
       // Fetch user's properties
-      const propertiesResult = await SupabaseService.getPropertiesByOwner(user!.id)
+      const propertiesResult = await SupabaseService.getPropertiesByOwner(userId)
       if (!propertiesResult.success) {
         console.error('Error fetching properties:', propertiesResult.error)
         toast.error('Failed to load properties')
@@ -60,42 +74,42 @@ export default function ClientDashboard() {
       }
 
       // Fetch bookings for user's properties
-      const allBookingsPromises = userProperties.map(property =>
+      const allBookingsPromises = userProperties.map((property: any) =>
         SupabaseService.getBookingsByProperty(property.id)
       )
       const bookingResults = await Promise.all(allBookingsPromises)
-      const allBookings = bookingResults.reduce((acc, result) => {
+      const allBookings = bookingResults.reduce((acc: any[], result: any) => {
         if (result.success && result.data) {
           acc.push(...result.data)
         }
         return acc
-      }, [] as any[])
+      }, [] as Booking[])
       setBookings(allBookings)
 
       // Fetch reports for user's properties
-      const allReportsPromises = userProperties.map(property =>
+      const allReportsPromises = userProperties.map((property: any) =>
         SupabaseService.getReportsByProperty(property.id)
       )
       const reportResults = await Promise.all(allReportsPromises)
-      const allReports = reportResults.reduce((acc, result) => {
+      const allReports = reportResults.reduce((acc: any[], result: any) => {
         if (result.success && result.data) {
           acc.push(...result.data)
         }
         return acc
-      }, [] as any[])
+      }, [] as Report[])
       setReports(allReports)
 
       // Fetch tasks for user's properties
-      const allTasksPromises = userProperties.map(property =>
+      const allTasksPromises = userProperties.map((property: any) =>
         SupabaseService.getTasksByProperty(property.id)
       )
       const taskResults = await Promise.all(allTasksPromises)
-      const allTasks = taskResults.reduce((acc, result) => {
+      const allTasks = taskResults.reduce((acc: any[], result: any) => {
         if (result.success && result.data) {
           acc.push(...result.data)
         }
         return acc
-      }, [] as any[])
+      }, [] as Task[])
       setTasks(allTasks)
 
     } catch (error) {
@@ -104,7 +118,17 @@ export default function ClientDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    // In development mode with session bypass, always fetch data
+    const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
+                               process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
+
+    if (user?.id || isDevelopmentBypass) {
+      fetchDashboardData()
+    }
+  }, [user?.id, fetchDashboardData])
 
   // Calculate dashboard metrics
   const calculateMetrics = () => {
@@ -225,7 +249,11 @@ export default function ClientDashboard() {
   const upcomingBookings = prepareUpcomingBookings()
   const maintenanceTasks = prepareMaintenanceTasks()
 
-  if (authLoading || loading || !user) {
+  // In development mode with session bypass, don't require user
+  const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
+                             process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
+
+  if (authLoading || loading || (!user && !isDevelopmentBypass)) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -237,69 +265,82 @@ export default function ClientDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
-        {/* Header - Lightspeed Style */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Date Selector */}
-            <div className="flex items-center gap-2 text-neutral-400">
-              <span className="text-sm">
-                {format(new Date(), 'MMM yyyy')}
-              </span>
-            </div>
-            {/* Settings Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-neutral-400 hover:text-white"
-            >
-              <Wrench className="w-4 h-4" />
-              Settings
-            </Button>
-          </div>
-        </div>
+    <DashboardLayout
+      title="Dashboard"
+      subtitle="Overview of your property portfolio"
+      actions={
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowSettings(!showSettings)}
+          className="text-neutral-400 hover:text-white"
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Settings
+        </Button>
+      }
+    >
+      <div className="max-w-7xl mx-auto">
+
 
         {/* Metric Selector - Lightspeed Style */}
         <div className="mb-6">
           <div className="flex items-center gap-2">
+            <span className="text-sm text-neutral-400">Monthly</span>
             <select
               value={selectedMetric}
               onChange={(e) => setSelectedMetric(e.target.value)}
-              className="bg-neutral-950 border border-neutral-800 rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="bg-transparent border-none text-primary-400 text-sm font-medium focus:outline-none cursor-pointer"
             >
-              <option value="revenue">Monthly Revenue</option>
-              <option value="bookings">Monthly Bookings</option>
-              <option value="occupancy">Monthly Occupancy</option>
+              <option value="revenue" className="bg-neutral-900 text-white">Revenue</option>
+              <option value="bookings" className="bg-neutral-900 text-white">Bookings</option>
+              <option value="occupancy" className="bg-neutral-900 text-white">Occupancy</option>
             </select>
+            <TrendingUp className="w-4 h-4 text-primary-400" />
           </div>
         </div>
 
-        {/* Main Chart Area - Lightspeed Style */}
-        <div className="mb-8">
-          <Card className="bg-neutral-950 border-neutral-800 p-6">
-            <div className="h-96">
-              <IncomeExpenseChart data={chartData} />
+        {/* Main Chart Area - Lightspeed Style - Full Screen Width */}
+        <div className="mb-8 -mx-6 md:-mx-12 lg:-mx-[calc(30vw-30%+2rem)] relative w-auto">
+          <Card className="bg-neutral-950 border-neutral-800 p-0 overflow-hidden rounded-none border-x-0 w-auto">
+            <div className="px-6 md:px-12 lg:px-16 py-6 border-b border-neutral-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-medium text-lg">Revenue Overview</h3>
+                  <p className="text-neutral-400 text-sm mt-1">Monthly performance tracking</p>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
+                    <span className="text-neutral-400 text-sm">Income</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-neutral-400 text-sm">Expenses</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 md:px-12 lg:px-16 py-8">
+              <div className="h-96 md:h-[32rem] lg:h-[38rem] w-full">
+                <IncomeExpenseChart data={chartData} />
+              </div>
             </div>
           </Card>
         </div>
 
         {/* Bottom Metrics - Lightspeed Style Circular Progress */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Revenue Target */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 text-center">
-            <div className="relative w-24 h-24 mx-auto mb-4">
-              <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+          <Card className="bg-neutral-950 border-neutral-800 p-6 text-center">
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
                 <circle
                   cx="50"
                   cy="50"
                   r="40"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="transparent"
                   className="text-neutral-800"
                 />
@@ -308,7 +349,7 @@ export default function ClientDashboard() {
                   cy="50"
                   r="40"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="transparent"
                   strokeDasharray={`${2 * Math.PI * 40}`}
                   strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(metrics.totalIncome / 50000, 1))}`}
@@ -317,7 +358,7 @@ export default function ClientDashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-medium text-green-400">
+                <span className="text-xs font-medium text-green-400">
                   {Math.round((metrics.totalIncome / 50000) * 100)}%
                 </span>
               </div>
@@ -325,24 +366,24 @@ export default function ClientDashboard() {
             <div className="text-2xl font-bold text-white mb-1">
               ${metrics.totalIncome.toLocaleString()}
             </div>
-            <div className="text-sm text-neutral-400 mb-1">
-              REVENUE TARGET
+            <div className="text-xs text-neutral-400 mb-1 uppercase tracking-wide">
+              Revenue Target
             </div>
             <div className="text-xs text-neutral-500">
-              Target: $50,000
+              vs $50,000
             </div>
-          </div>
+          </Card>
 
           {/* Bookings Target */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 text-center">
-            <div className="relative w-24 h-24 mx-auto mb-4">
-              <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+          <Card className="bg-neutral-950 border-neutral-800 p-6 text-center">
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
                 <circle
                   cx="50"
                   cy="50"
                   r="40"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="transparent"
                   className="text-neutral-800"
                 />
@@ -351,7 +392,7 @@ export default function ClientDashboard() {
                   cy="50"
                   r="40"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="transparent"
                   strokeDasharray={`${2 * Math.PI * 40}`}
                   strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(metrics.totalBookings / 100, 1))}`}
@@ -360,7 +401,7 @@ export default function ClientDashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-medium text-orange-400">
+                <span className="text-xs font-medium text-orange-400">
                   {Math.round((metrics.totalBookings / 100) * 100)}%
                 </span>
               </div>
@@ -368,24 +409,24 @@ export default function ClientDashboard() {
             <div className="text-2xl font-bold text-white mb-1">
               {metrics.totalBookings}
             </div>
-            <div className="text-sm text-neutral-400 mb-1">
-              BOOKING TARGET
+            <div className="text-xs text-neutral-400 mb-1 uppercase tracking-wide">
+              Booking Target
             </div>
             <div className="text-xs text-neutral-500">
-              Target: 100
+              vs 100
             </div>
-          </div>
+          </Card>
 
           {/* Occupancy Target */}
-          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 text-center">
-            <div className="relative w-24 h-24 mx-auto mb-4">
-              <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+          <Card className="bg-neutral-950 border-neutral-800 p-6 text-center">
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
                 <circle
                   cx="50"
                   cy="50"
                   r="40"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="transparent"
                   className="text-neutral-800"
                 />
@@ -394,7 +435,7 @@ export default function ClientDashboard() {
                   cy="50"
                   r="40"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="transparent"
                   strokeDasharray={`${2 * Math.PI * 40}`}
                   strokeDashoffset={`${2 * Math.PI * 40 * (1 - metrics.avgOccupancy / 100)}`}
@@ -403,7 +444,7 @@ export default function ClientDashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-medium text-red-400">
+                <span className="text-xs font-medium text-red-400">
                   {Math.round(metrics.avgOccupancy)}%
                 </span>
               </div>
@@ -411,20 +452,20 @@ export default function ClientDashboard() {
             <div className="text-2xl font-bold text-white mb-1">
               {metrics.avgOccupancy.toFixed(1)}%
             </div>
-            <div className="text-sm text-neutral-400 mb-1">
-              OCCUPANCY TARGET
+            <div className="text-xs text-neutral-400 mb-1 uppercase tracking-wide">
+              Occupancy Target
             </div>
             <div className="text-xs text-neutral-500">
-              Target: 85%
+              vs 85%
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Upcoming Bookings Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
+            <h2 className="text-xl font-semibold text-white flex items-center gap-6 mt-3">
+              <Calendar className="w-5 h-5 text-primary-400" />
               Upcoming Bookings
             </h2>
             <span className="text-sm text-neutral-400">
@@ -435,7 +476,9 @@ export default function ClientDashboard() {
           {upcomingBookings.length === 0 ? (
             <Card className="bg-neutral-900 border-neutral-800">
               <CardContent className="p-6 text-center">
-                <Calendar className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
+                <div className="w-16 h-16 bg-gradient-to-r from-primary-500/10 to-primary-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-8 h-8 text-primary-400" />
+                </div>
                 <p className="text-neutral-400">No upcoming bookings</p>
                 <p className="text-sm text-neutral-500 mt-1">
                   New bookings will appear here
@@ -465,13 +508,13 @@ export default function ClientDashboard() {
                             <tr key={booking.id} className={`border-b border-neutral-800 ${index === upcomingBookings.length - 1 ? 'border-b-0' : ''}`}>
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
-                                  <User className="w-4 h-4 text-neutral-500" />
+                                  <User className="w-4 h-4 text-primary-400" />
                                   <span className="text-white font-medium">{booking.guest_name}</span>
                                 </div>
                               </td>
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
-                                  <Home className="w-4 h-4 text-neutral-500" />
+                                  <Home className="w-4 h-4 text-neutral-400" />
                                   <span className="text-neutral-300">{booking.property_name}</span>
                                 </div>
                               </td>
@@ -519,11 +562,11 @@ export default function ClientDashboard() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <User className="w-4 h-4 text-neutral-500" />
+                            <User className="w-4 h-4 text-primary-400" />
                             <span className="text-white font-medium">{booking.guest_name}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Home className="w-4 h-4 text-neutral-500" />
+                            <Home className="w-4 h-4 text-neutral-400" />
                             <span className="text-neutral-300 text-sm">{booking.property_name}</span>
                           </div>
                         </div>
@@ -569,7 +612,7 @@ export default function ClientDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-orange-400" />
+              <Wrench className="w-5 h-5 text-primary-400" />
               Active Maintenance
             </h2>
             <span className="text-sm text-neutral-400">
@@ -580,7 +623,9 @@ export default function ClientDashboard() {
           {maintenanceTasks.length === 0 ? (
             <Card className="bg-neutral-900 border-neutral-800">
               <CardContent className="p-6 text-center">
-                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle2 className="w-8 h-8 text-green-400" />
+                </div>
                 <p className="text-neutral-400">No active maintenance issues</p>
                 <p className="text-sm text-neutral-500 mt-1">
                   All maintenance tasks are up to date
@@ -598,25 +643,29 @@ export default function ClientDashboard() {
                           {task.title || task.description}
                         </h3>
                         <div className="flex items-center gap-2 text-sm text-neutral-400 mb-2">
-                          <Home className="w-4 h-4" />
+                          <Home className="w-4 h-4 text-neutral-400" />
                           <span>{task.property_name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-neutral-500">
-                          <Clock className="w-4 h-4" />
+                          <Clock className="w-4 h-4 text-neutral-500" />
                           <span>Reported {format(new Date(task.created_at), 'MMM dd, yyyy')}</span>
                         </div>
                       </div>
                       <div className="ml-3">
                         {task.status === 'pending' ? (
                           <div className="flex items-center gap-1">
-                            <AlertCircle className="w-4 h-4 text-red-400" />
+                            <div className="w-6 h-6 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded flex items-center justify-center">
+                              <AlertCircle className="w-3 h-3 text-red-400" />
+                            </div>
                             <Badge variant="secondary" className="bg-red-900 text-red-300 border-red-800">
                               Pending
                             </Badge>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4 text-yellow-400" />
+                            <div className="w-6 h-6 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 rounded flex items-center justify-center">
+                              <Clock className="w-3 h-3 text-yellow-400" />
+                            </div>
                             <Badge variant="secondary" className="bg-yellow-900 text-yellow-300 border-yellow-800">
                               In Progress
                             </Badge>
@@ -698,6 +747,6 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

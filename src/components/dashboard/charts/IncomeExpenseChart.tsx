@@ -42,7 +42,7 @@ export function IncomeExpenseChart({ data, currency = 'USD' }: IncomeExpenseChar
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-[80%] mx-auto h-full"> {/* Updated width to 80% and centered using mx-auto */}
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}

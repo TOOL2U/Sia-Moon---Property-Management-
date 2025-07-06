@@ -786,28 +786,109 @@ button:not(:disabled):active {
 }
 
 /* Link hover effects with slide-in underline */
-a:not(.no-underline) {
+a:not(.no-underline):not(button):not([role="button"]) {
   position: relative;
   transition: color 0.2s ease-out;
 }
 
-a:not(.no-underline):hover {
+a:not(.no-underline):not(button):not([role="button"]):hover {
   text-decoration: none;
 }
 
-a:not(.no-underline)::after {
+a:not(.no-underline):not(button):not([role="button"])::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: 6px;
   left: 0;
   width: 0;
   height: 1px;
   background: currentColor;
-  transition: width 0.3s ease-out;
+  transition: width 0.6s ease-out;
 }
 
-a:not(.no-underline):hover::after {
+a:not(.no-underline):not(button):not([role="button"]):hover::after {
   width: 100%;
+}
+
+/* Ensure buttons never have underlines - Comprehensive coverage */
+button,
+[role="button"],
+.btn,
+a button,
+a [role="button"],
+/* Specific targeting for buttons with borders */
+button[class*="border"],
+[role="button"][class*="border"],
+.btn[class*="border"],
+a button[class*="border"],
+a [role="button"][class*="border"],
+/* Button variants */
+button[class*="outline"],
+[role="button"][class*="outline"],
+.btn[class*="outline"],
+a button[class*="outline"],
+a [role="button"][class*="outline"],
+/* Link wrapping buttons */
+a:has(button),
+a:has([role="button"]),
+a:has(.btn) {
+  text-decoration: none !important;
+}
+
+/* Remove pseudo-elements that create underlines */
+button::after,
+[role="button"]::after,
+.btn::after,
+a button::after,
+a [role="button"]::after,
+/* Specific targeting for buttons with borders */
+button[class*="border"]::after,
+[role="button"][class*="border"]::after,
+.btn[class*="border"]::after,
+a button[class*="border"]::after,
+a [role="button"][class*="border"]::after,
+/* Button variants */
+button[class*="outline"]::after,
+[role="button"][class*="outline"]::after,
+.btn[class*="outline"]::after,
+a button[class*="outline"]::after,
+a [role="button"][class*="outline"]::after,
+/* Link wrapping buttons */
+a:has(button)::after,
+a:has([role="button"])::after,
+a:has(.btn)::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Additional protection for Next.js Link components wrapping buttons */
+a[href] button,
+a[href] [role="button"],
+a[href] .btn {
+  text-decoration: none !important;
+}
+
+a[href] button::after,
+a[href] [role="button"]::after,
+a[href] .btn::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Specific protection for buttons with any border-related classes */
+*[class*="border-"] button,
+*[class*="border-"] [role="button"],
+button[class*="border-"],
+[role="button"][class*="border-"] {
+  text-decoration: none !important;
+}
+
+*[class*="border-"] button::after,
+*[class*="border-"] [role="button"]::after,
+button[class*="border-"]::after,
+[role="button"][class*="border-"]::after {
+  display: none !important;
+  content: none !important;
 }
 
 /* Ultra-slow icon hover animations */
