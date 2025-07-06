@@ -108,20 +108,22 @@ export class ErrorLogger {
   }
 
   private async sendToLoggingService(errorData: ErrorLogData) {
-    // Console logging for development
-    if (!this.isProduction) {
-      const logMethod = errorData.level === 'error' ? console.error : 
-                      errorData.level === 'warning' ? console.warn : console.log
-      
-      logMethod(`[${errorData.level.toUpperCase()}] ${errorData.component || 'App'}:`, {
-        message: errorData.message,
-        context: errorData.context,
-        stack: errorData.stack
-      })
+    // Always log to console first for immediate visibility
+    const logMethod = errorData.level === 'error' ? console.error :
+                    errorData.level === 'warning' ? console.warn : console.log
+
+    logMethod(`[${errorData.level.toUpperCase()}] ${errorData.component || 'App'}:`, {
+      message: errorData.message,
+      context: errorData.context,
+      stack: errorData.stack
+    })
+
+    // Only attempt remote logging in production and if explicitly enabled
+    if (!this.isProduction || process.env.ENABLE_ERROR_LOGGING !== 'true') {
       return
     }
 
-    // Production logging
+    // Production logging - fail silently to prevent error loops
     try {
       // Option 1: Send to your own API endpoint
       await this.sendToInternalAPI(errorData)
@@ -130,27 +132,34 @@ export class ErrorLogger {
       // await this.sendToExternalService(errorData)
 
     } catch (loggingError) {
-      // Fallback: at least log to console if logging service fails
-      console.error('Failed to send error to logging service:', loggingError)
-      console.error('Original error:', errorData)
+      // Silently fail to prevent error loops - just log to console
+      console.warn('Error logging service failed (silently continuing):', loggingError instanceof Error ? loggingError.message : loggingError)
     }
   }
 
   private async sendToInternalAPI(errorData: ErrorLogData) {
     try {
+      // Set a timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
       const response = await fetch('/api/log-error', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(errorData)
+        body: JSON.stringify(errorData),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         throw new Error(`Logging API responded with status: ${response.status}`)
       }
     } catch (error) {
-      throw new Error(`Failed to send to internal API: ${error}`)
+      // Don't re-throw to prevent error loops
+      console.warn('Internal API logging failed:', error instanceof Error ? error.message : error)
     }
   }
 

@@ -7,65 +7,81 @@ import { useReducedMotion } from 'framer-motion'
 export const ANIMATION_CONFIG = {
   // Easing curves for consistent feel
   easing: {
-    smooth: "easeOut",
-    bounce: "backOut",
-    sharp: "easeInOut",
-    gentle: "easeInOut"
+    smooth: [0.25, 0.46, 0.45, 0.94] as const,
+    bounce: [0.68, -0.55, 0.265, 1.55] as const,
+    sharp: [0.4, 0, 0.2, 1] as const,
+    gentle: [0.25, 0.1, 0.25, 1] as const
   },
   
-  // Duration presets
+  // Duration presets - Much slower for smoother feel
   duration: {
-    fast: 0.2,
+    fast: 0.6,
+    normal: 0.8,
+    slow: 1.2,
+    slower: 1.8,
+    sequence: 2.5
+  },
+
+  // Stagger delays - Increased for better coordination
+  stagger: {
+    fast: 0.15,
     normal: 0.3,
     slow: 0.5,
-    slower: 0.8,
-    sequence: 1.2
-  },
-  
-  // Stagger delays
-  stagger: {
-    fast: 0.05,
-    normal: 0.1,
-    slow: 0.2,
-    text: 0.05
+    text: 0.2
   }
 }
 
-// Page load animation states
+// Page load animation states - Enhanced with single trigger prevention
 export const usePageLoadAnimation = () => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [animationPhase, setAnimationPhase] = useState<'loading' | 'hero' | 'content' | 'complete'>('loading')
+  const [hasStarted, setHasStarted] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
-    // Simulate page load completion
-    const timer = setTimeout(() => {
+    // Prevent double initialization
+    if (hasStarted) return
+
+    setHasStarted(true)
+
+    // Much slower, coordinated sequence
+    const loadTimer = setTimeout(() => {
       setIsLoaded(true)
       setAnimationPhase('hero')
-      
-      // Progress through animation phases
-      setTimeout(() => setAnimationPhase('content'), 800)
-      setTimeout(() => setAnimationPhase('complete'), 1500)
-    }, 100)
+    }, 200)
 
-    return () => clearTimeout(timer)
-  }, [])
+    // Extended timing for smoother coordination
+    const heroTimer = setTimeout(() => {
+      setAnimationPhase('content')
+    }, 3000) // Updated from 2000ms to 3000ms for longer hero image duration
+
+    const completeTimer = setTimeout(() => {
+      setAnimationPhase('complete')
+    }, 4000) // Increased from 1500ms
+
+    return () => {
+      clearTimeout(loadTimer)
+      clearTimeout(heroTimer)
+      clearTimeout(completeTimer)
+    }
+  }, [hasStarted])
 
   return {
     isLoaded,
     animationPhase,
     shouldReduceMotion,
+    hasStarted,
     // Skip animations if reduced motion is preferred
     skipAnimations: shouldReduceMotion
   }
 }
 
-// Hero section coordinated animation variants
+// Hero section coordinated animation variants - Much slower and smoother
 export const heroAnimationVariants = {
-  // Background image animation
+  // Background image animation - Slower and more subtle
   backgroundImage: {
     initial: {
-      scale: 0.95,
+      scale: 1.02,
       opacity: 0
     },
     animate: {
@@ -73,77 +89,82 @@ export const heroAnimationVariants = {
       opacity: 1,
       transition: {
         duration: ANIMATION_CONFIG.duration.sequence,
-        ease: ANIMATION_CONFIG.easing.smooth
+        ease: ANIMATION_CONFIG.easing.smooth,
+        delay: 0.2
       }
     }
   },
 
-  // Headline staggered animation
+  // Headline staggered animation - Much slower
   headline: {
     initial: {
       opacity: 0,
-      y: 40
+      y: 60
     },
     animate: (custom: number) => ({
       opacity: 1,
       y: 0,
       transition: {
-        duration: ANIMATION_CONFIG.duration.slow,
+        duration: ANIMATION_CONFIG.duration.slower,
         ease: ANIMATION_CONFIG.easing.smooth,
-        delay: custom * ANIMATION_CONFIG.stagger.slow
+        delay: 0.8 + (custom * ANIMATION_CONFIG.stagger.slow)
       }
     })
   },
 
-  // Subtitle with blur effect
+  // Subtitle with blur effect - Slower and smoother
   subtitle: {
     initial: {
       opacity: 0,
-      y: 20,
-      filter: 'blur(4px)'
+      y: 30,
+      filter: 'blur(6px)'
     },
     animate: {
       opacity: 1,
       y: 0,
       filter: 'blur(0px)',
       transition: {
-        duration: ANIMATION_CONFIG.duration.slow,
+        duration: ANIMATION_CONFIG.duration.slower,
         ease: ANIMATION_CONFIG.easing.smooth,
-        delay: 0.4
+        delay: 1.8
       }
     }
   },
 
-  // CTA buttons scale-in
+  // CTA buttons scale-in - Much slower
   ctaButton: {
     initial: {
       opacity: 0,
-      scale: 0.9
+      scale: 0.85,
+      y: 20
     },
     animate: (custom: number) => ({
       opacity: 1,
       scale: 1,
+      y: 0,
       transition: {
-        duration: ANIMATION_CONFIG.duration.normal,
+        duration: ANIMATION_CONFIG.duration.slow,
         ease: ANIMATION_CONFIG.easing.smooth,
-        delay: 0.6 + (custom * ANIMATION_CONFIG.stagger.normal)
+        delay: 2.5 + (custom * ANIMATION_CONFIG.stagger.normal)
       }
     })
   },
 
-  // Trusted by logos
+  // Trusted by logos - Slower cascade
   trustedLogo: {
     initial: {
       opacity: 0,
-      x: -20
+      x: -30,
+      scale: 0.9
     },
     animate: (custom: number) => ({
       opacity: 1,
       x: 0,
+      scale: 1,
       transition: {
-        duration: ANIMATION_CONFIG.duration.normal,
+        duration: ANIMATION_CONFIG.duration.slow,
         ease: ANIMATION_CONFIG.easing.smooth,
-        delay: 0.8 + (custom * ANIMATION_CONFIG.stagger.fast)
+        delay: 3.2 + (custom * ANIMATION_CONFIG.stagger.fast)
       }
     })
   }
@@ -341,21 +362,36 @@ export const viewportConfig = {
   amount: 0.3
 }
 
-// Stagger container variants
+// Stagger container variants - Slower and more coordinated
 export const staggerContainer = {
+  initial: {},
   animate: {
     transition: {
       staggerChildren: ANIMATION_CONFIG.stagger.normal,
-      delayChildren: 0.1
+      delayChildren: 0.3,
+      when: "beforeChildren"
     }
   }
 }
 
 export const staggerContainerFast = {
+  initial: {},
   animate: {
     transition: {
       staggerChildren: ANIMATION_CONFIG.stagger.fast,
-      delayChildren: 0.05
+      delayChildren: 0.2,
+      when: "beforeChildren"
+    }
+  }
+}
+
+// Hero-specific stagger container with no conflicts
+export const heroStaggerContainer = {
+  initial: {},
+  animate: {
+    transition: {
+      when: "beforeChildren",
+      delayChildren: 0.5
     }
   }
 }

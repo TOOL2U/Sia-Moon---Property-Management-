@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, ChevronDown, LogOut, User, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
@@ -148,6 +148,7 @@ interface MobileDrawerProps {
 
 function MobileDrawer({ isOpen, onClose, navigationLinks, user, onSignOut }: MobileDrawerProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
   // Close drawer on escape key
   useEffect(() => {
@@ -187,7 +188,9 @@ function MobileDrawer({ isOpen, onClose, navigationLinks, user, onSignOut }: Mob
           <Link
             href="/"
             className="text-xl font-semibold text-white hover:text-primary-400 transition-colors duration-200"
-            onClick={onClose}
+            onClick={() => {
+              router.push('/');
+            }}
           >
             Sia Moon
           </Link>
@@ -277,6 +280,7 @@ export function Navbar() {
   const { profile: user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -292,6 +296,7 @@ export function Navbar() {
       console.log('🔄 Navbar: Starting sign out...')
       await signOut()
       console.log('✅ Navbar: Sign out completed')
+      router.push('/') // Redirect to homepage after sign out
     } catch (error) {
       console.error('❌ Navbar: Sign out error:', error)
     }
@@ -303,6 +308,7 @@ export function Navbar() {
     { href: '/bookings', label: 'Bookings' },
     { href: '/onboard', label: 'Onbourding Survey' },
     ...(user.role === 'staff' ? [{ href: '/admin', label: 'Admin Panel' }] : []),
+    { href: 'https://wa.me/', label: 'Contact Us' }, // Added Contact Us tab linking to WhatsApp
   ] : []
 
   return (
@@ -318,6 +324,9 @@ export function Navbar() {
               <Link
                 href="/"
                 className="text-xl font-semibold text-white hover:text-primary-400 transition-colors duration-200 mt-3"
+                onClick={() => {
+                  router.push('/');
+                }}
               >
                 Sia Moon
               </Link>

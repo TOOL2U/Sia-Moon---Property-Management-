@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { Profile } from '@/types'
-import { logAuthError, logDatabaseError } from '@/lib/errorLogger'
+import { logAuthError } from '@/lib/errorLogger'
+import WebhookService from '@/lib/webhookService'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 
 export interface AuthState {
   user: User | null
@@ -25,6 +27,7 @@ export interface UseSupabaseAuthReturn extends AuthState {
 }
 
 export function useSupabaseAuth(): UseSupabaseAuthReturn {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -82,17 +85,18 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
             console.log('📝 Creating profile with data:', profileData)
 
+            // Use upsert to handle potential race conditions
             const { data: newProfile, error: createError } = await supabaseClient
               .from('profiles')
-              .insert(profileData)
+              .upsert(profileData, { onConflict: 'id' })
               .select()
               .single()
 
             if (!createError && newProfile) {
-              console.log('✅ Profile created successfully:', newProfile)
+              console.log('✅ Profile created/updated successfully:', newProfile)
               return newProfile as Profile
             } else {
-              console.error('❌ Failed to create profile:', createError?.message)
+              console.error('❌ Failed to create/update profile:', createError?.message)
             }
           }
         } catch (createErr) {
@@ -229,8 +233,8 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
   // Sign in function
   const signIn = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       if (!supabase) {
         throw new Error('Supabase is not configured');
@@ -239,32 +243,34 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
-      })
+      });
 
       if (error) {
-        console.error('Sign in error:', error)
-        logAuthError(error, 'signIn', email)
-        setError(error.message)
-        toast.error(error.message)
-        return false
+        console.error('Sign in error:', error);
+        logAuthError(error, 'signIn', email);
+        setError(error.message);
+        toast.error(error.message);
+        return false;
       }
 
       if (data.user) {
-        // Wait for profile to be loaded
-        console.log('🔄 User signed in, loading profile...')
-        const userProfile = await loadProfile(data.user.id)
+        console.log('🔄 User signed in, loading profile...');
+        const userProfile = await loadProfile(data.user.id);
 
         if (userProfile) {
-          setProfile(userProfile)
-          setUser(data.user)
-          setSession(data.session)
-          console.log('✅ Profile loaded after sign in:', userProfile)
-          toast.success('Signed in successfully!')
-          return true
+          setProfile(userProfile);
+          setUser(data.user);
+          setSession(data.session);
+          console.log('✅ Profile loaded after sign in:', userProfile);
+          toast.success('Signed in successfully!');
+
+          // Redirect to dashboard
+          router.push('/dashboard');
+          return true;
         } else {
-          console.log('⚠️ No profile found after sign in')
-          toast.error('Profile not found. Please contact support.')
-          return false
+          console.log('⚠️ No profile found after sign in');
+          toast.error('Profile not found. Please contact support.');
+          return false;
         }
       }
 
@@ -277,7 +283,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     } finally {
       setLoading(false)
     }
-  }, [loadProfile])
+  }, [loadProfile, router])
 
   // Sign up function
   const signUp = useCallback(async (
@@ -288,6 +294,77 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     try {
       setLoading(true)
       setError(null)
+
+      // Development mode bypass
+      if (process.env.NODE_ENV === 'development' &&
+          process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true') {
+        console.log('🔧 Development mode: Simulating signup success')
+
+        // Create a mock user for development
+        const mockUser: User = {
+          id: `dev-user-${Date.now()}`,
+          email: email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          aud: 'authenticated',
+          role: 'authenticated',
+          email_confirmed_at: new Date().toISOString(),
+          phone: undefined,
+          confirmed_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          app_metadata: {},
+          user_metadata: {},
+          identities: []
+        }
+
+        const mockProfile: Profile = {
+          id: mockUser.id,
+          email: email,
+          full_name: userData?.full_name || 'Development User',
+          role: (userData?.role as 'client' | 'staff' | 'admin') || 'client',
+          avatar_url: null,
+          phone: null,
+          address: null,
+          created_at: mockUser.created_at || new Date().toISOString(),
+          updated_at: mockUser.updated_at || new Date().toISOString()
+        }
+
+        const mockSession: Session = {
+          access_token: 'dev-token',
+          refresh_token: 'dev-refresh',
+          expires_in: 3600,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
+          token_type: 'bearer',
+          user: mockUser
+        }
+
+        setUser(mockUser)
+        setProfile(mockProfile)
+        setSession(mockSession)
+
+        // Send welcome email
+        try {
+          console.log('📧 Sending signup confirmation email...')
+          const emailResult = await WebhookService.sendSignupConfirmation({
+            name: userData?.full_name || 'New User',
+            email: email,
+            role: userData?.role || 'client',
+            userId: mockUser.id
+          })
+
+          if (emailResult.success) {
+            console.log('✅ Welcome email sent successfully')
+          } else {
+            console.warn('⚠️ Welcome email failed:', emailResult.error)
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Email sending failed:', emailError)
+          // Don't fail signup if email fails
+        }
+
+        toast.success('Development account created successfully!')
+        return true
+      }
 
       if (!supabase) {
         throw new Error('Supabase is not configured');
@@ -313,77 +390,35 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       }
 
       if (data.user) {
-        // Manually create profile since trigger might not be working
-        try {
-          console.log('🔄 Creating profile for new user:', data.user.id)
+        console.log('🔄 Creating profile for new user:', data.user.id)
 
-          const profileData = {
-            id: data.user.id,
-            email: data.user.email || '',
-            full_name: userData?.full_name || '',
-            role: (userData?.role as 'client' | 'staff' | 'admin') || 'client'
-          }
+        const profileData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: userData?.full_name || '',
+          role: (userData?.role as 'client' | 'staff' | 'admin') || 'client'
+        }
 
-          // First try to insert the profile
-          const { data: insertedProfile, error: insertError } = await supabaseClient
-            .from('profiles')
-            .insert(profileData)
-            .select()
-            .single()
+        const { data: insertedProfile, error: insertError } = await supabaseClient
+          .from('profiles')
+          .upsert(profileData, { onConflict: 'id' })
+          .select()
+          .single()
 
-          if (insertError) {
-            console.warn('Profile insert failed:', insertError.message)
-            logDatabaseError(insertError, 'insert', 'profiles')
-
-            // If insert failed, try to load existing profile
-            console.log('🔄 Attempting to load existing profile...')
-            const userProfile = await loadProfile(data.user.id, 5) // More retries for signup
-
-            if (userProfile) {
-              setProfile(userProfile)
-              setUser(data.user)
-              setSession(data.session)
-              console.log('✅ Existing profile loaded after signup:', userProfile)
-              toast.success('Account created successfully!')
-              return true
-            } else {
-              // If no existing profile, try upsert as last resort
-              console.log('🔄 Trying upsert as fallback...')
-              const { data: upsertedProfile, error: upsertError } = await supabaseClient
-                .from('profiles')
-                .upsert(profileData, { onConflict: 'id' })
-                .select()
-                .single()
-
-              if (upsertError || !upsertedProfile) {
-                console.error('❌ All profile creation methods failed')
-                toast.error('Failed to create user profile. Please contact support.')
-                return false
-              } else {
-                setProfile(upsertedProfile as Profile)
-                setUser(data.user)
-                setSession(data.session)
-                console.log('✅ Profile created via upsert fallback')
-                toast.success('Account created successfully!')
-                return true
-              }
-            }
-          } else {
-            console.log('✅ Profile created successfully:', insertedProfile)
-
-            // Set the auth state immediately with the created profile
-            setProfile(insertedProfile as Profile)
-            setUser(data.user)
-            setSession(data.session)
-
-            console.log('✅ Auth state set after signup')
-            toast.success('Account created successfully!')
-            return true
-          }
-        } catch (profileErr) {
-          console.error('Profile creation error:', profileErr)
+        if (insertError) {
+          console.warn('Profile insert failed:', insertError.message)
           toast.error('Failed to create user profile. Please contact support.')
           return false
+        } else {
+          setProfile(insertedProfile as Profile)
+          setUser(data.user)
+          setSession(data.session)
+          console.log('✅ Profile created successfully:', insertedProfile)
+
+          // Redirect to dashboard
+          router.push('/dashboard');
+          toast.success('Account created successfully!')
+          return true
         }
       }
 
@@ -396,7 +431,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     } finally {
       setLoading(false)
     }
-  }, [loadProfile])
+  }, [router])
 
   // Sign out function
   const signOut = useCallback(async (): Promise<void> => {

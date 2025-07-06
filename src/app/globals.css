@@ -210,56 +210,6 @@
   --error: #ef4444;
 }
 
-@theme inline {
-  /* Linear Design System Theme Variables */
-  --color-background: var(--background);
-  --color-background-secondary: var(--background-secondary);
-  --color-background-tertiary: var(--background-tertiary);
-
-  --color-foreground: var(--foreground);
-  --color-foreground-secondary: var(--foreground-secondary);
-  --color-foreground-tertiary: var(--foreground-tertiary);
-
-  --color-border: var(--border);
-  --color-border-light: var(--border-light);
-  --color-border-strong: var(--border-strong);
-
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary-hover: var(--primary-hover);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary-hover: var(--secondary-hover);
-
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent-hover: var(--accent-hover);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-
-  --color-input: var(--input);
-  --color-input-border: var(--input-border);
-  --color-input-focus: var(--input-focus);
-
-  --color-ring: var(--ring);
-
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-error: var(--error);
-
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: 'Inter var';
-}
-
 /* Global styles - Linear-inspired dark theme */
 * {
   box-sizing: border-box;
@@ -798,7 +748,7 @@ a:not(.no-underline):not(button):not([role="button"]):hover {
 a:not(.no-underline):not(button):not([role="button"])::after {
   content: '';
   position: absolute;
-  bottom: 6px;
+  bottom: 9px;
   left: 0;
   width: 0;
   height: 1px;
@@ -889,6 +839,39 @@ button[class*="border-"]::after,
 [role="button"][class*="border-"]::after {
   display: none !important;
   content: none !important;
+}
+
+/* Full-screen chart modal optimizations */
+.chart-modal-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+  background: #000 !important;
+}
+
+/* Touch optimization for charts in modal */
+.touch-pan-x {
+  touch-action: pan-x;
+}
+
+.touch-pan-y {
+  touch-action: pan-y;
+}
+
+/* Prevent zoom on double tap for chart interactions */
+.chart-container {
+  touch-action: manipulation;
+}
+
+/* Mobile landscape optimizations */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .chart-modal-fullscreen .chart-content {
+    padding-top: 60px !important;
+    padding-bottom: 60px !important;
+  }
 }
 
 /* Ultra-slow icon hover animations */

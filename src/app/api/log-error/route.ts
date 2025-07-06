@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     }
 
-    // Store in database if Supabase is available
+    // Store in database if Supabase is available and error_logs table exists
     if (supabase) {
       try {
         const { error: dbError } = await supabase
@@ -38,12 +38,12 @@ export async function POST(request: NextRequest) {
           .insert([sanitizedError])
 
         if (dbError) {
-          console.error('Failed to store error in database:', dbError)
+          console.warn('Failed to store error in database (table may not exist):', dbError.message)
           // Continue execution - don't fail the request if DB storage fails
         }
       } catch (dbError) {
-        console.error('Database error while logging:', dbError)
-        // Continue execution
+        console.warn('Database error while logging (continuing silently):', dbError)
+        // Continue execution - this is expected if error_logs table doesn't exist
       }
     }
 

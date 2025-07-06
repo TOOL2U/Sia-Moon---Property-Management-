@@ -42,6 +42,9 @@ export default function TestSupabasePage() {
     setRunning(true)
     setTests([])
 
+    console.log('🧪 Starting Supabase tests (development bypass disabled)')
+    console.log('ℹ️ Note: Some tests may fail if not authenticated or if database is empty')
+
     // Test 1: Supabase Connection
     updateTest('Supabase Connection', 'pending', 'Testing connection...')
     try {
@@ -62,10 +65,11 @@ export default function TestSupabasePage() {
       updateTest('Authentication', 'error', 'Not authenticated')
     }
 
-    // Test 3: Database Service - Properties
+    // Test 3: Database Service - Properties (with test user ID)
     updateTest('Properties Service', 'pending', 'Testing properties service...')
     try {
-      const result = await SupabaseService.getAllProperties()
+      // Use a valid UUID format for test user ID since we're not authenticated
+      const result = await SupabaseService.getAllProperties('00000000-0000-0000-0000-000000000001')
       if (result.success) {
         updateTest('Properties Service', 'success', `Found ${result.data?.length || 0} properties`, result.data)
       } else {
@@ -75,10 +79,11 @@ export default function TestSupabasePage() {
       updateTest('Properties Service', 'error', error.message)
     }
 
-    // Test 4: Database Service - Bookings
+    // Test 4: Database Service - Bookings (with test user ID)
     updateTest('Bookings Service', 'pending', 'Testing bookings service...')
     try {
-      const result = await SupabaseService.getAllBookings()
+      // Use a valid UUID format for test user ID since we're not authenticated
+      const result = await SupabaseService.getAllBookings('00000000-0000-0000-0000-000000000001')
       if (result.success) {
         updateTest('Bookings Service', 'success', `Found ${result.data?.length || 0} bookings`, result.data)
       } else {
@@ -104,7 +109,8 @@ export default function TestSupabasePage() {
     // Test 6: Database Service - Reports
     updateTest('Reports Service', 'pending', 'Testing reports service...')
     try {
-      const result = await SupabaseService.getAllReports()
+      // Use a valid UUID format for test user ID since we're not authenticated
+      const result = await SupabaseService.getAllReports('00000000-0000-0000-0000-000000000001')
       if (result.success) {
         updateTest('Reports Service', 'success', `Found ${result.data?.length || 0} reports`, result.data)
       } else {
@@ -215,6 +221,14 @@ export default function TestSupabasePage() {
               <CardDescription>
                 Run comprehensive tests to verify Supabase integration
               </CardDescription>
+              {!user && (
+                <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-3 mt-2">
+                  <p className="text-yellow-400 text-sm">
+                    ⚠️ <strong>Note:</strong> Some tests may fail without authentication.
+                    Development bypass is now disabled, so real user authentication is required for user-specific data.
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-3">

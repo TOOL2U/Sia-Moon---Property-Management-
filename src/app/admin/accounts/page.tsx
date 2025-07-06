@@ -57,10 +57,14 @@ export default function AccountsPage() {
       }
 
       // Patch missing address property for backward compatibility
-      setAccounts((data || []).map((acc: any) => ({
-        ...acc,
-        address: acc.address ?? null
-      })))
+      setAccounts((data || []).map((acc) => {
+        // Type assertion to handle the mismatch between service return type and actual data
+        const fullAccount = acc as unknown as Profile;
+        return {
+          ...fullAccount,
+          address: fullAccount.address ?? null
+        };
+      }))
     } catch (error) {
       console.error('Error fetching accounts:', error)
       toast.error('Failed to load user accounts')

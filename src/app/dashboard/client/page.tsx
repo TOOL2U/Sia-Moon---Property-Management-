@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
-import SupabaseService from '@/lib/supabaseService'
+import SupabaseService, { DatabaseResponse } from '@/lib/supabaseService'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseChart'
+import { FullScreenChartModal, useFullScreenChart } from '@/components/dashboard/FullScreenChartModal'
 import {
   Wrench,
   Calendar,
@@ -36,6 +37,9 @@ export default function ClientDashboard() {
   const [selectedMetric, setSelectedMetric] = useState('revenue')
 
   const [showSettings, setShowSettings] = useState(false)
+
+  // Full-screen chart functionality
+  const { isModalOpen, isMobile, openChart, closeChart } = useFullScreenChart()
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -74,11 +78,11 @@ export default function ClientDashboard() {
       }
 
       // Fetch bookings for user's properties
-      const allBookingsPromises = userProperties.map((property: any) =>
+      const allBookingsPromises = userProperties.map((property: Property) =>
         SupabaseService.getBookingsByProperty(property.id)
       )
       const bookingResults = await Promise.all(allBookingsPromises)
-      const allBookings = bookingResults.reduce((acc: any[], result: any) => {
+      const allBookings = bookingResults.reduce((acc: Booking[], result: DatabaseResponse<Booking[]>) => {
         if (result.success && result.data) {
           acc.push(...result.data)
         }
@@ -87,11 +91,11 @@ export default function ClientDashboard() {
       setBookings(allBookings)
 
       // Fetch reports for user's properties
-      const allReportsPromises = userProperties.map((property: any) =>
+      const allReportsPromises = userProperties.map((property: Property) =>
         SupabaseService.getReportsByProperty(property.id)
       )
       const reportResults = await Promise.all(allReportsPromises)
-      const allReports = reportResults.reduce((acc: any[], result: any) => {
+      const allReports = reportResults.reduce((acc: Report[], result: DatabaseResponse<Report[]>) => {
         if (result.success && result.data) {
           acc.push(...result.data)
         }
@@ -100,11 +104,11 @@ export default function ClientDashboard() {
       setReports(allReports)
 
       // Fetch tasks for user's properties
-      const allTasksPromises = userProperties.map((property: any) =>
+      const allTasksPromises = userProperties.map((property: Property) =>
         SupabaseService.getTasksByProperty(property.id)
       )
       const taskResults = await Promise.all(allTasksPromises)
-      const allTasks = taskResults.reduce((acc: any[], result: any) => {
+      const allTasks = taskResults.reduce((acc: Task[], result: DatabaseResponse<Task[]>) => {
         if (result.success && result.data) {
           acc.push(...result.data)
         }
@@ -253,7 +257,23 @@ export default function ClientDashboard() {
   const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
                              process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
 
+  // Debug authentication state
+  console.log('🔍 Dashboard auth check:', {
+    authLoading,
+    loading,
+    user: !!user,
+    userEmail: user?.email,
+    userRole: user?.role,
+    isDevelopmentBypass
+  })
+
   if (authLoading || loading || (!user && !isDevelopmentBypass)) {
+    console.log('⏳ Dashboard showing loading screen:', {
+      authLoading,
+      loading,
+      hasUser: !!user,
+      isDevelopmentBypass
+    })
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -322,8 +342,17 @@ export default function ClientDashboard() {
               </div>
             </div>
             <div className="px-6 md:px-12 lg:px-16 py-8">
-              <div className="h-96 md:h-[32rem] lg:h-[38rem] w-full">
+              <div
+                className={`relative h-96 md:h-[32rem] lg:h-[38rem] w-full ${isMobile ? 'cursor-pointer hover:bg-neutral-900/50 transition-colors rounded-lg' : ''}`}
+                onClick={isMobile ? openChart : undefined}
+              >
                 <IncomeExpenseChart data={chartData} />
+                {/* Mobile tap indicator */}
+                {isMobile && (
+                  <div className="absolute top-4 right-4 bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border border-blue-500/30">
+                    📱 Tap to expand
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -747,6 +776,16 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
+
+      {/* Full-Screen Chart Modal for Mobile */}
+      <FullScreenChartModal
+        isOpen={isModalOpen}
+        onClose={closeChart}
+        title="Income & Expense Chart"
+        subtitle="Detailed view of your property performance"
+      >
+        <IncomeExpenseChart data={chartData} />
+      </FullScreenChartModal>
     </DashboardLayout>
   )
 }

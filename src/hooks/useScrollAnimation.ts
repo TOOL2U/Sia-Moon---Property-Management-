@@ -5,7 +5,7 @@ import { useInView } from 'framer-motion'
 
 interface UseScrollAnimationOptions {
   threshold?: number
-  rootMargin?: string
+  rootMargin?: string // Correct type for rootMargin
   triggerOnce?: boolean
 }
 
@@ -133,7 +133,7 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
 export function useFramerAnimation(options: {
   threshold?: number;
   triggerOnce?: boolean;
-  rootMargin?: string;
+  rootMargin?: string; // Correct type for rootMargin
 } = {}) {
   const {
     threshold = 0.15,
@@ -142,9 +142,9 @@ export function useFramerAnimation(options: {
   } = options;
 
   const ref = useRef(null);
-  const inView = useInView(ref, { 
-    once: triggerOnce, 
-    margin: rootMargin as any, // Type cast to resolve type mismatch
+  const inView = useInView(ref, {
+    once: triggerOnce,
+    margin: rootMargin, // Removed type casting
     amount: threshold
   });
 

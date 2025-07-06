@@ -16,26 +16,26 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react'
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   usePageLoadAnimation,
   heroAnimationVariants,
-  navbarAnimationVariants,
-  contentAnimationVariants,
-  scrollAnimationVariants,
-  staggerContainer,
-  viewportConfig,
-  ANIMATION_CONFIG
+  heroStaggerContainer,
 } from '@/hooks/usePageAnimations'
-import { useCountAnimation } from '@/hooks/useCountAnimation'
+import { CountUpNumber, PercentageCounter } from '@/components/animations/CountUpNumber'
 
 
 export default function Home() {
   const router = useRouter()
   const { user, profile, loading } = useAuth()
 
-  // Initialize page load animation system
-  const { isLoaded, animationPhase, skipAnimations } = usePageLoadAnimation()
+  // Initialize page load animation system with single trigger
+  const { animationPhase, skipAnimations } = usePageLoadAnimation()
+
+  // Debug animation state
+  useEffect(() => {
+    console.log('🎬 Animation state:', { animationPhase, skipAnimations })
+  }, [animationPhase, skipAnimations])
 
 
   // Redirect authenticated users to dashboard
@@ -82,12 +82,12 @@ export default function Home() {
 
       {/* Hero Section - Linear style with preserved background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Enhanced Cloudinary Hero Image Background with coordinated animation */}
+        {/* Enhanced Cloudinary Hero Image Background - Always visible with animation */}
         <motion.div
           className="absolute inset-0"
           variants={heroAnimationVariants.backgroundImage}
           initial="initial"
-          animate={isLoaded && !skipAnimations ? "animate" : "initial"}
+          animate={skipAnimations ? { opacity: 1, scale: 1 } : (animationPhase !== 'loading' ? "animate" : { opacity: 1, scale: 1 })}
         >
           <CloudinaryImage
             publicId="e36eb55c-9c04-4d51-b1aa-8ce78e49ec97_s5opqn"
@@ -110,22 +110,22 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
-              variants={staggerContainer}
+              variants={heroStaggerContainer}
               initial="initial"
-              animate={animationPhase === 'hero' || animationPhase === 'complete' ? "animate" : "initial"}
+              animate={skipAnimations ? "animate" : (animationPhase !== 'loading' ? "animate" : "animate")}
             >
 
-              {/* Main headline - Enhanced with staggered animation */}
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-none mb-6">
+              {/* Main headline - Slower, smoother staggered animation */}
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
                 <motion.span
-                  className="block bg-gradient-to-r from-white via-gray-300 via-80% to-transparent bg-clip-text text-transparent"
+                  className="block bg-gradient-to-r from-white/90 via-gray-500 via-80% to-transparent bg-clip-text text-transparent"
                   variants={heroAnimationVariants.headline}
                   custom={0}
                 >
                   A purpose-built platform
                 </motion.span>
                 <motion.span
-                  className="block bg-gradient-to-r from-white via-gray-300 via-80% to-transparent bg-clip-text text-transparent"
+                  className="block bg-gradient-to-r from-white/90 via-gray-500 via-80% to-transparent bg-clip-text text-transparent mb-3"
                   variants={heroAnimationVariants.headline}
                   custom={1}
                 >
@@ -133,51 +133,99 @@ export default function Home() {
                 </motion.span>
               </h1>
 
-              {/* Subtitle */}
-              <p className="text-l text-white-400 max-w-2xl mx-auto mb-1 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-300 via-80% to-transparent text-transparent">
-                Meet the system for modern software development.
-              </p>
-              <p className="text-l text-white-400 max-w-2xl mx-auto mb-10 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-300 via-80% to-transparent text-transparent">
-                Streamline bookings, maintenance, and reporting with a modern, automated workflow.
-              </p>
-
-              {/* CTA buttons - Linear style */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-16 justify-center">
-                <Link href="/auth/signup">
-                  <Button size="lg" className="  hover:bg-white/5 px-8 py-4 text-base border-white font-medium bg-gradient-to-r from-white  bg-clip-text text-transparent">
-                    Get started for free
-                    <ArrowRight className="ml-2 h-4 w-4 hover-white text-white" />
-                  </Button>
-                </Link>
-                <Link href="/signin">
-                  <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/5 px-8 py-4 text-base font-medium ">
-                    Sign in 
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Trusted By Section - Platform Integration Logos */}
-              <div className="mb-12">
-                <p className="text-xs uppercase tracking-wider text-gray-500 text-center mb-6 font-medium">
-                  Trusted by leading platforms
+              {/* Enhanced Subtitle with smoother blur-to-clear effect */}
+              <motion.div
+                variants={heroAnimationVariants.subtitle}
+                initial="initial"
+                animate={skipAnimations ? { opacity: 1, y: 0, filter: 'blur(0px)' } : (animationPhase !== 'loading' ? "animate" : { opacity: 1, y: 0, filter: 'blur(0px)' })}
+              >
+                <p className="text-l text-white-400 max-w-2xl mx-auto mb-1 mt-5 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-300 via-80% to-transparent text-transparent">
+                  Meet the system for modern software development.
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-                  {/* Airbnb Logo */}
-                  <div className="opacity-70 hover:opacity-100 transition-all duration-300 hover:scale-150">
+                <p className="text-l text-white-400 max-w-2xl mx-auto mb-10 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-400 via-80% to-transparent text-transparent">
+                  Streamline bookings, maintenance, and reporting with a modern, automated workflow.
+                </p>
+              </motion.div>
+
+              {/* CTA buttons - Slower, smoother coordinated sequence */}
+              <motion.div
+                className="flex flex-col sm:flex-row gap-4 mb-16 justify-center"
+                variants={heroStaggerContainer}
+                initial="initial"
+                animate={skipAnimations ? "animate" : (animationPhase !== 'loading' ? "animate" : "animate")}
+              >
+                <Link href="/auth/signup">
+                  <motion.div
+                    variants={heroAnimationVariants.ctaButton}
+                    custom={0}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button size="lg" className="bg-gradient-to-r bg-clip-text from-white via-50% to-transparent text-white hover:from-gray-10 hover:to-gray-10 px-8 py-4 text-base font-semibold shadow-2xl hover:shadow-white/20 transition-all duration-300 border border-white/50 backdrop-blur-sm hover:text-white">
+                      Launch Your Portfolio
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                </Link>
+                <Link href="/dashboard">
+                  <motion.div
+                    variants={heroAnimationVariants.ctaButton}
+                    custom={1}
+                    whileHover={{ scale: 1.02, x: 5 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 px-8 py-4 text-base font-medium backdrop-blur-sm hover:shadow-lg hover:shadow-white/10 transition-all duration-300 group">
+                      Sign In
+                    </Button>
+                  </motion.div>
+                </Link>
+              </motion.div>
+
+              {/* Trusted By Section - Always visible with optional animation */}
+              <motion.div
+                className="mb-12"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: skipAnimations ? 0 : 3.0, duration: skipAnimations ? 0.3 : 0.8 }}
+              >
+                <motion.p
+                  className="text-xs uppercase tracking-wider text-gray-500 text-center mb-6 font-medium"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: skipAnimations ? 0.1 : 3.2, duration: skipAnimations ? 0.3 : 0.6 }}
+                >
+                  Trusted by leading platforms
+                </motion.p>
+                <motion.div
+                  className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
+                  variants={heroStaggerContainer}
+                  initial="initial"
+                  animate="animate"
+                >
+                  {/* Airbnb Logo - Enhanced with staggered animation */}
+                  <motion.div
+                    className="opacity-70 hover:opacity-100 transition-all duration-300 hover:scale-105"
+                    variants={heroAnimationVariants.trustedLogo}
+                    custom={0}
+                  >
                     <svg className="h-6 w-auto text-white" viewBox="0 0 1000 1000" fill="currentColor">
                       <path d="M499.3 736.7c-51-64-81-120.1-91-168.1-10-39-6-70 11-93 18-27 45-40 80-40s62 13 80 40c17 23 21 54 11 93-10 48-40 104.1-91 168.1-5 6-10 12-15 18-5-6-10-12-15-18zm362.2 43c-7 47-39 86-83 105-85 37-169.1-31-241.1-102 119.1-149.1 141.1-265.1 119.1-351.1-17-65-61-117-122-148C484.3 258.6 437.3 254.6 392.3 268.6c-61 31-105 83-122 148-22 86 0 202 119.1 351.1-72 71-156.1 139-241.1 102-44-19-76-58-83-105-7-52 14-108 58-162 11-15 25-30 41-45l41-33c143-109 263-250 263-250s120 141 263 250l41 33c16 15 30 30 41 45 44 54 65 110 58 162z"/>
                     </svg>
-                  </div>
+                  </motion.div>
 
-                  {/* Booking.com Logo */}
-                  <div className="opacity-70 hover:opacity-100 transition-all duration-300 hover:scale-105">
+                  {/* Booking.com Logo - Enhanced with staggered animation */}
+                  <motion.div
+                    className="opacity-70 hover:opacity-100 transition-all duration-300 hover:scale-105"
+                    variants={heroAnimationVariants.trustedLogo}
+                    custom={1}
+                  >
                     <svg className="h-6 w-auto text-gray-400" viewBox="0 0 200 50" fill="currentColor">
                       <path d="M20 10h15c8.3 0 15 6.7 15 15s-6.7 15-15 15H20V10zm0 25h15c2.8 0 5-2.2 5-5s-2.2-5-5-5H20v10zm45-25h15c8.3 0 15 6.7 15 15s-6.7 15-15 15H65V10zm0 25h15c2.8 0 5-2.2 5-5s-2.2-5-5-5H65v10zm45-25h15c8.3 0 15 6.7 15 15s-6.7 15-15 15h-15V10zm0 25h15c2.8 0 5-2.2 5-5s-2.2-5-5-5h-15v10zm45-25h15c8.3 0 15 6.7 15 15s-6.7 15-15 15h-15V10zm0 25h15c2.8 0 5-2.2 5-5s-2.2-5-5-5h-15v10z"/>
                       <text x="20" y="45" fontSize="8" fill="currentColor">booking.com</text>
                     </svg>
-                  </div>
-                </div>
-              </div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
 
               {/* Trust indicators - Security & Support */}
               <div className="flex flex-wrap items-center justify-center gap-8 text-xs text-gray-500">
@@ -350,14 +398,11 @@ export default function Home() {
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <motion.div
+                <CountUpNumber
+                  end={500}
+                  suffix="+"
                   className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent"
-                  initial={{ scale: 1 }}
-                  whileInView={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1.2, delay: 0.3, times: [0, 0.5, 1] }}
-                >
-                  500+
-                </motion.div>
+                />
                 <div className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Properties managed</div>
               </motion.div>
             </motion.div>
@@ -375,14 +420,10 @@ export default function Home() {
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <motion.div
+                <PercentageCounter
+                  end={99.9}
                   className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent"
-                  initial={{ scale: 1 }}
-                  whileInView={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1.2, delay: 0.4, times: [0, 0.5, 1] }}
-                >
-                  99.9%
-                </motion.div>
+                />
                 <div className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">Uptime guarantee</div>
               </motion.div>
             </motion.div>
@@ -622,7 +663,7 @@ export default function Home() {
                   transition={{ duration: 0.2 }}
                 >
                   <Button size="lg" className="bg-gradient-to-r from-white via-white/90 to-gray-100 text-black hover:bg-white/90 px-8 py-4 text-base font-medium shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] transition-all duration-300">
-                    Start free trial
+                    Get Started
                     <motion.div
                       animate={{ x: [0, 4, 0] }}
                       transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop", ease: "easeInOut", repeatDelay: 1 }}
@@ -636,8 +677,8 @@ export default function Home() {
                 whileHover={{ x: 5 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link href="/developers" className="inline-flex items-center text-gray-400 hover:text-white transition-all duration-300 hover:bg-white/5 px-4 py-3 rounded-lg group">
-                  Learn more
+                <Link href="/contactus" className="inline-flex items-center text-gray-400 hover:text-white transition-all duration-300 hover:bg-white/5 px-4 py-3 rounded-lg group">
+                  Contact Us
                   <motion.div
                     className="ml-1"
                     animate={{ x: [0, 2, 0] }}

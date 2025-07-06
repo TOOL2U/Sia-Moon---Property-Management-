@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -11,7 +10,8 @@ import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 
 export default function SignUpPage() {
-  const router = useRouter()
+  console.log('📄 SignUp page component loaded')
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,49 +23,35 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const { signUp } = useAuth()
+  const auth = useAuth()
+  const { signUp } = auth
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    console.log('🔍 Signup page auth check:', {
+      loading: auth.loading,
+      user: !!auth.user,
+      profile: !!auth.profile,
+      userEmail: auth.user?.email,
+      profileRole: auth.profile?.role
+    })
+
+    if (!auth.loading && auth.user && auth.profile) {
+      console.log('🔄 User already authenticated, redirecting to dashboard...')
+      console.log('👤 User:', auth.user.email, 'Profile:', auth.profile.role)
+      console.log('🚀 Executing redirect via window.location.href')
+      window.location.href = '/dashboard/client'
+    } else if (!auth.loading) {
+      console.log('👤 No authenticated user found, staying on signup page')
+    } else {
+      console.log('⏳ Still loading auth state...')
+    }
+  }, [auth.loading, auth.user, auth.profile])
 
   // Email validation
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
-  }
-
-  // Strong password validation
-  const validatePassword = (password: string) => {
-    const minLength = password.length >= 12
-    const hasUpperCase = /[A-Z]/.test(password)
-    const hasLowerCase = /[a-z]/.test(password)
-    const hasNumbers = /\d/.test(password)
-    const hasSpecialChars = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
-    const noCommonPatterns = !/^(password|123456|qwerty|admin|user|guest|villa|property)/i.test(password)
-    const noRepeatingChars = !/(.)\1{3,}/.test(password)
-    const noSequential = !/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|123|234|345|456|567|678|789)/i.test(password)
-
-    return {
-      minLength,
-      hasUpperCase,
-      hasLowerCase,
-      hasNumbers,
-      hasSpecialChars,
-      noCommonPatterns,
-      noRepeatingChars,
-      noSequential,
-      isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers &&
-               hasSpecialChars && noCommonPatterns && noRepeatingChars && noSequential
-    }
-  }
-
-  // Password strength indicator
-  const getPasswordStrength = (password: string) => {
-    const validation = validatePassword(password)
-    const score = Object.values(validation).filter(v => v === true).length - 1 // Exclude isValid
-
-    if (score < 4) return { strength: 'Very Weak', color: 'red', percentage: 20 }
-    if (score < 6) return { strength: 'Weak', color: 'orange', percentage: 40 }
-    if (score < 7) return { strength: 'Medium', color: 'yellow', percentage: 60 }
-    if (score < 8) return { strength: 'Strong', color: 'green', percentage: 80 }
-    return { strength: 'Very Strong', color: 'green', percentage: 100 }
   }
 
   // Form validation
@@ -87,21 +73,6 @@ export default function SignUpPage() {
     // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else {
-      const passwordValidation = validatePassword(formData.password)
-      if (!passwordValidation.isValid) {
-        const requirements = []
-        if (!passwordValidation.minLength) requirements.push('at least 12 characters')
-        if (!passwordValidation.hasUpperCase) requirements.push('uppercase letter')
-        if (!passwordValidation.hasLowerCase) requirements.push('lowercase letter')
-        if (!passwordValidation.hasNumbers) requirements.push('number')
-        if (!passwordValidation.hasSpecialChars) requirements.push('special character')
-        if (!passwordValidation.noCommonPatterns) requirements.push('avoid common patterns')
-        if (!passwordValidation.noRepeatingChars) requirements.push('avoid repeating characters')
-        if (!passwordValidation.noSequential) requirements.push('avoid sequential characters')
-
-        newErrors.password = `Password must include: ${requirements.join(', ')}`
-      }
     }
 
     // Confirm password validation
@@ -145,13 +116,15 @@ export default function SignUpPage() {
       })
 
       if (success) {
-        console.log('✅ Signup successful, email verification required')
-        toast.success('Account created! Please check your email to verify your account before signing in.')
+        console.log('✅ Signup successful')
+        toast.success('Account created successfully! Welcome to Sia Moon!')
 
-        // Redirect to login page with verification message
-        setTimeout(() => {
-          router.push('/auth/login?message=verify-email')
-        }, 2000)
+        // Redirect to client dashboard immediately
+        console.log('🔄 Redirecting to dashboard immediately...')
+
+        // Use window.location for immediate redirect
+        console.log('🚀 Using window.location.href for immediate redirect')
+        window.location.href = '/dashboard/client'
       } else {
         console.log('❌ Signup failed')
         toast.error('Failed to create account. Please try again.')
@@ -245,7 +218,7 @@ export default function SignUpPage() {
                   <option value="staff">Staff Member</option>
                 </select>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Choose "Property Owner" if you want to list and manage properties
+                  Choose &quot;Property Owner&quot; if you want to list and manage properties
                 </p>
               </div>
 
@@ -278,21 +251,6 @@ export default function SignUpPage() {
                   <div className="flex items-center mt-1 text-red-400 text-sm">
                     <AlertCircle className="h-4 w-4 mr-1" />
                     {errors.password}
-                  </div>
-                )}
-                {formData.password && !errors.password && (
-                  <div className="mt-2 space-y-1">
-                    {(() => {
-                      const validation = validatePassword(formData.password)
-                      return (
-                        <div className="text-xs space-y-1">
-                          <div className={`flex items-center ${validation.minLength ? 'text-green-400' : 'text-neutral-400'}`}>
-                            {validation.minLength ? <CheckCircle className="h-3 w-3 mr-1" /> : <div className="h-3 w-3 mr-1 rounded-full border border-neutral-600" />}
-                            At least 6 characters
-                          </div>
-                        </div>
-                      )
-                    })()}
                   </div>
                 )}
               </div>
@@ -360,6 +318,24 @@ export default function SignUpPage() {
                 </Link>
               </p>
             </div>
+
+            {/* Debug: Manual redirect button */}
+            {auth.user && (
+              <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+                <p className="text-yellow-400 text-sm mb-2">
+                  🔍 Debug: You are already authenticated as {auth.user.email}
+                </p>
+                <Button
+                  onClick={() => {
+                    console.log('🚀 Manual redirect button clicked')
+                    window.location.href = '/dashboard/client'
+                  }}
+                  className="w-full bg-yellow-600 hover:bg-yellow-700"
+                >
+                  Go to Dashboard Manually
+                </Button>
+              </div>
+            )}
 
             {/* Back to Home */}
             <div className="mt-4 text-center">

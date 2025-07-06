@@ -58,7 +58,7 @@ export interface Booking {
   updated_at: string;
 }
 
-// Task interface for maintenance and cleaning tasks
+// Task interface for maintenance and cleaning tasks (matches database schema)
 export interface Task {
   id: string;
   property_id: string | null;
@@ -70,9 +70,8 @@ export interface Task {
   assigned_to?: string | null;
   due_date?: string | null;
   completed_at?: string | null;
-  estimated_duration?: number | null;
-  actual_duration?: number | null;
-  cost?: number | null;
+  cost: number;
+  currency: string;
   notes?: string | null;
   created_at: string;
   updated_at: string;
