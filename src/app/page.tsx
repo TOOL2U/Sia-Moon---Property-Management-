@@ -16,12 +16,26 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react'
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  usePageLoadAnimation,
+  heroAnimationVariants,
+  navbarAnimationVariants,
+  contentAnimationVariants,
+  scrollAnimationVariants,
+  staggerContainer,
+  viewportConfig,
+  ANIMATION_CONFIG
+} from '@/hooks/usePageAnimations'
+import { useCountAnimation } from '@/hooks/useCountAnimation'
 
 
 export default function Home() {
   const router = useRouter()
   const { user, profile, loading } = useAuth()
+
+  // Initialize page load animation system
+  const { isLoaded, animationPhase, skipAnimations } = usePageLoadAnimation()
 
 
   // Redirect authenticated users to dashboard
@@ -68,12 +82,12 @@ export default function Home() {
 
       {/* Hero Section - Linear style with preserved background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Preserved Cloudinary Hero Image Background */}
+        {/* Enhanced Cloudinary Hero Image Background with coordinated animation */}
         <motion.div
           className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2, ease: "easeOut" }}
+          variants={heroAnimationVariants.backgroundImage}
+          initial="initial"
+          animate={isLoaded && !skipAnimations ? "animate" : "initial"}
         >
           <CloudinaryImage
             publicId="e36eb55c-9c04-4d51-b1aa-8ce78e49ec97_s5opqn"
@@ -96,20 +110,27 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              variants={staggerContainer}
+              initial="initial"
+              animate={animationPhase === 'hero' || animationPhase === 'complete' ? "animate" : "initial"}
             >
-            
-              {/* Main headline - Linear typography with customizable gradient */}
+
+              {/* Main headline - Enhanced with staggered animation */}
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-none mb-6">
-                <span className="bg-gradient-to-r from-white via-gray-300 via-80% to-transparent bg-clip-text text-transparent">
-                  A purpose-built platform 
-                </span>
-                <br />
-              <span className="bg-gradient-to-r from-white via-gray-300 via-80% to-transparent bg-clip-text text-transparent">
+                <motion.span
+                  className="block bg-gradient-to-r from-white via-gray-300 via-80% to-transparent bg-clip-text text-transparent"
+                  variants={heroAnimationVariants.headline}
+                  custom={0}
+                >
+                  A purpose-built platform
+                </motion.span>
+                <motion.span
+                  className="block bg-gradient-to-r from-white via-gray-300 via-80% to-transparent bg-clip-text text-transparent"
+                  variants={heroAnimationVariants.headline}
+                  custom={1}
+                >
                   for managing properties
-                </span>
+                </motion.span>
               </h1>
 
               {/* Subtitle */}
