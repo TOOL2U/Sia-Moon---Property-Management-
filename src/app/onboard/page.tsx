@@ -9,10 +9,11 @@ import { Checkbox } from '@/components/ui/Checkbox'
 import { FileUpload } from '@/components/ui/FileUpload'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
-import { createClient } from '@/lib/supabase/client'
+// TODO: Replace with new database service when implemented
+// import { createClient } from '@/lib/newDatabase/client'
 import { validateVillaOnboarding, validateField } from '@/lib/validations/villa-onboarding'
-import SupabaseService from '@/lib/supabaseService'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
+// import DatabaseService from '@/lib/newDatabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
 import Link from 'next/link'
@@ -90,7 +91,7 @@ interface VillaOnboardingData {
 }
 
 export default function OnboardYourVilla() {
-  const { profile: user } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
@@ -197,8 +198,13 @@ export default function OnboardYourVilla() {
 
     try {
       setLoadingExisting(true)
-      const result = await SupabaseService.getVillaOnboarding(id)
-      const { data, error } = { data: result.data, error: result.success ? null : result.error }
+      // TODO: Replace with new database service when implemented
+      console.log('🔄 Loading existing villa data (development mode - not implemented)')
+
+      // For now, just show a message that editing is not available in development mode
+      toast.error('Editing existing villa data is not available in development mode')
+      router.push('/dashboard/client/onboarding')
+      return
 
       if (error) {
         toast.error('Failed to load villa data for editing')
@@ -306,15 +312,9 @@ export default function OnboardYourVilla() {
     }
   }
 
-  // Only initialize Supabase if not in bypass mode and env vars are available
-  const supabase = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? null : (() => {
-    try {
-      return createClient()
-    } catch (error) {
-      console.warn('Supabase not configured, running in development mode')
-      return null
-    }
-  })()
+  // TODO: Replace with new database service when implemented
+  // For now, running in development mode without database storage
+  const supabase = null
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -485,7 +485,7 @@ export default function OnboardYourVilla() {
     return true
   }
 
-  const uploadFilesToSupabase = async () => {
+  const uploadFiles = async () => {
     const uploadedUrls: {[key: string]: string} = {}
     const filesToUpload = Object.entries(uploadedFiles).filter(([, files]) => files.length > 0)
 
@@ -553,11 +553,11 @@ export default function OnboardYourVilla() {
 
     try {
       // Upload files first
-      const uploadedUrls = await uploadFilesToSupabase()
+      const uploadedUrls = await uploadFiles()
 
       // Prepare data for insertion
       const villaData = {
-        user_id: user.id,
+        user_id: user?.id || 'dev-user',
         // Owner Details
         owner_full_name: formData.ownerFullName,
         owner_nationality: formData.ownerNationality,
@@ -637,53 +637,33 @@ export default function OnboardYourVilla() {
         status: 'pending'
       }
 
-      // Create or update villa onboarding data
-      let savedVilla, dbError
+      // TODO: Replace with new database service when implemented
+      // For now, just send to Make.com webhook for processing
+      console.log('🔄 Submitting villa onboarding data via webhook (development mode)')
 
       if (isEditing && editId) {
-        // Update existing onboarding
-        const updateResult = await SupabaseService.updateVillaOnboarding(editId, villaData)
-        savedVilla = updateResult.data
-        dbError = updateResult.error
-
-        if (!dbError) {
-          console.log('✅ Villa onboarding updated successfully:', editId)
-          toast.success('Villa onboarding updated successfully! Our team will review your changes.')
-        }
-      } else {
-        // Create new onboarding
-        const createResult = await SupabaseService.createVillaOnboarding(villaData)
-        savedVilla = createResult.data
-        dbError = createResult.error
-
-        if (!dbError) {
-          console.log('✅ Villa onboarding created successfully:', savedVilla?.id)
-          toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
-        }
+        // Editing not supported in development mode
+        toast.error('Editing existing villa data is not available in development mode')
+        return
       }
 
-      if (dbError) {
-        throw new Error(dbError.message)
-      }
-
-      // Send basic information to Make.com for confirmation email (only for new submissions)
-      if (!isEditing) {
-        try {
-          const makeData: OnboardingSubmissionData = {
-            name: formData.ownerFullName,
-            email: formData.ownerEmail,
-            phone: formData.ownerContactNumber,
-            property_address: formData.propertyAddress,
-            notes: `Property: ${formData.propertyName}${formData.bedrooms ? ` | Bedrooms: ${formData.bedrooms}` : ''}${formData.bathrooms ? ` | Bathrooms: ${formData.bathrooms}` : ''}`
-          }
-
-          await submitToMake(makeData)
-          console.log('✅ Basic information sent to Make.com for confirmation email')
-        } catch (makeError) {
-          // Don't fail the entire submission if Make.com webhook fails
-          console.warn('⚠️ Failed to send confirmation email via Make.com:', makeError)
-          toast.error('Villa submitted successfully, but confirmation email may be delayed.')
+      // Send villa onboarding data to Make.com for processing
+      try {
+        const makeData: OnboardingSubmissionData = {
+          name: formData.ownerFullName,
+          email: formData.ownerEmail,
+          phone: formData.ownerContactNumber,
+          property_address: formData.propertyAddress,
+          notes: `Property: ${formData.propertyName}${formData.bedrooms ? ` | Bedrooms: ${formData.bedrooms}` : ''}${formData.bathrooms ? ` | Bathrooms: ${formData.bathrooms}` : ''}`
         }
+
+        await submitToMake(makeData)
+        console.log('✅ Basic information sent to Make.com for confirmation email')
+        toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
+      } catch (makeError) {
+        // Don't fail the entire submission if Make.com webhook fails
+        console.warn('⚠️ Failed to send confirmation email via Make.com:', makeError)
+        toast.error('Villa submitted successfully, but confirmation email may be delayed.')
       }
 
       setSubmitted(true)

@@ -7,6 +7,7 @@ import { Menu, X, ChevronDown, LogOut, User, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/utils/cn'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface NavLinkProps {
   href: string
@@ -276,8 +277,7 @@ function MobileDrawer({ isOpen, onClose, navigationLinks, user, onSignOut }: Mob
 }
 
 export function Navbar() {
-  // TODO: Replace with new auth system when implemented
-  const user = null // Temporarily set to null since auth is removed
+  const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const router = useRouter()
@@ -294,9 +294,8 @@ export function Navbar() {
   const handleSignOut = async () => {
     try {
       console.log('🔄 Navbar: Starting sign out...')
-      // TODO: Implement sign out when new auth system is ready
+      await signOut()
       console.log('✅ Navbar: Sign out completed')
-      router.push('/') // Redirect to homepage after sign out
     } catch (error) {
       console.error('❌ Navbar: Sign out error:', error)
     }
@@ -306,7 +305,7 @@ export function Navbar() {
     { href: `/dashboard/client`, label: 'Dashboard' }, // Default to client dashboard
     { href: '/properties', label: 'Properties' },
     { href: '/bookings', label: 'Bookings' },
-    { href: '/onboard', label: 'Onbourding Form' },
+    { href: '/onboard', label: 'Onboarding Form' },
     // TODO: Add role-based navigation when auth is implemented
     { href: 'https://wa.me/', label: 'Contact Us' }, // Added Contact Us tab linking to WhatsApp
   ] : []

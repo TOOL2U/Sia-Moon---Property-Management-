@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import SupabaseService from '@/lib/supabaseService'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
+// TODO: Replace with new database service when implemented
+// import DatabaseService from '@/lib/newDatabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -25,53 +26,56 @@ export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const { profile: user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        console.log('🔍 Fetching properties from Supabase...')
+        console.log('🔍 Loading properties (development mode with mock data)')
+        setLoading(true)
 
-        // Development mode: Use demo user ID if no authenticated user
-        const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
-                                   process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
+        // TODO: Replace with real data loading when new database service is implemented
+        // Simulate loading delay
+        await new Promise(resolve => setTimeout(resolve, 800))
 
-        let userId = user?.id
-        if (!userId && isDevelopmentBypass) {
-          console.log('🔧 Development mode: Using demo user ID')
-          userId = 'demo-user-id' // Use a consistent demo user ID
-        }
+        // Mock properties data
+        const mockProperties: Property[] = [
+          {
+            id: 'prop-1',
+            name: 'Sunset Villa Bali',
+            description: 'Luxurious 4-bedroom villa with stunning ocean views and private pool. Perfect for families and groups seeking a premium Bali experience.',
+            location: 'Seminyak, Bali, Indonesia',
+            owner_id: user?.id || 'dev-user',
+            status: 'active',
+            created_at: '2024-01-15T00:00:00Z',
+            updated_at: '2024-07-01T00:00:00Z'
+          },
+          {
+            id: 'prop-2',
+            name: 'Ocean View Retreat',
+            description: 'Modern 3-bedroom beachfront property with direct beach access. Ideal for couples and small families.',
+            location: 'Canggu, Bali, Indonesia',
+            owner_id: user?.id || 'dev-user',
+            status: 'active',
+            created_at: '2024-02-20T00:00:00Z',
+            updated_at: '2024-06-15T00:00:00Z'
+          },
+          {
+            id: 'prop-3',
+            name: 'Mountain View Lodge',
+            description: 'Peaceful 2-bedroom villa nestled in the hills with panoramic mountain views and tropical gardens.',
+            location: 'Ubud, Bali, Indonesia',
+            owner_id: user?.id || 'dev-user',
+            status: 'active',
+            created_at: '2024-03-10T00:00:00Z',
+            updated_at: '2024-05-20T00:00:00Z'
+          }
+        ]
 
-        // Only fetch properties owned by the current user
-        if (!userId) {
-          console.error('❌ No user ID available')
-          return
-        }
-
-        const propertiesResult = await SupabaseService.getPropertiesByOwner(userId)
-
-        if (!propertiesResult.success) {
-          console.error('❌ Error fetching properties:', propertiesResult.error)
-          toast.error('Failed to load properties')
-          return
-        }
-
-        // Map the Supabase data to match our Property interface
-        const mappedProperties = (propertiesResult.data || []).map(property => ({
-          id: property.id,
-          name: property.name,
-          description: property.description || '',
-          location: property.address || `${property.city || ''}, ${property.country || ''}`.trim(),
-          owner_id: property.owner_id,
-          status: 'active' as const,
-          created_at: property.created_at,
-          updated_at: property.updated_at
-        }))
-
-        console.log('✅ Properties loaded:', mappedProperties.length)
-        setProperties(mappedProperties)
+        console.log('✅ Properties loaded:', mockProperties.length)
+        setProperties(mockProperties)
       } catch (error) {
-        console.error('❌ Error fetching properties:', error)
+        console.error('❌ Error loading properties:', error)
         toast.error('Failed to load properties')
       } finally {
         setLoading(false)

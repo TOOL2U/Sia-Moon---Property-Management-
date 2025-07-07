@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+// TODO: Replace with new database service when implemented
+// import { createClient } from '@/lib/newDatabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -39,42 +40,88 @@ export default function EditPropertyPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const supabase = createClient()
+  // TODO: Replace with new database service when implemented
+  // const supabase = createClient()
 
   const propertyId = params.id as string
-
-  const fetchProperty = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`
-          *,
-          users!properties_client_id_fkey(name, email)
-        `)
-        .eq('id', propertyId)
-        .single()
-
-      if (error) throw error
-
-      setProperty(data)
-      setFormData({
-        name: data.name,
-        address: data.address
-      })
-    } catch (error) {
-      console.error('Error fetching property:', error)
-      toast.error('Failed to load property')
-      router.push('/properties')
-    } finally {
-      setLoading(false)
-    }
-  }, [propertyId, supabase, router])
 
   useEffect(() => {
     if (propertyId) {
       fetchProperty()
     }
-  }, [propertyId, fetchProperty])
+  }, [propertyId])
+
+  const fetchProperty = async () => {
+    try {
+      console.log('🔍 Loading property for editing (development mode with mock data)')
+
+      // TODO: Replace with real data loading when new database service is implemented
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Mock property data based on ID
+      const mockProperties: { [key: string]: Property } = {
+        'prop-1': {
+          id: 'prop-1',
+          name: 'Sunset Villa Bali',
+          address: 'Jl. Sunset Road, Seminyak, Bali, Indonesia',
+          client_id: 'dev-user',
+          created_at: '2024-01-15T00:00:00Z',
+          updated_at: '2024-07-01T00:00:00Z',
+          users: {
+            name: 'John Smith',
+            email: 'john@example.com'
+          }
+        },
+        'prop-2': {
+          id: 'prop-2',
+          name: 'Ocean View Retreat',
+          address: 'Jl. Pantai Berawa, Canggu, Bali, Indonesia',
+          client_id: 'dev-user',
+          created_at: '2024-02-20T00:00:00Z',
+          updated_at: '2024-06-15T00:00:00Z',
+          users: {
+            name: 'John Smith',
+            email: 'john@example.com'
+          }
+        },
+        'prop-3': {
+          id: 'prop-3',
+          name: 'Mountain View Lodge',
+          address: 'Jl. Monkey Forest Road, Ubud, Bali, Indonesia',
+          client_id: 'dev-user',
+          created_at: '2024-03-10T00:00:00Z',
+          updated_at: '2024-05-20T00:00:00Z',
+          users: {
+            name: 'John Smith',
+            email: 'john@example.com'
+          }
+        }
+      }
+
+      const mockProperty = mockProperties[propertyId]
+
+      if (!mockProperty) {
+        toast.error('Property not found')
+        router.push('/properties')
+        return
+      }
+
+      setProperty(mockProperty)
+      setFormData({
+        name: mockProperty.name,
+        address: mockProperty.address
+      })
+
+      console.log('✅ Property loaded for editing:', mockProperty.name)
+    } catch (error) {
+      console.error('❌ Error loading property:', error)
+      toast.error('Failed to load property')
+      router.push('/properties')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -108,25 +155,29 @@ export default function EditPropertyPage() {
     setError('')
 
     try {
-      const { error: updateError } = await supabase
-        .from('properties')
-        .update({
+      console.log('🔄 Updating property (development mode - mock update)')
+
+      // TODO: Replace with real database update when new database service is implemented
+      // Simulate update delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Update local state to reflect changes
+      if (property) {
+        const updatedProperty = {
+          ...property,
           name: formData.name,
           address: formData.address,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', propertyId)
-        .select()
-
-      if (updateError) {
-        throw updateError
+        }
+        setProperty(updatedProperty)
       }
 
+      console.log('✅ Property updated successfully (mock):', formData.name)
       toast.success('Property updated successfully!')
       router.push(`/properties/${propertyId}`)
 
     } catch (err: unknown) {
-      console.error('Error updating property:', err)
+      console.error('❌ Error updating property:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to update property. Please try again.'
       setError(errorMessage)
       toast.error(errorMessage)

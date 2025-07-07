@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import SupabaseService from '@/lib/supabaseService'
+// TODO: Replace with new database service when implemented
+// import DatabaseService from '@/lib/newDatabaseService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building } from 'lucide-react'
@@ -63,27 +64,59 @@ export default function PropertyDetailsPage() {
     try {
       console.log('🔍 Fetching property details from local database...')
 
-      // Fetch property details
-      const { data: propertyData, error: propertyError } = await SupabaseService.getProperty(propertyId)
+      // TODO: Replace with real data loading when new database service is implemented
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 800))
 
-      if (propertyError) {
-        throw new Error(`Failed to fetch property: ${propertyError.message}`)
+      // Mock property data based on ID
+      const mockProperties: { [key: string]: Property } = {
+        'prop-1': {
+          id: 'prop-1',
+          name: 'Sunset Villa Bali',
+          address: 'Jl. Sunset Road, Seminyak, Bali, Indonesia',
+          created_at: '2024-01-15T00:00:00Z',
+          updated_at: '2024-07-01T00:00:00Z',
+          users: {
+            name: 'John Smith',
+            email: 'john@example.com',
+            role: 'client'
+          }
+        },
+        'prop-2': {
+          id: 'prop-2',
+          name: 'Ocean View Retreat',
+          address: 'Jl. Pantai Berawa, Canggu, Bali, Indonesia',
+          created_at: '2024-02-20T00:00:00Z',
+          updated_at: '2024-06-15T00:00:00Z',
+          users: {
+            name: 'John Smith',
+            email: 'john@example.com',
+            role: 'client'
+          }
+        },
+        'prop-3': {
+          id: 'prop-3',
+          name: 'Mountain View Lodge',
+          address: 'Jl. Monkey Forest Road, Ubud, Bali, Indonesia',
+          created_at: '2024-03-10T00:00:00Z',
+          updated_at: '2024-05-20T00:00:00Z',
+          users: {
+            name: 'John Smith',
+            email: 'john@example.com',
+            role: 'client'
+          }
+        }
       }
 
-      if (!propertyData) {
+      const mockProperty = mockProperties[propertyId]
+
+      if (!mockProperty) {
         throw new Error('Property not found')
       }
 
-      // Fetch owner details
-      const { data: ownerData } = await SupabaseService.getUser(propertyData.owner_id)
+      setProperty(mockProperty)
 
-      setProperty({
-        ...propertyData,
-        users: ownerData ? { name: ownerData.name, email: ownerData.email, role: ownerData.role } : undefined
-      })
-
-      // For now, set empty arrays for bookings and tasks since we don't have those services yet
-      // TODO: Implement booking and task services
+      // Set empty arrays for bookings and tasks (mock data)
       setBookings([])
       setTasks([])
 
@@ -104,15 +137,13 @@ export default function PropertyDetailsPage() {
 
     setDeleting(true)
     try {
-      console.log('🗑️ Deleting property from local database...')
+      console.log('🗑️ Deleting property (development mode - mock delete)')
 
-      const { error } = await SupabaseService.deleteProperty(propertyId)
+      // TODO: Replace with real database delete when new database service is implemented
+      // Simulate delete delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-      if (error) {
-        throw new Error(`Failed to delete property: ${error.message}`)
-      }
-
-      console.log('✅ Property deleted successfully')
+      console.log('✅ Property deleted successfully (mock)')
       toast.success('Property deleted successfully')
       router.push('/properties')
     } catch (error) {

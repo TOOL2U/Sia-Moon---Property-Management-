@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import SupabaseService from '@/lib/supabaseService'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
+// TODO: Replace with new database service when implemented
+// import DatabaseService from '@/lib/newDatabaseService'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -25,7 +26,7 @@ export default function AddPropertyPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const { profile: user } = useAuth()
+  const { user } = useAuth()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -66,23 +67,23 @@ export default function AddPropertyPage() {
         throw new Error('You must be logged in to create a property')
       }
 
-      // Create property using Supabase
-      const { data, error: insertError } = await SupabaseService.createProperty({
+      console.log('🔄 Creating property (development mode - mock creation)')
+
+      // TODO: Replace with real database creation when new database service is implemented
+      // Simulate creation delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Mock property creation
+      const mockProperty = {
+        id: `prop-${Date.now()}`,
         name: formData.name,
         address: formData.address,
-        owner_id: user.id
-      })
-
-      console.log('✅ Property created:', data)
-
-      if (insertError) {
-        throw new Error(`Database error: ${insertError}`)
+        owner_id: user.id || 'dev-user',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
 
-      if (!data) {
-        throw new Error('Failed to create property')
-      }
-
+      console.log('✅ Property created (mock):', mockProperty)
       toast.success('Property added successfully!')
       setSubmitted(true)
 
@@ -100,7 +101,7 @@ export default function AddPropertyPage() {
         errorMessage = err.message
       } else if (typeof err === 'object' && err !== null) {
         // Handle database error objects
-        const dbError = err as { message?: string }
+        const dbError = err as any
         if (dbError.message) {
           errorMessage = dbError.message
         } else {
