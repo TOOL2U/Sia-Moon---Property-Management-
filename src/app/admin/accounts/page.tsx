@@ -2,9 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
-import SupabaseService from '@/lib/supabaseService'
-import type { Profile } from '@/types/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+// TODO: Replace with Firebase service
+// import FirebaseService from '@/lib/firebaseService'
+
+interface Profile {
+  id: string
+  email: string
+  full_name: string
+  role: 'client' | 'staff' | 'admin'
+  created_at: string
+  updated_at?: string
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -25,7 +34,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function AccountsPage() {
-  const { profile: user } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const [accounts, setAccounts] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,23 +57,31 @@ export default function AccountsPage() {
   const fetchAccounts = async () => {
     try {
       setLoading(true)
-      const { data, error } = await SupabaseService.getAllUsers()
-      
-      if (error) {
-        console.error('Error fetching accounts:', error)
-        toast.error('Failed to load user accounts')
-        return
-      }
+      // TODO: Replace with Firebase Firestore
+      // const usersSnapshot = await getDocs(collection(db, 'users'))
+      // const data = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-      // Patch missing address property for backward compatibility
-      setAccounts((data || []).map((acc) => {
-        // Type assertion to handle the mismatch between service return type and actual data
-        const fullAccount = acc as unknown as Profile;
-        return {
-          ...fullAccount,
-          address: fullAccount.address ?? null
-        };
-      }))
+      console.log('⚠️ Account fetching not implemented - Firebase integration needed')
+
+      // Placeholder data for development
+      const mockAccounts: Profile[] = [
+        {
+          id: '1',
+          email: 'admin@example.com',
+          full_name: 'Admin User',
+          role: 'admin',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          email: 'client@example.com',
+          full_name: 'Client User',
+          role: 'client',
+          created_at: new Date().toISOString()
+        }
+      ]
+
+      setAccounts(mockAccounts)
     } catch (error) {
       console.error('Error fetching accounts:', error)
       toast.error('Failed to load user accounts')
@@ -295,7 +312,7 @@ export default function AccountsPage() {
                       <div>
                         <label className="text-xs text-neutral-400 uppercase tracking-wide">Updated</label>
                         <p className="text-sm mt-1">
-                          {new Date(account.updated_at).toLocaleDateString()}
+                          {account.updated_at ? new Date(account.updated_at).toLocaleDateString() : 'N/A'}
                         </p>
                       </div>
                     </div>

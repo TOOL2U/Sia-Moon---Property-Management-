@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { supabase } from '@/lib/supabase'
+// TODO: Replace with Firebase Auth
+// import { auth } from '@/lib/firebase'
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('')
@@ -69,22 +70,12 @@ export default function UpdatePasswordPage() {
     setLoading(true)
 
     try {
-      if (!supabase) {
-        throw new Error('Authentication service not available')
-      }
+      // TODO: Replace with Firebase Auth
+      // await updatePassword(auth.currentUser, password)
 
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      })
-
-      if (error) {
-        console.error('Password update error:', error)
-        setError(error.message)
-        return
-      }
-
-      setSuccess(true)
-      toast.success('Password updated successfully!')
+      console.log('⚠️ Password update not implemented - Firebase integration needed')
+      toast.error('Password update functionality requires Firebase integration')
+      return
       
       // Redirect to login after a delay
       setTimeout(() => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
+import { useAuth } from '@/contexts/AuthContext'
 import SupabaseService from '@/lib/supabaseService'
 import { VillaOnboarding } from '@/lib/db'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -28,7 +28,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function ClientOnboardingPage() {
-  const { profile: user } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const [onboardings, setOnboardings] = useState<VillaOnboarding[]>([])
   const [loading, setLoading] = useState(true)

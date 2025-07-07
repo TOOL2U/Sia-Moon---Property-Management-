@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 
 interface User {
   id: string
@@ -25,99 +28,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Check for existing session on mount
+  // Firebase auth state listener
   useEffect(() => {
-    const checkSession = () => {
-      try {
-        const savedUser = localStorage.getItem('auth_user')
-        if (savedUser) {
-          const userData = JSON.parse(savedUser)
-          setUser(userData)
-          console.log('✅ Session restored:', userData.email)
-        }
-      } catch (error) {
-        console.error('Error checking session:', error)
-        localStorage.removeItem('auth_user')
-      } finally {
-        setLoading(false)
-      }
-    }
+    console.log('🔍 Setting up Firebase auth state listener in AuthContext...')
 
-    checkSession()
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('🔄 AuthContext auth state changed:', firebaseUser ? 'User signed in' : 'User signed out')
+
+      if (firebaseUser) {
+        try {
+          // Fetch user profile from Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+          if (userDoc.exists()) {
+            const userData = userDoc.data()
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              full_name: userData.fullName || '',
+              role: userData.role || 'client'
+            })
+          } else {
+            // Fallback if no profile exists
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              full_name: '',
+              role: 'client'
+            })
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error)
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            full_name: '',
+            role: 'client'
+          })
+        }
+      } else {
+        setUser(null)
+      }
+
+      setLoading(false)
+    })
+
+    return () => {
+      console.log('🧹 Cleaning up AuthContext Firebase auth listener')
+      unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setLoading(true)
-      console.log('🔄 Signing in:', email)
-
-      // TODO: Replace with real authentication
-      // For now, simulate authentication
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Mock user data
-      const mockUser: User = {
-        id: 'user-' + Date.now(),
-        email,
-        full_name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        role: email.includes('admin') ? 'admin' : email.includes('staff') ? 'staff' : 'client'
-      }
-
-      setUser(mockUser)
-      localStorage.setItem('auth_user', JSON.stringify(mockUser))
-      
-      console.log('✅ Sign in successful:', mockUser.email)
-      return true
-    } catch (error) {
-      console.error('❌ Sign in error:', error)
-      return false
-    } finally {
-      setLoading(false)
-    }
+    // Note: This function is not used anymore since we use Firebase forms directly
+    // Keeping for interface compatibility
+    console.log('⚠️ signIn called but Firebase forms handle authentication directly')
+    return false
   }
 
   const signUp = async (email: string, password: string, name: string, role: string) => {
-    try {
-      setLoading(true)
-      console.log('🔄 Signing up:', email)
-
-      // TODO: Replace with real authentication
-      // For now, simulate authentication
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      // Mock user data
-      const mockUser: User = {
-        id: 'user-' + Date.now(),
-        email,
-        full_name: name,
-        role: role as 'client' | 'staff' | 'admin'
-      }
-
-      setUser(mockUser)
-      localStorage.setItem('auth_user', JSON.stringify(mockUser))
-      
-      console.log('✅ Sign up successful:', mockUser.email)
-      return { success: true, needsVerification: false }
-    } catch (error) {
-      console.error('❌ Sign up error:', error)
-      return { success: false, needsVerification: false }
-    } finally {
-      setLoading(false)
-    }
+    // Note: This function is not used anymore since we use Firebase forms directly
+    // Keeping for interface compatibility
+    console.log('⚠️ signUp called but Firebase forms handle authentication directly')
+    return { success: false, needsVerification: false }
   }
 
   const signOut = async (): Promise<void> => {
     try {
       console.log('🔄 Signing out...')
-      
-      // TODO: Replace with real sign out
+
+      await firebaseSignOut(auth)
       setUser(null)
-      localStorage.removeItem('auth_user')
-      
-      console.log('✅ Sign out successful')
+
+      console.log('✅ Firebase sign out successful')
       router.push('/auth/login')
     } catch (error) {
-      console.error('❌ Sign out error:', error)
+      console.error('❌ Firebase sign out error:', error)
     }
   }
 

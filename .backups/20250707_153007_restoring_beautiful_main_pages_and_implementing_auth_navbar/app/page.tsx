@@ -142,7 +142,7 @@ export default function Home() {
                 animate={skipAnimations ? { opacity: 1, y: 0, filter: 'blur(0px)' } : (animationPhase !== 'loading' ? "animate" : { opacity: 1, y: 0, filter: 'blur(0px)' })}
               >
                 <p className="text-l text-white-400 max-w-2xl mx-auto mb-1 mt-5 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-300 via-80% to-transparent text-transparent">
-                  Meet the system for modern software development.
+                  Meet the system for modern property management.
                 </p>
                 <p className="text-l text-white-400 max-w-2xl mx-auto mb-10 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-400 via-80% to-transparent text-transparent">
                   Streamline bookings, maintenance, and reporting with a modern, automated workflow.

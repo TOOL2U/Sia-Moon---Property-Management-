@@ -1,8 +1,21 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { Session, User } from '@supabase/supabase-js'
-import supabase from '@/lib/supabase'
+import { onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
+
+interface Session {
+  user: User
+  access_token: string
+  expires_at: number
+}
+
+interface User {
+  id: string
+  email: string
+  created_at: string
+}
 
 interface Profile {
   id: string
@@ -34,20 +47,18 @@ export function UserProvider({ children }: UserProviderProps) {
   const fetchProfile = async (userId: string) => {
     try {
       console.log('🔍 Fetching user profile:', userId)
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
 
-      if (error) {
-        console.error('❌ Error fetching profile:', error)
-        return null
+      const profileDoc = await getDoc(doc(db, 'users', userId))
+      if (profileDoc.exists()) {
+        const data = profileDoc.data()
+        return {
+          id: data.uid,
+          email: data.email,
+          full_name: data.fullName,
+          created_at: data.createdAt
+        }
       }
-
-      console.log('✅ Profile fetched successfully:', data)
-      return data
+      return null
     } catch (error) {
       console.error('❌ Unexpected error fetching profile:', error)
       return null
@@ -65,14 +76,9 @@ export function UserProvider({ children }: UserProviderProps) {
     try {
       console.log('🔄 Signing out...')
       setLoading(true)
-      
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('❌ Sign out error:', error)
-        throw error
-      }
-      
+
+      await firebaseSignOut(auth)
+
       console.log('✅ Signed out successfully')
       setSession(null)
       setProfile(null)
@@ -91,24 +97,21 @@ export function UserProvider({ children }: UserProviderProps) {
     const getInitialSession = async () => {
       try {
         console.log('🔍 Getting initial session...')
-        
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('❌ Error getting initial session:', error)
-          return
-        }
 
-        if (mounted) {
-          console.log('📋 Initial session:', initialSession ? 'Found' : 'None')
-          setSession(initialSession)
-          
-          if (initialSession?.user?.id) {
-            const profileData = await fetchProfile(initialSession.user.id)
-            if (mounted) {
-              setProfile(profileData)
-            }
+        const user = auth.currentUser
+        if (user) {
+          const session = {
+            user: { id: user.uid, email: user.email || '', created_at: user.metadata.creationTime || '' },
+            access_token: await user.getIdToken(),
+            expires_at: Date.now() + 3600000
           }
+          setSession(session)
+          const profileData = await fetchProfile(user.uid)
+          setProfile(profileData)
+        } else {
+          console.log('📋 Initial session: None')
+          setSession(null)
+          setProfile(null)
         }
       } catch (error) {
         console.error('❌ Unexpected error getting initial session:', error)
@@ -121,33 +124,29 @@ export function UserProvider({ children }: UserProviderProps) {
 
     getInitialSession()
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (!mounted) return
-
-        console.log('🔄 Auth state change:', event, newSession ? 'Session exists' : 'No session')
-        
-        setSession(newSession)
-        
-        if (newSession?.user?.id) {
-          const profileData = await fetchProfile(newSession.user.id)
-          if (mounted) {
-            setProfile(profileData)
-          }
-        } else {
-          setProfile(null)
+    // Firebase Auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!mounted) return
+      console.log('🔄 Auth state change:', user ? 'User exists' : 'No user')
+      if (user) {
+        const session = {
+          user: { id: user.uid, email: user.email || '', created_at: user.metadata.creationTime || '' },
+          access_token: await user.getIdToken(),
+          expires_at: Date.now() + 3600000
         }
-        
-        if (mounted) {
-          setLoading(false)
-        }
+        setSession(session)
+        const profileData = await fetchProfile(user.uid)
+        setProfile(profileData)
+      } else {
+        setSession(null)
+        setProfile(null)
       }
-    )
+      setLoading(false)
+    })
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      unsubscribe()
     }
   }, [])
 

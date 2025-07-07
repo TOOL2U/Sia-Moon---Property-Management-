@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import supabase from '@/lib/supabase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
@@ -43,35 +44,11 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
       setIsLoading(true)
       console.log('🔄 Starting sign in process...')
 
-      // Sign in with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
+      // Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
+      const user = userCredential.user
 
-      if (authError) {
-        console.error('❌ Auth sign in error:', authError)
-        
-        // Handle specific auth errors
-        if (authError.message.includes('Invalid login credentials')) {
-          setError('email', { message: 'Invalid email or password' })
-          setError('password', { message: 'Invalid email or password' })
-        } else if (authError.message.includes('Email not confirmed')) {
-          toast.error('Please check your email and confirm your account before signing in.')
-        } else if (authError.message.includes('Too many requests')) {
-          toast.error('Too many sign in attempts. Please wait a moment and try again.')
-        } else {
-          toast.error(authError.message)
-        }
-        return
-      }
-
-      if (!authData.user) {
-        toast.error('Failed to sign in. Please try again.')
-        return
-      }
-
-      console.log('✅ Sign in successful:', authData.user.id)
+      console.log('✅ Firebase Auth sign in successful:', user.uid)
       toast.success('Welcome back!')
 
       // Handle success

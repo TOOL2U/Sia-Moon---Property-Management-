@@ -80,7 +80,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-
       {/* Hero Section - Linear style with preserved background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Enhanced Cloudinary Hero Image Background - Always visible with animation */}
@@ -123,14 +122,14 @@ export default function Home() {
                   variants={heroAnimationVariants.headline}
                   custom={0}
                 >
-                  A purpose-built platform
+                  A purpose-built platform.
                 </motion.span>
                 <motion.span
                   className="block bg-gradient-to-r from-white/90 via-gray-500 via-80% to-transparent bg-clip-text text-transparent mb-3"
                   variants={heroAnimationVariants.headline}
                   custom={1}
                 >
-                  for managing properties
+                 Designed for Property Success.
                 </motion.span>
               </h1>
 

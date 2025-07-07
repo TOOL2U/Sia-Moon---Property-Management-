@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import supabase from '@/lib/supabase'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react'
@@ -49,49 +51,22 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
       setIsLoading(true)
       console.log('🔄 Starting sign up process...')
 
-      // Step 1: Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Step 1: Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
+      const user = userCredential.user
+
+      console.log('✅ Firebase Auth sign up successful:', user.uid)
+
+      // Step 2: Create user profile in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
         email: data.email,
-        password: data.password,
+        fullName: data.fullName,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
 
-      if (authError) {
-        console.error('❌ Auth sign up error:', authError)
-        
-        // Handle specific auth errors
-        if (authError.message.includes('already registered')) {
-          setError('email', { message: 'This email is already registered' })
-        } else if (authError.message.includes('password')) {
-          setError('password', { message: authError.message })
-        } else {
-          toast.error(authError.message)
-        }
-        return
-      }
-
-      if (!authData.user) {
-        toast.error('Failed to create account. Please try again.')
-        return
-      }
-
-      console.log('✅ Auth sign up successful:', authData.user.id)
-
-      // Step 2: Create profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: data.email,
-          full_name: data.fullName
-        })
-
-      if (profileError) {
-        console.error('❌ Profile creation error:', profileError)
-        toast.error('Account created but profile setup failed. Please contact support.')
-        return
-      }
-
-      console.log('✅ Profile created successfully')
+      console.log('✅ User profile created in Firestore')
       toast.success('Account created successfully! Welcome!')
 
       // Step 3: Handle success

@@ -8,10 +8,10 @@ import DatabaseService from '@/lib/dbService'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params
+    const { propertyId } = await params
     
     if (!propertyId) {
       return NextResponse.json({
@@ -60,10 +60,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params
+    const { propertyId } = await params
     const body = await request.json()
     const { year, month, currency = 'USD' } = body
     

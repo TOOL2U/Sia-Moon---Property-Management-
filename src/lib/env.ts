@@ -12,13 +12,14 @@ const envSchema = z.object({
   NEXT_PUBLIC_DEV_SESSION_BYPASS: z.string().optional().transform(val => val === "true"),
   NEXT_PUBLIC_VERCEL_ENV: z.string().optional(),
 
-  // Supabase configuration - more flexible URL validation
-  NEXT_PUBLIC_SUPABASE_URL: z.string().optional().refine(
-    (val) => !val || val.startsWith('http') || val.includes('supabase'),
-    { message: "Invalid Supabase URL format" }
-  ),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  // Firebase configuration - required for authentication
+  NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1, "Firebase API key is required"),
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().min(1, "Firebase auth domain is required"),
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().min(1, "Firebase project ID is required"),
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: z.string().min(1, "Firebase storage bucket is required"),
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().min(1, "Firebase messaging sender ID is required"),
+  NEXT_PUBLIC_FIREBASE_APP_ID: z.string().min(1, "Firebase app ID is required"),
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: z.string().optional(),
 
   // Application configuration - more flexible URL validation
   NEXT_PUBLIC_APP_URL: z.string().optional().refine(
@@ -113,10 +114,14 @@ export const NEXT_PUBLIC_BYPASS_AUTH = env.NEXT_PUBLIC_BYPASS_AUTH;
 export const NEXT_PUBLIC_DEV_SESSION_BYPASS = env.NEXT_PUBLIC_DEV_SESSION_BYPASS;
 export const NEXT_PUBLIC_VERCEL_ENV = env.NEXT_PUBLIC_VERCEL_ENV;
 
-// Supabase
-export const NEXT_PUBLIC_SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
-export const NEXT_PUBLIC_SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-export const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+// Firebase
+export const NEXT_PUBLIC_FIREBASE_API_KEY = env.NEXT_PUBLIC_FIREBASE_API_KEY;
+export const NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+export const NEXT_PUBLIC_FIREBASE_PROJECT_ID = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+export const NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+export const NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+export const NEXT_PUBLIC_FIREBASE_APP_ID = env.NEXT_PUBLIC_FIREBASE_APP_ID;
+export const NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID = env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
 // Application
 export const NEXT_PUBLIC_APP_URL = env.NEXT_PUBLIC_APP_URL;
@@ -162,8 +167,8 @@ export const isTest = NODE_ENV === "test";
 export const isDevelopmentBypass = isDevelopment && NEXT_PUBLIC_BYPASS_AUTH && NEXT_PUBLIC_VERCEL_ENV !== "production";
 export const isDevelopmentSessionBypass = isDevelopment && NEXT_PUBLIC_DEV_SESSION_BYPASS;
 
-// Supabase configuration check
-export const isSupabaseConfigured = !!(NEXT_PUBLIC_SUPABASE_URL && NEXT_PUBLIC_SUPABASE_ANON_KEY);
+// Firebase configuration check
+export const isFirebaseConfigured = !!(NEXT_PUBLIC_FIREBASE_API_KEY && NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN && NEXT_PUBLIC_FIREBASE_PROJECT_ID);
 
 // Cloudinary configuration check
 export const isCloudinaryConfigured = !!(NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET);

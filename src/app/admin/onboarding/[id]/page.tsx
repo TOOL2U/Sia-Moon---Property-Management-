@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
-import SupabaseService from '@/lib/supabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+// TODO: Replace with Firebase service
+// import FirebaseService from '@/lib/firebaseService'
 import { VillaOnboarding } from '@/lib/db'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -37,7 +38,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function OnboardingDetailPage() {
-  const { profile: user } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
