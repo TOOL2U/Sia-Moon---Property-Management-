@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUser } from '@/contexts/UserContext'
 // TODO: Replace with new database service when implemented
 // import DatabaseService, { DatabaseResponse } from '@/lib/newDatabaseService'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
@@ -27,8 +29,8 @@ import { Property, Booking, Task, Report } from '@/types'
 
 export default function ClientDashboard() {
   const { user, loading: authLoading } = useAuth()
-  // Use real user data or fallback for development
-  const profile = user || { id: 'dev-user', full_name: 'John Smith', role: 'client' }
+  const { session, profile, loading: userLoading } = useUser()
+  const router = useRouter()
 
   const [properties, setProperties] = useState<Property[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -38,6 +40,18 @@ export default function ClientDashboard() {
   const [selectedMetric, setSelectedMetric] = useState('revenue')
 
   const [showSettings, setShowSettings] = useState(false)
+
+  // Route protection
+  useEffect(() => {
+    if (!authLoading && !userLoading) {
+      if (!session) {
+        console.log('❌ No session found, redirecting to login')
+        router.push('/login')
+        return
+      }
+      console.log('✅ Session found, user can access client dashboard')
+    }
+  }, [session, authLoading, userLoading, router])
 
   // Full-screen chart functionality
   const { isModalOpen, isMobile, openChart, closeChart } = useFullScreenChart()

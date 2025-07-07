@@ -759,7 +759,7 @@ export default function OnboardYourVilla() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent mx-auto mb-4"></div>
-          <p className="text-neutral-400">Loading villa data for editing...</p>
+          <p className="text-neutral-400">Loading property data for editing...</p>
         </div>
       </div>
     )
@@ -786,7 +786,7 @@ export default function OnboardYourVilla() {
               <Building className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-semibold text-white sm:text-4xl animate-fade-in-up animate-delay-150 will-change-transform">
-              {isEditing ? 'Edit Villa Information' : 'Villa Owner Onboarding'}
+              {isEditing ? 'Edit Villa Information' : 'Property Owner Onboarding Form'}
             </h1>
             <p className="mt-4 text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animate-delay-300 will-change-transform">
               {isEditing

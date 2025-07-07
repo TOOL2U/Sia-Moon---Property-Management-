@@ -3,39 +3,50 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUser } from '@/contexts/UserContext'
 
 export default function DashboardRedirect() {
   const router = useRouter()
-  const { user, loading } = useAuth()
-  const profile = user // For compatibility
+  const { loading } = useAuth()
+  const { session, profile, loading: userLoading } = useUser()
 
   useEffect(() => {
-    if (loading) {
-      console.log('🔄 Dashboard redirect: Still loading auth state...')
-      return
-    }
+    const checkAuthAndRedirect = async () => {
+      // Wait for both auth contexts to finish loading
+      if (loading || userLoading) {
+        console.log('🔄 Dashboard redirect: Still loading...', { loading, userLoading })
+        return
+      }
 
-    if (!profile) {
-      console.log('🔄 Dashboard redirect: No profile, redirecting to login...')
-      router.push('/auth/login')
-      return
-    }
+      console.log('🔍 Dashboard auth check:', {
+        session: session ? 'exists' : 'none',
+        profile: profile ? 'exists' : 'none',
+        loading,
+        userLoading
+      })
 
-    // Redirect based on user role
-    console.log('🔄 Dashboard redirect: Profile found, redirecting based on role:', profile.role)
-    if (profile.role === 'staff' || profile.role === 'admin') {
-      router.push('/dashboard/staff')
-    } else {
+      // If no session, redirect to login
+      if (!session) {
+        console.log('❌ No session found, redirecting to login')
+        router.push('/login')
+        return
+      }
+
+      // If session exists, redirect to appropriate dashboard
+      console.log('✅ Session found, redirecting to client dashboard')
       router.push('/dashboard/client')
     }
-  }, [profile, loading, router])
 
-  if (loading) {
+    checkAuthAndRedirect()
+  }, [session, profile, loading, userLoading, router])
+
+  // Show loading while checking authentication
+  if (loading || userLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-white">Checking authentication...</p>
         </div>
       </div>
     )
@@ -44,7 +55,7 @@ export default function DashboardRedirect() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
         <p className="text-white">Redirecting...</p>
       </div>
     </div>
