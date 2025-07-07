@@ -100,7 +100,7 @@ export default function AddPropertyPage() {
         errorMessage = err.message
       } else if (typeof err === 'object' && err !== null) {
         // Handle database error objects
-        const dbError = err as any
+        const dbError = err as { message?: string }
         if (dbError.message) {
           errorMessage = dbError.message
         } else {

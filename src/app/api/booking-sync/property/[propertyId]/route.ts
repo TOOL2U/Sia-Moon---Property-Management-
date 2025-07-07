@@ -158,10 +158,10 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params
+    const { propertyId } = await params
     const body = await request.json()
 
     console.log(`🔄 Updating sync config for property: ${propertyId}`)

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { NODE_ENV, isProduction } from "./src/lib/env";
 
 const nextConfig: NextConfig = {
   // Image optimization
@@ -31,7 +32,7 @@ const nextConfig: NextConfig = {
 
   // Build-time optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
+    removeConsole: isProduction ? {
       exclude: ['error', 'warn']
     } : false,
   },
@@ -41,7 +42,7 @@ const nextConfig: NextConfig = {
     const redirects = [];
 
     // Redirect test pages in production
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       redirects.push(
         {
           source: '/test-:path*',

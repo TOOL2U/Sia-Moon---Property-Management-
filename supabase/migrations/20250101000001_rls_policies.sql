@@ -14,6 +14,12 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- =============================================================================
 -- PROFILES TABLE POLICIES
 -- =============================================================================
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Staff can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+
 -- Users can view and update their own profile
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
@@ -37,6 +43,13 @@ CREATE POLICY "System can insert profiles" ON public.profiles
 -- =============================================================================
 -- PROPERTIES TABLE POLICIES
 -- =============================================================================
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Owners can manage own properties" ON public.properties;
+DROP POLICY IF EXISTS "Staff can view all properties" ON public.properties;
+DROP POLICY IF EXISTS "Staff can update all properties" ON public.properties;
+DROP POLICY IF EXISTS "Property owners can manage their properties" ON public.properties;
+DROP POLICY IF EXISTS "Anyone can view active properties" ON public.properties;
+
 -- Property owners can manage their properties
 CREATE POLICY "Owners can manage own properties" ON public.properties
     FOR ALL USING (owner_id = auth.uid());
@@ -62,6 +75,12 @@ CREATE POLICY "Staff can update all properties" ON public.properties
 -- =============================================================================
 -- BOOKINGS TABLE POLICIES
 -- =============================================================================
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Owners can view own property bookings" ON public.bookings;
+DROP POLICY IF EXISTS "Staff can manage all bookings" ON public.bookings;
+DROP POLICY IF EXISTS "Property owners and staff can view bookings" ON public.bookings;
+DROP POLICY IF EXISTS "Property owners and staff can manage bookings" ON public.bookings;
+
 -- Property owners can view bookings for their properties
 CREATE POLICY "Owners can view own property bookings" ON public.bookings
     FOR SELECT USING (
@@ -101,6 +120,13 @@ CREATE POLICY "Owners can update own property bookings" ON public.bookings
 -- =============================================================================
 -- TASKS TABLE POLICIES
 -- =============================================================================
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Owners can view own property tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Users can view assigned tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Staff can manage all tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Owners can create tasks for own properties" ON public.tasks;
+DROP POLICY IF EXISTS "Property owners and staff can manage tasks" ON public.tasks;
+
 -- Property owners can view tasks for their properties
 CREATE POLICY "Owners can view own property tasks" ON public.tasks
     FOR SELECT USING (
@@ -139,6 +165,13 @@ CREATE POLICY "Assigned users can update task status" ON public.tasks
 -- =============================================================================
 -- REPORTS TABLE POLICIES
 -- =============================================================================
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Owners can view own property reports" ON public.reports;
+DROP POLICY IF EXISTS "Staff can manage all reports" ON public.reports;
+DROP POLICY IF EXISTS "Owners can create reports for own properties" ON public.reports;
+DROP POLICY IF EXISTS "Property owners can view their reports" ON public.reports;
+DROP POLICY IF EXISTS "Property owners and staff can manage reports" ON public.reports;
+
 -- Property owners can view reports for their properties
 CREATE POLICY "Owners can view own property reports" ON public.reports
     FOR SELECT USING (
@@ -169,6 +202,13 @@ CREATE POLICY "Owners can create reports for own properties" ON public.reports
 -- =============================================================================
 -- NOTIFICATIONS TABLE POLICIES
 -- =============================================================================
+-- Drop existing policies first
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Staff can create notifications" ON public.notifications;
+DROP POLICY IF EXISTS "System can create notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Users can delete own notifications" ON public.notifications;
+
 -- Users can view their own notifications
 CREATE POLICY "Users can view own notifications" ON public.notifications
     FOR SELECT USING (user_id = auth.uid());

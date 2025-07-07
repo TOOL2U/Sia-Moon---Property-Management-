@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
@@ -43,13 +43,7 @@ export default function EditPropertyPage() {
 
   const propertyId = params.id as string
 
-  useEffect(() => {
-    if (propertyId) {
-      fetchProperty()
-    }
-  }, [propertyId])
-
-  const fetchProperty = async () => {
+  const fetchProperty = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('properties')
@@ -74,7 +68,13 @@ export default function EditPropertyPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [propertyId, supabase, router])
+
+  useEffect(() => {
+    if (propertyId) {
+      fetchProperty()
+    }
+  }, [propertyId, fetchProperty])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -108,7 +108,7 @@ export default function EditPropertyPage() {
     setError('')
 
     try {
-      const { data, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('properties')
         .update({
           name: formData.name,
@@ -152,7 +152,7 @@ export default function EditPropertyPage() {
         <div className="text-center">
           <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Property Not Found</h2>
-          <p className="text-gray-600 mb-6">The property you're trying to edit doesn't exist.</p>
+          <p className="text-gray-600 mb-6">The property you&apos;re trying to edit doesn&apos;t exist.</p>
           <Link href="/properties">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />

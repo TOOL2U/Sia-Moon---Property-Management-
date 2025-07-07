@@ -22,12 +22,11 @@
     "supabase:functions": "supabase functions deploy",
     "supabase:logs": "supabase functions logs",
     "setup:database": "node scripts/setup-database.js",
-
     "create:notifications": "node scripts/create-notification-tables.js",
     "create:notifications-table": "node scripts/create-notifications-table.js",
-
     "db:seed": "supabase db reset --db-url postgresql://postgres:postgres@localhost:54322/postgres",
-    "db:types": "supabase gen types typescript --local > src/types/supabase.ts"
+    "db:types": "supabase gen types typescript --local > src/types/supabase.ts",
+    "dev:debug": "cross-env NODE_OPTIONS='--inspect' next dev"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
@@ -70,9 +69,11 @@
     "@types/node-cron": "^3.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.0.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

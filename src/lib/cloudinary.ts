@@ -1,3 +1,5 @@
+import { NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } from '@/lib/env'
+
 // Server-side only Cloudinary configuration
 let cloudinary: any = null
 
@@ -8,9 +10,9 @@ if (typeof window === 'undefined') {
     cloudinary = v2
 
     cloudinary.config({
-      cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
+      cloud_name: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      api_key: CLOUDINARY_API_KEY,
+      api_secret: CLOUDINARY_API_SECRET,
     })
   } catch (error) {
     console.warn('Cloudinary not available on server side')

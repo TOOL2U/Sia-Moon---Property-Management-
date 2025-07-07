@@ -8,10 +8,10 @@ import DatabaseService from '@/lib/dbService'
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { notificationId: string } }
+  { params }: { params: Promise<{ notificationId: string }> }
 ) {
   try {
-    const { notificationId } = params
+    const { notificationId } = await params
     
     if (!notificationId) {
       return NextResponse.json({

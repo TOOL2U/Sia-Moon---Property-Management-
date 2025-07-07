@@ -122,6 +122,112 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 -- =============================================================================
+-- ADD MISSING COLUMNS TO EXISTING TABLES
+-- =============================================================================
+DO $$
+BEGIN
+  -- Add missing columns to properties table
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'properties'
+                 AND column_name = 'status') THEN
+    ALTER TABLE public.properties ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'maintenance'));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'properties'
+                 AND column_name = 'currency') THEN
+    ALTER TABLE public.properties ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'properties'
+                 AND column_name = 'amenities') THEN
+    ALTER TABLE public.properties ADD COLUMN amenities JSONB DEFAULT '[]'::jsonb;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'properties'
+                 AND column_name = 'images') THEN
+    ALTER TABLE public.properties ADD COLUMN images JSONB DEFAULT '[]'::jsonb;
+  END IF;
+
+  -- Add missing columns to bookings table
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings'
+                 AND column_name = 'currency') THEN
+    ALTER TABLE public.bookings ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings'
+                 AND column_name = 'source') THEN
+    ALTER TABLE public.bookings ADD COLUMN source TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'bookings'
+                 AND column_name = 'notes') THEN
+    ALTER TABLE public.bookings ADD COLUMN notes TEXT;
+  END IF;
+
+  -- Add missing columns to tasks table
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'tasks'
+                 AND column_name = 'task_type') THEN
+    ALTER TABLE public.tasks ADD COLUMN task_type TEXT NOT NULL DEFAULT 'maintenance' CHECK (task_type IN ('maintenance', 'cleaning', 'inspection', 'other'));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'tasks'
+                 AND column_name = 'priority') THEN
+    ALTER TABLE public.tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent'));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'tasks'
+                 AND column_name = 'estimated_duration') THEN
+    ALTER TABLE public.tasks ADD COLUMN estimated_duration INTEGER;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'tasks'
+                 AND column_name = 'actual_duration') THEN
+    ALTER TABLE public.tasks ADD COLUMN actual_duration INTEGER;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'tasks'
+                 AND column_name = 'cost') THEN
+    ALTER TABLE public.tasks ADD COLUMN cost DECIMAL(10,2);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'tasks'
+                 AND column_name = 'notes') THEN
+    ALTER TABLE public.tasks ADD COLUMN notes TEXT;
+  END IF;
+
+  -- Add missing columns to reports table
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'reports'
+                 AND column_name = 'currency') THEN
+    ALTER TABLE public.reports ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'reports'
+                 AND column_name = 'notes') THEN
+    ALTER TABLE public.reports ADD COLUMN notes TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'reports'
+                 AND column_name = 'pdf_url') THEN
+    ALTER TABLE public.reports ADD COLUMN pdf_url TEXT;
+  END IF;
+END $$;
+
+-- =============================================================================
 -- INDEXES FOR PERFORMANCE
 -- =============================================================================
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
@@ -153,22 +259,27 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply updated_at triggers to all tables
+DROP TRIGGER IF EXISTS handle_profiles_updated_at ON public.profiles;
 CREATE TRIGGER handle_profiles_updated_at
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS handle_properties_updated_at ON public.properties;
 CREATE TRIGGER handle_properties_updated_at
     BEFORE UPDATE ON public.properties
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS handle_bookings_updated_at ON public.bookings;
 CREATE TRIGGER handle_bookings_updated_at
     BEFORE UPDATE ON public.bookings
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS handle_tasks_updated_at ON public.tasks;
 CREATE TRIGGER handle_tasks_updated_at
     BEFORE UPDATE ON public.tasks
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS handle_reports_updated_at ON public.reports;
 CREATE TRIGGER handle_reports_updated_at
     BEFORE UPDATE ON public.reports
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

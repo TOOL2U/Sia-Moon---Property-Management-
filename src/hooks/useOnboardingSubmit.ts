@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { NEXT_PUBLIC_MAKE_WEBHOOK_URL } from '@/lib/env'
 
 /**
  * Type definition for the onboarding form data that will be sent to Make.com
@@ -61,8 +62,7 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
    */
   const submitOnboarding = async (data: OnboardingSubmissionData): Promise<void> => {
     // Validate required environment variable
-    const webhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL
-    if (!webhookUrl) {
+    if (!NEXT_PUBLIC_MAKE_WEBHOOK_URL) {
       const errorMsg = 'Webhook URL not configured. Please contact support.'
       console.warn('⚠️ NEXT_PUBLIC_MAKE_WEBHOOK_URL is not set in environment variables')
       setError(errorMsg)
@@ -99,9 +99,9 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
         ...data,
         email: data.email.replace(/(.{2}).*(@.*)/, '$1***$2') // Mask email for logging
       })
-      console.log('📡 Webhook URL:', webhookUrl)
+      console.log('📡 Webhook URL:', NEXT_PUBLIC_MAKE_WEBHOOK_URL)
 
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(NEXT_PUBLIC_MAKE_WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

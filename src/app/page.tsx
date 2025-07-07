@@ -79,7 +79,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-
       {/* Hero Section - Linear style with preserved background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Enhanced Cloudinary Hero Image Background - Always visible with animation */}
@@ -122,14 +121,14 @@ export default function Home() {
                   variants={heroAnimationVariants.headline}
                   custom={0}
                 >
-                  A purpose-built platform
+                  A purpose-built platform.
                 </motion.span>
                 <motion.span
                   className="block bg-gradient-to-r from-white/90 via-gray-500 via-80% to-transparent bg-clip-text text-transparent mb-3"
                   variants={heroAnimationVariants.headline}
                   custom={1}
                 >
-                  for managing properties
+                 Designed for Property Success.
                 </motion.span>
               </h1>
 
@@ -394,7 +393,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -416,7 +415,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -437,7 +436,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -462,7 +461,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -677,7 +676,12 @@ export default function Home() {
                 whileHover={{ x: 5 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link href="/contactus" className="inline-flex items-center text-gray-400 hover:text-white transition-all duration-300 hover:bg-white/5 px-4 py-3 rounded-lg group">
+                <Link 
+                  href="https://wa.me/66933880630" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-gray-400 hover:text-white transition-all duration-300 hover:bg-white/5 px-4 py-3 rounded-lg group"
+                >
                   Contact Us
                   <motion.div
                     className="ml-1"

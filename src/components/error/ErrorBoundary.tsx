@@ -4,6 +4,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
+import { isDevelopment, isProduction } from '@/lib/env'
 
 interface Props {
   children: ReactNode
@@ -29,12 +30,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error('Error Boundary caught an error:', error, errorInfo)
     }
 
     // Log error to external service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       this.logErrorToService(error, errorInfo)
     }
 
@@ -97,7 +98,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {isDevelopment && this.state.error && (
                   <div className="p-3 bg-neutral-900 border border-neutral-700 rounded-lg">
                     <p className="text-xs text-red-400 font-mono break-all">
                       {this.state.error.message}
@@ -146,11 +147,11 @@ export class ErrorBoundary extends Component<Props, State> {
 // Hook version for functional components
 export const useErrorHandler = () => {
   const handleError = (error: Error, errorInfo?: string) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error('Error caught by useErrorHandler:', error, errorInfo)
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       // Log to external service
       const errorData = {
         message: error.message,

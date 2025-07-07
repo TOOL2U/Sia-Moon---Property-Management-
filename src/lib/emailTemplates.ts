@@ -1,4 +1,5 @@
 // Email templates for various notifications
+import { NEXT_PUBLIC_APP_URL } from '@/lib/env'
 
 export interface EmailTemplate {
   subject: string;
@@ -307,7 +308,7 @@ export const getSignupConfirmationEmail = (userData: {
   name: string;
   email: string;
 }): EmailTemplate => {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   return signupConfirmationTemplate({
     userName: userData.name,

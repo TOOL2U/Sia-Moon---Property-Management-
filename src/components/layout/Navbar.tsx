@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, ChevronDown, LogOut, User, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { useAuth } from '@/contexts/SupabaseAuthContext'
 import { cn } from '@/utils/cn'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 
@@ -277,7 +276,8 @@ function MobileDrawer({ isOpen, onClose, navigationLinks, user, onSignOut }: Mob
 }
 
 export function Navbar() {
-  const { profile: user, signOut } = useAuth()
+  // TODO: Replace with new auth system when implemented
+  const user = null // Temporarily set to null since auth is removed
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const router = useRouter()
@@ -294,7 +294,7 @@ export function Navbar() {
   const handleSignOut = async () => {
     try {
       console.log('🔄 Navbar: Starting sign out...')
-      await signOut()
+      // TODO: Implement sign out when new auth system is ready
       console.log('✅ Navbar: Sign out completed')
       router.push('/') // Redirect to homepage after sign out
     } catch (error) {
@@ -303,11 +303,11 @@ export function Navbar() {
   }
 
   const navigationLinks = user ? [
-    { href: `/dashboard/${user.role}`, label: 'Dashboard' },
+    { href: `/dashboard/client`, label: 'Dashboard' }, // Default to client dashboard
     { href: '/properties', label: 'Properties' },
     { href: '/bookings', label: 'Bookings' },
-    { href: '/onboard', label: 'Onbourding Survey' },
-    ...(user.role === 'staff' ? [{ href: '/admin', label: 'Admin Panel' }] : []),
+    { href: '/onboard', label: 'Onbourding Form' },
+    // TODO: Add role-based navigation when auth is implemented
     { href: 'https://wa.me/', label: 'Contact Us' }, // Added Contact Us tab linking to WhatsApp
   ] : []
 

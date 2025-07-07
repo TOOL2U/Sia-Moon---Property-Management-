@@ -1,5 +1,7 @@
 'use client'
 
+import { NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME } from '@/lib/env'
+
 // Client-side Cloudinary upload utilities
 export interface CloudinaryUploadResult {
   public_id: string
@@ -45,8 +47,7 @@ export const uploadToCloudinary = async (
     context = {}
   } = options
 
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-  if (!cloudName) {
+  if (!NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
     throw new Error('Cloudinary cloud name not configured')
   }
 
@@ -87,7 +88,7 @@ export const uploadToCloudinary = async (
 
   try {
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
       {
         method: 'POST',
         body: formData,
@@ -165,7 +166,7 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
 
 // Generate responsive image URLs for different screen sizes
 export const generateResponsiveUrls = (publicId: string, opacity?: number) => {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your_cloud_name_here'
+  const cloudName = NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your_cloud_name_here'
 
   const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload`
   const opacityParam = opacity !== undefined ? `o_${opacity},` : ''

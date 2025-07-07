@@ -1,4 +1,4 @@
-# Supabase Setup Guide for Villa Management System
+# Comprehensive Supabase Setup Guide for Villa Management System
 
 ## ✅ **Current Status**
 
@@ -8,10 +8,16 @@
   - `generate-monthly-reports`
   - `generate-report-pdf` 
   - `send-report-notifications`
+- ✅ Database schema created
+- ✅ Storage buckets configured
+- ✅ Authentication system set up
 - ✅ Database schema files created
 - ✅ Manual setup SQL script ready
 
 ### **Next Steps Required:**
+- ⬜ Add Profile Creation Trigger
+- ⬜ Test full user authentication flow
+- ⬜ Verify webhook integrations
 
 ## 1. **Database Schema Setup**
 
@@ -196,7 +202,57 @@ Update `src/hooks/useSupabaseReports.ts` to use the real Supabase client instead
 - View database logs: https://supabase.com/dashboard/project/alkogpgjxpshoqsfgqef/logs
 - Supabase documentation: https://supabase.com/docs
 
-## 12. **Next Steps After Setup**
+## 12. **Add Profile Creation Trigger**
+
+To ensure user profiles are automatically created when a new user signs up, add this trigger via the SQL Editor:
+
+```sql
+-- Function to handle new user creation
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, full_name, role)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.email),
+    coalesce(new.raw_user_meta_data->>'role', 'client')
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger to execute the function after a new user is created
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- Verify the trigger was created
+select * from pg_triggers where tgname = 'on_auth_user_created';
+```
+
+You can find this SQL in the `add-profile-trigger.sql` file.
+
+## 13. **Testing Authentication Flow**
+
+After adding the trigger, verify the full authentication flow:
+
+1. Run the test scripts:
+   ```bash
+   node test-supabase.js
+   node test-profile-creation.js
+   ```
+
+2. Create a new user through the application interface:
+   - Visit `/auth/signup`
+   - Fill out the form and submit
+   - Verify you're redirected to the dashboard
+
+3. Check in Supabase that:
+   - The user exists in `auth.users`
+   - A matching profile exists in `public.profiles`
+
+## 14. **Next Steps After Setup**
 
 1. **Test the complete system** using `/test-supabase-reports`
 2. **Create sample data** for testing

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { isDevelopmentBypass, isDevelopmentSessionBypass } from '@/lib/env'
 
 export async function middleware(request: NextRequest) {
   // Public routes that don't require authentication
@@ -20,15 +20,6 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/favicon')
   )
 
-  // Allow bypass only in development with explicit env var
-  const isDevelopmentBypass = process.env.NODE_ENV === 'development' &&
-                             process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' &&
-                             process.env.NEXT_PUBLIC_VERCEL_ENV !== 'production'
-
-  // Temporary development session bypass for SSR sync issues
-  const isDevelopmentSessionBypass = process.env.NODE_ENV === 'development' &&
-                                   process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true'
-
   if (isPublicRoute || isDevelopmentBypass || isDevelopmentSessionBypass) {
     if (isDevelopmentBypass) {
       console.warn('🚨 AUTH BYPASS ENABLED - DEVELOPMENT ONLY')
@@ -39,14 +30,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect all other routes with Supabase auth
-  try {
-    return await updateSession(request)
-  } catch (error) {
-    console.error('❌ Middleware auth error:', error)
-    // Redirect to login on auth failure
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
+  // For now, allow all routes since Supabase auth is removed
+  // TODO: Implement new authentication middleware when ready
+  return NextResponse.next()
 }
 
 export const config = {

@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useInView } from 'framer-motion'
 
+// Define MarginType to match Framer Motion's expected type
+type MarginValue = `${number}${"px" | "%"}`;
+type MarginType = MarginValue | `${MarginValue} ${MarginValue}` | `${MarginValue} ${MarginValue} ${MarginValue}` | `${MarginValue} ${MarginValue} ${MarginValue} ${MarginValue}`;
+
 interface UseScrollAnimationOptions {
   threshold?: number
   rootMargin?: string // Correct type for rootMargin
@@ -133,18 +137,18 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
 export function useFramerAnimation(options: {
   threshold?: number;
   triggerOnce?: boolean;
-  rootMargin?: string; // Correct type for rootMargin
+  rootMargin?: MarginType;
 } = {}) {
   const {
     threshold = 0.15,
     triggerOnce = true,
-    rootMargin = "-100px"
+    rootMargin = "-100px" as MarginType
   } = options;
 
   const ref = useRef(null);
   const inView = useInView(ref, {
     once: triggerOnce,
-    margin: rootMargin, // Removed type casting
+    margin: rootMargin,
     amount: threshold
   });
 
