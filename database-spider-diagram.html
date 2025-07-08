@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Villa Management Database Schema - Spider Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: auto;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            height: 800px;
+            background: #f8fafc;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+
+        .center-node {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            z-index: 10;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .table-node {
+            position: absolute;
+            width: 200px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        .table-node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .table-node.core {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+        }
+
+        .table-node.auth {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4, #e6fffa);
+        }
+
+        .table-node.business {
+            border-color: #ed8936;
+            background: linear-gradient(135deg, #fffaf0, #fef5e7);
+        }
+
+        .table-node.support {
+            border-color: #9f7aea;
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+        }
+
+        .table-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .table-fields {
+            font-size: 0.85rem;
+            color: #4a5568;
+            line-height: 1.4;
+        }
+
+        .field {
+            margin-bottom: 4px;
+            padding: 2px 6px;
+            background: #f7fafc;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .field.primary {
+            background: #fed7d7;
+            color: #c53030;
+            font-weight: 600;
+        }
+
+        .field.foreign {
+            background: #c6f6d5;
+            color: #22543d;
+            font-weight: 600;
+        }
+
+        .connection-line {
+            position: absolute;
+            background: #cbd5e0;
+            height: 2px;
+            transform-origin: left center;
+            z-index: 1;
+        }
+
+        .connection-line.strong {
+            background: #667eea;
+            height: 3px;
+        }
+
+        .legend {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .legend-text {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .stats {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .diagram-container {
+                height: 600px;
+            }
+            
+            .table-node {
+                width: 160px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Villa Management Database Schema</h1>
+            <p>Interactive 2D Spider Diagram - Supabase Database Structure</p>
+        </div>
+
+        <div class="diagram-container" id="diagram">
+            <!-- Center Node -->
+            <div class="center-node">
+                VILLA<br>MANAGEMENT<br>SYSTEM
+            </div>
+
+            <!-- Table Nodes will be positioned here -->
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #667eea;"></div>
+                <div class="legend-text">Core Tables (Primary)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #48bb78;"></div>
+                <div class="legend-text">Authentication & Users</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ed8936;"></div>
+                <div class="legend-text">Business Logic</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9f7aea;"></div>
+                <div class="legend-text">Support & Notifications</div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">6</div>
+                <div class="stat-label">Main Tables</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Key Fields</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">8</div>
+                <div class="stat-label">RLS Policies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Triggers</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database schema data
+        const databaseSchema = {
+            center: { x: 400, y: 400 },
+            tables: [
+                {
+                    name: "profiles",
+                    category: "auth",
+                    position: { x: 200, y: 200 },
+                    fields: [
+                        { name: "id (UUID, PK)", type: "primary" },
+                        { name: "email (TEXT)", type: "normal" },
+                        { name: "role (ENUM)", type: "normal" },
+                        { name: "first_name (TEXT)", type: "normal" },
+                        { name: "last_name (TEXT)", type: "normal" },
+                        { name: "created_at (TIMESTAMP)", type: "normal" }
+                    ],
+                    connections: ["auth.users"]
+                },
+                {
+                    name: "villa_onboarding",
+                    category: "business",
+                    position: { x: 600, y: 150 },
+                    fields: [
+                        { name: "id (UUID, PK)", type: "primary" },
+                        { name: "owner_full_name (TEXT)", type: "normal" },
+                        { name: "property_name (TEXT)", type: "normal" },
+                        { name: "bedrooms (INTEGER)", type: "normal" },
+                        { name: "bathrooms (INTEGER)", type: "normal" },
+                        { name: "rental_rates (JSONB)", type: "normal" },
+                        { name: "status (ENUM)", type: "normal" }
+                    ],
+                    connections: []
+                },
+                {
+                    name: "properties",
+                    category: "core",
+                    position: { x: 650, y: 350 },
+                    fields: [
+                        { name: "id (UUID, PK)", type: "primary" },
+                        { name: "owner_id (UUID, FK)", type: "foreign" },
+                        { name: "name (TEXT)", type: "normal" },
+                        { name: "address (TEXT)", type: "normal" },
+                        { name: "bedrooms (INTEGER)", type: "normal" },
+                        { name: "price_per_night (DECIMAL)", type: "normal" }
+                    ],
+                    connections: ["profiles", "villa_onboarding"]
+                },
+                {
+                    name: "bookings",
+                    category: "business",
+                    position: { x: 500, y: 550 },
+                    fields: [
+                        { name: "id (UUID, PK)", type: "primary" },
+                        { name: "property_id (UUID, FK)", type: "foreign" },
+                        { name: "guest_name (TEXT)", type: "normal" },
+                        { name: "guest_email (TEXT)", type: "normal" },
+                        { name: "check_in (DATE)", type: "normal" },
+                        { name: "check_out (DATE)", type: "normal" },
+                        { name: "status (ENUM)", type: "normal" }
+                    ],
+                    connections: ["properties"]
+                },
+                {
+                    name: "tasks",
+                    category: "support",
+                    position: { x: 200, y: 500 },
+                    fields: [
+                        { name: "id (UUID, PK)", type: "primary" },
+                        { name: "property_id (UUID, FK)", type: "foreign" },
+                        { name: "assigned_to (UUID, FK)", type: "foreign" },
+                        { name: "title (TEXT)", type: "normal" },
+                        { name: "status (ENUM)", type: "normal" },
+                        { name: "priority (ENUM)", type: "normal" }
+                    ],
+                    connections: ["properties", "profiles"]
+                },
+                {
+                    name: "notifications",
+                    category: "support",
+                    position: { x: 100, y: 350 },
+                    fields: [
+                        { name: "id (UUID, PK)", type: "primary" },
+                        { name: "user_id (UUID, FK)", type: "foreign" },
+                        { name: "title (TEXT)", type: "normal" },
+                        { name: "message (TEXT)", type: "normal" },
+                        { name: "type (TEXT)", type: "normal" },
+                        { name: "status (ENUM)", type: "normal" }
+                    ],
+                    connections: ["profiles"]
+                }
+            ]
+        };
+
+        // Create table nodes
+        function createTableNodes() {
+            const diagram = document.getElementById('diagram');
+            
+            databaseSchema.tables.forEach(table => {
+                const node = document.createElement('div');
+                node.className = `table-node ${table.category}`;
+                node.style.left = table.position.x + 'px';
+                node.style.top = table.position.y + 'px';
+                
+                const tableName = document.createElement('div');
+                tableName.className = 'table-name';
+                tableName.textContent = table.name;
+                
+                const fields = document.createElement('div');
+                fields.className = 'table-fields';
+                
+                table.fields.forEach(field => {
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.className = `field ${field.type}`;
+                    fieldDiv.textContent = field.name;
+                    fields.appendChild(fieldDiv);
+                });
+                
+                node.appendChild(tableName);
+                node.appendChild(fields);
+                diagram.appendChild(node);
+            });
+        }
+
+        // Create connection lines
+        function createConnections() {
+            const diagram = document.getElementById('diagram');
+            
+            databaseSchema.tables.forEach(table => {
+                table.connections.forEach(connection => {
+                    const targetTable = databaseSchema.tables.find(t => t.name === connection);
+                    if (targetTable) {
+                        const line = document.createElement('div');
+                        line.className = 'connection-line';
+                        
+                        // Calculate line position and angle
+                        const dx = targetTable.position.x - table.position.x;
+                        const dy = targetTable.position.y - table.position.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                        
+                        line.style.left = (table.position.x + 100) + 'px';
+                        line.style.top = (table.position.y + 50) + 'px';
+                        line.style.width = (distance - 200) + 'px';
+                        line.style.transform = `rotate(${angle}deg)`;
+                        
+                        // Make connections to properties stronger
+                        if (table.name === 'properties' || targetTable.name === 'properties') {
+                            line.classList.add('strong');
+                        }
+                        
+                        diagram.appendChild(line);
+                    }
+                });
+            });
+        }
+
+        // Initialize the diagram
+        document.addEventListener('DOMContentLoaded', function() {
+            createTableNodes();
+            createConnections();
+            
+            // Add hover effects for connections
+            const tableNodes = document.querySelectorAll('.table-node');
+            tableNodes.forEach(node => {
+                node.addEventListener('mouseenter', function() {
+                    this.style.zIndex = '15';
+                });
+                
+                node.addEventListener('mouseleave', function() {
+                    this.style.zIndex = '5';
+                });
+            });
+        });
+
+        // Add responsive positioning for mobile
+        function adjustForMobile() {
+            if (window.innerWidth <= 768) {
+                const diagram = document.getElementById('diagram');
+                diagram.style.height = '600px';
+                
+                // Adjust positions for mobile
+                databaseSchema.tables.forEach((table, index) => {
+                    const node = document.querySelector(`[style*="left: ${table.position.x}px"]`);
+                    if (node) {
+                        // Scale down positions for mobile
+                        const scale = 0.7;
+                        node.style.left = (table.position.x * scale) + 'px';
+                        node.style.top = (table.position.y * scale) + 'px';
+                    }
+                });
+            }
+        }
+
+        window.addEventListener('resize', adjustForMobile);
+        adjustForMobile();
+    </script>
+</body>
+</html> 

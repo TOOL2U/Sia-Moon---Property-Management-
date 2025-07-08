@@ -72,7 +72,16 @@ const developerTools: DeveloperTool[] = [
     href: '/bookings',
     icon: Calendar,
     category: 'Core Application',
-    status: 'beta'
+    status: 'stable'
+  },
+  {
+    title: 'Staff Management',
+    description: 'Manage staff profiles, roles, and assignments',
+    href: '/staff',
+    icon: Users,
+    category: 'Core Application',
+    status: 'stable',
+    isNew: true
   },
 
   // Dashboards
@@ -173,49 +182,21 @@ const developerTools: DeveloperTool[] = [
 
   // Testing & Development
   {
-    title: 'Task Management Test',
-    description: 'Test task creation, assignment, and email notifications',
-    href: '/test-tasks',
-    icon: Terminal,
+    title: 'Test Suite',
+    description: 'Organized testing tools for all system components',
+    href: '/developers/tests',
+    icon: TestTube,
     category: 'Testing',
     status: 'stable',
     isNew: true
   },
   {
-    title: 'Reports Test',
-    description: 'Test monthly report generation and PDF creation',
-    href: '/test-reports',
-    icon: FileText,
+    title: 'Firebase Authentication Test',
+    description: 'Test Firebase auth setup and user creation',
+    href: '/test-firebase',
+    icon: Shield,
     category: 'Testing',
-    status: 'stable',
-    isNew: true
-  },
-  {
-    title: 'Notifications Test',
-    description: 'Test email, push, and in-app notification system',
-    href: '/test-notifications',
-    icon: Bell,
-    category: 'Testing',
-    status: 'stable',
-    isNew: true
-  },
-  {
-    title: 'Monthly Reports Test',
-    description: 'Test automated monthly report generation with PDF and notifications',
-    href: '/test-supabase-reports',
-    icon: FileText,
-    category: 'Testing',
-    status: 'stable',
-    isNew: true
-  },
-  {
-    title: 'Supabase Integration Test',
-    description: 'Comprehensive test suite for Supabase database migration and services',
-    href: '/test-supabase',
-    icon: Database,
-    category: 'Testing',
-    status: 'stable',
-    isNew: true
+    status: 'stable'
   },
   {
     title: 'Webhook Test',
@@ -226,15 +207,6 @@ const developerTools: DeveloperTool[] = [
     status: 'stable'
   },
   {
-    title: 'Signup Webhook Test',
-    description: 'Test signup confirmation email webhook integration',
-    href: '/test-signup-webhook',
-    icon: Server,
-    category: 'Testing',
-    status: 'stable',
-    isNew: true
-  },
-  {
     title: 'Storage Test',
     description: 'Test localStorage persistence and data management',
     href: '/test-storage',
@@ -243,70 +215,31 @@ const developerTools: DeveloperTool[] = [
     status: 'stable'
   },
   {
-    title: 'Database Test',
-    description: 'Test database operations and data integrity',
-    href: '/test-db',
+    title: 'Firestore Test',
+    description: 'Test Firestore database operations',
+    href: '/test-firestore',
     icon: Database,
     category: 'Testing',
     status: 'stable'
-  },
-  {
-    title: 'Connection Test',
-    description: 'Test Supabase connection, database access, and environment setup',
-    href: '/test-connection',
-    icon: Database,
-    category: 'Testing',
-    status: 'stable'
-  },
-  {
-    title: 'Property Test',
-    description: 'Property creation and validation testing tools',
-    href: '/test-property',
-    icon: TestTube,
-    category: 'Testing',
-    status: 'experimental'
-  },
-  {
-    title: 'Profile Test',
-    description: 'User profile testing and validation',
-    href: '/test-profile',
-    icon: UserCheck,
-    category: 'Testing',
-    status: 'experimental'
   },
 
   // Debug & Development Tools
   {
-    title: 'User Debug',
+    title: 'Debug Tools',
+    description: 'Organized debugging utilities and development tools',
+    href: '/developers/debug',
+    icon: Bug,
+    category: 'Debug Tools',
+    status: 'stable',
+    isNew: true
+  },
+  {
+    title: 'User Debug Console',
     description: 'View current user state, session info, and profile data',
     href: '/debug-user',
     icon: UserCheck,
     category: 'Debug Tools',
     status: 'stable'
-  },
-  {
-    title: 'Simple Test',
-    description: 'Basic functionality and component testing',
-    href: '/simple-test',
-    icon: Bug,
-    category: 'Debug Tools',
-    status: 'experimental'
-  },
-  {
-    title: 'Smooth Scroll Test',
-    description: 'Test smooth scrolling animations and performance',
-    href: '/smooth-scroll-test',
-    icon: BarChart3,
-    category: 'Debug Tools',
-    status: 'experimental'
-  },
-  {
-    title: 'Dev Dashboard (Legacy)',
-    description: 'Original development dashboard (deprecated)',
-    href: '/dev-dashboard',
-    icon: BarChart3,
-    category: 'Debug Tools',
-    status: 'experimental'
   }
 ]
 
@@ -314,12 +247,12 @@ const categories = ['Core Application', 'Dashboards', 'Onboarding', 'Authenticat
 
 // Frequently used development tools
 const favoriteTools = [
-  'Task Management Test',
-  'Booking Sync Admin',
+  'Test Suite',
+  'Debug Tools',
+  'Staff Management',
   'Admin Dashboard',
-  'Storage Test',
   'Webhook Test',
-  'Auth Debug Console'
+  'Firebase Authentication Test'
 ]
 
 const getStatusColor = (status?: string) => {
@@ -387,21 +320,21 @@ export default function DevelopersPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
-                <span className="font-medium text-neutral-300">Supabase URL</span>
-                <span className={process.env.NEXT_PUBLIC_SUPABASE_URL ? 'text-emerald-400' : 'text-red-400'}>
-                  {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing'}
+                <span className="font-medium text-neutral-300">Firebase Project</span>
+                <span className={process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'text-emerald-400' : 'text-red-400'}>
+                  {process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? '✅ Connected' : '❌ Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
-                <span className="font-medium text-neutral-300">Anon Key</span>
-                <span className={process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'text-emerald-400' : 'text-red-400'}>
-                  {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}
+                <span className="font-medium text-neutral-300">Firebase Auth</span>
+                <span className={process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'text-emerald-400' : 'text-red-400'}>
+                  {process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '✅ Configured' : '❌ Missing'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
-                <span className="font-medium text-neutral-300">Auth Bypass</span>
-                <span className={process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? 'text-yellow-400' : 'text-emerald-400'}>
-                  {process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true' ? '⚠️ Enabled' : '✅ Disabled'}
+                <span className="font-medium text-neutral-300">Development Mode</span>
+                <span className="text-emerald-400">
+                  ✅ Active
                 </span>
               </div>
             </div>
@@ -567,22 +500,22 @@ export default function DevelopersPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link href="/auth-debug">
+              <Link href="/developers/tests">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <TestTube className="mr-2 h-4 w-4" />
+                  Test Suite
+                </Button>
+              </Link>
+              <Link href="/developers/debug">
                 <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <Bug className="mr-2 h-4 w-4" />
-                  Debug Auth
+                  Debug Tools
                 </Button>
               </Link>
-              <Link href="/test-connection">
+              <Link href="/staff">
                 <Button variant="outline" className="w-full justify-start h-11" size="lg">
-                  <Database className="mr-2 h-4 w-4" />
-                  Test DB
-                </Button>
-              </Link>
-              <Link href="/properties/add">
-                <Button variant="outline" className="w-full justify-start h-11" size="lg">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Property
+                  <Users className="mr-2 h-4 w-4" />
+                  Staff Management
                 </Button>
               </Link>
               <Link href="/onboard">
@@ -602,10 +535,10 @@ export default function DevelopersPage() {
               <div>
                 <h4 className="font-medium text-white mb-2">Development Status</h4>
                 <div className="space-y-1 text-neutral-400">
-                  <p>• Task Management: ✅ Complete</p>
-                  <p>• Booking Sync: ✅ Complete</p>
+                  <p>• Staff Management: ✅ Complete</p>
+                  <p>• Firebase Auth: ✅ Complete</p>
                   <p>• Email Notifications: ✅ Complete</p>
-                  <p>• Authentication: ✅ Complete</p>
+                  <p>• Test Suite: ✅ Organized</p>
                 </div>
               </div>
 
@@ -623,8 +556,8 @@ export default function DevelopersPage() {
                 <h4 className="font-medium text-white mb-2">Environment</h4>
                 <div className="space-y-1 text-neutral-400">
                   <p>• Mode: Development</p>
-                  <p>• Database: localStorage</p>
-                  <p>• Auth: Local (dev mode)</p>
+                  <p>• Database: Firebase/localStorage</p>
+                  <p>• Auth: Firebase</p>
                   <p>• Webhooks: Make.com</p>
                 </div>
               </div>

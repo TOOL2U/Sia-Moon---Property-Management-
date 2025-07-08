@@ -147,6 +147,12 @@ class WebhookService {
    */
   static async sendSignupConfirmation(signupData: SignupData): Promise<WebhookResponse> {
     try {
+      console.log('🔍 WebhookService Debug:', {
+        SIGNUP_WEBHOOK_URL: this.SIGNUP_WEBHOOK_URL,
+        ENV_VAR: process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL,
+        NODE_ENV: process.env.NODE_ENV
+      })
+
       console.log('🚀 Sending comprehensive signup data to Make.com:', {
         email: signupData.email?.replace(/(.{2}).*(@.*)/, '$1***$2'), // Mask email for logging
         name: signupData.name,
@@ -202,10 +208,27 @@ class WebhookService {
         // System metadata
         submission_type: 'user_signup',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+
+        // Additional automation fields for Make.com
+        welcome_email_needed: true,
+        onboarding_sequence: 'new_property_manager',
+        follow_up_days: [1, 3, 7, 14], // Days for follow-up emails
+        trial_period_days: 30,
+        next_action: 'send_welcome_email',
+        user_segment: 'new_property_manager',
+
+        // Integration flags
+        needs_tutorial: true,
+        demo_property_setup: true,
+        initial_setup_complete: false
       };
 
       // Send to webhook
+      console.log('🌐 Sending POST request to:', this.SIGNUP_WEBHOOK_URL)
+      console.log('📦 Payload size:', JSON.stringify(webhookPayload).length, 'characters')
+      console.log('📋 Complete webhook payload:', JSON.stringify(webhookPayload, null, 2))
+
       const response = await fetch(this.SIGNUP_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -215,10 +238,17 @@ class WebhookService {
         body: JSON.stringify(webhookPayload)
       });
 
+      console.log('📡 Response status:', response.status)
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        throw new Error(`Signup webhook failed with status: ${response.status}`);
+        const errorText = await response.text()
+        console.error('❌ Response error text:', errorText)
+        throw new Error(`Signup webhook failed with status: ${response.status} - ${errorText}`);
       }
 
+      const responseText = await response.text()
+      console.log('✅ Signup webhook response:', responseText)
       console.log('✅ Signup data sent successfully to Make.com');
 
       return {

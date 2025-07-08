@@ -40,11 +40,11 @@ export default function TestFirebasePage() {
     </div>
   )
 
-  if (userLoading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white">Loading Firebase test...</p>
         </div>
       </div>
@@ -150,8 +150,8 @@ export default function TestFirebasePage() {
                 >
                   Test Sign In
                 </Button>
-                {session && (
-                  <Button 
+                {user && (
+                  <Button
                     onClick={signOut}
                     variant="outline"
                     className="border-red-500 text-red-400 hover:bg-red-500/10"
@@ -179,9 +179,13 @@ export default function TestFirebasePage() {
           <CardContent>
             <pre className="text-xs text-neutral-400 bg-black p-4 rounded overflow-auto">
               {JSON.stringify({
-                session: session ? { ...session, user: { ...session.user, access_token: '[HIDDEN]' } } : null,
-                profile,
-                authUser: authUser ? { uid: authUser.uid, email: authUser.email } : null,
+                user: user ? {
+                  uid: user.uid,
+                  email: user.email,
+                  emailVerified: user.emailVerified,
+                  displayName: user.displayName
+                } : null,
+                loading,
                 testResults
               }, null, 2)}
             </pre>

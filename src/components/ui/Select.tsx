@@ -1,64 +1,145 @@
-import { SelectHTMLAttributes, forwardRef } from 'react'
-import { cn } from '@/utils/cn'
-import { ChevronDown } from 'lucide-react'
+'use client'
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string
-  error?: string
-  helperText?: string
-  options: { value: string; label: string }[]
+import * as React from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+interface SelectContextType {
+  value: string
+  onValueChange: (value: string) => void
+  open: boolean
+  setOpen: (open: boolean) => void
 }
 
-const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, helperText, options, ...props }, ref) => {
-    return (
-      <div className="space-y-2">
-        {label && (
-          <label className="block text-sm font-medium text-white mb-2">
-            {label}
-            {props.required && <span className="text-red-400 ml-1">*</span>}
-          </label>
-        )}
-        <div className="relative">
-          <select
-            className={cn(
-              // Augment dark select styling
-              'flex h-10 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2',
-              'text-sm text-white appearance-none',
-              'transition-all duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
-              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-neutral-800',
-              // Touch-friendly on mobile
-              'touch-manipulation',
-              // Error state
-              error && 'border-red-500 focus:ring-red-500 focus:border-red-500',
-              className
-            )}
-            ref={ref}
-            {...props}
-          >
-            <option value="" disabled>
-              Select an option...
-            </option>
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none transition-colors duration-150" />
-        </div>
-        {helperText && !error && (
-          <p className="text-xs text-neutral-400">{helperText}</p>
-        )}
-        {error && (
-          <p className="text-xs text-red-400 font-medium">{error}</p>
-        )}
+const SelectContext = React.createContext<SelectContextType | undefined>(undefined)
+
+interface SelectProps {
+  value?: string
+  onValueChange?: (value: string) => void
+  children: React.ReactNode
+  disabled?: boolean
+}
+
+export function Select({ value = '', onValueChange, children, disabled }: SelectProps) {
+  const [open, setOpen] = React.useState(false)
+
+  return (
+    <SelectContext.Provider value={{ value, onValueChange: onValueChange || (() => {}), open, setOpen }}>
+      <div className="relative">
+        {children}
       </div>
-    )
+    </SelectContext.Provider>
+  )
+}
+
+interface SelectTriggerProps {
+  className?: string
+  children: React.ReactNode
+}
+
+export function SelectTrigger({ className, children }: SelectTriggerProps) {
+  const context = React.useContext(SelectContext)
+  if (!context) throw new Error('SelectTrigger must be used within Select')
+
+  const { open, setOpen } = context
+
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(!open)}
+      className={cn(
+        'flex h-10 w-full items-center justify-between rounded-md border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-50',
+        className
+      )}
+    >
+      {children}
+      <ChevronDown className="h-4 w-4 opacity-50" />
+    </button>
+  )
+}
+
+interface SelectValueProps {
+  placeholder?: string
+}
+
+export function SelectValue({ placeholder }: SelectValueProps) {
+  const context = React.useContext(SelectContext)
+  if (!context) throw new Error('SelectValue must be used within Select')
+
+  const { value } = context
+
+  return <span>{value || placeholder}</span>
+}
+
+interface SelectContentProps {
+  className?: string
+  children: React.ReactNode
+}
+
+export function SelectContent({ className, children }: SelectContentProps) {
+  const context = React.useContext(SelectContext)
+  if (!context) throw new Error('SelectContent must be used within Select')
+
+  const { open, setOpen } = context
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contentRef.current && !contentRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [open, setOpen])
+
+  if (!open) return null
+
+  return (
+    <div
+      ref={contentRef}
+      className={cn(
+        'absolute top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-neutral-700 bg-neutral-800 py-1 text-base shadow-lg focus:outline-none sm:text-sm',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+interface SelectItemProps {
+  value: string
+  children: React.ReactNode
+  className?: string
+}
+
+export function SelectItem({ value, children, className }: SelectItemProps) {
+  const context = React.useContext(SelectContext)
+  if (!context) throw new Error('SelectItem must be used within Select')
+
+  const { onValueChange, setOpen } = context
+
+  const handleSelect = () => {
+    onValueChange(value)
+    setOpen(false)
   }
-)
 
-Select.displayName = 'Select'
-
-export { Select }
+  return (
+    <div
+      onClick={handleSelect}
+      className={cn(
+        'relative cursor-default select-none py-2 pl-3 pr-9 text-white hover:bg-neutral-700 focus:bg-neutral-700',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}

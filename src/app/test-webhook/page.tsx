@@ -4,11 +4,14 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
-import { CheckCircle, XCircle, Loader2, Send } from 'lucide-react'
+import WebhookService, { SignupData } from '@/lib/webhookService'
+import { CheckCircle, XCircle, Loader2, Send, User, Mail } from 'lucide-react'
 
 export default function TestWebhookPage() {
   const { isLoading, isSuccess, error, submitOnboarding, reset } = useOnboardingSubmit()
   const [testResults, setTestResults] = useState<string[]>([])
+  const [signupLoading, setSignupLoading] = useState(false)
+  const [signupResult, setSignupResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const addTestResult = (message: string) => {
     setTestResults(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
@@ -154,6 +157,79 @@ export default function TestWebhookPage() {
     }
   }
 
+  const testSignupWebhook = async () => {
+    setSignupLoading(true)
+    setSignupResult(null)
+    setTestResults([])
+    addTestResult('Testing signup webhook...')
+
+    const testSignupData: SignupData = {
+      // User Information
+      name: 'John Smith',
+      email: 'john.smith@example.com',
+      phone: '+1234567890',
+      role: 'property_owner',
+      userId: 'user_test_12345',
+
+      // Account Details
+      account_type: 'premium',
+      subscription_plan: 'professional',
+      referral_source: 'google_search',
+      marketing_consent: true,
+
+      // Business Information
+      company_name: 'Smith Property Holdings',
+      business_type: 'vacation_rental',
+      property_count: '3-5',
+      experience_level: 'intermediate',
+      primary_goals: ['increase_revenue', 'automate_management', 'improve_guest_experience'],
+
+      // Technical Details
+      signup_method: 'web_form',
+      device_type: 'desktop',
+      browser: 'Chrome',
+      ip_address: '192.168.1.100',
+      user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+
+      // Timestamps
+      signup_date: new Date().toISOString(),
+      email_verified: false,
+      profile_completed: false,
+
+      // Preferences
+      communication_preferences: ['email', 'sms', 'push_notifications'],
+      timezone: 'Asia/Bali',
+      language: 'en',
+
+      // Metadata
+      source: 'webhook_test_page',
+      campaign_id: 'test_campaign_001',
+      utm_source: 'test',
+      utm_medium: 'webhook_test',
+      utm_campaign: 'signup_test'
+    }
+
+    try {
+      addTestResult('Sending signup data to Make.com webhook...')
+      const result = await WebhookService.sendSignupConfirmation(testSignupData)
+
+      if (result.success) {
+        addTestResult('✅ Signup webhook test successful!')
+        addTestResult(`Webhook ID: ${result.webhookId}`)
+        setSignupResult({ success: true, message: 'Signup webhook test completed successfully!' })
+      } else {
+        addTestResult(`❌ Signup webhook failed: ${result.error}`)
+        setSignupResult({ success: false, message: result.error || 'Unknown error' })
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      addTestResult(`❌ Signup webhook test failed: ${errorMessage}`)
+      setSignupResult({ success: false, message: errorMessage })
+    } finally {
+      setSignupLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -170,9 +246,9 @@ export default function TestWebhookPage() {
           {/* Test Controls */}
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
-              <CardTitle className="text-white">Test Controls</CardTitle>
+              <CardTitle className="text-white">Onboarding Webhook Tests</CardTitle>
               <CardDescription className="text-neutral-400">
-                Run tests to verify webhook functionality
+                Test villa onboarding webhook functionality
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -220,6 +296,62 @@ export default function TestWebhookPage() {
               >
                 Reset Test State
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Signup Webhook Tests */}
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardHeader>
+              <CardTitle className="text-white">Signup Webhook Tests</CardTitle>
+              <CardDescription className="text-neutral-400">
+                Test user signup email webhook functionality
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={testSignupWebhook}
+                disabled={signupLoading}
+                className="w-full"
+              >
+                {signupLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Testing Signup Webhook...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span>Test Signup Email Webhook</span>
+                  </div>
+                )}
+              </Button>
+
+              {signupResult && (
+                <div className={`p-4 rounded-lg border ${
+                  signupResult.success
+                    ? 'bg-green-500/10 border-green-500/20'
+                    : 'bg-red-500/10 border-red-500/20'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    {signupResult.success ? (
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-400" />
+                    )}
+                    <p className={`text-sm ${
+                      signupResult.success ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {signupResult.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="text-xs text-neutral-500 space-y-1">
+                <p>• Tests signup confirmation email webhook</p>
+                <p>• Sends comprehensive user data to Make.com</p>
+                <p>• Check your email for test confirmation</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -280,21 +412,47 @@ export default function TestWebhookPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-neutral-400">Webhook URL:</span>
-                <span className="text-white font-mono text-xs">
-                  {process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL ? 
-                    `${process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL.substring(0, 50)}...` : 
-                    'Not configured'
-                  }
-                </span>
+            <div className="space-y-3 text-sm">
+              <div>
+                <h4 className="text-neutral-300 font-medium mb-2">Onboarding Webhook</h4>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">URL:</span>
+                    <span className="text-white font-mono text-xs">
+                      {process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL ?
+                        `${process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL.substring(0, 50)}...` :
+                        'Not configured'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Status:</span>
+                    <span className={`text-xs ${process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL ? 'text-green-400' : 'text-red-400'}`}>
+                      {process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL ? '✅ Configured' : '❌ Missing'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-400">Status:</span>
-                <span className={`text-xs ${process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL ? 'text-green-400' : 'text-red-400'}`}>
-                  {process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL ? '✅ Configured' : '❌ Missing'}
-                </span>
+
+              <div>
+                <h4 className="text-neutral-300 font-medium mb-2">Signup Webhook</h4>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">URL:</span>
+                    <span className="text-white font-mono text-xs">
+                      {process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL ?
+                        `${process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL.substring(0, 50)}...` :
+                        'Not configured'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Status:</span>
+                    <span className={`text-xs ${process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL ? 'text-green-400' : 'text-red-400'}`}>
+                      {process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL ? '✅ Configured' : '❌ Missing'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -306,21 +464,55 @@ export default function TestWebhookPage() {
             <CardTitle className="text-white">Test Instructions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 text-sm text-neutral-300">
-              <p>
-                <strong>1. Test Valid Submission:</strong> Sends a complete test payload to the Make.com webhook.
-                Check your Make.com scenario to verify the data is received correctly.
-              </p>
-              <p>
-                <strong>2. Test Validation:</strong> Attempts to submit invalid data to verify client-side validation
-                is working correctly.
-              </p>
-              <p>
-                <strong>3. Check Console:</strong> Open browser developer tools to see detailed logging
-                of the webhook requests and responses.
-              </p>
-              <p className="text-yellow-400">
-                <strong>Note:</strong> Make sure your Make.com webhook URL is configured in the environment variables.
+            <div className="space-y-4 text-sm text-neutral-300">
+              <div>
+                <h4 className="text-white font-medium mb-2">Onboarding Webhook Tests:</h4>
+                <div className="space-y-2 ml-4">
+                  <p>
+                    <strong>• Test Valid Submission:</strong> Sends a complete villa onboarding payload to the Make.com webhook.
+                    Check your Make.com scenario to verify the data is received correctly.
+                  </p>
+                  <p>
+                    <strong>• Test Validation:</strong> Attempts to submit invalid data to verify client-side validation
+                    is working correctly.
+                  </p>
+                  <p>
+                    <strong>• Test Email Validation:</strong> Tests email format validation specifically.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-white font-medium mb-2">Signup Webhook Tests:</h4>
+                <div className="space-y-2 ml-4">
+                  <p>
+                    <strong>• Test Signup Email Webhook:</strong> Sends comprehensive user signup data to the Make.com webhook.
+                    This should trigger a welcome email to be sent to the test email address.
+                  </p>
+                  <p>
+                    <strong>• Check Email:</strong> After running the test, check the email inbox (including spam folder)
+                    for the welcome email from the signup webhook.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-white font-medium mb-2">Debugging:</h4>
+                <div className="space-y-2 ml-4">
+                  <p>
+                    <strong>• Check Console:</strong> Open browser developer tools to see detailed logging
+                    of the webhook requests and responses.
+                  </p>
+                  <p>
+                    <strong>• Make.com Logs:</strong> Check your Make.com scenario execution history to see
+                    if webhooks are being received and processed.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-yellow-400 border-l-2 border-yellow-400 pl-3">
+                <strong>Important:</strong> Make sure both webhook URLs are configured in your environment variables
+                and that your Make.com scenarios are active and properly configured for email sending.
               </p>
             </div>
           </CardContent>
