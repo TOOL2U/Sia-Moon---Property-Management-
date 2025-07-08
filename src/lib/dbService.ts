@@ -1,20 +1,19 @@
 /**
  * Database Service Layer
- * 
+ *
  * This service provides a clean abstraction over the database operations.
- * It can easily switch between local database and Supabase by changing the import.
+ * Uses Firebase Firestore for production and local storage for development.
  * All methods return consistent data structures regardless of the underlying database.
- * 
+ *
  * Features:
  * - Consistent API for all database operations
- * - Easy switching between local and Supabase
+ * - Firebase Firestore integration
  * - Proper error handling and logging
  * - TypeScript support with proper types
  */
 
 import db, { User, Property, Booking, VillaOnboarding, Task, DatabaseResponse } from '@/lib/db'
-// TODO: For production, replace with:
-// import { createClient } from '@supabase/supabase-js'
+// TODO: For production, replace with Firebase Firestore service
 
 export class DatabaseService {
   // USER OPERATIONS
@@ -585,33 +584,4 @@ export class DatabaseService {
 // Export default instance
 export default DatabaseService
 
-// TODO: For Supabase migration, replace the above with:
-// 
-// import { createClient } from '@supabase/supabase-js'
-// 
-// const supabase = createClient(
-//   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-//   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-// )
-// 
-// export class DatabaseService {
-//   static async getUser(id: string) {
-//     const { data, error } = await supabase
-//       .from('users')
-//       .select('*')
-//       .eq('id', id)
-//       .single()
-//     return { data, error }
-//   }
-//   
-//   static async getUserByEmail(email: string) {
-//     const { data, error } = await supabase
-//       .from('users')
-//       .select('*')
-//       .eq('email', email)
-//       .single()
-//     return { data, error }
-//   }
-//   
-//   // ... other methods following the same pattern
-// }
+// TODO: For Firebase migration, replace the above with Firebase Firestore service

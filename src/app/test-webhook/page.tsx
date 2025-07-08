@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { useOnboardingSubmit } from '@/hooks/useOnboardingSubmit'
+import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { CheckCircle, XCircle, Loader2, Send } from 'lucide-react'
 
 export default function TestWebhookPage() {
@@ -19,12 +19,79 @@ export default function TestWebhookPage() {
     setTestResults([])
     addTestResult('Starting webhook test...')
 
-    const testData = {
+    const testData: OnboardingSubmissionData = {
+      // Owner Details
       name: 'Test User',
       email: 'test@example.com',
       phone: '+1234567890',
-      property_address: '123 Test Villa Street, Test City',
-      notes: 'This is a test submission to verify the Make.com webhook integration.'
+      nationality: 'American',
+      preferred_contact_method: 'email',
+      bank_details: 'Test Bank - Account ending in 1234',
+
+      // Property Details
+      property_name: 'Villa Paradise Test',
+      property_address: '123 Test Villa Street, Ubud, Bali, Indonesia',
+      google_maps_url: 'https://maps.google.com/test-villa',
+      bedrooms: 4,
+      bathrooms: 3,
+      land_size_sqm: 500,
+      villa_size_sqm: 300,
+      year_built: 2020,
+
+      // Amenities
+      has_pool: true,
+      has_garden: true,
+      has_air_conditioning: true,
+      internet_provider: 'Telkom Indonesia',
+      has_parking: true,
+      has_laundry: true,
+      has_backup_power: true,
+
+      // Access & Staff
+      access_details: 'Private gate with remote control',
+      has_smart_lock: true,
+      gate_remote_details: 'Remote provided to guests',
+      onsite_staff: 'Daily housekeeping and gardener',
+
+      // Utilities
+      electricity_provider: 'PLN',
+      water_source: 'Municipal water supply',
+      internet_package: 'Fiber 100Mbps',
+
+      // Rental & Marketing
+      rental_rates: '$150-200 per night',
+      platforms_listed: ['Airbnb', 'Booking.com', 'Vrbo'],
+      average_occupancy_rate: '75%',
+      minimum_stay_requirements: '3 nights',
+      target_guests: 'Couples and families',
+      owner_blackout_dates: 'December 20-31, 2024',
+
+      // Preferences & Rules
+      pets_allowed: false,
+      parties_allowed: false,
+      smoking_allowed: false,
+      maintenance_auto_approval_limit: '$500',
+
+      // Current Condition
+      repairs_needed: 'Minor touch-up painting needed',
+      last_septic_service: '2024-01-15',
+      pest_control_schedule: 'Monthly',
+
+      // Photos & Media
+      professional_photos_status: 'completed',
+      floor_plan_images_available: true,
+      video_walkthrough_available: true,
+
+      // Emergency Contact
+      emergency_contact_name: 'Jane Doe',
+      emergency_contact_phone: '+1234567891',
+
+      // Additional Notes
+      notes: 'This is a comprehensive test submission from the webhook test page with all villa details',
+
+      // Submission metadata
+      submission_type: 'test_comprehensive_villa_onboarding',
+      timestamp: new Date().toISOString()
     }
 
     try {
@@ -41,17 +108,18 @@ export default function TestWebhookPage() {
     setTestResults([])
     addTestResult('Testing validation with missing data...')
 
-    const invalidData = {
+    const invalidData: Partial<OnboardingSubmissionData> = {
       name: '',
       email: 'invalid-email',
       phone: '',
+      property_name: '',
       property_address: '',
       notes: ''
     }
 
     try {
       addTestResult('Attempting to submit invalid data...')
-      await submitOnboarding(invalidData)
+      await submitOnboarding(invalidData as OnboardingSubmissionData)
       addTestResult('❌ Validation test failed - should have thrown error')
     } catch (err) {
       // This is expected behavior - validation should catch missing fields
@@ -66,10 +134,11 @@ export default function TestWebhookPage() {
     setTestResults([])
     addTestResult('Testing email validation...')
 
-    const invalidEmailData = {
+    const invalidEmailData: OnboardingSubmissionData = {
       name: 'Test User',
       email: 'invalid-email-format',
       phone: '+1234567890',
+      property_name: 'Test Villa',
       property_address: '123 Test Street',
       notes: 'Testing email validation'
     }

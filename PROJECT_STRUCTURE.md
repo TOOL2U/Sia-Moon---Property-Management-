@@ -80,16 +80,19 @@ villa-property-management/
 - **Next.js 15** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
-- **Supabase** for backend services
+- **Firebase** for backend services
 - **Lucide React** for icons
 
 ## 🔧 Configuration Files
 
 ### Environment Variables (.env.local)
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://alkogpgjxpshoqsfgqef.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 

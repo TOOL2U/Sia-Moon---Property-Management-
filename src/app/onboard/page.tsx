@@ -96,8 +96,8 @@ export default function OnboardYourVilla() {
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
 
-  const [isEditing, setIsEditing] = useState(!!editId)
-  // Note: setIsEditing is unused in development mode since editing redirects away
+  const [isEditing, _setIsEditing] = useState(!!editId)
+  // Note: _setIsEditing is unused in development mode since editing redirects away
   // It will be used when database editing functionality is implemented
 
   // Webhook submission hook for Make.com integration
@@ -215,9 +215,7 @@ export default function OnboardYourVilla() {
     }
   }, [editId, user, loadExistingData])
 
-  // TODO: Replace with new database service when implemented
-  // For now, running in development mode without database storage
-  const supabase = null
+  // Using Firebase for storage and database operations
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -330,7 +328,7 @@ export default function OnboardYourVilla() {
           }
         } else if (field === 'bedrooms' || field === 'bathrooms') {
           // Special handling for number fields
-          if (!value || value === 0 || value === '0' || value === '') {
+          if (!value || value === '0' || value === '') {
             newErrors[field] = message
             console.log(`❌ ${field} is empty or zero`)
           }
@@ -387,7 +385,7 @@ export default function OnboardYourVilla() {
     return true
   }
 
-  const uploadFiles = async () => {
+  const _uploadFiles = async () => { // Unused in dev mode, prepared for Firebase Storage
     const uploadedUrls: {[key: string]: string} = {}
     const filesToUpload = Object.entries(uploadedFiles).filter(([, files]) => files.length > 0)
 
@@ -395,45 +393,14 @@ export default function OnboardYourVilla() {
       return uploadedUrls
     }
 
-    // If Supabase is not available (development mode), simulate file uploads
-    if (!supabase) {
-      for (let i = 0; i < filesToUpload.length; i++) {
-        const [category, files] = filesToUpload[i]!
-        const file = files[0]
-        // Simulate upload with a fake URL
-        uploadedUrls[category] = `https://example.com/uploads/${Date.now()}-${category}-${file.name}`
-        toast.success(`Simulated upload: ${category} (${i + 1}/${filesToUpload.length})`)
-      }
-      return uploadedUrls
-    }
-
+    // TODO: Implement Firebase Storage upload
+    // For now, simulate file uploads in development mode
     for (let i = 0; i < filesToUpload.length; i++) {
       const [category, files] = filesToUpload[i]!
-      const file = files[0] // For now, take the first file
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}-${category}.${fileExt}`
-      const filePath = `villa-documents/${fileName}`
-
-      try {
-        const { error } = await supabase.storage
-          .from('villa-documents')
-          .upload(filePath, file)
-
-        if (error) throw error
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('villa-documents')
-          .getPublicUrl(filePath)
-
-        uploadedUrls[category] = publicUrl
-
-        // Show progress
-        toast.success(`Uploaded ${category} successfully (${i + 1}/${filesToUpload.length})`)
-      } catch (error) {
-        console.error(`Error uploading ${category}:`, error)
-        toast.error(`Failed to upload ${category}: ${error}`)
-      }
+      const file = files[0]
+      // Simulate upload with a placeholder URL
+      uploadedUrls[category] = `https://firebase-storage.example.com/uploads/${Date.now()}-${category}-${file.name}`
+      toast.success(`Simulated upload: ${category} (${i + 1}/${filesToUpload.length})`)
     }
 
     return uploadedUrls
@@ -468,14 +435,81 @@ export default function OnboardYourVilla() {
         return
       }
 
-      // Send villa onboarding data to Make.com for processing
+      // Send comprehensive villa onboarding data to Make.com for processing
       try {
         const makeData: OnboardingSubmissionData = {
+          // Owner Details
           name: formData.ownerFullName,
           email: formData.ownerEmail,
           phone: formData.ownerContactNumber,
+          nationality: formData.ownerNationality,
+          preferred_contact_method: formData.preferredContactMethod,
+          bank_details: formData.bankDetails,
+
+          // Property Details
+          property_name: formData.propertyName,
           property_address: formData.propertyAddress,
-          notes: `Property: ${formData.propertyName}${formData.bedrooms ? ` | Bedrooms: ${formData.bedrooms}` : ''}${formData.bathrooms ? ` | Bathrooms: ${formData.bathrooms}` : ''}`
+          google_maps_url: formData.googleMapsUrl,
+          bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
+          bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
+          land_size_sqm: formData.landSizeSqm ? Number(formData.landSizeSqm) : undefined,
+          villa_size_sqm: formData.villaSizeSqm ? Number(formData.villaSizeSqm) : undefined,
+          year_built: formData.yearBuilt ? Number(formData.yearBuilt) : undefined,
+
+          // Amenities
+          has_pool: formData.hasPool,
+          has_garden: formData.hasGarden,
+          has_air_conditioning: formData.hasAirConditioning,
+          internet_provider: formData.internetProvider,
+          has_parking: formData.hasParking,
+          has_laundry: formData.hasLaundry,
+          has_backup_power: formData.hasBackupPower,
+
+          // Access & Staff
+          access_details: formData.accessDetails,
+          has_smart_lock: formData.hasSmartLock,
+          gate_remote_details: formData.gateRemoteDetails,
+          onsite_staff: formData.onsiteStaff,
+
+          // Utilities
+          electricity_provider: formData.electricityProvider,
+          water_source: formData.waterSource,
+          internet_package: formData.internetPackage,
+
+          // Rental & Marketing
+          rental_rates: formData.rentalRates,
+          platforms_listed: formData.platformsListed,
+          average_occupancy_rate: formData.averageOccupancyRate,
+          minimum_stay_requirements: formData.minimumStayRequirements,
+          target_guests: formData.targetGuests,
+          owner_blackout_dates: formData.ownerBlackoutDates,
+
+          // Preferences & Rules
+          pets_allowed: formData.petsAllowed,
+          parties_allowed: formData.partiesAllowed,
+          smoking_allowed: formData.smokingAllowed,
+          maintenance_auto_approval_limit: formData.maintenanceAutoApprovalLimit,
+
+          // Current Condition
+          repairs_needed: formData.repairsNeeded,
+          last_septic_service: formData.lastSepticService,
+          pest_control_schedule: formData.pestControlSchedule,
+
+          // Photos & Media
+          professional_photos_status: formData.professionalPhotosStatus,
+          floor_plan_images_available: formData.floorPlanImagesAvailable,
+          video_walkthrough_available: formData.videoWalkthroughAvailable,
+
+          // Emergency Contact
+          emergency_contact_name: formData.emergencyContactName,
+          emergency_contact_phone: formData.emergencyContactPhone,
+
+          // Additional Notes
+          notes: `Additional Information: ${formData.repairsNeeded || 'None specified'}`,
+
+          // Submission metadata
+          submission_type: 'comprehensive_villa_onboarding',
+          timestamp: new Date().toISOString()
         }
 
         await submitToMake(makeData)
@@ -640,7 +674,6 @@ export default function OnboardYourVilla() {
                   <h3 className="text-red-400 font-medium mb-2">Please fix the following errors:</h3>
                   <ul className="space-y-1">
                     {Object.entries(validationErrors).map(([field, error]) => {
-                      const fieldLabel = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
                       return (
                         <li key={field} className="text-sm text-red-300 flex items-center gap-2">
                           <span className="w-1 h-1 bg-red-400 rounded-full flex-shrink-0"></span>

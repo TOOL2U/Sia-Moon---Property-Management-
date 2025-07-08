@@ -25,10 +25,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/auth-ui-react": "^0.4.7",
-    "@supabase/auth-ui-shared": "^0.1.8",
-    "@supabase/ssr": "^0.6.1",
+
     "@types/nodemailer": "^6.4.17",
     "axios": "^1.7.9",
     "bcryptjs": "^3.0.2",
@@ -55,7 +52,7 @@
     "react-hot-toast": "^2.4.1",
     "react-onesignal": "^3.0.1",
     "recharts": "^3.0.2",
-    "supabase": "^2.30.4",
+
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.75"
   },

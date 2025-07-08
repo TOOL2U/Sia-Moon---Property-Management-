@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
+import { enableNetwork, disableNetwork, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getAnalytics, isSupported } from 'firebase/analytics'
 
@@ -36,11 +36,17 @@ if (missingFields.length > 0) {
   throw new Error(`Firebase configuration incomplete. Missing: ${missingFields.join(', ')}`)
 }
 
-// Initialize Firebase
+// Initialize Firebase with singleton pattern
 let app
 try {
-  app = initializeApp(firebaseConfig)
-  console.log('✅ Firebase initialized successfully')
+  // Check if Firebase app is already initialized
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig)
+    console.log('✅ Firebase initialized successfully')
+  } else {
+    app = getApp()
+    console.log('✅ Firebase app already initialized, using existing instance')
+  }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
   throw error

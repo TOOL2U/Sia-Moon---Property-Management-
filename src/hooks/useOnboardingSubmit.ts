@@ -1,14 +1,81 @@
 import { useState } from 'react'
 
 /**
- * Type definition for the onboarding form data that will be sent to Make.com
+ * Type definition for the comprehensive villa onboarding data that will be sent to Make.com
  */
 export interface OnboardingSubmissionData {
+  // Owner Details
   name: string
   email: string
   phone: string
+  nationality?: string
+  preferred_contact_method?: string
+  bank_details?: string
+
+  // Property Details
+  property_name: string
   property_address: string
-  notes: string
+  google_maps_url?: string
+  bedrooms?: number
+  bathrooms?: number
+  land_size_sqm?: number
+  villa_size_sqm?: number
+  year_built?: number
+
+  // Amenities
+  has_pool?: boolean
+  has_garden?: boolean
+  has_air_conditioning?: boolean
+  internet_provider?: string
+  has_parking?: boolean
+  has_laundry?: boolean
+  has_backup_power?: boolean
+
+  // Access & Staff
+  access_details?: string
+  has_smart_lock?: boolean
+  gate_remote_details?: string
+  onsite_staff?: string
+
+  // Utilities
+  electricity_provider?: string
+  water_source?: string
+  internet_package?: string
+
+  // Rental & Marketing
+  rental_rates?: string
+  platforms_listed?: string[]
+  average_occupancy_rate?: string
+  minimum_stay_requirements?: string
+  target_guests?: string
+  owner_blackout_dates?: string
+
+  // Preferences & Rules
+  pets_allowed?: boolean
+  parties_allowed?: boolean
+  smoking_allowed?: boolean
+  maintenance_auto_approval_limit?: string
+
+  // Current Condition
+  repairs_needed?: string
+  last_septic_service?: string
+  pest_control_schedule?: string
+
+  // Photos & Media
+  professional_photos_status?: string
+  floor_plan_images_available?: boolean
+  video_walkthrough_available?: boolean
+
+  // Emergency Contact
+  emergency_contact_name?: string
+  emergency_contact_phone?: string
+
+  // Additional Notes
+  notes?: string
+
+  // Submission metadata
+  submission_type?: string
+  timestamp?: string
 }
 
 /**
@@ -70,8 +137,11 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
     }
 
     // Validate required data fields
-    const requiredFields: (keyof OnboardingSubmissionData)[] = ['name', 'email', 'phone', 'property_address']
-    const missingFields = requiredFields.filter(field => !data[field]?.trim())
+    const requiredFields: (keyof OnboardingSubmissionData)[] = ['name', 'email', 'phone', 'property_name', 'property_address']
+    const missingFields = requiredFields.filter(field => {
+      const value = data[field]
+      return !value || (typeof value === 'string' && !value.trim())
+    })
 
     if (missingFields.length > 0) {
       const errorMsg = `Please fill in all required fields: ${missingFields.join(', ')}`
@@ -107,11 +177,79 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: data.name.trim(),
-          email: data.email.trim(),
-          phone: data.phone.trim(),
-          property_address: data.property_address.trim(),
-          notes: data.notes.trim() || '' // Notes can be empty
+          // Owner Details
+          name: data.name?.trim(),
+          email: data.email?.trim(),
+          phone: data.phone?.trim(),
+          nationality: data.nationality?.trim(),
+          preferred_contact_method: data.preferred_contact_method?.trim(),
+          bank_details: data.bank_details?.trim(),
+
+          // Property Details
+          property_name: data.property_name?.trim(),
+          property_address: data.property_address?.trim(),
+          google_maps_url: data.google_maps_url?.trim(),
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          land_size_sqm: data.land_size_sqm,
+          villa_size_sqm: data.villa_size_sqm,
+          year_built: data.year_built,
+
+          // Amenities
+          has_pool: data.has_pool,
+          has_garden: data.has_garden,
+          has_air_conditioning: data.has_air_conditioning,
+          internet_provider: data.internet_provider?.trim(),
+          has_parking: data.has_parking,
+          has_laundry: data.has_laundry,
+          has_backup_power: data.has_backup_power,
+
+          // Access & Staff
+          access_details: data.access_details?.trim(),
+          has_smart_lock: data.has_smart_lock,
+          gate_remote_details: data.gate_remote_details?.trim(),
+          onsite_staff: data.onsite_staff?.trim(),
+
+          // Utilities
+          electricity_provider: data.electricity_provider?.trim(),
+          water_source: data.water_source?.trim(),
+          internet_package: data.internet_package?.trim(),
+
+          // Rental & Marketing
+          rental_rates: data.rental_rates?.trim(),
+          platforms_listed: data.platforms_listed,
+          average_occupancy_rate: data.average_occupancy_rate?.trim(),
+          minimum_stay_requirements: data.minimum_stay_requirements?.trim(),
+          target_guests: data.target_guests?.trim(),
+          owner_blackout_dates: data.owner_blackout_dates?.trim(),
+
+          // Preferences & Rules
+          pets_allowed: data.pets_allowed,
+          parties_allowed: data.parties_allowed,
+          smoking_allowed: data.smoking_allowed,
+          maintenance_auto_approval_limit: data.maintenance_auto_approval_limit?.trim(),
+
+          // Current Condition
+          repairs_needed: data.repairs_needed?.trim(),
+          last_septic_service: data.last_septic_service?.trim(),
+          pest_control_schedule: data.pest_control_schedule?.trim(),
+
+          // Photos & Media
+          professional_photos_status: data.professional_photos_status?.trim(),
+          floor_plan_images_available: data.floor_plan_images_available,
+          video_walkthrough_available: data.video_walkthrough_available,
+
+          // Emergency Contact
+          emergency_contact_name: data.emergency_contact_name?.trim(),
+          emergency_contact_phone: data.emergency_contact_phone?.trim(),
+
+          // Additional Notes
+          notes: data.notes?.trim() || '',
+
+          // Submission metadata
+          submission_type: data.submission_type || 'villa_onboarding',
+          timestamp: data.timestamp || new Date().toISOString(),
+          source: 'sia_moon_webapp'
         })
       })
 

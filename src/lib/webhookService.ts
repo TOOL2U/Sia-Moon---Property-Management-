@@ -25,9 +25,55 @@ export interface WebhookResponse {
   timestamp?: string;
 }
 
+export interface SignupData {
+  // User Information
+  name: string;
+  email: string;
+  phone?: string;
+  role?: string;
+  userId?: string;
+
+  // Account Details
+  account_type?: string;
+  subscription_plan?: string;
+  referral_source?: string;
+  marketing_consent?: boolean;
+
+  // Business Information
+  company_name?: string;
+  business_type?: string;
+  property_count?: string;
+  experience_level?: string;
+  primary_goals?: string[];
+
+  // Technical Details
+  signup_method?: string;
+  device_type?: string;
+  browser?: string;
+  ip_address?: string;
+  user_agent?: string;
+
+  // Timestamps
+  signup_date?: string;
+  email_verified?: boolean;
+  profile_completed?: boolean;
+
+  // Preferences
+  communication_preferences?: string[];
+  timezone?: string;
+  language?: string;
+
+  // Metadata
+  source?: string;
+  campaign_id?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+}
+
 class WebhookService {
-  private static readonly SIGNUP_WEBHOOK_URL = 'https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx';
-  private static readonly ONBOARDING_WEBHOOK_URL = 'https://hook.eu2.make.com/b59iga7bj65atyrgo5ej9dwvlujdsupa';
+  private static readonly SIGNUP_WEBHOOK_URL = process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL || 'https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx';
+  private static readonly ONBOARDING_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL || 'https://hook.eu2.make.com/b59iga7bj65atyrgo5ej9dwvlujdsupa';
   private static readonly TIMEOUT_MS = 10000; // 10 seconds
 
   /**
@@ -97,33 +143,98 @@ class WebhookService {
   }
 
   /**
-   * Send signup confirmation email
+   * Send comprehensive signup data to webhook and email
    */
-  static async sendSignupConfirmation(userData: {
-    name: string;
-    email: string;
-    role?: string;
-    userId?: string;
-  }): Promise<WebhookResponse> {
-    const { getSignupConfirmationEmail } = await import('./emailTemplates');
-    const emailTemplate = getSignupConfirmationEmail(userData);
+  static async sendSignupConfirmation(signupData: SignupData): Promise<WebhookResponse> {
+    try {
+      console.log('🚀 Sending comprehensive signup data to Make.com:', {
+        email: signupData.email?.replace(/(.{2}).*(@.*)/, '$1***$2'), // Mask email for logging
+        name: signupData.name,
+        userId: signupData.userId
+      });
 
-    return this.sendEmail({
-      to: userData.email,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html,
-      text: emailTemplate.text,
-      from: 'noreply@siamoon.com',
-      fromName: 'Sia Moon Property Management',
-      replyTo: 'support@siamoon.com',
-      type: 'signup_confirmation',
-      userData,
-      metadata: {
-        signupDate: new Date().toISOString(),
-        userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'Server',
-        source: 'web_signup'
+      // Prepare comprehensive signup payload
+      const webhookPayload = {
+        // User Information
+        name: signupData.name?.trim(),
+        email: signupData.email?.trim(),
+        phone: signupData.phone?.trim(),
+        role: signupData.role || 'property_owner',
+        userId: signupData.userId,
+
+        // Account Details
+        account_type: signupData.account_type || 'standard',
+        subscription_plan: signupData.subscription_plan || 'free',
+        referral_source: signupData.referral_source,
+        marketing_consent: signupData.marketing_consent || false,
+
+        // Business Information
+        company_name: signupData.company_name?.trim(),
+        business_type: signupData.business_type,
+        property_count: signupData.property_count,
+        experience_level: signupData.experience_level,
+        primary_goals: signupData.primary_goals || [],
+
+        // Technical Details
+        signup_method: signupData.signup_method || 'web_form',
+        device_type: signupData.device_type,
+        browser: signupData.browser,
+        ip_address: signupData.ip_address,
+        user_agent: signupData.user_agent,
+
+        // Timestamps
+        signup_date: signupData.signup_date || new Date().toISOString(),
+        email_verified: signupData.email_verified || false,
+        profile_completed: signupData.profile_completed || false,
+
+        // Preferences
+        communication_preferences: signupData.communication_preferences || ['email'],
+        timezone: signupData.timezone,
+        language: signupData.language || 'en',
+
+        // Metadata
+        source: signupData.source || 'sia_moon_webapp',
+        campaign_id: signupData.campaign_id,
+        utm_source: signupData.utm_source,
+        utm_medium: signupData.utm_medium,
+        utm_campaign: signupData.utm_campaign,
+
+        // System metadata
+        submission_type: 'user_signup',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+      };
+
+      // Send to webhook
+      const response = await fetch(this.SIGNUP_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'SiaMoon-PropertyManagement/1.0'
+        },
+        body: JSON.stringify(webhookPayload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Signup webhook failed with status: ${response.status}`);
       }
-    }, this.SIGNUP_WEBHOOK_URL);
+
+      console.log('✅ Signup data sent successfully to Make.com');
+
+      return {
+        success: true,
+        webhookId: `signup-${Date.now()}`,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('❌ Signup webhook failed:', error);
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown signup webhook error'
+      };
+    }
   }
 
   /**
