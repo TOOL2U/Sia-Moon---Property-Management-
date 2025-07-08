@@ -1,5 +1,18 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# backup directories (should not be in production)
+.backups/
+*.backup
+
+# test and debug files (should not be in production)
+test-*.js
+debug-*.js
+debug-*.mjs
+*.debug.log
+pglite-debug.log
+setup-sql-executor.js
+add-profile-trigger.js
+
 # dependencies
 /node_modules
 /.pnp
