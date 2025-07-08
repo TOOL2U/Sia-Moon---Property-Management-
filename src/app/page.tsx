@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import CloudinaryImage from '@/components/ui/CloudinaryImage'
-import { useAuth } from '@/contexts/AuthContext'
+// TODO: Replace with new auth system when implemented
 import {
   ArrowRight,
   Star,
@@ -27,8 +27,10 @@ import { CountUpNumber, PercentageCounter } from '@/components/animations/CountU
 
 export default function Home() {
   const router = useRouter()
-  const { user, loading } = useAuth()
-  const profile = user // For compatibility with existing code
+  // TODO: Replace with new auth system when implemented
+  const user = null
+  const profile = null
+  const loading = false
 
   // Initialize page load animation system with single trigger
   const { animationPhase, skipAnimations } = usePageLoadAnimation()
@@ -140,7 +142,7 @@ export default function Home() {
                 animate={skipAnimations ? { opacity: 1, y: 0, filter: 'blur(0px)' } : (animationPhase !== 'loading' ? "animate" : { opacity: 1, y: 0, filter: 'blur(0px)' })}
               >
                 <p className="text-l text-white-400 max-w-2xl mx-auto mb-1 mt-5 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-300 via-80% to-transparent text-transparent">
-                  Meet the system for modern software development.
+                  Meet the system for modern property management.
                 </p>
                 <p className="text-l text-white-400 max-w-2xl mx-auto mb-10 leading-relaxed bg-clip-text bg-gradient-to-r from-white via-gray-400 via-80% to-transparent text-transparent">
                   Streamline bookings, maintenance, and reporting with a modern, automated workflow.
@@ -394,7 +396,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -416,7 +418,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -437,7 +439,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -462,7 +464,7 @@ export default function Home() {
               className="text-center group cursor-default"
             >
               <motion.div
-                className="bg-gradient-to-br from-white/[0.07] to-transparent rounded-xl p-6 border border-white/10 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/5 backdrop-blur-sm"
+                className="p-6 hover:border-white/20 hover:bg-white/[0.08] transition-all duration-300 hover:shadow-xl hover:shadow-white/1 backdrop-blur-sm rounded-2xl"
                 whileHover={{ y: -8, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
@@ -677,7 +679,12 @@ export default function Home() {
                 whileHover={{ x: 5 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link href="/contactus" className="inline-flex items-center text-gray-400 hover:text-white transition-all duration-300 hover:bg-white/5 px-4 py-3 rounded-lg group">
+                <Link 
+                  href="https://wa.me/66933880630" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-gray-400 hover:text-white transition-all duration-300 hover:bg-white/5 px-4 py-3 rounded-lg group"
+                >
                   Contact Us
                   <motion.div
                     className="ml-1"

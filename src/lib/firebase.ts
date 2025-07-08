@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore, enableNetwork, disableNetwork, connectFirestoreEmulator, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
+import { getAnalytics, isSupported } from 'firebase/analytics'
 
 // Firebase configuration using direct process.env access
 const firebaseConfig = {
@@ -47,8 +48,52 @@ try {
 
 // Initialize Firebase services
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+
+// Initialize Firestore with custom settings to reduce connection issues
+export const db = initializeFirestore(app, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+  experimentalForceLongPolling: false, // Use WebSocket when available
+  ignoreUndefinedProperties: true,
+})
+
 export const storage = getStorage(app)
+
+// Configure Firestore for better offline handling
+if (typeof window !== 'undefined') {
+  // Add a delay before enabling network to ensure proper initialization
+  setTimeout(() => {
+    enableNetwork(db).catch((error) => {
+      console.warn('⚠️ Firestore network enable failed:', error)
+      // Try to recover by disabling and re-enabling network
+      setTimeout(() => {
+        disableNetwork(db).then(() => {
+          setTimeout(() => {
+            enableNetwork(db).catch((retryError) => {
+              console.warn('⚠️ Firestore network retry failed:', retryError)
+            })
+          }, 1000)
+        })
+      }, 2000)
+    })
+  }, 1000)
+}
+
+// Initialize Analytics (only in browser and if supported)
+let analytics: any = null
+if (typeof window !== 'undefined') {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app)
+      console.log('📊 Firebase Analytics initialized')
+    } else {
+      console.log('📊 Firebase Analytics not supported in this environment')
+    }
+  }).catch((error) => {
+    console.warn('⚠️ Firebase Analytics initialization failed:', error)
+  })
+}
+
+export { analytics }
 
 // Export the app instance
 export default app
@@ -58,5 +103,6 @@ console.log('🔥 Firebase services initialized:', {
   auth: !!auth,
   firestore: !!db,
   storage: !!storage,
+  analytics: !!analytics,
   projectId: firebaseConfig.projectId
 })

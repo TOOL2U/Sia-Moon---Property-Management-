@@ -1,24 +1,25 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useUser } from '@/contexts/UserContext'
+import { useAuth } from '@/contexts/AuthContext'
 import SignUpForm from '@/components/SignUpForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { ArrowLeft } from 'lucide-react'
+// Temporarily commenting out to isolate the issue
+// import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export default function SignUpPage() {
-  const { session, loading } = useUser()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && user) {
       console.log('🔄 User already authenticated, redirecting to dashboard...')
       router.push('/dashboard')
     }
-  }, [loading, session, router])
+  }, [loading, user, router])
 
   if (loading) {
     return (
@@ -39,8 +40,8 @@ export default function SignUpPage() {
           href="/auth/login"
           className="inline-flex items-center text-sm text-neutral-400 hover:text-white mb-6 transition-colors duration-200"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Sign In
+          {/* <ArrowLeft className="h-4 w-4 mr-2" /> */}
+          ← Back to Sign In
         </Link>
 
         <Card className="bg-neutral-900 border-neutral-800">

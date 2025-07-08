@@ -305,7 +305,8 @@ export function Navbar() {
     { href: `/dashboard/client`, label: 'Dashboard' }, // Default to client dashboard
     { href: '/properties', label: 'Properties' },
     { href: '/bookings', label: 'Bookings' },
-    { href: '/onboard', label: 'Onboarding Form' },
+    { href: '/reports', label: 'Reports' },
+    { href: '/onboard', label: 'Onbourding Form' },
     // TODO: Add role-based navigation when auth is implemented
     { href: 'https://wa.me/', label: 'Contact Us' }, // Added Contact Us tab linking to WhatsApp
   ] : []

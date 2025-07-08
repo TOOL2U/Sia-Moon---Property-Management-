@@ -55,65 +55,13 @@ export default function EditPropertyPage() {
     try {
       console.log('🔍 Loading property for editing (development mode with mock data)')
 
-      // TODO: Replace with real data loading when new database service is implemented
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 800))
+      // Load property from Firestore for editing
 
-      // Mock property data based on ID
-      const mockProperties: { [key: string]: Property } = {
-        'prop-1': {
-          id: 'prop-1',
-          name: 'Sunset Villa Bali',
-          address: 'Jl. Sunset Road, Seminyak, Bali, Indonesia',
-          client_id: 'dev-user',
-          created_at: '2024-01-15T00:00:00Z',
-          updated_at: '2024-07-01T00:00:00Z',
-          users: {
-            name: 'John Smith',
-            email: 'john@example.com'
-          }
-        },
-        'prop-2': {
-          id: 'prop-2',
-          name: 'Ocean View Retreat',
-          address: 'Jl. Pantai Berawa, Canggu, Bali, Indonesia',
-          client_id: 'dev-user',
-          created_at: '2024-02-20T00:00:00Z',
-          updated_at: '2024-06-15T00:00:00Z',
-          users: {
-            name: 'John Smith',
-            email: 'john@example.com'
-          }
-        },
-        'prop-3': {
-          id: 'prop-3',
-          name: 'Mountain View Lodge',
-          address: 'Jl. Monkey Forest Road, Ubud, Bali, Indonesia',
-          client_id: 'dev-user',
-          created_at: '2024-03-10T00:00:00Z',
-          updated_at: '2024-05-20T00:00:00Z',
-          users: {
-            name: 'John Smith',
-            email: 'john@example.com'
-          }
-        }
-      }
-
-      const mockProperty = mockProperties[propertyId]
-
-      if (!mockProperty) {
-        toast.error('Property not found')
-        router.push('/properties')
-        return
-      }
-
-      setProperty(mockProperty)
-      setFormData({
-        name: mockProperty.name,
-        address: mockProperty.address
-      })
-
-      console.log('✅ Property loaded for editing:', mockProperty.name)
+      // Load property from Firestore for editing
+      // For new users, no properties will exist
+      toast.error('Property not found - new user has no properties')
+      router.push('/properties')
+      return
     } catch (error) {
       console.error('❌ Error loading property:', error)
       toast.error('Failed to load property')

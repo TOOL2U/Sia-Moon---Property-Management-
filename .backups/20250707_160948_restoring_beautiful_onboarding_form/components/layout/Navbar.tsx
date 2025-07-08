@@ -266,7 +266,7 @@ function MobileDrawer({ isOpen, onClose, navigationLinks, user, onSignOut }: Mob
                 className="flex w-full items-center justify-center px-4 py-3 text-base font-medium bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 rounded-lg transition-all duration-200"
                 onClick={onClose}
               >
-                Get Started
+                Get Startedddddd
               </Link>
             </div>
           )}

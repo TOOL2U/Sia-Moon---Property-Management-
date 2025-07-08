@@ -5,6 +5,7 @@ import { DashboardSidebar } from './DashboardSidebar'
 import { Bell, Search, Calendar, ChevronDown, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { format } from 'date-fns'
 
 interface DashboardLayoutProps {
@@ -115,19 +116,7 @@ export function DashboardLayout({
               </div>
 
               {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative text-neutral-400 hover:text-white p-2"
-              >
-                <Bell className="w-5 h-5" />
-                <Badge 
-                  variant="secondary" 
-                  className="absolute -top-1 -right-1 bg-red-500 text-white border-red-500 text-xs px-1.5 py-0.5 h-5 min-w-[20px]"
-                >
-                  3
-                </Badge>
-              </Button>
+              <NotificationBell className="text-neutral-400 hover:text-white p-2" />
 
               {/* Custom Actions */}
               {actions}

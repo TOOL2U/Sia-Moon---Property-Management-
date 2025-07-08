@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+// Testing imports one by one to identify the problematic component
 import { Navbar } from '@/components/layout/Navbar';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { UserProvider } from '@/contexts/UserContext';
-// import { Toaster } from 'react-hot-toast';
+import { ToasterProvider } from '@/components/providers/ToasterProvider';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,12 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased bg-black text-white transition-colors duration-200`}>
-        <UserProvider>
-          <AuthProvider>
-            <Navbar />
-            <main className="page-transition">{children}</main>
-          </AuthProvider>
-        </UserProvider>
+        <AuthProvider>
+          <Navbar />
+          <main className="page-transition">{children}</main>
+          <ToasterProvider />
+        </AuthProvider>
       </body>
     </html>
   );

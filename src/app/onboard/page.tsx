@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -97,6 +97,8 @@ export default function OnboardYourVilla() {
   const editId = searchParams.get('edit')
 
   const [isEditing, setIsEditing] = useState(!!editId)
+  // Note: setIsEditing is unused in development mode since editing redirects away
+  // It will be used when database editing functionality is implemented
 
   // Webhook submission hook for Make.com integration
   const { submitOnboarding: submitToMake } = useOnboardingSubmit()
@@ -186,14 +188,7 @@ export default function OnboardYourVilla() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const [loadingExisting, setLoadingExisting] = useState(false)
 
-  // Load existing data when editing
-  useEffect(() => {
-    if (editId && user) {
-      loadExistingData(editId)
-    }
-  }, [editId, user])
-
-  const loadExistingData = async (id: string) => {
+  const loadExistingData = useCallback(async (_id: string) => { // _id unused in dev mode
     if (!user) return
 
     try {
@@ -204,105 +199,6 @@ export default function OnboardYourVilla() {
       // For now, just show a message that editing is not available in development mode
       toast.error('Editing existing villa data is not available in development mode')
       router.push('/dashboard/client/onboarding')
-      return
-
-      if (error) {
-        toast.error('Failed to load villa data for editing')
-        router.push('/dashboard/client/onboarding')
-        return
-      }
-
-      // Check if this onboarding belongs to the current user
-      if (data && data.user_id !== user.id) {
-        toast.error('Access denied. You can only edit your own submissions.')
-        router.push('/dashboard/client/onboarding')
-        return
-      }
-
-      if (data) {
-        // Map database data to form data
-        setFormData({
-          // Owner Details
-          ownerFullName: data.owner_full_name || '',
-          ownerNationality: data.owner_nationality || '',
-          ownerContactNumber: data.owner_contact_number || '',
-          ownerEmail: data.owner_email || '',
-          preferredContactMethod: data.preferred_contact_method || '',
-          bankDetails: data.bank_details || '',
-
-          // Property Details
-          propertyName: data.property_name || '',
-          propertyAddress: data.property_address || '',
-          googleMapsUrl: data.google_maps_url || '',
-          bedrooms: data.bedrooms || 0,
-          bathrooms: data.bathrooms || 0,
-          landSizeSqm: data.land_size_sqm || 0,
-          villaSizeSqm: data.villa_size_sqm || 0,
-          yearBuilt: data.year_built || 0,
-
-          // Amenities
-          hasPool: data.has_pool || false,
-          hasGarden: data.has_garden || false,
-          hasAirConditioning: data.has_air_conditioning || false,
-          internetProvider: data.internet_provider || '',
-          hasParking: data.has_parking || false,
-          hasLaundry: data.has_laundry || false,
-          hasBackupPower: data.has_backup_power || false,
-
-          // Access & Staff
-          accessDetails: data.access_details || '',
-          hasSmartLock: data.has_smart_lock || false,
-          gateRemoteDetails: data.gate_remote_details || '',
-          onsiteStaff: data.onsite_staff || '',
-
-          // Utilities
-          electricityProvider: data.electricity_provider || '',
-          waterSource: data.water_source || '',
-          internetPackage: data.internet_package || '',
-
-          // Rental & Marketing
-          rentalRates: data.rental_rates || '',
-          platformsListed: data.platforms_listed || [],
-          averageOccupancyRate: data.average_occupancy_rate || '',
-          minimumStayRequirements: data.minimum_stay_requirements || '',
-          targetGuests: data.target_guests || '',
-          ownerBlackoutDates: data.owner_blackout_dates || '',
-
-          // Preferences & Rules
-          petsAllowed: data.pets_allowed || false,
-          partiesAllowed: data.parties_allowed || false,
-          smokingAllowed: data.smoking_allowed || false,
-          maintenanceAutoApprovalLimit: data.maintenance_auto_approval_limit || '',
-
-          // Current Condition
-          repairsNeeded: data.repairs_needed || '',
-          lastSepticService: data.last_septic_service || '',
-          pestControlSchedule: data.pest_control_schedule || '',
-
-          // Photos & Media
-          professionalPhotosStatus: data.professional_photos_status || '',
-          floorPlanImagesAvailable: data.floor_plan_images_available || false,
-          videoWalkthroughAvailable: data.video_walkthrough_available || false,
-
-          // Emergency Contact
-          emergencyContactName: data.emergency_contact_name || '',
-          emergencyContactPhone: data.emergency_contact_phone || '',
-
-          // File uploads (empty for now)
-          furnitureAppliances: [],
-          floorPlans: [],
-          titleDeed: [],
-          houseRegistration: [],
-          insurancePolicy: [],
-          licenses: [],
-
-          // Confirmation
-          informationConfirmed: false // Reset this for editing
-        })
-
-        setIsEditing(true)
-        toast.success('Villa data loaded for editing')
-      }
     } catch (error) {
       console.error('Error loading existing data:', error)
       toast.error('Failed to load villa data for editing')
@@ -310,7 +206,14 @@ export default function OnboardYourVilla() {
     } finally {
       setLoadingExisting(false)
     }
-  }
+  }, [user, router])
+
+  // Load existing data when editing
+  useEffect(() => {
+    if (editId && user) {
+      loadExistingData(editId)
+    }
+  }, [editId, user, loadExistingData])
 
   // TODO: Replace with new database service when implemented
   // For now, running in development mode without database storage
@@ -462,7 +365,6 @@ export default function OnboardYourVilla() {
       // Create detailed error message
       const errorCount = Object.keys(newErrors).length
       const firstError = Object.entries(newErrors)[0]
-      const fieldName = firstError[0].replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
 
       toast.error(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}. First error: ${firstError[1]}`)
 
@@ -552,90 +454,9 @@ export default function OnboardYourVilla() {
     setError('')
 
     try {
-      // Upload files first
-      const uploadedUrls = await uploadFiles()
-
-      // Prepare data for insertion
-      const villaData = {
-        user_id: user?.id || 'dev-user',
-        // Owner Details
-        owner_full_name: formData.ownerFullName,
-        owner_nationality: formData.ownerNationality,
-        owner_contact_number: formData.ownerContactNumber,
-        owner_email: formData.ownerEmail,
-        preferred_contact_method: formData.preferredContactMethod === '' ? null : formData.preferredContactMethod,
-        bank_details: formData.bankDetails || null,
-
-        // Property Details
-        property_name: formData.propertyName,
-        property_address: formData.propertyAddress,
-        google_maps_url: formData.googleMapsUrl || null,
-        bedrooms: formData.bedrooms ? Number(formData.bedrooms) : null,
-        bathrooms: formData.bathrooms ? Number(formData.bathrooms) : null,
-        land_size_sqm: formData.landSizeSqm ? Number(formData.landSizeSqm) : null,
-        villa_size_sqm: formData.villaSizeSqm ? Number(formData.villaSizeSqm) : null,
-        year_built: formData.yearBuilt ? Number(formData.yearBuilt) : null,
-
-        // Amenities
-        has_pool: formData.hasPool,
-        has_garden: formData.hasGarden,
-        has_air_conditioning: formData.hasAirConditioning,
-        internet_provider: formData.internetProvider || null,
-        has_parking: formData.hasParking,
-        has_laundry: formData.hasLaundry,
-        has_backup_power: formData.hasBackupPower,
-
-        // Access & Staff
-        access_details: formData.accessDetails || null,
-        has_smart_lock: formData.hasSmartLock,
-        gate_remote_details: formData.gateRemoteDetails || null,
-        onsite_staff: formData.onsiteStaff || null,
-
-        // Utilities
-        electricity_provider: formData.electricityProvider || null,
-        water_source: formData.waterSource || null,
-        internet_package: formData.internetPackage || null,
-
-        // Rental & Marketing
-        rental_rates: formData.rentalRates || null,
-        platforms_listed: formData.platformsListed,
-        average_occupancy_rate: formData.averageOccupancyRate ? Number(formData.averageOccupancyRate) : null,
-        minimum_stay_requirements: formData.minimumStayRequirements || null,
-        target_guests: formData.targetGuests || null,
-        owner_blackout_dates: formData.ownerBlackoutDates || null,
-
-        // Preferences & Rules
-        pets_allowed: formData.petsAllowed,
-        parties_allowed: formData.partiesAllowed,
-        smoking_allowed: formData.smokingAllowed,
-        maintenance_auto_approval_limit: formData.maintenanceAutoApprovalLimit ? Number(formData.maintenanceAutoApprovalLimit) : null,
-
-        // Current Condition
-        repairs_needed: formData.repairsNeeded || null,
-        last_septic_service: formData.lastSepticService || null,
-        pest_control_schedule: formData.pestControlSchedule || null,
-
-        // Photos & Media
-        professional_photos_status: formData.professionalPhotosStatus === '' ? null : formData.professionalPhotosStatus,
-        floor_plan_images_available: formData.floorPlanImagesAvailable,
-        video_walkthrough_available: formData.videoWalkthroughAvailable,
-
-        // Emergency Contact
-        emergency_contact_name: formData.emergencyContactName,
-        emergency_contact_phone: formData.emergencyContactPhone,
-
-        // File URLs
-        furniture_appliances_list_url: uploadedUrls.furnitureAppliances || null,
-        floor_plans_url: uploadedUrls.floorPlans || null,
-        title_deed_url: uploadedUrls.titleDeed || null,
-        house_registration_url: uploadedUrls.houseRegistration || null,
-        insurance_policy_url: uploadedUrls.insurancePolicy || null,
-        licenses_url: uploadedUrls.licenses || null,
-
-        // Confirmation
-        information_confirmed: formData.informationConfirmed,
-        status: 'pending'
-      }
+      // TODO: In production, upload files and prepare data for database insertion
+      // For now in development mode, we only send basic info to Make.com webhook
+      // const uploadedUrls = await uploadFiles()
 
       // TODO: Replace with new database service when implemented
       // For now, just send to Make.com webhook for processing
@@ -712,7 +533,7 @@ export default function OnboardYourVilla() {
             </div>
             <CardTitle className="text-2xl font-semibold text-white animate-fade-in-up animate-delay-300">Villa Submitted Successfully!</CardTitle>
             <CardDescription className="text-neutral-400 mt-3 animate-fade-in-up animate-delay-450">
-              Thank you for choosing Sia Moon Property Management. We'll review your comprehensive villa information and contact you within 24-48 hours to discuss next steps.
+              Thank you for choosing Sia Moon Property Management. We&apos;ll review your comprehensive villa information and contact you within 24-48 hours to discuss next steps.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -726,15 +547,15 @@ export default function OnboardYourVilla() {
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                    We'll schedule a property visit
+                    We&apos;ll schedule a property visit
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                    You'll receive a management proposal
+                    You&apos;ll receive a management proposal
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                    We'll begin onboarding your villa
+                    We&apos;ll begin onboarding your villa
                   </li>
                 </ul>
               </div>

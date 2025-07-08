@@ -2,23 +2,29 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-// Validation schema
+// Validation schemas
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
 })
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+})
+
 type SignInFormData = z.infer<typeof signInSchema>
+type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 
 interface SignInFormProps {
   onSuccess?: () => void
@@ -28,6 +34,8 @@ interface SignInFormProps {
 export default function SignInForm({ onSuccess, className = '' }: SignInFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const router = useRouter()
 
   const {
@@ -37,6 +45,15 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
     setError
   } = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema)
+  })
+
+  const {
+    register: registerForgot,
+    handleSubmit: handleSubmitForgot,
+    formState: { errors: forgotErrors },
+    reset: resetForgotForm
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema)
   })
 
   const onSubmit = async (data: SignInFormData) => {
@@ -66,8 +83,41 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
     }
   }
 
+  const onForgotPasswordSubmit = async (data: ForgotPasswordFormData) => {
+    try {
+      setIsResettingPassword(true)
+      console.log('🔄 Sending password reset email to:', data.email)
+
+      await sendPasswordResetEmail(auth, data.email)
+
+      console.log('✅ Password reset email sent successfully')
+      toast.success('Password reset email sent! Check your inbox.')
+
+      // Reset form and close modal
+      resetForgotForm()
+      setShowForgotPassword(false)
+
+    } catch (error: any) {
+      console.error('❌ Password reset error:', error)
+
+      // Handle specific Firebase errors
+      if (error.code === 'auth/user-not-found') {
+        toast.error('No account found with this email address.')
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('Please enter a valid email address.')
+      } else if (error.code === 'auth/too-many-requests') {
+        toast.error('Too many requests. Please try again later.')
+      } else {
+        toast.error('Failed to send password reset email. Please try again.')
+      }
+    } finally {
+      setIsResettingPassword(false)
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
+    <>
+      <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
       {/* Email Field */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
@@ -79,6 +129,7 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
             id="email"
             type="email"
             placeholder="Enter your email"
+            autoComplete="email"
             className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
             {...register('email')}
           />
@@ -99,6 +150,7 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
             id="password"
             type={showPassword ? 'text' : 'password'}
             placeholder="Enter your password"
+            autoComplete="current-password"
             className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
             {...register('password')}
           />
@@ -113,6 +165,23 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
         {errors.password && (
           <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
         )}
+
+        {/* Forgot Password Links */}
+        <div className="text-right space-y-1">
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(true)}
+            className="block text-sm text-primary-400 hover:text-primary-300 transition-colors duration-200"
+          >
+            Forgot your password?
+          </button>
+          <Link
+            href="/auth/forgot-password"
+            className="block text-xs text-neutral-500 hover:text-neutral-400 transition-colors duration-200"
+          >
+            Or use dedicated reset page
+          </Link>
+        </div>
       </div>
 
       {/* Submit Button */}
@@ -131,6 +200,70 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
           'Sign In'
         )}
       </Button>
-    </form>
+      </form>
+
+      {/* Forgot Password Modal - Moved outside of main form */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-2">Reset Password</h3>
+            <p className="text-sm text-neutral-400 mb-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+
+            <form onSubmit={handleSubmitForgot(onForgotPasswordSubmit)} className="space-y-4">
+              <div>
+                <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    autoComplete="email"
+                    className={`pl-10 ${forgotErrors.email ? 'border-red-500' : ''}`}
+                    {...registerForgot('email')}
+                  />
+                </div>
+                {forgotErrors.email && (
+                  <p className="mt-1 text-sm text-red-500">{forgotErrors.email.message}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false)
+                    resetForgotForm()
+                  }}
+                  className="flex-1"
+                  disabled={isResettingPassword}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isResettingPassword}
+                  className="flex-1"
+                >
+                  {isResettingPassword ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    'Send Reset Email'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

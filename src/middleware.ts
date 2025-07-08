@@ -2,11 +2,15 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { isDevelopmentBypass, isDevelopmentSessionBypass } from '@/lib/env'
 
 export async function middleware(request: NextRequest) {
+  console.log('🔍 MIDDLEWARE: Processing request for:', request.nextUrl.pathname)
+
   // Public routes that don't require authentication
   const publicRoutes = [
     '/',
     '/auth/login',
     '/auth/signup',
+    '/auth/forgot-password',
+    '/auth/reset-password',
     '/developers',
     '/status'
   ]
@@ -20,7 +24,17 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/favicon')
   )
 
-  if (isPublicRoute || isDevelopmentBypass || isDevelopmentSessionBypass) {
+  console.log('🔍 MIDDLEWARE: isPublicRoute:', isPublicRoute, 'for path:', request.nextUrl.pathname)
+
+  if (isPublicRoute) {
+    console.log('🔍 MIDDLEWARE: Public route, allowing access')
+    return NextResponse.next()
+  }
+
+  console.log('🔍 MIDDLEWARE: isDevelopmentBypass:', isDevelopmentBypass)
+  console.log('🔍 MIDDLEWARE: isDevelopmentSessionBypass:', isDevelopmentSessionBypass)
+
+  if (isDevelopmentBypass || isDevelopmentSessionBypass) {
     if (isDevelopmentBypass) {
       console.warn('🚨 AUTH BYPASS ENABLED - DEVELOPMENT ONLY')
     }
@@ -30,8 +44,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For now, allow all routes since Supabase auth is removed
-  // TODO: Implement new authentication middleware when ready
+  // Check for authentication token in cookies
+  const authToken = request.cookies.get('auth-token')?.value
+  const firebaseToken = request.cookies.get('firebase-auth-token')?.value
+
+  console.log('🔍 MIDDLEWARE: Checking authentication tokens...')
+  console.log('🔍 MIDDLEWARE: authToken:', authToken ? 'EXISTS' : 'MISSING')
+  console.log('🔍 MIDDLEWARE: firebaseToken:', firebaseToken ? 'EXISTS' : 'MISSING')
+
+  // For now, let's be more strict and require a valid, non-empty token
+  const hasValidToken = (authToken && authToken.length > 10) || (firebaseToken && firebaseToken.length > 10)
+
+  if (!hasValidToken) {
+    console.log('🔒 MIDDLEWARE: No valid authentication token found, redirecting to login')
+    const loginUrl = new URL('/auth/login', request.url)
+    loginUrl.searchParams.set('redirect', request.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Allow authenticated requests to proceed
+  console.log('✅ MIDDLEWARE: Valid authentication token found, allowing access')
   return NextResponse.next()
 }
 

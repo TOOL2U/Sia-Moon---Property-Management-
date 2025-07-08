@@ -3,45 +3,41 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUser } from '@/contexts/UserContext'
 
 export default function DashboardRedirect() {
   const router = useRouter()
-  const { loading } = useAuth()
-  const { session, profile, loading: userLoading } = useUser()
+  const { user, loading } = useAuth()
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
-      // Wait for both auth contexts to finish loading
-      if (loading || userLoading) {
-        console.log('🔄 Dashboard redirect: Still loading...', { loading, userLoading })
+      // Wait for auth to finish loading
+      if (loading) {
+        console.log('🔄 Dashboard redirect: Still loading...', { loading })
         return
       }
 
       console.log('🔍 Dashboard auth check:', {
-        session: session ? 'exists' : 'none',
-        profile: profile ? 'exists' : 'none',
-        loading,
-        userLoading
+        user: user ? 'exists' : 'none',
+        loading
       })
 
-      // If no session, redirect to login
-      if (!session) {
-        console.log('❌ No session found, redirecting to login')
-        router.push('/login')
+      // If no user, redirect to login
+      if (!user) {
+        console.log('❌ No user found, redirecting to login')
+        router.push('/auth/login')
         return
       }
 
-      // If session exists, redirect to appropriate dashboard
-      console.log('✅ Session found, redirecting to client dashboard')
+      // If user exists, redirect to appropriate dashboard
+      console.log('✅ User found, redirecting to client dashboard')
       router.push('/dashboard/client')
     }
 
     checkAuthAndRedirect()
-  }, [session, profile, loading, userLoading, router])
+  }, [user, loading, router])
 
   // Show loading while checking authentication
-  if (loading || userLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">

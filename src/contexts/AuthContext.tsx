@@ -5,6 +5,18 @@ import { useRouter } from 'next/navigation'
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
+import { getUserDocument, isConnectivityError } from '@/lib/firestoreUtils'
+
+// Cookie management utilities
+const setCookie = (name: string, value: string, days: number = 7) => {
+  const expires = new Date()
+  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000))
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`
+}
+
+const deleteCookie = (name: string) => {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`
+}
 
 interface User {
   id: string
@@ -36,36 +48,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔄 AuthContext auth state changed:', firebaseUser ? 'User signed in' : 'User signed out')
 
       if (firebaseUser) {
-        try {
-          // Fetch user profile from Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-          if (userDoc.exists()) {
-            const userData = userDoc.data()
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              full_name: userData.fullName || '',
-              role: userData.role || 'client'
-            })
-          } else {
-            // Fallback if no profile exists
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              full_name: '',
-              role: 'client'
-            })
-          }
-        } catch (error) {
-          console.error('Error fetching user profile:', error)
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            full_name: '',
-            role: 'client'
-          })
+        // Set authentication cookie for middleware
+        if (typeof window !== 'undefined') {
+          setCookie('firebase-auth-token', firebaseUser.uid, 7)
         }
+
+        // Set basic user info immediately to avoid blocking UI
+        const basicUser = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          full_name: '',
+          role: 'client' as const
+        }
+        setUser(basicUser)
+
+        // Fetch additional user profile from Firestore with improved error handling
+        const fetchUserProfile = async () => {
+          try {
+            console.log('🔄 Fetching user profile with improved connectivity handling...')
+            const userDoc = await getUserDocument(firebaseUser.uid)
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data()
+              console.log('✅ User profile fetched successfully')
+              setUser({
+                id: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                full_name: userData.fullName || '',
+                role: userData.role || 'client'
+              })
+            } else {
+              console.log('⚠️ User profile document does not exist, using basic info')
+              // Keep the basic user info we already set
+            }
+          } catch (error: any) {
+            console.error('❌ Error fetching user profile:', error)
+
+            if (isConnectivityError(error)) {
+              console.log('🌐 Connectivity issue detected, will retry when connection is restored')
+            } else {
+              console.log('⚠️ Non-connectivity error, using basic user info')
+            }
+            // Keep the basic user info we already set regardless of error type
+          }
+        }
+
+        // Start fetching profile with a small delay to ensure Firestore is ready
+        setTimeout(() => fetchUserProfile(), 500)
       } else {
+        // Remove authentication cookie when user signs out
+        if (typeof window !== 'undefined') {
+          deleteCookie('firebase-auth-token')
+          deleteCookie('auth-token')
+        }
         setUser(null)
       }
 
@@ -97,6 +132,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔄 Signing out...')
 
       await firebaseSignOut(auth)
+
+      // Clear authentication cookies
+      if (typeof window !== 'undefined') {
+        deleteCookie('firebase-auth-token')
+        deleteCookie('auth-token')
+      }
+
       setUser(null)
 
       console.log('✅ Firebase sign out successful')

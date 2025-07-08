@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@/contexts/UserContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -9,25 +8,23 @@ import { Badge } from '@/components/ui/Badge'
 import { CheckCircle, XCircle, User, Database, Shield } from 'lucide-react'
 
 export default function TestFirebasePage() {
-  const { session, profile, loading: userLoading, signOut } = useUser()
-  const { user: authUser, loading: authLoading } = useAuth()
+  const { user, loading, signOut } = useAuth()
   const [testResults, setTestResults] = useState<any>({})
 
   useEffect(() => {
     const runTests = () => {
       setTestResults({
-        firebaseConfigured: !!(session || authUser),
-        userContextWorking: !!session,
-        authContextWorking: !!authUser,
-        profileLoaded: !!profile,
-        loadingStates: { userLoading, authLoading }
+        firebaseConfigured: !!user,
+        authContextWorking: !!user,
+        userLoaded: !!user,
+        loadingStates: { loading }
       })
     }
 
-    if (!userLoading && !authLoading) {
+    if (!loading) {
       runTests()
     }
-  }, [session, profile, authUser, userLoading, authLoading])
+  }, [user, loading])
 
   const TestResult = ({ title, success, description }: { title: string, success: boolean, description: string }) => (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900/50">
@@ -79,19 +76,14 @@ export default function TestFirebasePage() {
                 description={testResults.firebaseConfigured ? "Firebase is properly configured" : "Firebase configuration missing"}
               />
               <TestResult
-                title="UserContext Working"
-                success={testResults.userContextWorking}
-                description={testResults.userContextWorking ? "UserContext has active session" : "No active session in UserContext"}
-              />
-              <TestResult
-                title="AuthContext Working"
+                title="Firebase Auth Working"
                 success={testResults.authContextWorking}
-                description={testResults.authContextWorking ? "AuthContext has active user" : "No active user in AuthContext"}
+                description={testResults.authContextWorking ? "Firebase Auth has active user" : "No active user in Firebase Auth"}
               />
               <TestResult
-                title="Profile Loaded"
-                success={testResults.profileLoaded}
-                description={testResults.profileLoaded ? "User profile loaded from Firestore" : "No profile data available"}
+                title="User Data Loaded"
+                success={testResults.userLoaded}
+                description={testResults.userLoaded ? "User data loaded from Firebase" : "No user data available"}
               />
             </CardContent>
           </Card>

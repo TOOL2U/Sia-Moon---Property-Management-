@@ -1,25 +1,24 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useUser } from '@/contexts/UserContext'
+import { useAuth } from '@/contexts/AuthContext'
 import SignInForm from '@/components/SignInForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-
 export default function LoginPage() {
-  const { session, loading } = useUser()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
-    if (!loading && session) {
+    if (!loading && user) {
       console.log('🔄 User already authenticated, redirecting to dashboard...')
       router.push('/dashboard')
     }
-  }, [loading, session, router])
+  }, [loading, user, router])
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">

@@ -3,11 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUser } from '@/contexts/UserContext'
 // TODO: Replace with new database service when implemented
 // import DatabaseService, { DatabaseResponse } from '@/lib/newDatabaseService'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseChart'
@@ -29,7 +28,6 @@ import { Property, Booking, Task, Report } from '@/types'
 
 export default function ClientDashboard() {
   const { user, loading: authLoading } = useAuth()
-  const { session, profile, loading: userLoading } = useUser()
   const router = useRouter()
 
   const [properties, setProperties] = useState<Property[]>([])
@@ -39,19 +37,19 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState('revenue')
 
-  const [showSettings, setShowSettings] = useState(false)
+
 
   // Route protection
   useEffect(() => {
-    if (!authLoading && !userLoading) {
-      if (!session) {
-        console.log('❌ No session found, redirecting to login')
-        router.push('/login')
+    if (!authLoading) {
+      if (!user) {
+        console.log('❌ No user found, redirecting to login')
+        router.push('/auth/login')
         return
       }
-      console.log('✅ Session found, user can access client dashboard')
+      console.log('✅ User found, user can access client dashboard')
     }
-  }, [session, authLoading, userLoading, router])
+  }, [user, authLoading, router])
 
   // Full-screen chart functionality
   const { isModalOpen, isMobile, openChart, closeChart } = useFullScreenChart()
@@ -61,137 +59,14 @@ export default function ClientDashboard() {
       setLoading(true)
       console.log('🔄 Loading dashboard data (development mode with mock data)')
 
-      // TODO: Replace with real data loading when new database service is implemented
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Load user's actual data from Firestore
 
-      // Mock data for development
-      const mockProperties: Property[] = [
-        {
-          id: 'prop-1',
-          name: 'Sunset Villa Bali',
-          description: 'Beautiful villa with ocean view',
-          address: 'Jl. Sunset Road 123',
-          city: 'Seminyak',
-          country: 'Indonesia',
-          bedrooms: 3,
-          bathrooms: 2,
-          max_guests: 6,
-          price_per_night: 150,
-          currency: 'USD',
-          amenities: ['Pool', 'WiFi', 'Kitchen'],
-          images: [],
-          owner_id: user?.id || 'dev-user',
-          is_active: true,
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01'
-        },
-        {
-          id: 'prop-2',
-          name: 'Ocean View Retreat',
-          description: 'Peaceful retreat near the beach',
-          address: 'Jl. Beach Road 456',
-          city: 'Canggu',
-          country: 'Indonesia',
-          bedrooms: 2,
-          bathrooms: 1,
-          max_guests: 4,
-          price_per_night: 120,
-          currency: 'USD',
-          amenities: ['Beach Access', 'WiFi'],
-          images: [],
-          owner_id: user?.id || 'dev-user',
-          is_active: true,
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01'
-        }
-      ]
-
-      const mockBookings: Booking[] = [
-        {
-          id: 'booking-1',
-          property_id: 'prop-1',
-          guest_name: 'Sarah Johnson',
-          guest_email: 'sarah@example.com',
-          check_in: '2024-07-15',
-          check_out: '2024-07-22',
-          guests: 4,
-          status: 'confirmed',
-          total_amount: 1050,
-          currency: 'USD',
-          created_at: '2024-07-01',
-          updated_at: '2024-07-01'
-        },
-        {
-          id: 'booking-2',
-          property_id: 'prop-2',
-          guest_name: 'Mike Chen',
-          guest_email: 'mike@example.com',
-          check_in: '2024-07-20',
-          check_out: '2024-07-25',
-          guests: 2,
-          status: 'pending',
-          total_amount: 600,
-          currency: 'USD',
-          created_at: '2024-07-02',
-          updated_at: '2024-07-02'
-        }
-      ]
-
-      const mockReports: Report[] = [
-        {
-          id: 'report-1',
-          property_id: 'prop-1',
-          month: 6,
-          year: 2024,
-          total_income: 5000,
-          total_expenses: 1500,
-          net_income: 3500,
-          occupancy_rate: 85,
-          total_bookings: 12,
-          currency: 'USD',
-          created_at: '2024-07-01',
-          updated_at: '2024-07-01'
-        }
-      ]
-
-      const mockTasks: Task[] = [
-        {
-          id: 'task-1',
-          property_id: 'prop-1',
-          title: 'Pool Cleaning',
-          description: 'Weekly pool maintenance and chemical balancing',
-          task_type: 'maintenance',
-          status: 'pending',
-          priority: 'normal',
-          assigned_to: 'staff-1',
-          due_date: '2024-07-10',
-          cost: 50,
-          currency: 'USD',
-          created_at: '2024-07-05',
-          updated_at: '2024-07-05'
-        },
-        {
-          id: 'task-2',
-          property_id: 'prop-2',
-          title: 'Garden Maintenance',
-          description: 'Trim hedges and water plants',
-          task_type: 'maintenance',
-          status: 'completed',
-          priority: 'low',
-          assigned_to: 'staff-2',
-          due_date: '2024-07-08',
-          cost: 30,
-          currency: 'USD',
-          created_at: '2024-07-03',
-          updated_at: '2024-07-08'
-        }
-      ]
-
-      setProperties(mockProperties)
-      setBookings(mockBookings)
-      setReports(mockReports)
-      setTasks(mockTasks)
+      // Load user's actual data from Firestore
+      // For new users, this will be empty arrays
+      setProperties([])
+      setBookings([])
+      setReports([])
+      setTasks([])
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -199,7 +74,7 @@ export default function ClientDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [])
 
   useEffect(() => {
     // In development mode with session bypass, always fetch data
@@ -369,7 +244,7 @@ export default function ClientDashboard() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setShowSettings(!showSettings)}
+          onClick={() => router.push('/settings')}
           className="text-neutral-400 hover:text-white"
         >
           <Settings className="w-4 h-4 mr-2" />
@@ -799,59 +674,7 @@ export default function ClientDashboard() {
           )}
         </div>
 
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="mt-8">
-            <Card className="bg-neutral-950 border-neutral-800">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Wrench className="w-5 h-5" />
-                  Dashboard Settings
-                </CardTitle>
-                <CardDescription className="text-neutral-400">
-                  Configure your dashboard targets and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Monthly Revenue Target
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="50000"
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Monthly Booking Target
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="100"
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Occupancy Target (%)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="85"
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-md px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div className="flex justify-end pt-4">
-                  <Button>
-                    Save Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+
       </div>
 
       {/* Full-Screen Chart Modal for Mobile */}

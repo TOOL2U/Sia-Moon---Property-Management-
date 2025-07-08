@@ -64,63 +64,11 @@ export default function PropertyDetailsPage() {
     try {
       console.log('🔍 Fetching property details from local database...')
 
-      // TODO: Replace with real data loading when new database service is implemented
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 800))
+      // Load property from Firestore
 
-      // Mock property data based on ID
-      const mockProperties: { [key: string]: Property } = {
-        'prop-1': {
-          id: 'prop-1',
-          name: 'Sunset Villa Bali',
-          address: 'Jl. Sunset Road, Seminyak, Bali, Indonesia',
-          created_at: '2024-01-15T00:00:00Z',
-          updated_at: '2024-07-01T00:00:00Z',
-          users: {
-            name: 'John Smith',
-            email: 'john@example.com',
-            role: 'client'
-          }
-        },
-        'prop-2': {
-          id: 'prop-2',
-          name: 'Ocean View Retreat',
-          address: 'Jl. Pantai Berawa, Canggu, Bali, Indonesia',
-          created_at: '2024-02-20T00:00:00Z',
-          updated_at: '2024-06-15T00:00:00Z',
-          users: {
-            name: 'John Smith',
-            email: 'john@example.com',
-            role: 'client'
-          }
-        },
-        'prop-3': {
-          id: 'prop-3',
-          name: 'Mountain View Lodge',
-          address: 'Jl. Monkey Forest Road, Ubud, Bali, Indonesia',
-          created_at: '2024-03-10T00:00:00Z',
-          updated_at: '2024-05-20T00:00:00Z',
-          users: {
-            name: 'John Smith',
-            email: 'john@example.com',
-            role: 'client'
-          }
-        }
-      }
-
-      const mockProperty = mockProperties[propertyId]
-
-      if (!mockProperty) {
-        throw new Error('Property not found')
-      }
-
-      setProperty(mockProperty)
-
-      // Set empty arrays for bookings and tasks (mock data)
-      setBookings([])
-      setTasks([])
-
-      console.log('✅ Property details loaded successfully')
+      // Load property from Firestore
+      // For new users, no properties will exist
+      throw new Error('Property not found - new user has no properties')
 
     } catch (error) {
       console.error('❌ Error fetching property details:', error)

@@ -34,46 +34,12 @@ export default function PropertiesPage() {
         console.log('🔍 Loading properties (development mode with mock data)')
         setLoading(true)
 
-        // TODO: Replace with real data loading when new database service is implemented
-        // Simulate loading delay
-        await new Promise(resolve => setTimeout(resolve, 800))
+        // Load user's actual properties from Firestore
 
-        // Mock properties data
-        const mockProperties: Property[] = [
-          {
-            id: 'prop-1',
-            name: 'Sunset Villa Bali',
-            description: 'Luxurious 4-bedroom villa with stunning ocean views and private pool. Perfect for families and groups seeking a premium Bali experience.',
-            location: 'Seminyak, Bali, Indonesia',
-            owner_id: user?.id || 'dev-user',
-            status: 'active',
-            created_at: '2024-01-15T00:00:00Z',
-            updated_at: '2024-07-01T00:00:00Z'
-          },
-          {
-            id: 'prop-2',
-            name: 'Ocean View Retreat',
-            description: 'Modern 3-bedroom beachfront property with direct beach access. Ideal for couples and small families.',
-            location: 'Canggu, Bali, Indonesia',
-            owner_id: user?.id || 'dev-user',
-            status: 'active',
-            created_at: '2024-02-20T00:00:00Z',
-            updated_at: '2024-06-15T00:00:00Z'
-          },
-          {
-            id: 'prop-3',
-            name: 'Mountain View Lodge',
-            description: 'Peaceful 2-bedroom villa nestled in the hills with panoramic mountain views and tropical gardens.',
-            location: 'Ubud, Bali, Indonesia',
-            owner_id: user?.id || 'dev-user',
-            status: 'active',
-            created_at: '2024-03-10T00:00:00Z',
-            updated_at: '2024-05-20T00:00:00Z'
-          }
-        ]
-
-        console.log('✅ Properties loaded:', mockProperties.length)
-        setProperties(mockProperties)
+        // Load user's actual properties from Firestore
+        // For new users, this will be an empty array
+        console.log('✅ Properties loaded: 0 (new user)')
+        setProperties([])
       } catch (error) {
         console.error('❌ Error loading properties:', error)
         toast.error('Failed to load properties')

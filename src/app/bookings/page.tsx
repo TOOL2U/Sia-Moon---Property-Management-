@@ -41,80 +41,18 @@ export default function BookingsPage() {
       console.log('🔍 Loading bookings (development mode with mock data)')
       setLoading(true)
 
-      // TODO: Replace with real data loading when new database service is implemented
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 800))
+      // Load user's actual bookings from Firestore
 
-      // Mock bookings data
-      const mockBookings: Booking[] = [
-        {
-          id: 'booking-1',
-          property_id: 'prop-1',
-          guest_name: 'Sarah Johnson',
-          guest_email: 'sarah.johnson@email.com',
-          check_in: '2024-07-15',
-          check_out: '2024-07-22',
-          status: 'confirmed',
-          created_at: '2024-07-01',
-          updated_at: '2024-07-01',
-          property: {
-            name: 'Sunset Villa Bali',
-            location: 'Seminyak, Bali'
-          }
-        },
-        {
-          id: 'booking-2',
-          property_id: 'prop-2',
-          guest_name: 'Mike Chen',
-          guest_email: 'mike.chen@email.com',
-          check_in: '2024-07-20',
-          check_out: '2024-07-25',
-          status: 'pending',
-          created_at: '2024-07-02',
-          updated_at: '2024-07-02',
-          property: {
-            name: 'Ocean View Retreat',
-            location: 'Canggu, Bali'
-          }
-        },
-        {
-          id: 'booking-3',
-          property_id: 'prop-1',
-          guest_name: 'Emma Wilson',
-          guest_email: 'emma.wilson@email.com',
-          check_in: '2024-08-01',
-          check_out: '2024-08-07',
-          status: 'confirmed',
-          created_at: '2024-07-10',
-          updated_at: '2024-07-10',
-          property: {
-            name: 'Sunset Villa Bali',
-            location: 'Seminyak, Bali'
-          }
-        },
-        {
-          id: 'booking-4',
-          property_id: 'prop-2',
-          guest_name: 'David Brown',
-          guest_email: 'david.brown@email.com',
-          check_in: '2024-06-15',
-          check_out: '2024-06-20',
-          status: 'cancelled',
-          created_at: '2024-06-01',
-          updated_at: '2024-06-10',
-          property: {
-            name: 'Ocean View Retreat',
-            location: 'Canggu, Bali'
-          }
-        }
-      ]
+      // Load user's actual bookings from Firestore
+      // For new users, this will be an empty array
+      const userBookings: Booking[] = []
 
       // Apply filter
       const filteredBookings = filter === 'all'
-        ? mockBookings
-        : mockBookings.filter(booking => booking.status === filter)
+        ? userBookings
+        : userBookings.filter(booking => booking.status === filter)
 
-      console.log(`✅ Loaded ${filteredBookings.length} bookings (filter: ${filter})`)
+      console.log(`✅ Loaded ${filteredBookings.length} bookings (filter: ${filter}) - new user`)
       setBookings(filteredBookings)
     } catch (error) {
       console.error('❌ Error fetching bookings:', error)

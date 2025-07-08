@@ -226,6 +226,15 @@ const developerTools: DeveloperTool[] = [
     status: 'stable'
   },
   {
+    title: 'Signup Webhook Test',
+    description: 'Test signup confirmation email webhook integration',
+    href: '/test-signup-webhook',
+    icon: Server,
+    category: 'Testing',
+    status: 'stable',
+    isNew: true
+  },
+  {
     title: 'Storage Test',
     description: 'Test localStorage persistence and data management',
     href: '/test-storage',

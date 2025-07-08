@@ -144,3 +144,48 @@ export type TaskInsert = Omit<Task, 'id' | 'created_at' | 'updated_at'>;
 export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at'>>;
 export type PropertyInsert = Omit<Property, 'id' | 'created_at' | 'updated_at'>;
 export type PropertyUpdate = Partial<Omit<Property, 'id' | 'created_at'>>;
+
+// Extended Report types for the Reports page
+export interface ReportEntry {
+  id: string;
+  date: string;
+  type: 'booking' | 'maintenance' | 'payment' | 'expense';
+  property_id: string;
+  property_name: string;
+  status: 'completed' | 'pending' | 'cancelled';
+  amount?: number;
+  currency: string;
+  description: string;
+  guest_name?: string;
+  staff_name?: string;
+  created_at: string;
+}
+
+export interface ReportMetrics {
+  totalProperties: number;
+  activeBookings: number;
+  completedMaintenance: number;
+  monthlyRevenue: number;
+  occupancyRate: number;
+}
+
+export interface ChartDataPoint {
+  date: string;
+  bookings?: number;
+  maintenance?: number;
+  revenue?: number;
+  expenses?: number;
+}
+
+export interface DateRange {
+  from: Date | null;
+  to: Date | null;
+}
+
+export interface ReportFilters {
+  dateRange: DateRange;
+  propertyId?: string;
+  reportType?: 'all' | 'booking' | 'maintenance' | 'payment' | 'expense';
+  status?: 'all' | 'completed' | 'pending' | 'cancelled';
+  searchQuery: string;
+}
