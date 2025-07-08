@@ -271,7 +271,7 @@ export default function TestSignupWebhookPage() {
                 <div>
                   <span className="font-semibold">Webhook URL:</span>
                   <span className="ml-2 font-mono text-blue-600">
-                    {process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL || 'https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx'}
+                    {process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL || 'https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf'}
                   </span>
                 </div>
                 <div>

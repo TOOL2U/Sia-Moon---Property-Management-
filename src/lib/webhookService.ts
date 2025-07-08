@@ -15,7 +15,7 @@ export interface EmailWebhookPayload {
     role?: string;
     userId?: string;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface WebhookResponse {
@@ -72,7 +72,7 @@ export interface SignupData {
 }
 
 class WebhookService {
-  private static readonly SIGNUP_WEBHOOK_URL = process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL || 'https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx';
+  private static readonly SIGNUP_WEBHOOK_URL = process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL || 'https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf';
   private static readonly ONBOARDING_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL || 'https://hook.eu2.make.com/b59iga7bj65atyrgo5ej9dwvlujdsupa';
   private static readonly TIMEOUT_MS = 10000; // 10 seconds
 
@@ -147,6 +147,14 @@ class WebhookService {
    */
   static async sendSignupConfirmation(signupData: SignupData): Promise<WebhookResponse> {
     try {
+      console.log('🎯 WebhookService.sendSignupConfirmation ENTRY POINT')
+      console.log('🔍 Environment variables in WebhookService:')
+      console.log('- process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL:', process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL)
+      console.log('- this.SIGNUP_WEBHOOK_URL:', this.SIGNUP_WEBHOOK_URL)
+      console.log('- Received signupData keys:', Object.keys(signupData))
+      console.log('- signupData.email:', signupData.email)
+      console.log('- signupData.name:', signupData.name)
+      
       console.log('🔍 WebhookService Debug:', {
         SIGNUP_WEBHOOK_URL: this.SIGNUP_WEBHOOK_URL,
         ENV_VAR: process.env.NEXT_PUBLIC_SIGNUP_WEBHOOK_URL,
@@ -208,26 +216,27 @@ class WebhookService {
         // System metadata
         submission_type: 'user_signup',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: process.env.NODE_ENV || 'development'
+      };
 
-        // Additional automation fields for Make.com
-        welcome_email_needed: true,
-        onboarding_sequence: 'new_property_manager',
-        follow_up_days: [1, 3, 7, 14], // Days for follow-up emails
-        trial_period_days: 30,
-        next_action: 'send_welcome_email',
-        user_segment: 'new_property_manager',
+      // Create beautiful dark-themed email template
+      const emailTemplate = this.createSignupEmailTemplate(signupData);
+      const emailTextVersion = this.createSignupEmailText(signupData);
 
-        // Integration flags
-        needs_tutorial: true,
-        demo_property_setup: true,
-        initial_setup_complete: false
+      // Add email template to webhook payload
+      const emailPayload = {
+        ...webhookPayload,
+        email_template: emailTemplate,
+        email_text: emailTextVersion,
+        email_subject: `Welcome to Sia Moon Property Management, ${signupData.name}! 🏡`,
+        email_from: 'welcome@siamoon.com',
+        email_from_name: 'Sia Moon Team',
+        email_reply_to: 'support@siamoon.com'
       };
 
       // Send to webhook
       console.log('🌐 Sending POST request to:', this.SIGNUP_WEBHOOK_URL)
-      console.log('📦 Payload size:', JSON.stringify(webhookPayload).length, 'characters')
-      console.log('📋 Complete webhook payload:', JSON.stringify(webhookPayload, null, 2))
+      console.log('📦 Payload size:', JSON.stringify(emailPayload).length, 'characters')
 
       const response = await fetch(this.SIGNUP_WEBHOOK_URL, {
         method: 'POST',
@@ -235,7 +244,7 @@ class WebhookService {
           'Content-Type': 'application/json',
           'User-Agent': 'SiaMoon-PropertyManagement/1.0'
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(emailPayload)
       });
 
       console.log('📡 Response status:', response.status)
@@ -448,6 +457,338 @@ The Sia Moon Team
         timestamp: new Date().toISOString()
       }
     });
+  }
+
+  /**
+   * Create beautiful dark-themed signup email template matching webapp aesthetic
+   */
+  private static createSignupEmailTemplate(signupData: SignupData): string {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Sia Moon Property Management</title>
+    <style>
+        /* Reset and base styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            background-color: #0a0a0a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #111111 0%, #1a1a1a 50%, #111111 100%);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Header with gradient */
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+            padding: 48px 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tagline {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Content */
+        .content {
+            padding: 48px 32px;
+            background: #111111;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 16px;
+            color: #ffffff;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            color: #a3a3a3;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        /* Feature cards */
+        .features {
+            margin: 32px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .feature-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .feature-description {
+            font-size: 14px;
+            color: #a3a3a3;
+            line-height: 1.5;
+        }
+
+        /* CTA Button */
+        .cta-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: -0.025em;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 16px -4px rgba(139, 92, 246, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -6px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Footer */
+        .footer {
+            background: #0a0a0a;
+            padding: 32px;
+            text-align: center;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .footer-text {
+            font-size: 14px;
+            color: #737373;
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            margin-bottom: 24px;
+        }
+
+        .footer-link {
+            color: #8b5cf6;
+            text-decoration: none;
+            margin: 0 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .footer-link:hover {
+            color: #a78bfa;
+        }
+
+        .footer-brand {
+            font-size: 12px;
+            color: #525252;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .email-container {
+                margin: 16px;
+                border-radius: 12px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .content {
+                padding: 32px 24px;
+            }
+
+            .footer {
+                padding: 24px;
+            }
+
+            .welcome-title {
+                font-size: 24px;
+            }
+
+            .feature-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">Sia Moon</div>
+            <div class="tagline">Property Management Excellence</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h1 class="welcome-title">Welcome to the future of property management, ${signupData.name}! 🏡</h1>
+
+            <p class="welcome-text">
+                Thank you for joining Sia Moon Property Management. We're excited to help you streamline your property operations with our cutting-edge platform designed for modern property managers.
+            </p>
+
+            <!-- Features -->
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">🏠</div>
+                    <div class="feature-title">Smart Property Management</div>
+                    <div class="feature-description">Manage multiple properties with ease using our intuitive dashboard and automated workflows.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Real-time Analytics</div>
+                    <div class="feature-description">Track occupancy, revenue, and performance metrics with beautiful, actionable insights.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <div class="feature-title">Automated Bookings</div>
+                    <div class="feature-description">Sync with Airbnb, Booking.com, and other platforms for seamless reservation management.</div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-container">
+                <a href="${baseUrl}/dashboard" class="cta-button">
+                    Access Your Dashboard →
+                </a>
+            </div>
+
+            <p class="welcome-text">
+                Your account is ready to go! Start by adding your first property or exploring the dashboard to see what Sia Moon can do for your business.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-text">
+                Need help getting started? Our team is here to support you every step of the way.
+            </p>
+
+            <div class="footer-links">
+                <a href="${baseUrl}/support" class="footer-link">Get Support</a>
+                <a href="${baseUrl}/docs" class="footer-link">Documentation</a>
+                <a href="${baseUrl}/contact" class="footer-link">Contact Us</a>
+            </div>
+
+            <p class="footer-brand">
+                © ${new Date().getFullYear()} Sia Moon Property Management. Built with ❤️ for property managers.
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+  }
+
+  /**
+   * Create plain text version of signup email
+   */
+  private static createSignupEmailText(signupData: SignupData): string {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    return `
+Welcome to Sia Moon Property Management, ${signupData.name}! 🏡
+
+Thank you for joining Sia Moon Property Management. We're excited to help you streamline your property operations with our cutting-edge platform designed for modern property managers.
+
+🏠 SMART PROPERTY MANAGEMENT
+Manage multiple properties with ease using our intuitive dashboard and automated workflows.
+
+📊 REAL-TIME ANALYTICS
+Track occupancy, revenue, and performance metrics with beautiful, actionable insights.
+
+🔄 AUTOMATED BOOKINGS
+Sync with Airbnb, Booking.com, and other platforms for seamless reservation management.
+
+ACCESS YOUR DASHBOARD
+${baseUrl}/dashboard
+
+Your account is ready to go! Start by adding your first property or exploring the dashboard to see what Sia Moon can do for your business.
+
+Need help getting started? Our team is here to support you every step of the way.
+
+HELPFUL LINKS:
+• Get Support: ${baseUrl}/support
+• Documentation: ${baseUrl}/docs
+• Contact Us: ${baseUrl}/contact
+
+© ${new Date().getFullYear()} Sia Moon Property Management
+Built with ❤️ for property managers.
+
+---
+This email was sent to ${signupData.email}
+If you didn't create this account, please contact us at support@siamoon.com
+`;
   }
 }
 

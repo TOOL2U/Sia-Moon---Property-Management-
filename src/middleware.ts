@@ -12,7 +12,11 @@ export async function middleware(request: NextRequest) {
     '/auth/forgot-password',
     '/auth/reset-password',
     '/developers',
-    '/status'
+    '/status',
+    '/test-browser-webhook',
+    '/test-webhook',
+    '/test-signup-webhook',
+    '/test-signup-webhook-new'
   ]
 
   // Check if current path is public

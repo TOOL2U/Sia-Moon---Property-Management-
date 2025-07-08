@@ -14,72 +14,14 @@ export default function TestSignupDirectPage() {
     try {
       console.log('🚀 Testing webhook directly...')
       
-      const webhookUrl = 'https://hook.eu2.make.com/fm7r9zvvcoj2hy3rj11as0uto5vj626i'
+      const webhookUrl = 'https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf'
       
       const testData = {
-        // Core user information (required by email template)
-        name: 'Test Property Manager',
-        email: 'test.manager@example.com',
-        userId: 'test-' + Date.now(),
+        name: 'Test User',
+        email: 'test@example.com',
+        userId: 'test-123',
         signup_date: new Date().toISOString(),
-
-        // Account details (used in email template)
-        account_type: 'Standard Property Manager',
-        subscription_plan: 'Free Trial',
-        role: 'property_manager',
-
-        // Business information
-        business_type: 'Property Management',
-        experience_level: 'New User',
-        property_count: '0',
-        primary_goals: ['Property Management', 'Booking Automation', 'Client Communication'],
-
-        // Contact and preferences
-        phone: '+66-123-456-789',
-        marketing_consent: true,
-        communication_preferences: ['email', 'dashboard'],
-
-        // Technical details
-        signup_method: 'Direct Test',
-        device_type: 'Desktop',
-        browser: 'Chrome',
-        user_agent: navigator.userAgent,
-        ip_address: 'Test Environment',
-
-        // Location and preferences
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        language: 'en',
-
-        // Status flags
-        email_verified: false,
-        profile_completed: false,
-        onboarding_completed: false,
-
-        // Source tracking
-        source: 'Direct Test',
-        referral_source: 'Manual Testing',
-        utm_source: 'test',
-        utm_medium: 'direct',
-        utm_campaign: 'webhook_test',
-        campaign_id: 'test_campaign_2025',
-
-        // Automation flags for Make.com
-        welcome_email_needed: true,
-        onboarding_sequence: 'new_property_manager',
-        follow_up_days: [1, 3, 7, 14],
-        trial_period_days: 30,
-        next_action: 'send_welcome_email',
-        user_segment: 'Test User',
-
-        // Setup flags
-        needs_tutorial: true,
-        demo_property_setup: true,
-        initial_setup_complete: false,
-
-        // System metadata
-        submission_type: 'direct_test',
-        timestamp: new Date().toISOString(),
-        environment: 'development'
+        source: 'direct_test'
       }
 
       console.log('📦 Sending data:', testData)
@@ -128,7 +70,7 @@ export default function TestSignupDirectPage() {
               This will send a POST request directly to the Make.com webhook URL:
             </p>
             <code className="text-sm bg-neutral-800 p-2 rounded block mb-4">
-              https://hook.eu2.make.com/fm7r9zvvcoj2hy3rj11as0uto5vj626i
+              https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf
             </code>
             
             <Button

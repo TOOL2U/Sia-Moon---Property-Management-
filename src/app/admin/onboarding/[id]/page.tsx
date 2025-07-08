@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-// TODO: Replace with Firebase service
-// import FirebaseService from '@/lib/firebaseService'
+import { DatabaseService } from '@/lib/dbService'
 import { VillaOnboarding } from '@/lib/db'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -64,7 +63,7 @@ export default function OnboardingDetailPage() {
   const fetchOnboarding = async () => {
     try {
       setLoading(true)
-      const { data, error } = await SupabaseService.getVillaOnboarding(id)
+      const { data, error } = await DatabaseService.getVillaOnboarding(id)
       
       if (error) {
         console.error('Error fetching onboarding:', error)
@@ -88,7 +87,7 @@ export default function OnboardingDetailPage() {
     if (!onboarding) return
 
     try {
-      const { error } = await SupabaseService.updateVillaOnboarding(onboarding.id, { status: newStatus })
+      const { error } = await DatabaseService.updateVillaOnboarding(onboarding.id, { status: newStatus })
       
       if (error) {
         toast.error('Failed to update status')
@@ -107,7 +106,7 @@ export default function OnboardingDetailPage() {
     if (!onboarding) return
 
     try {
-      const { error } = await SupabaseService.updateVillaOnboarding(onboarding.id, editData)
+      const { error } = await DatabaseService.updateVillaOnboarding(onboarding.id, editData)
       
       if (error) {
         toast.error('Failed to save changes')

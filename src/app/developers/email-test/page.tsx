@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import { ExternalLink, Mail, Send, Eye, TestTube } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -205,7 +205,7 @@ export default function EmailTestPage() {
                   Signup Confirmation Webhook
                 </label>
                 <div className="bg-gray-700 p-3 rounded-md text-sm font-mono break-all text-gray-300">
-                  https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx
+                  https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf
                 </div>
               </div>
 

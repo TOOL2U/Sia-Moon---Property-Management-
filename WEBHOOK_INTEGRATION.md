@@ -35,7 +35,7 @@ The `WebhookService` class handles all webhook communications:
 
 - **Location**: `src/lib/webhookService.ts`
 - **Main Method**: `sendSignupConfirmation()`
-- **Webhook URL**: `https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx`
+- **Webhook URL**: `https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf`
 
 ### 3. Email Templates
 Professional email templates are defined in `src/lib/emailTemplates.ts`:
@@ -48,8 +48,9 @@ Professional email templates are defined in `src/lib/emailTemplates.ts`:
 
 ### Environment Variables
 ```bash
-# Make.com Webhook URL
-NEXT_PUBLIC_MAKE_WEBHOOK_URL=https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx
+# Make.com Webhook URLs
+NEXT_PUBLIC_MAKE_WEBHOOK_URL=https://hook.eu2.make.com/b59iga7bj65atyrgo5ej9dwvlujdsupa
+NEXT_PUBLIC_SIGNUP_WEBHOOK_URL=https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf
 ```
 
 ### Webhook Payload Structure
@@ -145,7 +146,7 @@ This ensures that email delivery issues don't prevent users from accessing their
 ## 🚀 Deployment Notes
 
 ### Production Checklist
-- ✅ Environment variable `NEXT_PUBLIC_MAKE_WEBHOOK_URL` configured
+- ✅ Environment variables `NEXT_PUBLIC_SIGNUP_WEBHOOK_URL` and `NEXT_PUBLIC_MAKE_WEBHOOK_URL` configured
 - ✅ Make.com scenario active and tested
 - ✅ Email templates reviewed and approved
 - ✅ Error handling tested

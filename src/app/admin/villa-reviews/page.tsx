@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-// TODO: Replace with Firebase client
-// import { db } from '@/lib/firebase'
+import { DatabaseService } from '@/lib/dbService'
+import { VillaOnboarding } from '@/lib/db'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -21,31 +21,11 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-interface VillaSubmission {
-  id: string
-  owner_full_name: string
-  owner_email: string
-  owner_contact_number: string
-  property_name: string
-  property_address: string
-  bedrooms: number
-  bathrooms: number
-  status: 'pending' | 'under_review' | 'approved' | 'rejected'
-  created_at: string
-  has_pool: boolean
-  has_garden: boolean
-  has_air_conditioning: boolean
-  title_deed_url?: string
-  floor_plans_url?: string
-  furniture_appliances_list_url?: string
-}
-
 export default function VillaReviewsAdmin() {
-  const [submissions, setSubmissions] = useState<VillaSubmission[]>([])
+  const [submissions, setSubmissions] = useState<VillaOnboarding[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedSubmission, setSelectedSubmission] = useState<VillaSubmission | null>(null)
+  const [selectedSubmission, setSelectedSubmission] = useState<VillaOnboarding | null>(null)
   const [filter, setFilter] = useState<'all' | 'pending' | 'under_review' | 'approved' | 'rejected'>('all')
-  const supabase = createClient()
 
   useEffect(() => {
     fetchSubmissions()
@@ -53,19 +33,20 @@ export default function VillaReviewsAdmin() {
 
   const fetchSubmissions = async () => {
     try {
-      let query = supabase
-        .from('villa_onboarding')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const { data, error } = await DatabaseService.getAllVillaOnboardings()
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter)
+      if (error) {
+        console.error('Error fetching submissions:', error)
+        toast.error('Failed to load villa submissions')
+        return
       }
 
-      const { data, error } = await query
+      let filteredData = data || []
+      if (filter !== 'all') {
+        filteredData = filteredData.filter(submission => submission.status === filter)
+      }
 
-      if (error) throw error
-      setSubmissions(data || [])
+      setSubmissions(filteredData)
     } catch (error) {
       console.error('Error fetching submissions:', error)
       toast.error('Failed to load villa submissions')
@@ -76,15 +57,16 @@ export default function VillaReviewsAdmin() {
 
   const updateSubmissionStatus = async (id: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('villa_onboarding')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
+      const { error } = await DatabaseService.updateVillaOnboarding(id, { 
+        status: status as 'pending' | 'under_review' | 'approved' | 'rejected',
+        updated_at: new Date().toISOString()
+      })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error updating status:', error)
+        toast.error('Failed to update submission status')
+        return
+      }
 
       toast.success(`Villa submission ${status} successfully`)
       fetchSubmissions()

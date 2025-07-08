@@ -1,0 +1,31 @@
+Welcome to Sia Moon Property Management, {{USER_NAME}}! 🏡
+
+Thank you for joining Sia Moon Property Management. We're excited to help you streamline your property operations with our cutting-edge platform designed for modern property managers.
+
+🏠 SMART PROPERTY MANAGEMENT
+Manage multiple properties with ease using our intuitive dashboard and automated workflows.
+
+📊 REAL-TIME ANALYTICS  
+Track occupancy, revenue, and performance metrics with beautiful, actionable insights.
+
+🔄 AUTOMATED BOOKINGS
+Sync with Airbnb, Booking.com, and other platforms for seamless reservation management.
+
+ACCESS YOUR DASHBOARD
+{{DASHBOARD_URL}}
+
+Your account is ready to go! Start by adding your first property or exploring the dashboard to see what Sia Moon can do for your business.
+
+Need help getting started? Our team is here to support you every step of the way.
+
+HELPFUL LINKS:
+• Get Support: {{SUPPORT_URL}}
+• Documentation: {{DOCS_URL}}
+• Contact Us: {{CONTACT_URL}}
+
+© 2024 Sia Moon Property Management
+Built with ❤️ for property managers.
+
+---
+This email was sent to {{USER_EMAIL}}
+If you didn't create this account, please contact us at support@siamoon.com

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Sia Moon Property Management</title>
+    <style>
+        /* ============================================ */
+        /* TEXT COLOR CUSTOMIZATION SECTION */
+        /* Edit these values to change text colors throughout the email */
+        /* ============================================ */
+        :root {
+            /* Primary text colors */
+            --primary-text-color: #ffffff;        /* Main text color (white) */
+            --secondary-text-color: #ffffff;      /* Secondary text color */
+            --muted-text-color: #ffffff;          /* Muted/footer text color */
+            
+            /* Header text colors */
+            --logo-text-color: #ffffff;           /* Logo text color */
+            --tagline-text-color: #ffffff;        /* Tagline text color */
+            
+            /* Content text colors */
+            --welcome-title-color: #ffffff;       /* Welcome title color */
+            --welcome-text-color: #ffffff;        /* Welcome paragraph text */
+            
+            /* Feature card text colors */
+            --feature-title-color: #ffffff;       /* Feature card titles */
+            --feature-description-color: #ffffff; /* Feature card descriptions */
+            
+            /* Button text color */
+            --button-text-color: #ffffff;         /* CTA button text */
+            
+            /* Footer text colors */
+            --footer-text-color: #ffffff;         /* Footer text */
+            --footer-link-color: #ffffff;         /* Footer links */
+            --footer-link-hover-color: #e5e5e5;   /* Footer links on hover */
+            --footer-brand-color: #ffffff;        /* Footer brand text */
+        }
+        
+        /* Reset and base styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--primary-text-color);
+            background-color: #0a0a0a;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #111111 0%, #1a1a1a 50%, #111111 100%);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Header with gradient */
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #1f1f1f 50%, #555555 100%);
+            padding: 48px 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            color: var(--logo-text-color);
+        }
+        
+        .tagline {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+            color: var(--tagline-text-color);
+        }
+        
+        /* Content */
+        .content {
+            padding: 48px 32px;
+            background: #111111;
+        }
+        
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 16px;
+            color: var(--welcome-title-color);
+        }
+        
+        .welcome-text {
+            font-size: 16px;
+            color: var(--welcome-text-color);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        
+        /* Feature cards */
+        .features {
+            margin: 32px 0;
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #525252;
+            background: linear-gradient(135deg, #262626 0%, #2f2f2f 100%);
+        }
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #232323 0%, #4a4a4a 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+        
+        .feature-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--feature-title-color);
+            margin-bottom: 8px;
+        }
+        
+        .feature-description {
+            font-size: 14px;
+            color: var(--feature-description-color);
+            line-height: 1.5;
+        }
+        
+        /* CTA Button */
+        .cta-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #000000 0%, #1e1e1e 100%);
+            color: var(--button-text-color);
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: -0.025em;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.6);
+        }
+        
+        /* Footer */
+        .footer {
+            background: #0a0a0a;
+            padding: 32px;
+            text-align: center;
+            border-top: 1px solid #333333;
+        }
+        
+        .footer-text {
+            font-size: 14px;
+            color: var(--footer-text-color);
+            margin-bottom: 16px;
+        }
+        
+        .footer-links {
+            margin-bottom: 24px;
+        }
+        
+        .footer-link {
+            color: var(--footer-link-color);
+            text-decoration: none;
+            margin: 0 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .footer-link:hover {
+            color: var(--footer-link-hover-color);
+        }
+        
+        .footer-brand {
+            font-size: 12px;
+            color: var(--footer-brand-color);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .email-container {
+                margin: 16px;
+                border-radius: 12px;
+            }
+            
+            .header {
+                padding: 32px 24px;
+            }
+            
+            .content {
+                padding: 32px 24px;
+            }
+            
+            .footer {
+                padding: 24px;
+            }
+            
+            .welcome-title {
+                font-size: 24px;
+            }
+            
+            .feature-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">Sia Moon</div>
+            <div class="tagline">Property Management Done right.</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <h1 class="welcome-title">Welcome to the future of property management, {{USER_NAME}}! 🏡</h1>
+            
+            <p class="welcome-text">
+                Thank you for joining Sia Moon Property Management. We're excited to help you streamline your property operations with our cutting-edge platform designed for modern property managers.
+            </p>
+            
+            <!-- Features -->
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">🏠</div>
+                    <div class="feature-title">Smart Property Management</div>
+                    <div class="feature-description">Manage multiple properties with ease using our intuitive dashboard and automated workflows.</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Real-time Analytics</div>
+                    <div class="feature-description">Track occupancy, revenue, and performance metrics with beautiful, actionable insights.</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <div class="feature-title">Automated Bookings</div>
+                    <div class="feature-description">Sync with Airbnb, Booking.com, and other platforms for seamless reservation management.</div>
+                </div>
+            </div>
+            
+            <!-- CTA -->
+            <div class="cta-container">
+                <a href="{{DASHBOARD_URL}}" class="cta-button">
+                    Access Your Dashboard →
+                </a>
+            </div>
+            
+            <p class="welcome-text">
+                Your account is ready to go! Start by adding your first property or exploring the dashboard to see what Sia Moon can do for your business.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-text">
+                Need help getting started? Our team is here to support you every step of the way.
+            </p>
+            
+            <div class="footer-links">
+                <a href="{{SUPPORT_URL}}" class="footer-link">Get Support</a>
+                <a href="{{DOCS_URL}}" class="footer-link">Documentation</a>
+                <a href="{{CONTACT_URL}}" class="footer-link">Contact Us</a>
+            </div>
+            
+            <p class="footer-brand">
+                © 2024 Sia Moon Property Management. Built with ❤️ for property managers.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
