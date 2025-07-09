@@ -85,23 +85,67 @@ try {
   env = envSchema.parse(process.env);
 } catch (error) {
   if (error instanceof z.ZodError) {
-    console.error('❌ Environment validation failed:');
-    error.errors.forEach((err) => {
-      console.error(`  - ${err.path.join('.')}: ${err.message}`);
-    });
-
-    // In development, provide helpful guidance
+    // Only log errors in development, not during build
     if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Environment validation failed:');
+      error.errors.forEach((err) => {
+        console.error(`  - ${err.path.join('.')}: ${err.message}`);
+      });
       console.warn('💡 Development tip: Check your .env.local file and ensure all required variables are set');
       console.warn('💡 You can copy .env.example to .env.local and update the values');
     }
 
-    // Use safe defaults for development
-    env = envSchema.parse({
-      NEXT_PUBLIC_BYPASS_AUTH: process.env.NEXT_PUBLIC_BYPASS_AUTH || 'false',
-      NEXT_PUBLIC_DEV_SESSION_BYPASS: process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS || 'false',
-      ...process.env
-    });
+    // Use safe defaults for all environments during build
+    env = {
+      NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
+      NEXT_PUBLIC_BYPASS_AUTH: process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true',
+      NEXT_PUBLIC_DEV_SESSION_BYPASS: process.env.NEXT_PUBLIC_DEV_SESSION_BYPASS === 'true',
+      NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
+
+      // Firebase - use undefined if not provided
+      NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+
+      // Application
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+
+      // Cloudinary
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+      CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+
+      // Email
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_USER: process.env.SMTP_USER,
+      SMTP_PASS: process.env.SMTP_PASS,
+      FROM_EMAIL: process.env.FROM_EMAIL,
+      FROM_NAME: process.env.FROM_NAME,
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+
+      // Webhooks
+      NEXT_PUBLIC_MAKE_WEBHOOK_URL: process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL,
+      SYNC_API_KEY: process.env.SYNC_API_KEY,
+
+      // Push notifications
+      NEXT_PUBLIC_ONESIGNAL_APP_ID: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+      ONESIGNAL_REST_API_KEY: process.env.ONESIGNAL_REST_API_KEY,
+
+      // Error logging
+      ENABLE_ERROR_LOGGING: process.env.ENABLE_ERROR_LOGGING === 'true',
+      ERROR_WEBHOOK_URL: process.env.ERROR_WEBHOOK_URL,
+      ERROR_EMAIL_ENDPOINT: process.env.ERROR_EMAIL_ENDPOINT,
+      NEXT_PUBLIC_ERROR_WEBHOOK_URL: process.env.NEXT_PUBLIC_ERROR_WEBHOOK_URL,
+
+      // Feature flags
+      ENABLE_BOOKING_SYNC_CRON: process.env.ENABLE_BOOKING_SYNC_CRON === 'true',
+      ENABLE_REPORT_CRON: process.env.ENABLE_REPORT_CRON === 'true',
+    };
   } else {
     throw error;
   }
