@@ -6,8 +6,9 @@ import { PropertyService, Property } from '@/lib/services/propertyService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Building, MapPin, Plus, Trash2, Users, Calendar, Home } from 'lucide-react'
+import { Building, MapPin, Plus, Trash2, Users, Calendar, Home, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 export default function PropertiesPage() {
@@ -104,24 +105,52 @@ export default function PropertiesPage() {
         {properties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
-              <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg text-white">{property.name}</CardTitle>
-                      <CardDescription className="flex items-center mt-1 text-neutral-400">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span className="truncate">{property.address}</span>
-                      </CardDescription>
+              <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800 overflow-hidden">
+                {/* Cover Photo */}
+                <div className="relative h-48 bg-neutral-800">
+                  {property.images && property.images.length > 0 ? (
+                    <Image
+                      src={property.images[0]}
+                      alt={property.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <ImageIcon className="h-12 w-12 text-neutral-600" />
                     </div>
+                  )}
+                  {/* Status Badge Overlay */}
+                  <div className="absolute top-3 right-3">
                     <Badge variant="secondary" className={
-                      property.status === 'active' ? 'bg-emerald-900 text-emerald-300 border border-emerald-800' :
-                      property.status === 'pending_approval' ? 'bg-yellow-900 text-yellow-300 border border-yellow-800' :
-                      'bg-neutral-900 text-neutral-300 border border-neutral-800'
+                      property.status === 'active' ? 'bg-emerald-900/90 text-emerald-300 border border-emerald-800/50 backdrop-blur-sm' :
+                      property.status === 'pending_approval' ? 'bg-yellow-900/90 text-yellow-300 border border-yellow-800/50 backdrop-blur-sm' :
+                      'bg-neutral-900/90 text-neutral-300 border border-neutral-800/50 backdrop-blur-sm'
                     }>
                       {property.status === 'active' ? 'Active' :
                        property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
                     </Badge>
+                  </div>
+
+                  {/* Photo Count Indicator */}
+                  {property.images && property.images.length > 1 && (
+                    <div className="absolute bottom-3 left-3">
+                      <Badge variant="secondary" className="bg-black/70 text-white border-neutral-700/50 backdrop-blur-sm">
+                        <ImageIcon className="h-3 w-3 mr-1" />
+                        {property.images.length}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                <CardHeader>
+                  <div>
+                    <CardTitle className="text-lg text-white">{property.name}</CardTitle>
+                    <CardDescription className="flex items-center mt-1 text-neutral-400">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span className="truncate">{property.address}</span>
+                    </CardDescription>
                   </div>
                 </CardHeader>
 

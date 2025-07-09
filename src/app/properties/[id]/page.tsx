@@ -2,73 +2,53 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-// TODO: Replace with new database service when implemented
-// import DatabaseService from '@/lib/newDatabaseService'
+import { useAuth } from '@/contexts/AuthContext'
+import { PropertyService, Property } from '@/lib/services/propertyService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building, Image as ImageIcon, Home, Users } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
-interface Property {
-  id: string
-  name: string
-  address: string
-  created_at: string
-  updated_at: string
-  users?: {
-    name: string
-    email: string
-    role: string
-  }
-}
-
-interface Booking {
-  id: string
-  guest_name: string
-  check_in_date: string
-  check_out_date: string
-  total_amount: number
-  status: string
-}
-
-interface Task {
-  id: string
-  task_type: string
-  status: string
-  due_date: string
-  notes: string
-  users?: {
-    name: string
-  }
-}
-
 export default function PropertyDetailsPage() {
+  const { user, loading: authLoading } = useAuth()
   const params = useParams()
   const router = useRouter()
   const [property, setProperty] = useState<Property | null>(null)
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
 
   const propertyId = params.id as string
 
   useEffect(() => {
-    if (propertyId) {
+    if (!authLoading && user && propertyId) {
       fetchPropertyDetails()
     }
-  }, [propertyId])
+  }, [authLoading, user, propertyId])
 
   const fetchPropertyDetails = async () => {
     try {
-      console.log('🔍 Fetching property details from local database...')
+      console.log('🔍 Fetching property details:', propertyId)
+      setLoading(true)
 
-      // Load property from Firestore
+      const propertyData = await PropertyService.getPropertyById(propertyId)
 
-      // Load property from Firestore
-      // For new users, no properties will exist
-      throw new Error('Property not found - new user has no properties')
+      if (!propertyData) {
+        toast.error('Property not found')
+        router.push('/properties')
+        return
+      }
+
+      // Check if user owns this property
+      if (propertyData.userId !== user?.id) {
+        toast.error('You do not have permission to view this property')
+        router.push('/properties')
+        return
+      }
+
+      setProperty(propertyData)
+      console.log('✅ Property details loaded')
 
     } catch (error) {
       console.error('❌ Error fetching property details:', error)
@@ -171,6 +151,48 @@ export default function PropertyDetailsPage() {
           </div>
         </div>
 
+        {/* Property Images */}
+        {property.images && property.images.length > 0 && (
+          <div className="mb-8">
+            <Card className="bg-neutral-950 border-neutral-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Property Photos ({property.images.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {property.images.map((imageUrl, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square bg-neutral-800 rounded-lg overflow-hidden">
+                        <Image
+                          src={imageUrl}
+                          alt={`${property.name} - Photo ${index + 1}`}
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(imageUrl, '_blank')}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                        >
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          View Full Size
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Property Info */}
           <div className="lg:col-span-2 space-y-6">
@@ -186,59 +208,109 @@ export default function PropertyDetailsPage() {
                     <p className="text-white">{property.name}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-400">Owner</label>
-                    <p className="text-white">{property.users?.name || 'Unknown'}</p>
+                    <label className="text-sm font-medium text-neutral-400">Status</label>
+                    <p className={`font-medium ${
+                      property.status === 'active' ? 'text-green-400' :
+                      property.status === 'pending_approval' ? 'text-yellow-400' :
+                      'text-neutral-400'
+                    }`}>
+                      {property.status === 'active' ? 'Active' :
+                       property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
+                    </p>
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-sm font-medium text-neutral-400">Address</label>
                     <p className="text-white">{property.address}</p>
                   </div>
+                  {property.description && (
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-neutral-400">Description</label>
+                      <p className="text-white">{property.description}</p>
+                    </div>
+                  )}
+
+                  {/* Property Details */}
+                  {(property.bedrooms || property.bathrooms || property.maxGuests) && (
+                    <>
+                      {property.bedrooms && (
+                        <div>
+                          <label className="text-sm font-medium text-neutral-400">Bedrooms</label>
+                          <p className="text-white flex items-center">
+                            <Home className="h-4 w-4 mr-1" />
+                            {property.bedrooms}
+                          </p>
+                        </div>
+                      )}
+                      {property.bathrooms && (
+                        <div>
+                          <label className="text-sm font-medium text-neutral-400">Bathrooms</label>
+                          <p className="text-white flex items-center">
+                            <Home className="h-4 w-4 mr-1" />
+                            {property.bathrooms}
+                          </p>
+                        </div>
+                      )}
+                      {property.maxGuests && (
+                        <div>
+                          <label className="text-sm font-medium text-neutral-400">Max Guests</label>
+                          <p className="text-white flex items-center">
+                            <Users className="h-4 w-4 mr-1" />
+                            {property.maxGuests}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Created</label>
-                    <p className="text-white">{new Date(property.created_at).toLocaleDateString()}</p>
+                    <p className="text-white">{property.createdAt.toDate().toLocaleDateString()}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Last Updated</label>
-                    <p className="text-white">{new Date(property.updated_at).toLocaleDateString()}</p>
+                    <p className="text-white">{property.updatedAt.toDate().toLocaleDateString()}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Recent Bookings */}
+            {/* Property Status */}
             <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
               <CardHeader>
-                <CardTitle className="text-white">Recent Bookings</CardTitle>
-                <CardDescription className="text-neutral-400">Latest guest reservations for this property</CardDescription>
+                <CardTitle className="text-white">Property Status</CardTitle>
+                <CardDescription className="text-neutral-400">Current status and next steps</CardDescription>
               </CardHeader>
               <CardContent>
-                {bookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {bookings.slice(0, 5).map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-4 bg-neutral-900 border border-neutral-800 rounded-lg">
-                        <div>
-                          <p className="font-medium text-white">{booking.guest_name}</p>
-                          <p className="text-sm text-neutral-400">
-                            {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-white">฿{booking.total_amount.toLocaleString()}</p>
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
-                            booking.status === 'confirmed' ? 'bg-emerald-900 text-emerald-300 border-emerald-800' :
-                            booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300 border-yellow-800' :
-                            booking.status === 'cancelled' ? 'bg-red-900 text-red-300 border-red-800' :
-                            'bg-blue-900 text-blue-300 border-blue-800'
-                          }`}>
-                            {booking.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-neutral-900 border border-neutral-800 rounded-lg">
+                    <div>
+                      <p className="font-medium text-white">Current Status</p>
+                      <p className="text-sm text-neutral-400">
+                        {property.status === 'pending_approval' ? 'Awaiting admin approval' :
+                         property.status === 'active' ? 'Property is live and accepting bookings' :
+                         'Property is currently inactive'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full border ${
+                        property.status === 'active' ? 'bg-emerald-900 text-emerald-300 border-emerald-800' :
+                        property.status === 'pending_approval' ? 'bg-yellow-900 text-yellow-300 border-yellow-800' :
+                        'bg-neutral-900 text-neutral-300 border-neutral-800'
+                      }`}>
+                        {property.status === 'active' ? 'Active' :
+                         property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-neutral-400 text-center py-8">No bookings yet</p>
-                )}
+
+                  {property.status === 'pending_approval' && (
+                    <div className="p-4 bg-yellow-900/20 border border-yellow-800/30 rounded-lg">
+                      <p className="text-yellow-300 text-sm">
+                        Your property is under review by our team. You'll be notified once it's approved and ready to accept bookings.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -252,53 +324,74 @@ export default function PropertyDetailsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Total Bookings</span>
-                  <span className="font-medium text-white">{bookings.length}</span>
+                  <span className="text-neutral-400">Property Status</span>
+                  <span className={`font-medium ${
+                    property.status === 'active' ? 'text-green-400' :
+                    property.status === 'pending_approval' ? 'text-yellow-400' :
+                    'text-neutral-400'
+                  }`}>
+                    {property.status === 'active' ? 'Active' :
+                     property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Active Tasks</span>
-                  <span className="font-medium text-white">{tasks.filter(t => t.status !== 'completed').length}</span>
+                  <span className="text-neutral-400">Photos Uploaded</span>
+                  <span className="font-medium text-white">{property.images?.length || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Total Revenue</span>
+                  <span className="text-neutral-400">Created Date</span>
                   <span className="font-medium text-white">
-                    ฿{bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.total_amount, 0).toLocaleString()}
+                    {property.createdAt.toDate().toLocaleDateString()}
                   </span>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Recent Tasks */}
+            {/* Property Amenities */}
             <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
               <CardHeader>
-                <CardTitle className="text-white">Recent Tasks</CardTitle>
+                <CardTitle className="text-white">Amenities</CardTitle>
               </CardHeader>
               <CardContent>
-                {tasks.length > 0 ? (
-                  <div className="space-y-3">
-                    {tasks.slice(0, 3).map((task) => (
-                      <div key={task.id} className="p-3 bg-neutral-900 border border-neutral-800 rounded-lg">
-                        <p className="font-medium text-white text-sm">{task.task_type}</p>
-                        <p className="text-xs text-neutral-400">Assigned to: {task.users?.name || 'Unassigned'}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
-                            task.status === 'completed' ? 'bg-emerald-900 text-emerald-300 border-emerald-800' :
-                            task.status === 'in_progress' ? 'bg-blue-900 text-blue-300 border-blue-800' :
-                            'bg-yellow-900 text-yellow-300 border-yellow-800'
-                          }`}>
-                            {task.status.replace('_', ' ')}
-                          </span>
-                          {task.due_date && (
-                            <span className="text-xs text-neutral-400">
-                              Due: {new Date(task.due_date).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
+                {property.amenities && property.amenities.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {property.amenities.map((amenity, index) => (
+                      <div key={index} className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                        <span className="text-sm text-white">{amenity}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-neutral-400 text-center py-4">No tasks yet</p>
+                  <div className="space-y-2">
+                    {property.hasPool && (
+                      <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                        <span className="text-sm text-white">Swimming Pool</span>
+                      </div>
+                    )}
+                    {property.hasGarden && (
+                      <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                        <span className="text-sm text-white">Garden</span>
+                      </div>
+                    )}
+                    {property.hasAirConditioning && (
+                      <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                        <span className="text-sm text-white">Air Conditioning</span>
+                      </div>
+                    )}
+                    {property.hasParking && (
+                      <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                        <span className="text-sm text-white">Parking</span>
+                      </div>
+                    )}
+                    {property.hasLaundry && (
+                      <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                        <span className="text-sm text-white">Laundry</span>
+                      </div>
+                    )}
+                    {!property.amenities && !property.hasPool && !property.hasGarden && !property.hasAirConditioning && !property.hasParking && !property.hasLaundry && (
+                      <p className="text-neutral-400 text-center py-4">No amenities listed</p>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

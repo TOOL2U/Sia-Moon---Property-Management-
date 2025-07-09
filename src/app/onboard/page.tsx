@@ -610,11 +610,19 @@ function OnboardYourVillaContent() {
 
         await submitToMake(makeData)
         console.log('✅ Confirmation email sent via Make.com')
-        toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
+        if (propertyId) {
+          toast.success('Villa onboarding submitted successfully! Your property has been created and our team will review your submission.')
+        } else {
+          toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
+        }
       } catch (makeError) {
         // Don't fail the entire submission if Make.com webhook fails
         console.warn('⚠️ Failed to send confirmation email via Make.com:', makeError)
-        toast.success('Villa submitted successfully, but confirmation email may be delayed.')
+        if (propertyId) {
+          toast.success('Villa submitted successfully and property created! Confirmation email may be delayed.')
+        } else {
+          toast.success('Villa submitted successfully, but confirmation email may be delayed.')
+        }
       }
 
       setSubmitted(true)
