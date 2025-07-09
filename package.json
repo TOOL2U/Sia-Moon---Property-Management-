@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
-
     "@types/nodemailer": "^6.4.17",
     "axios": "^1.7.9",
     "bcryptjs": "^3.0.2",
@@ -57,12 +56,12 @@
     "react-hot-toast": "^2.4.1",
     "react-onesignal": "^3.0.1",
     "recharts": "^3.0.2",
-
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.75"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@netlify/plugin-nextjs": "^5.11.4",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
