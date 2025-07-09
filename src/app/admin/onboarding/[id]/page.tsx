@@ -5,18 +5,15 @@ import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { DatabaseService } from '@/lib/dbService'
 import { VillaOnboarding } from '@/lib/db'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { 
+import {
   ArrowLeft,
-  Building, 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
+  Building,
+  User,
+  MapPin,
   Bed,
   Bath,
   Car,
