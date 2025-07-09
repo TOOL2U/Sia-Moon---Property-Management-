@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { FileUpload } from '@/components/ui/FileUpload'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -96,6 +95,7 @@ function OnboardYourVillaContent() {
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isEditing, _setIsEditing] = useState(!!editId)
   // Note: _setIsEditing is unused in development mode since editing redirects away
   // It will be used when database editing functionality is implemented
@@ -188,6 +188,7 @@ function OnboardYourVillaContent() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const [loadingExisting, setLoadingExisting] = useState(false)
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const loadExistingData = useCallback(async (_id: string) => { // _id unused in dev mode
     if (!user) return
 
@@ -385,6 +386,7 @@ function OnboardYourVillaContent() {
     return true
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _uploadFiles = async () => { // Unused in dev mode, prepared for Firebase Storage
     const uploadedUrls: {[key: string]: string} = {}
     const filesToUpload = Object.entries(uploadedFiles).filter(([, files]) => files.length > 0)

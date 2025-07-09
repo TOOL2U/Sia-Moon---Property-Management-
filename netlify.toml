@@ -6,15 +6,9 @@
   NODE_VERSION = "20.18.0"
   NPM_FLAGS = "--production=false"
 
-# Next.js plugin configuration
+# Next.js plugin configuration - REQUIRED for proper Next.js deployment
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-# Redirect rules for Next.js SPA
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
 
 # Headers for security
 [[headers]]

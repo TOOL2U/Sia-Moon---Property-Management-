@@ -1,8 +1,8 @@
-# Netlify redirects for Next.js SPA
-# This ensures all routes are handled by Next.js client-side routing
+# Netlify redirects for Next.js with API routes
+# This file is used as a fallback when @netlify/plugin-nextjs doesn't handle routing
 
-# API routes should be handled first
-/api/* /api/:splat 200
+# API routes should be handled by Next.js server functions
+/api/* /.netlify/functions/___netlify-handler 200
 
 # All other routes should fallback to the Next.js app
 /* /index.html 200

@@ -11,6 +11,7 @@
     "dev:turbo": "next dev --turbopack --port 3000",
     "build": "next build",
     "build:production": "NODE_ENV=production next build",
+    "build:static": "next build && next export",
     "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
     "start:production": "NODE_ENV=production next start",
