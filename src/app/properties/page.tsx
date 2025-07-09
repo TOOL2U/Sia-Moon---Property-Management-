@@ -1,26 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-// TODO: Replace with new database service when implemented
-// import DatabaseService from '@/lib/newDatabaseService'
 import { useAuth } from '@/contexts/AuthContext'
+import { PropertyService, Property } from '@/lib/services/propertyService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Building, MapPin, Plus, Trash2 } from 'lucide-react'
+import { Building, MapPin, Plus, Trash2, Users, Calendar, Home } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-
-interface Property {
-  id: string
-  name: string
-  description: string
-  location: string
-  owner_id: string
-  status: 'active' | 'inactive'
-  created_at: string
-  updated_at: string
-}
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
@@ -30,19 +18,20 @@ export default function PropertiesPage() {
 
   useEffect(() => {
     const fetchProperties = async () => {
+      if (!user?.id) return
+
       try {
-        console.log('🔍 Loading properties (development mode with mock data)')
+        console.log('🔍 Loading properties for user:', user.id)
         setLoading(true)
 
         // Load user's actual properties from Firestore
-
-        // Load user's actual properties from Firestore
-        // For new users, this will be an empty array
-        console.log('✅ Properties loaded: 0 (new user)')
-        setProperties([])
+        const userProperties = await PropertyService.getPropertiesByUserId(user.id)
+        setProperties(userProperties)
+        console.log('✅ Properties loaded:', userProperties.length)
       } catch (error) {
         console.error('❌ Error loading properties:', error)
         toast.error('Failed to load properties')
+        setProperties([]) // Set empty array on error
       } finally {
         setLoading(false)
       }
@@ -122,29 +111,52 @@ export default function PropertiesPage() {
                       <CardTitle className="text-lg text-white">{property.name}</CardTitle>
                       <CardDescription className="flex items-center mt-1 text-neutral-400">
                         <MapPin className="h-4 w-4 mr-1" />
-                        <span className="truncate">{property.location}</span>
+                        <span className="truncate">{property.address}</span>
                       </CardDescription>
                     </div>
-                    <Badge variant="secondary" className={property.status === 'active' ? 'bg-emerald-900 text-emerald-300 border border-emerald-800' : 'bg-neutral-900 text-neutral-300 border border-neutral-800'}>
-                      {property.status === 'active' ? 'Active' : 'Inactive'}
+                    <Badge variant="secondary" className={
+                      property.status === 'active' ? 'bg-emerald-900 text-emerald-300 border border-emerald-800' :
+                      property.status === 'pending_approval' ? 'bg-yellow-900 text-yellow-300 border border-yellow-800' :
+                      'bg-neutral-900 text-neutral-300 border border-neutral-800'
+                    }>
+                      {property.status === 'active' ? 'Active' :
+                       property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
                     </Badge>
                   </div>
                 </CardHeader>
 
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="text-sm text-neutral-400">
-                      <div className="flex items-center mb-2">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span className="truncate">{property.location}</span>
-                      </div>
-                      <div className="text-sm text-neutral-400 mb-2">
-                        {property.description}
-                      </div>
+                    {/* Property Details */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {property.bedrooms && (
+                        <div className="flex items-center text-neutral-400">
+                          <Home className="h-4 w-4 mr-1" />
+                          {property.bedrooms} bed
+                        </div>
+                      )}
+                      {property.bathrooms && (
+                        <div className="flex items-center text-neutral-400">
+                          <Home className="h-4 w-4 mr-1" />
+                          {property.bathrooms} bath
+                        </div>
+                      )}
+                      {property.maxGuests && (
+                        <div className="flex items-center text-neutral-400">
+                          <Users className="h-4 w-4 mr-1" />
+                          {property.maxGuests} guests
+                        </div>
+                      )}
                     </div>
 
+                    {property.description && (
+                      <div className="text-sm text-neutral-400">
+                        {property.description}
+                      </div>
+                    )}
+
                     <div className="text-sm text-neutral-500">
-                      Added {new Date(property.created_at).toLocaleDateString()}
+                      Added {property.createdAt.toDate().toLocaleDateString()}
                     </div>
 
                     <div className="space-y-3 pt-2">

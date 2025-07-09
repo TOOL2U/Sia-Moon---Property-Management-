@@ -12,6 +12,7 @@ interface VillaPhotoUploadProps {
   userId: string
   villaId?: string
   disabled?: boolean
+  onPhotosChange?: (photoUrls: string[]) => void
 }
 
 interface UploadedPhoto {
@@ -23,7 +24,7 @@ interface UploadedPhoto {
   uploadedAt: Date
 }
 
-export function VillaPhotoUpload({ userId, villaId, disabled = false }: VillaPhotoUploadProps) {
+export function VillaPhotoUpload({ userId, villaId, disabled = false, onPhotosChange }: VillaPhotoUploadProps) {
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -126,7 +127,14 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false }: VillaPho
           uploadedAt: new Date()
         }
 
-        setUploadedPhotos(prev => [newPhoto, ...prev])
+        setUploadedPhotos(prev => {
+          const updated = [newPhoto, ...prev]
+          // Notify parent component of photo URLs
+          if (onPhotosChange) {
+            onPhotosChange(updated.map(photo => photo.url))
+          }
+          return updated
+        })
         toast.success(`${file.name} uploaded successfully`)
         
         return newPhoto
@@ -144,7 +152,7 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false }: VillaPho
     } finally {
       setIsUploading(false)
     }
-  }, [userId, disabled, getStoragePath])
+  }, [userId, disabled, getStoragePath, onPhotosChange])
 
   // Handle file deletion
   const handleDeletePhoto = useCallback(async (photo: UploadedPhoto) => {
@@ -155,7 +163,14 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false }: VillaPho
       const storageRef = ref(storage, photo.path)
       await deleteObject(storageRef)
       
-      setUploadedPhotos(prev => prev.filter(p => p.id !== photo.id))
+      setUploadedPhotos(prev => {
+        const updated = prev.filter(p => p.id !== photo.id)
+        // Notify parent component of photo URLs
+        if (onPhotosChange) {
+          onPhotosChange(updated.map(photo => photo.url))
+        }
+        return updated
+      })
       toast.success('Photo deleted successfully')
     } catch (error) {
       console.error('Failed to delete photo:', error)

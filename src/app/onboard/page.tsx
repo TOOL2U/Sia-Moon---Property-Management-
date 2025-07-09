@@ -17,6 +17,7 @@ import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboar
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
 import { VillaPhotoUpload } from '@/components/VillaPhotoUpload'
 import { OnboardingService } from '@/lib/services/onboardingService'
+import { PropertyService } from '@/lib/services/propertyService'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -514,6 +515,20 @@ function OnboardYourVillaContent() {
       const submissionId = await OnboardingService.createSubmission(submissionData)
       console.log('✅ Onboarding submission saved to Firestore:', submissionId)
 
+      // Create property from onboarding data
+      let propertyId: string | null = null
+      try {
+        propertyId = await PropertyService.createPropertyFromOnboarding(
+          submissionData,
+          user?.id || '',
+          submissionId
+        )
+        console.log('✅ Property created from onboarding:', propertyId)
+      } catch (propertyError) {
+        console.warn('⚠️ Failed to create property, but onboarding submission saved:', propertyError)
+        // Don't fail the entire submission if property creation fails
+      }
+
       // Send confirmation email via Make.com webhook
       try {
         const makeData: OnboardingSubmissionData = {
@@ -602,9 +617,9 @@ function OnboardYourVillaContent() {
 
       setSubmitted(true)
 
-      // Redirect to client onboarding page after successful submission
+      // Redirect to properties page after successful submission
       setTimeout(() => {
-        router.push('/dashboard/client/onboarding')
+        router.push('/properties')
       }, 2000)
     } catch (err: unknown) {
       console.error('Submission error:', err)
