@@ -5,6 +5,7 @@ import "./globals.css";
 import { Navbar } from '@/components/layout/Navbar';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ToasterProvider } from '@/components/providers/ToasterProvider';
+import FirebaseStatus from '@/components/FirebaseStatus';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,6 +28,7 @@ export default function RootLayout({
           <Navbar />
           <main className="page-transition">{children}</main>
           <ToasterProvider />
+          <FirebaseStatus showInProduction={true} />
         </AuthProvider>
       </body>
     </html>

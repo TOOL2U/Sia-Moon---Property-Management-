@@ -30,20 +30,27 @@ console.log("🔍 Firebase Config Debug:", {
 const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId']
 const missingFields = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig])
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined'
+const isBuildTime = !isBrowser && process.env.NODE_ENV === 'production'
+
 if (missingFields.length > 0) {
   console.warn('⚠️ Firebase configuration is incomplete. Missing fields:', missingFields)
 
-  // Only throw error in production runtime, not during build
-  if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
-    console.error('❌ Firebase configuration is required in production')
-    console.error('Please configure environment variables in your deployment platform')
+  if (isBrowser) {
+    // In browser, show user-friendly error
+    console.error('❌ Firebase configuration is missing. Please check environment variables.')
+    console.error('Missing fields:', missingFields)
+
+    // Create a helpful error message for users
+    if (process.env.NODE_ENV === 'production') {
+      console.error('🔧 This appears to be a deployment configuration issue.')
+      console.error('Please ensure Firebase environment variables are set in your hosting platform.')
+    }
   } else if (process.env.NODE_ENV === 'development') {
     console.error('❌ Firebase configuration is incomplete for development')
     console.error('Please check your environment variables in .env.local')
-  }
-
-  // Don't throw during build process
-  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'development') {
+  } else {
     console.log('🔧 Build time: Firebase configuration will be validated at runtime')
   }
 }
@@ -51,10 +58,8 @@ if (missingFields.length > 0) {
 // Initialize Firebase with singleton pattern (only if config is complete and not during build)
 let app
 try {
-  // Only initialize if we have the required configuration and we're not in build mode
-  const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
-
-  if (missingFields.length === 0 && !isBuildTime) {
+  // Only initialize if we have the required configuration and we're in browser
+  if (missingFields.length === 0 && isBrowser) {
     // Check if Firebase app is already initialized
     if (getApps().length === 0) {
       app = initializeApp(firebaseConfig)
@@ -64,8 +69,8 @@ try {
       console.log('✅ Firebase app already initialized, using existing instance')
     }
   } else {
-    if (isBuildTime) {
-      console.log('🔧 Build time: Firebase initialization skipped')
+    if (!isBrowser) {
+      console.log('🔧 Server-side: Firebase initialization skipped')
     } else {
       console.log('⏳ Firebase initialization skipped - configuration incomplete')
     }
@@ -73,9 +78,13 @@ try {
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
-  // Don't throw during build time
-  if (typeof window !== 'undefined') {
-    throw error
+  // Only throw in browser environment
+  if (isBrowser) {
+    console.error('🔧 Firebase initialization error details:', {
+      missingFields,
+      configKeys: Object.keys(firebaseConfig),
+      environment: process.env.NODE_ENV
+    })
   }
   app = null
 }
