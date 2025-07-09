@@ -10,6 +10,7 @@ import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building, Image as Ima
 import Link from 'next/link'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
 
 export default function PropertyDetailsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -151,24 +152,60 @@ export default function PropertyDetailsPage() {
           </div>
         </div>
 
-        {/* Property Images */}
-        {property.images && property.images.length > 0 && (
+        {/* Hero Cover Photo */}
+        <div className="mb-8">
+          <Card className="bg-neutral-950 border-neutral-800 overflow-hidden">
+            <div className="relative h-64 md:h-80 lg:h-96">
+              {(property.coverPhoto || (property.images && property.images.length > 0)) ? (
+                <>
+                  <Image
+                    src={property.coverPhoto || property.images![0]}
+                    alt={`${property.name} - Cover Photo`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                </>
+              ) : (
+                <PropertyImagePlaceholder
+                  propertyName={property.name}
+                  className="h-full"
+                  showText={false}
+                />
+              )}
+              <div className="absolute bottom-6 left-6 right-6">
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{property.name}</h1>
+                {property.address && (
+                  <p className="text-neutral-200 flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {property.address}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Property Images Gallery */}
+        {property.images && property.images.length > 1 && (
           <div className="mb-8">
             <Card className="bg-neutral-950 border-neutral-800">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Property Photos ({property.images.length})
+                  Additional Photos ({property.images.length - 1})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {property.images.map((imageUrl, index) => (
+                  {property.images.slice(1).map((imageUrl, index) => (
                     <div key={index} className="relative group">
                       <div className="aspect-square bg-neutral-800 rounded-lg overflow-hidden">
                         <Image
                           src={imageUrl}
-                          alt={`${property.name} - Photo ${index + 1}`}
+                          alt={`${property.name} - Photo ${index + 2}`}
                           width={300}
                           height={300}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"

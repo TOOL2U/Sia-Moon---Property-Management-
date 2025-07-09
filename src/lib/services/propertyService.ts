@@ -70,7 +70,8 @@ export interface Property {
   emergencyContactPhone?: string
   
   // Media
-  images?: string[]
+  coverPhoto?: string // Primary cover photo URL (first uploaded photo from onboarding)
+  images?: string[] // All property photos
   professionalPhotosStatus?: string
   floorPlanImagesAvailable?: boolean
   videoWalkthroughAvailable?: boolean
@@ -183,7 +184,10 @@ export class PropertyService {
         emergencyContactName: onboardingData.emergencyContactName,
         emergencyContactPhone: onboardingData.emergencyContactPhone,
         
-        // Media
+        // Media - Set cover photo as first uploaded image
+        coverPhoto: onboardingData.uploadedPhotos && onboardingData.uploadedPhotos.length > 0
+          ? onboardingData.uploadedPhotos[0]
+          : undefined,
         images: onboardingData.uploadedPhotos || [],
         professionalPhotosStatus: onboardingData.professionalPhotosStatus,
         floorPlanImagesAvailable: onboardingData.floorPlanImagesAvailable,
@@ -319,11 +323,33 @@ export class PropertyService {
   }
 
   /**
+   * Update property cover photo
+   */
+  static async updateCoverPhoto(propertyId: string, coverPhotoUrl: string): Promise<void> {
+    try {
+      if (!db) {
+        throw new Error('Firebase Firestore not initialized')
+      }
+
+      const propertyRef = doc(db, this.collection, propertyId)
+      await updateDoc(propertyRef, {
+        coverPhoto: coverPhotoUrl,
+        updatedAt: Timestamp.now()
+      })
+
+      console.log('✅ Property cover photo updated:', propertyId)
+    } catch (error) {
+      console.error('❌ Error updating property cover photo:', error)
+      throw error
+    }
+  }
+
+  /**
    * Extract amenities from onboarding data
    */
   private static extractAmenities(data: any): string[] {
     const amenities: string[] = []
-    
+
     if (data.hasPool) amenities.push('Pool')
     if (data.hasGarden) amenities.push('Garden')
     if (data.hasAirConditioning) amenities.push('Air Conditioning')
@@ -332,7 +358,7 @@ export class PropertyService {
     if (data.hasBackupPower) amenities.push('Backup Power')
     if (data.hasSmartLock) amenities.push('Smart Lock')
     if (data.internetProvider) amenities.push('Internet')
-    
+
     return amenities
   }
 }

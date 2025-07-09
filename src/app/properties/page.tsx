@@ -10,6 +10,7 @@ import { Building, MapPin, Plus, Trash2, Users, Calendar, Home, Image as ImageIc
 import Link from 'next/link'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
@@ -108,18 +109,19 @@ export default function PropertiesPage() {
               <Card key={property.id} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800 overflow-hidden">
                 {/* Cover Photo */}
                 <div className="relative h-48 bg-neutral-800">
-                  {property.images && property.images.length > 0 ? (
+                  {(property.coverPhoto || (property.images && property.images.length > 0)) ? (
                     <Image
-                      src={property.images[0]}
-                      alt={property.name}
+                      src={property.coverPhoto || property.images![0]}
+                      alt={`${property.name} - Cover Photo`}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <ImageIcon className="h-12 w-12 text-neutral-600" />
-                    </div>
+                    <PropertyImagePlaceholder
+                      propertyName={property.name}
+                      className="h-full rounded-t-lg"
+                    />
                   )}
                   {/* Status Badge Overlay */}
                   <div className="absolute top-3 right-3">
