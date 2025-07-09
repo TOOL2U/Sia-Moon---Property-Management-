@@ -5,20 +5,7 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "hosting": {
-    "public": "public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
+
   "emulators": {
     "firestore": {
       "port": 8080
@@ -26,9 +13,7 @@
     "auth": {
       "port": 9099
     },
-    "hosting": {
-      "port": 5000
-    },
+
     "ui": {
       "enabled": true,
       "port": 4000
