@@ -48,7 +48,7 @@ export const getCloudinaryUrl = (
     transformation = []
   } = options
 
-  let transformations = []
+  const transformations = []
 
   // Add basic transformations
   if (width || height) {

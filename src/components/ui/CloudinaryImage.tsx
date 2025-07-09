@@ -82,7 +82,7 @@ function CloudinaryImage({
   }
 
   // Simple Cloudinary URL generation
-  let transformations = []
+  const transformations = []
   if (width && !fill) transformations.push(`w_${width}`)
   if (height && !fill) transformations.push(`h_${height}`)
   if (crop) transformations.push(`c_${crop}`)
