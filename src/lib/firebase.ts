@@ -32,7 +32,6 @@ const missingFields = requiredFields.filter(field => !firebaseConfig[field as ke
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined'
-const isBuildTime = !isBrowser && process.env.NODE_ENV === 'production'
 
 if (missingFields.length > 0) {
   console.warn('⚠️ Firebase configuration is incomplete. Missing fields:', missingFields)
