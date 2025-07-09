@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Task, User } from '@/types/supabase'
+import { Task, User } from '@/types'
 
 /**
  * Type definition for task notification data
@@ -84,13 +84,13 @@ export const useTaskNotifications = (): UseTaskNotificationsReturn => {
       console.log('🚀 Sending task assignment notification to:', {
         assignee: data.assignee.email.replace(/(.{2}).*(@.*)/, '$1***$2'), // Mask email for logging
         task: data.task.title,
-        type: data.task.type
+        type: data.task.task_type
       })
 
       // Prepare notification payload
       const notificationPayload = {
         // Email recipient
-        name: data.assignee.name,
+        name: data.assignee.email, // Use email as name since User doesn't have name field
         email: data.assignee.email,
         phone: '', // Not needed for task notifications
         
@@ -100,17 +100,17 @@ export const useTaskNotifications = (): UseTaskNotificationsReturn => {
         // Task information in the notes field
         notes: `TASK ASSIGNMENT - ${data.task.title}
 
-Task Type: ${data.task.type.toUpperCase()}
+Task Type: ${data.task.task_type.toUpperCase()}
 Priority: ${data.task.priority.toUpperCase()}
-Due Date: ${new Date(data.task.due_date).toLocaleDateString('en-US', {
+Due Date: ${data.task.due_date ? new Date(data.task.due_date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
           hour: '2-digit',
           minute: '2-digit'
-        })}
+        }) : 'Not specified'}
 
-Description: ${data.task.description}
+Description: ${data.task.description || 'No description provided'}
 
 ${data.property ? `Property: ${data.property.name}
 Location: ${data.property.location}` : ''}

@@ -32,8 +32,8 @@ export function FullScreenChartModal({
 
     if (isMobile) {
       // Lock to landscape orientation if supported
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {
+      if (screen.orientation && 'lock' in screen.orientation) {
+        (screen.orientation as { lock?: (orientation: string) => Promise<void> }).lock?.('landscape').catch(() => {
           // If orientation lock fails, show rotate hint
           setShowRotateHint(true)
         })
@@ -60,8 +60,8 @@ export function FullScreenChartModal({
         document.body.style.overflow = 'unset'
         
         // Unlock orientation when closing
-        if (screen.orientation && screen.orientation.unlock) {
-          screen.orientation.unlock()
+        if (screen.orientation && 'unlock' in screen.orientation) {
+          (screen.orientation as { unlock?: () => void }).unlock?.()
         }
       }
     }

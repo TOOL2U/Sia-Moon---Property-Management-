@@ -1,18 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# backup directories (should not be in production)
-.backups/
-*.backup
-
-# test and debug files (should not be in production)
-test-*.js
-debug-*.js
-debug-*.mjs
-*.debug.log
-pglite-debug.log
-setup-sql-executor.js
-add-profile-trigger.js
-
 # dependencies
 /node_modules
 /.pnp
@@ -180,3 +167,32 @@ out/
 test-results/
 playwright-report/
 test-results.xml
+
+# project-specific test and debug files
+test-*.js
+debug-*.js
+debug-*.mjs
+*.debug.log
+pglite-debug.log
+test-results-summary.md
+
+# temporary email templates (keep only the ones in email-templates/)
+signup-email-*.html
+onboarding-survey-email.html
+
+# database and setup files (development only)
+setup-*.sql
+setup-*.js
+create-test-user.sql
+supabase-schema.sql
+villa-management-schema.sql
+add-profile-trigger.*
+check-environment.sh
+debug.sh
+
+# documentation that might contain sensitive info
+restart-instructions.md
+make-com-onboarding-setup-guide.md
+
+# HTML files in root (keep only in proper directories)
+database-spider-diagram.html

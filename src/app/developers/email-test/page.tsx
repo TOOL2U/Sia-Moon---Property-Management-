@@ -205,7 +205,7 @@ export default function EmailTestPage() {
                   Signup Confirmation Webhook
                 </label>
                 <div className="bg-gray-700 p-3 rounded-md text-sm font-mono break-all text-gray-300">
-                  https://hook.eu2.make.com/w2yvka9ab0x4jl58bfdjotra1ehozrqf
+                  https://hook.eu2.make.com/7ed8ib93t7f5l3mvko2i35rkdn30i9cx
                 </div>
               </div>
 

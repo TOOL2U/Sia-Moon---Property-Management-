@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
-import db, { User } from '@/lib/db'
+import db from '@/lib/db'
 
 // Auth types matching Supabase
 export interface AuthUser {
@@ -102,7 +102,8 @@ export function LocalAuthProvider({ children }: { children: ReactNode }) {
       console.log('🔄 Attempting sign in for:', email)
 
       // First try the new password verification system
-      const { data: userData, error: dbError } = await db.verifyUserPassword(email, password)
+      const { data: initialUserData, error: dbError } = await db.verifyUserPassword(email, password)
+      let userData = initialUserData
 
       if (dbError || !userData) {
         // Fallback to mock credentials for existing test users

@@ -1,6 +1,6 @@
-# Sia Moon Property Management System
+# Villa Property Management System
 
-A comprehensive villa property management web application built with Next.js, TypeScript, Tailwind CSS, and Firebase.
+A comprehensive villa property management web application built with Next.js, TypeScript, Tailwind CSS, and Supabase.
 
 ## Features
 
@@ -8,14 +8,14 @@ A comprehensive villa property management web application built with Next.js, Ty
 - **Owner Dashboard**: Property overview, booking management, revenue tracking
 - **Staff Dashboard**: Task management, maintenance tracking, guest services
 - **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Real-time Updates**: Powered by Firebase for real-time data synchronization
+- **Real-time Updates**: Powered by Supabase for real-time data synchronization
 - **TypeScript**: Full type safety throughout the application
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React, TypeScript
 - **Styling**: Tailwind CSS
-- **Backend**: Firebase (Database, Authentication, Real-time)
+- **Backend**: Supabase (Database, Authentication, Real-time)
 - **Icons**: Lucide React
 - **Deployment**: Vercel (recommended)
 
