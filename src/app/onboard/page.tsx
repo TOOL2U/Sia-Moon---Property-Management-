@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
 import { VillaPhotoUpload } from '@/components/VillaPhotoUpload'
+import { OnboardingService } from '@/lib/services/onboardingService'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -424,21 +425,96 @@ function OnboardYourVillaContent() {
     setError('')
 
     try {
-      // TODO: In production, upload files and prepare data for database insertion
-      // For now in development mode, we only send basic info to Make.com webhook
-      // const uploadedUrls = await uploadFiles()
-
-      // TODO: Replace with new database service when implemented
-      // For now, just send to Make.com webhook for processing
-      console.log('🔄 Submitting villa onboarding data via webhook (development mode)')
+      console.log('🔄 Submitting villa onboarding data to Firestore and webhook')
 
       if (isEditing && editId) {
-        // Editing not supported in development mode
-        toast.error('Editing existing villa data is not available in development mode')
+        // Editing not supported yet
+        toast.error('Editing existing villa data is not available yet')
         return
       }
 
-      // Send comprehensive villa onboarding data to Make.com for processing
+      // Save to Firestore first
+      const submissionData = {
+        userId: user?.id,
+
+        // Owner Details
+        ownerFullName: formData.ownerFullName,
+        ownerNationality: formData.ownerNationality,
+        ownerContactNumber: formData.ownerContactNumber,
+        ownerEmail: formData.ownerEmail,
+        preferredContactMethod: formData.preferredContactMethod,
+        bankDetails: formData.bankDetails,
+
+        // Property Details
+        propertyName: formData.propertyName,
+        propertyAddress: formData.propertyAddress,
+        googleMapsUrl: formData.googleMapsUrl,
+        bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
+        bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
+        landSizeSqm: formData.landSizeSqm ? Number(formData.landSizeSqm) : undefined,
+        villaSizeSqm: formData.villaSizeSqm ? Number(formData.villaSizeSqm) : undefined,
+        yearBuilt: formData.yearBuilt ? Number(formData.yearBuilt) : undefined,
+
+        // Amenities
+        hasPool: formData.hasPool,
+        hasGarden: formData.hasGarden,
+        hasAirConditioning: formData.hasAirConditioning,
+        internetProvider: formData.internetProvider,
+        hasParking: formData.hasParking,
+        hasLaundry: formData.hasLaundry,
+        hasBackupPower: formData.hasBackupPower,
+
+        // Access & Staff
+        accessDetails: formData.accessDetails,
+        hasSmartLock: formData.hasSmartLock,
+        gateRemoteDetails: formData.gateRemoteDetails,
+        onsiteStaff: formData.onsiteStaff,
+
+        // Utilities
+        electricityProvider: formData.electricityProvider,
+        waterSource: formData.waterSource,
+        internetPackage: formData.internetPackage,
+
+        // Rental & Marketing
+        rentalRates: formData.rentalRates,
+        platformsListed: formData.platformsListed,
+        averageOccupancyRate: formData.averageOccupancyRate,
+        minimumStayRequirements: formData.minimumStayRequirements,
+        targetGuests: formData.targetGuests,
+        ownerBlackoutDates: formData.ownerBlackoutDates,
+
+        // Preferences & Rules
+        petsAllowed: formData.petsAllowed,
+        partiesAllowed: formData.partiesAllowed,
+        smokingAllowed: formData.smokingAllowed,
+        maintenanceAutoApprovalLimit: formData.maintenanceAutoApprovalLimit,
+
+        // Current Condition
+        repairsNeeded: formData.repairsNeeded,
+        lastSepticService: formData.lastSepticService,
+        pestControlSchedule: formData.pestControlSchedule,
+
+        // Photos & Media
+        professionalPhotosStatus: formData.professionalPhotosStatus,
+        floorPlanImagesAvailable: formData.floorPlanImagesAvailable,
+        videoWalkthroughAvailable: formData.videoWalkthroughAvailable,
+
+        // Emergency Contact
+        emergencyContactName: formData.emergencyContactName,
+        emergencyContactPhone: formData.emergencyContactPhone,
+
+        // Additional Notes
+        notes: formData.repairsNeeded || '',
+
+        // Submission metadata
+        submissionType: 'comprehensive_villa_onboarding'
+      }
+
+      // Save to Firestore
+      const submissionId = await OnboardingService.createSubmission(submissionData)
+      console.log('✅ Onboarding submission saved to Firestore:', submissionId)
+
+      // Send confirmation email via Make.com webhook
       try {
         const makeData: OnboardingSubmissionData = {
           // Owner Details
@@ -516,12 +592,12 @@ function OnboardYourVillaContent() {
         }
 
         await submitToMake(makeData)
-        console.log('✅ Basic information sent to Make.com for confirmation email')
+        console.log('✅ Confirmation email sent via Make.com')
         toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
       } catch (makeError) {
         // Don't fail the entire submission if Make.com webhook fails
         console.warn('⚠️ Failed to send confirmation email via Make.com:', makeError)
-        toast.error('Villa submitted successfully, but confirmation email may be delayed.')
+        toast.success('Villa submitted successfully, but confirmation email may be delayed.')
       }
 
       setSubmitted(true)
