@@ -77,8 +77,6 @@ export default function TestWebhookPage() {
 
       // Current Condition
       repairs_needed: 'Minor touch-up painting needed',
-      last_septic_service: '2024-01-15',
-      pest_control_schedule: 'Monthly',
 
       // Photos & Media
       professional_photos_status: 'completed',

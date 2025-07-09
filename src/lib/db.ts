@@ -216,8 +216,6 @@ export interface VillaOnboarding {
 
   // Current Condition
   repairs_needed?: string
-  last_septic_service?: string
-  pest_control_schedule?: string
 
   // Photos & Media
   professional_photos_status?: string

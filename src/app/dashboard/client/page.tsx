@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseChart'
 import { MobileIncomeExpenseChart } from '@/components/dashboard/charts/MobileIncomeExpenseChart'
+import { SummaryCardsGrid, SummaryCardsGridSkeleton } from '@/components/dashboard/SummaryCardsGrid'
+import { BookingPreview, BookingPreviewSkeleton } from '@/components/dashboard/BookingPreview'
 import {
   Wrench,
   Calendar,
@@ -134,6 +136,74 @@ export default function ClientDashboard() {
     }
   }
 
+  // Calculate summary metrics for cards
+  const calculateSummaryMetrics = () => {
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
+
+    // Current month data
+    const currentMonthReports = reports.filter(r =>
+      r.month === currentMonth + 1 && r.year === currentYear
+    )
+    const currentIncome = currentMonthReports.reduce((sum, r) => sum + r.total_income, 0)
+    const currentExpenses = currentMonthReports.reduce((sum, r) => sum + r.total_expenses, 0)
+    const currentProfit = currentIncome - currentExpenses
+    const currentOccupancy = currentMonthReports.length > 0
+      ? currentMonthReports.reduce((sum, r) => sum + r.occupancy_rate, 0) / currentMonthReports.length
+      : 0
+
+    // Last month data for comparison
+    const lastMonthReports = reports.filter(r =>
+      r.month === lastMonth + 1 && r.year === lastMonthYear
+    )
+    const lastIncome = lastMonthReports.reduce((sum, r) => sum + r.total_income, 0)
+    const lastExpenses = lastMonthReports.reduce((sum, r) => sum + r.total_expenses, 0)
+    const lastProfit = lastIncome - lastExpenses
+    const lastOccupancy = lastMonthReports.length > 0
+      ? lastMonthReports.reduce((sum, r) => sum + r.occupancy_rate, 0) / lastMonthReports.length
+      : 0
+
+    // Calculate percentage changes
+    const incomeChange = lastIncome > 0 ? ((currentIncome - lastIncome) / lastIncome) * 100 : 0
+    const expensesChange = lastExpenses > 0 ? ((currentExpenses - lastExpenses) / lastExpenses) * 100 : 0
+    const profitChange = lastProfit !== 0 ? ((currentProfit - lastProfit) / Math.abs(lastProfit)) * 100 : 0
+    const occupancyChange = lastOccupancy > 0 ? ((currentOccupancy - lastOccupancy) / lastOccupancy) * 100 : 0
+
+    // Upcoming bookings count
+    const upcomingBookingsCount = bookings.filter(booking => {
+      const checkIn = new Date(booking.check_in)
+      return isAfter(checkIn, now) && isBefore(checkIn, addDays(now, 30))
+    }).length
+
+    // Last month's upcoming bookings for comparison
+    const lastMonthDate = subMonths(now, 1)
+    const lastMonthUpcomingCount = bookings.filter(booking => {
+      const checkIn = new Date(booking.check_in)
+      return isAfter(checkIn, lastMonthDate) && isBefore(checkIn, addDays(lastMonthDate, 30))
+    }).length
+
+    const bookingsChange = lastMonthUpcomingCount > 0
+      ? ((upcomingBookingsCount - lastMonthUpcomingCount) / lastMonthUpcomingCount) * 100
+      : 0
+
+    return {
+      totalIncomeThisMonth: currentIncome,
+      totalExpensesThisMonth: currentExpenses,
+      netProfitThisMonth: currentProfit,
+      occupancyRateThisMonth: currentOccupancy,
+      upcomingBookingsCount,
+      incomeChange,
+      expensesChange,
+      profitChange,
+      occupancyChange,
+      bookingsChange,
+      currency: 'USD'
+    }
+  }
+
   // Prepare chart data
   const prepareChartData = () => {
     const last6Months = []
@@ -253,6 +323,21 @@ export default function ClientDashboard() {
     >
       <div className="max-w-7xl mx-auto">
 
+
+        {/* Summary Cards Grid - Mobile & Desktop */}
+        <div className="mb-8">
+          {loading ? (
+            <SummaryCardsGridSkeleton />
+          ) : (
+            <SummaryCardsGrid
+              metrics={calculateSummaryMetrics()}
+              onCardTap={(cardType) => {
+                console.log('Card tapped:', cardType)
+                // Handle card tap - could navigate to detailed view
+              }}
+            />
+          )}
+        </div>
 
         {/* Metric Selector - Lightspeed Style */}
         <div className="mb-6">
