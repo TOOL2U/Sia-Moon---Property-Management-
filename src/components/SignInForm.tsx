@@ -74,7 +74,8 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard')
+        console.log('🔄 Redirecting to client dashboard after successful login...')
+        router.push('/dashboard/client')
       }
 
     } catch (error) {

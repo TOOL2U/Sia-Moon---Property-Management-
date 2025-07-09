@@ -232,7 +232,8 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/dashboard')
+        console.log('🔄 Redirecting to client dashboard after successful signup...')
+        router.push('/dashboard/client')
       }
 
     } catch (error: unknown) {

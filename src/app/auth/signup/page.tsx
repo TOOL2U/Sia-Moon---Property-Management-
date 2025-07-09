@@ -18,8 +18,8 @@ export default function SignUpPage() {
     const signupInProgress = sessionStorage.getItem('signup_in_progress')
     
     if (!loading && user && !signupInProgress) {
-      console.log('🔄 User already authenticated, redirecting to dashboard...')
-      router.push('/dashboard')
+      console.log('🔄 User already authenticated, redirecting to client dashboard...')
+      router.push('/dashboard/client')
     } else if (signupInProgress) {
       console.log('⏳ Signup in progress, delaying redirect...')
     }

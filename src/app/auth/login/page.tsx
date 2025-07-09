@@ -12,11 +12,11 @@ export default function LoginPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to client dashboard
   useEffect(() => {
     if (!loading && user) {
-      console.log('🔄 User already authenticated, redirecting to dashboard...')
-      router.push('/dashboard')
+      console.log('🔄 User already authenticated, redirecting to client dashboard...')
+      router.push('/dashboard/client')
     }
   }, [loading, user, router])
 
