@@ -1,7 +1,27 @@
 'use client'
 
 import { useState } from 'react'
-import { useSupabaseReports, formatCurrency, getMonthName, calculateNetIncome } from '@/hooks/useSupabaseReports'
+import { useReports } from '@/hooks/useReports'
+
+// Utility functions
+const formatCurrency = (amount: number, currency = 'USD') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency
+  }).format(amount)
+}
+
+const getMonthName = (month: number) => {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+  return months[month - 1] || 'Unknown'
+}
+
+const calculateNetIncome = (report: any) => {
+  return (report.totalIncome || 0) - (report.totalExpenses || 0)
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -26,9 +46,9 @@ interface ReportsSectionProps {
 }
 
 export function ReportsSection({ propertyId }: ReportsSectionProps) {
-  const { reports, loading, error, refreshReports, downloadReport, generateReport } = useSupabaseReports({ 
+  const { reports, loading, error, refreshReports, downloadPDF, generateReport } = useReports({
     propertyId,
-    autoLoad: true 
+    autoLoad: true
   })
   
   const [generatingReport, setGeneratingReport] = useState(false)
@@ -43,14 +63,18 @@ export function ReportsSection({ propertyId }: ReportsSectionProps) {
     
     setGeneratingReport(true)
     try {
-      await generateReport(propertyId, selectedMonth, selectedYear)
+      await generateReport({
+        propertyId: propertyId!,
+        year: selectedYear,
+        month: selectedMonth
+      })
     } finally {
       setGeneratingReport(false)
     }
   }
   
   const handleDownload = async (reportId: string) => {
-    await downloadReport(reportId)
+    await downloadPDF(reportId)
   }
   
   const getReportStatusColor = (report: any) => {
@@ -238,10 +262,10 @@ export function ReportsSection({ propertyId }: ReportsSectionProps) {
                         <Calendar className="h-5 w-5 text-primary-400" />
                         {getMonthName(report.month)} {report.year}
                       </CardTitle>
-                      {report.property && (
+                      {report.property_id && (
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <Home className="h-3 w-3" />
-                          {report.property.name}
+                          Property ID: {report.property_id}
                         </CardDescription>
                       )}
                     </div>

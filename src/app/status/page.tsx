@@ -147,7 +147,7 @@ export default function StatusPage() {
         }
       })
 
-      setServices(updatedServices)
+      setServices(updatedServices as ServiceStatus[])
 
       // Calculate overall status
       const onlineCount = updatedServices.filter(s => s.status === 'online').length

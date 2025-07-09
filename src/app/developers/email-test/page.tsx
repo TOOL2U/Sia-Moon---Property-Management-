@@ -12,7 +12,7 @@ export default function EmailTestPage() {
   const [testEmail, setTestEmail] = useState('test@example.com')
   const [testName, setTestName] = useState('Test User')
   const [loading, setLoading] = useState(false)
-  const [lastResult, setLastResult] = useState<any>(null)
+  const [lastResult, setLastResult] = useState<{ success: boolean; error?: string; webhookId?: string; timestamp?: string } | null>(null)
 
   const sendTestEmail = async () => {
     if (!testEmail || !testName) {

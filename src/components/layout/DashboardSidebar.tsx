@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface SidebarProps {
   collapsed?: boolean
@@ -32,9 +33,7 @@ interface SidebarProps {
 
 export function DashboardSidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname()
-  // TODO: Replace with new auth system when implemented
-  const profile = null
-  const signOut = async () => { console.log('Sign out placeholder') }
+  const { user, signOut } = useAuth()
   const [isCollapsing, setIsCollapsing] = useState(false)
 
   const handleToggle = () => {
@@ -151,15 +150,15 @@ export function DashboardSidebar({ collapsed = false, onToggle }: SidebarProps) 
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-medium text-sm truncate">
-                {profile?.full_name || 'User'}
+                {user?.full_name || 'User'}
               </p>
               <p className="text-neutral-400 text-xs truncate">
-                {profile?.email}
+                {user?.email}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 <Shield className="w-3 h-3 text-primary-400" />
                 <span className="text-primary-400 text-xs capitalize">
-                  {profile?.role || 'client'}
+                  {user?.role || 'client'}
                 </span>
               </div>
             </div>

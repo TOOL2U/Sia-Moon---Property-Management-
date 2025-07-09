@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser } from 'firebase/auth'
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 
@@ -48,6 +48,9 @@ export function UserProvider({ children }: UserProviderProps) {
     try {
       console.log('🔍 Fetching user profile:', userId)
 
+      if (!db) {
+        throw new Error('Firebase Firestore not initialized')
+      }
       const profileDoc = await getDoc(doc(db, 'users', userId))
       if (profileDoc.exists()) {
         const data = profileDoc.data()
@@ -77,6 +80,9 @@ export function UserProvider({ children }: UserProviderProps) {
       console.log('🔄 Signing out...')
       setLoading(true)
 
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       await firebaseSignOut(auth)
 
       console.log('✅ Signed out successfully')
@@ -97,6 +103,13 @@ export function UserProvider({ children }: UserProviderProps) {
     const getInitialSession = async () => {
       try {
         console.log('🔍 Getting initial session...')
+
+        if (!auth) {
+          console.log('📋 Firebase auth not initialized')
+          setSession(null)
+          setProfile(null)
+          return
+        }
 
         const user = auth.currentUser
         if (user) {
@@ -125,6 +138,12 @@ export function UserProvider({ children }: UserProviderProps) {
     getInitialSession()
 
     // Firebase Auth state listener
+    if (!auth) {
+      console.error('Firebase auth not initialized')
+      setLoading(false)
+      return
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!mounted) return
       console.log('🔄 Auth state change:', user ? 'User exists' : 'No user')

@@ -1,23 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
-// TODO: Update types when new auth system is implemented
-// import { Notification, NotificationPreference } from '@/types/supabase'
-import { NEXT_PUBLIC_ONESIGNAL_APP_ID } from '@/lib/env'
-import toast from 'react-hot-toast'
+import { useState, useCallback } from 'react'
+import { Notification as DbNotification, NotificationPreference as DbNotificationPreference } from '@/lib/db'
 
-// Temporary types until new auth system is implemented
-interface Notification {
-  id: string
-  title: string
-  message: string
-  read: boolean
-  created_at: string
-}
-
-interface NotificationPreference {
-  id: string
-  email_notifications: boolean
-  push_notifications: boolean
-}
+// Re-export the types for consistency
+export type Notification = DbNotification
+export type NotificationPreference = DbNotificationPreference
 
 export interface UseNotificationsOptions {
   autoLoad?: boolean
@@ -42,6 +28,7 @@ export interface UseNotificationsReturn {
  * Hook for managing user notifications and preferences
  * TODO: Implement with new auth system
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function useNotifications(options: UseNotificationsOptions = {}): UseNotificationsReturn {
   // Temporary implementation - returns empty data until new auth system is ready
   const [notifications] = useState<Notification[]>([])

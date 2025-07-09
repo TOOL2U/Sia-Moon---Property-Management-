@@ -40,6 +40,9 @@ export default function ProfilePage() {
     try {
       setIsLoading(true)
       
+      if (!db) {
+        throw new Error('Database not initialized')
+      }
       await updateDoc(doc(db, 'users', user.id), {
         fullName: formData.fullName,
         phone: formData.phone,

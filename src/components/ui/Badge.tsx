@@ -27,7 +27,7 @@ const Badge = forwardRef<HTMLDivElement, BadgeProps>(
             'text-white border border-neutral-700 bg-transparent hover:bg-neutral-900': variant === 'outline',
             'bg-green-500 text-white hover:bg-green-600': variant === 'success',
             'bg-yellow-500 text-black hover:bg-yellow-600': variant === 'warning',
-            'bg-red-500 text-white hover:bg-red-600': variant === 'error',
+            'bg-red-600 text-white hover:bg-red-700': variant === 'error',
           },
           className
         )}

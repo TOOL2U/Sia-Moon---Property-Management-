@@ -103,6 +103,9 @@ export default function SettingsPage() {
 
     try {
       setIsLoading(true)
+      if (!db) {
+        throw new Error('Database not initialized')
+      }
       const userDoc = await getDoc(doc(db, 'users', user.id))
       
       if (userDoc.exists()) {
@@ -125,6 +128,9 @@ export default function SettingsPage() {
     try {
       setIsSaving(true)
       
+      if (!db) {
+        throw new Error('Database not initialized')
+      }
       await updateDoc(doc(db, 'users', user.id), {
         settings: settings,
         updatedAt: new Date().toISOString()

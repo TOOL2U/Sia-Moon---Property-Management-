@@ -196,3 +196,7 @@ make-com-onboarding-setup-guide.md
 
 # HTML files in root (keep only in proper directories)
 database-spider-diagram.html
+
+# Netlify
+.netlify/
+netlify-debug.log

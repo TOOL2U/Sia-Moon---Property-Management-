@@ -148,7 +148,7 @@ export default function PropertyDetailsPage() {
                 <h1 className="text-2xl font-semibold text-white sm:text-3xl">{property.name}</h1>
                 <p className="text-neutral-400 flex items-center mt-1">
                   <MapPin className="h-4 w-4 mr-1" />
-                  {property.location || property.address}
+                  {property.address}
                 </p>
               </div>
             </div>
@@ -191,7 +191,7 @@ export default function PropertyDetailsPage() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-sm font-medium text-neutral-400">Address</label>
-                    <p className="text-white">{property.location || property.address}</p>
+                    <p className="text-white">{property.address}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Created</label>

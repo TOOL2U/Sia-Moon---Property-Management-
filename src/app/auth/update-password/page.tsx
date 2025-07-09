@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast'
 // TODO: Replace with Firebase Auth
 // import { auth } from '@/lib/firebase'
 
-export default function UpdatePasswordPage() {
+function UpdatePasswordContent() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -238,5 +238,13 @@ export default function UpdatePasswordPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function UpdatePasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UpdatePasswordContent />
+    </Suspense>
   )
 }

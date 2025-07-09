@@ -66,6 +66,9 @@ export default function ForgotPasswordForm({ onEmailSent, className = '' }: Forg
       // The actionCodeSettings are handled by Firebase Console configuration
       // The "Customize action URL" should be set to: 
       // https://cursor---property-management.web.app/auth/reset-password
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       await sendPasswordResetEmail(auth, email)
 
       console.log('✅ Password reset email sent successfully')
@@ -80,20 +83,25 @@ export default function ForgotPasswordForm({ onEmailSent, className = '' }: Forg
       // Call optional callback
       onEmailSent?.()
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error sending password reset email:', err)
       
       // Provide user-friendly error messages based on Firebase error codes
-      if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email address. Please check your spelling or create a new account.')
-      } else if (err.code === 'auth/invalid-email') {
-        setError('The email address is invalid. Please enter a valid email.')
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many password reset requests. Please wait a few minutes before trying again.')
-      } else if (err.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your internet connection and try again.')
+      if (err && typeof err === 'object' && 'code' in err) {
+        const firebaseError = err as { code: string; message?: string }
+        if (firebaseError.code === 'auth/user-not-found') {
+          setError('No account found with this email address. Please check your spelling or create a new account.')
+        } else if (firebaseError.code === 'auth/invalid-email') {
+          setError('The email address is invalid. Please enter a valid email.')
+        } else if (firebaseError.code === 'auth/too-many-requests') {
+          setError('Too many password reset requests. Please wait a few minutes before trying again.')
+        } else if (firebaseError.code === 'auth/network-request-failed') {
+          setError('Network error. Please check your internet connection and try again.')
+        } else {
+          setError(firebaseError.message || 'Failed to send password reset email. Please try again.')
+        }
       } else {
-        setError(err.message || 'Failed to send password reset email. Please try again.')
+        setError('Failed to send password reset email. Please try again.')
       }
       
       // Show error toast
@@ -140,11 +148,11 @@ export default function ForgotPasswordForm({ onEmailSent, className = '' }: Forg
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-white">Email Sent!</h3>
                 <p className="text-sm text-neutral-400">
-                  We've sent a password reset link to your email address. 
+                  We&apos;ve sent a password reset link to your email address. 
                   Click the link in the email to reset your password.
                 </p>
                 <p className="text-xs text-neutral-500">
-                  Don't see the email? Check your spam folder or wait a few minutes.
+                  Don&apos;t see the email? Check your spam folder or wait a few minutes.
                 </p>
               </div>
 

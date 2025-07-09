@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -90,7 +90,7 @@ interface VillaOnboardingData {
   informationConfirmed: boolean
 }
 
-export default function OnboardYourVilla() {
+function OnboardYourVillaContent() {
   const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -755,13 +755,23 @@ export default function OnboardYourVilla() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Select
-                    label="Preferred Contact Method"
-                    name="preferredContactMethod"
-                    value={formData.preferredContactMethod}
-                    onChange={handleInputChange}
-                    options={contactMethodOptions}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Preferred Contact Method
+                    </label>
+                    <select
+                      name="preferredContactMethod"
+                      value={formData.preferredContactMethod}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      {contactMethodOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Bank Details for Payouts
@@ -1240,13 +1250,23 @@ export default function OnboardYourVilla() {
             >
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Select
-                    label="Professional Photos Available?"
-                    name="professionalPhotosStatus"
-                    value={formData.professionalPhotosStatus}
-                    onChange={handleInputChange}
-                    options={photosStatusOptions}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Professional Photos Available?
+                    </label>
+                    <select
+                      name="professionalPhotosStatus"
+                      value={formData.professionalPhotosStatus}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      {photosStatusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div></div>
                 </div>
 
@@ -1352,5 +1372,13 @@ export default function OnboardYourVilla() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function OnboardYourVilla() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OnboardYourVillaContent />
+    </Suspense>
   )
 }

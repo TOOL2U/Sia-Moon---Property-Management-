@@ -218,7 +218,7 @@ export class BookingSyncCronService {
   getStatus(): { running: boolean; jobs: Array<{ name: string; running: boolean }> } {
     const jobs = Array.from(this.tasks.entries()).map(([name, task]) => ({
       name,
-      running: task.running
+      running: this.isRunning // Simplified - all tasks have same running state
     }))
 
     return {
@@ -230,7 +230,13 @@ export class BookingSyncCronService {
   /**
    * Manually trigger a sync job
    */
-  async triggerManualSync(): Promise<void> {
+  async triggerManualSync(): Promise<{
+    properties: number
+    successful: number
+    newBookings: number
+    updatedBookings: number
+    cleaningTasks: number
+  }> {
     console.log('🔄 Manual sync triggered via cron service...')
     
     try {

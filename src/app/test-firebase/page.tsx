@@ -98,20 +98,20 @@ export default function TestFirebasePage() {
               <CardDescription>Current user information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {session ? (
+              {user ? (
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-neutral-400">Email</p>
-                    <p className="text-white">{session.user.email}</p>
+                    <p className="text-white">{user.email}</p>
                   </div>
                   <div>
                     <p className="text-sm text-neutral-400">User ID</p>
-                    <p className="text-white font-mono text-xs">{session.user.id}</p>
+                    <p className="text-white font-mono text-xs">{user.id}</p>
                   </div>
-                  {profile && (
+                  {user.full_name && (
                     <div>
                       <p className="text-sm text-neutral-400">Full Name</p>
-                      <p className="text-white">{profile.full_name}</p>
+                      <p className="text-white">{user.full_name}</p>
                     </div>
                   )}
                   <Badge variant="outline" className="text-green-400 border-green-400">
@@ -120,7 +120,7 @@ export default function TestFirebasePage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-neutral-400">No user session found</p>
+                  <p className="text-neutral-400">No user found</p>
                   <p className="text-sm text-neutral-500 mt-2">Please sign in to test authentication</p>
                 </div>
               )}
@@ -180,10 +180,10 @@ export default function TestFirebasePage() {
             <pre className="text-xs text-neutral-400 bg-black p-4 rounded overflow-auto">
               {JSON.stringify({
                 user: user ? {
-                  uid: user.uid,
+                  id: user.id,
                   email: user.email,
-                  emailVerified: user.emailVerified,
-                  displayName: user.displayName
+                  full_name: user.full_name,
+                  role: user.role
                 } : null,
                 loading,
                 testResults

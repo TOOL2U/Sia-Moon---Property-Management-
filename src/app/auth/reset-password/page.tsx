@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
@@ -29,7 +29,7 @@ import toast from 'react-hot-toast'
  * 3. Confirm password reset with new password
  * 4. Redirect to sign-in page on success
  */
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -60,6 +60,9 @@ export default function ResetPasswordPage() {
       console.log('🔄 Verifying password reset code...')
 
       // Step 1: Verify the action code (oobCode)
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       verifyPasswordResetCode(auth, oobCode)
         .then((emailFromCode) => {
           console.log('✅ Password reset code verified for:', emailFromCode)
@@ -124,6 +127,9 @@ export default function ResetPasswordPage() {
       console.log('🔄 Confirming password reset...')
 
       // Step 2: Confirm the password reset with the new password
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       await confirmPasswordReset(auth, oobCode!, newPassword)
 
       console.log('✅ Password reset successful')
@@ -370,5 +376,13 @@ export default function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

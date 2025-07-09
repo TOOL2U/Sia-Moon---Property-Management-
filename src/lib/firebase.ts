@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { enableNetwork, disableNetwork, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
-import { getAnalytics, isSupported } from 'firebase/analytics'
+import { getAnalytics, isSupported, Analytics } from 'firebase/analytics'
 
 // Firebase configuration using direct process.env access
 const firebaseConfig = {
@@ -26,46 +26,64 @@ console.log("🔍 Firebase Config Debug:", {
   measurementId: firebaseConfig.measurementId || 'MISSING'
 })
 
-// Validate Firebase configuration
+// Validate Firebase configuration (only in runtime, not during build)
 const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId']
 const missingFields = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig])
 
 if (missingFields.length > 0) {
-  console.error('❌ Firebase configuration is incomplete. Missing fields:', missingFields)
-  console.error('Please check your environment variables in .env.local')
-  throw new Error(`Firebase configuration incomplete. Missing: ${missingFields.join(', ')}`)
+  console.warn('⚠️ Firebase configuration is incomplete. Missing fields:', missingFields)
+
+  // Only throw error in production runtime, not during build
+  if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
+    console.error('❌ Firebase configuration is required in production')
+    console.error('Please configure environment variables in your deployment platform')
+  } else if (process.env.NODE_ENV === 'development') {
+    console.error('❌ Firebase configuration is incomplete for development')
+    console.error('Please check your environment variables in .env.local')
+  }
+
+  // Don't throw during build process
+  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'development') {
+    console.log('🔧 Build time: Firebase configuration will be validated at runtime')
+  }
 }
 
-// Initialize Firebase with singleton pattern
+// Initialize Firebase with singleton pattern (only if config is complete)
 let app
 try {
-  // Check if Firebase app is already initialized
-  if (getApps().length === 0) {
-    app = initializeApp(firebaseConfig)
-    console.log('✅ Firebase initialized successfully')
+  // Only initialize if we have the required configuration
+  if (missingFields.length === 0) {
+    // Check if Firebase app is already initialized
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig)
+      console.log('✅ Firebase initialized successfully')
+    } else {
+      app = getApp()
+      console.log('✅ Firebase app already initialized, using existing instance')
+    }
   } else {
-    app = getApp()
-    console.log('✅ Firebase app already initialized, using existing instance')
+    console.log('⏳ Firebase initialization skipped - configuration incomplete')
+    app = null
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
   throw error
 }
 
-// Initialize Firebase services
-export const auth = getAuth(app)
+// Initialize Firebase services (with null checks for build time)
+export const auth = app ? getAuth(app) : null
 
 // Initialize Firestore with custom settings to reduce connection issues
-export const db = initializeFirestore(app, {
+export const db = app ? initializeFirestore(app, {
   cacheSizeBytes: CACHE_SIZE_UNLIMITED,
   experimentalForceLongPolling: false, // Use WebSocket when available
   ignoreUndefinedProperties: true,
-})
+}) : null
 
-export const storage = getStorage(app)
+export const storage = app ? getStorage(app) : null
 
-// Configure Firestore for better offline handling
-if (typeof window !== 'undefined') {
+// Configure Firestore for better offline handling (only if db exists)
+if (typeof window !== 'undefined' && db) {
   // Add a delay before enabling network to ensure proper initialization
   setTimeout(() => {
     enableNetwork(db).catch((error) => {
@@ -85,8 +103,8 @@ if (typeof window !== 'undefined') {
 }
 
 // Initialize Analytics (only in browser and if supported)
-let analytics: any = null
-if (typeof window !== 'undefined') {
+let analytics: Analytics | null = null
+if (typeof window !== 'undefined' && app) {
   isSupported().then((supported) => {
     if (supported) {
       analytics = getAnalytics(app)

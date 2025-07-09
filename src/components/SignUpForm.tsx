@@ -87,6 +87,14 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
       console.log('🔄 Starting sign up process...')
       console.log('📝 Form data received:', { email: data.email, fullName: data.fullName })
 
+      // Check if Firebase is initialized
+      if (!auth) {
+        throw new Error('Firebase Auth is not initialized')
+      }
+      if (!db) {
+        throw new Error('Firebase Firestore is not initialized')
+      }
+
       // Create user with Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
       const user = userCredential.user

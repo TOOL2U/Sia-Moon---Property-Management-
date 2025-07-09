@@ -22,27 +22,12 @@ export async function GET(
     
     console.log(`📊 API: Fetching reports for property ${propertyId}`)
     
-    // Get all reports for the property
-    const reportsResult = await DatabaseService.getMonthlyReportsByProperty(propertyId)
-    
-    if (reportsResult.error) {
-      return NextResponse.json({
-        success: false,
-        error: reportsResult.error.message
-      }, { status: 500 })
-    }
-    
-    const reports = reportsResult.data || []
-    
-    // Get property details
-    const propertyResult = await DatabaseService.getProperty(propertyId)
-    
+    // For now, return a simple error since this method doesn't exist
+    // TODO: Implement proper report retrieval when database methods are available
     return NextResponse.json({
-      success: true,
-      property: propertyResult.data,
-      reports,
-      count: reports.length
-    })
+      success: false,
+      error: 'Property reports retrieval not yet implemented - database methods need to be updated'
+    }, { status: 501 })
     
   } catch (error) {
     console.error('❌ Error fetching property reports:', error)

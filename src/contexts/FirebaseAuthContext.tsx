@@ -33,6 +33,9 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
   const fetchUserProfile = async (uid: string) => {
     try {
       console.log('🔍 Fetching user profile from Firestore:', uid)
+      if (!db) {
+        throw new Error('Firebase Firestore not initialized')
+      }
       const userDoc = await getDoc(doc(db, 'users', uid))
       
       if (userDoc.exists()) {
@@ -53,6 +56,9 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
   const signOut = async (): Promise<void> => {
     try {
       console.log('🔄 Signing out...')
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       await firebaseSignOut(auth)
       setUser(null)
       setProfile(null)
@@ -66,6 +72,12 @@ export function FirebaseAuthProvider({ children }: { children: React.ReactNode }
 
   // Listen for auth state changes
   useEffect(() => {
+    if (!auth) {
+      console.error('Firebase auth not initialized')
+      setLoading(false)
+      return
+    }
+    
     console.log('🔍 Setting up Firebase auth state listener...')
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {

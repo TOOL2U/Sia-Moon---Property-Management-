@@ -1,0 +1,38 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_FLAGS = "--production=false"
+
+# Next.js plugin configuration
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Redirect rules for Next.js app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Environment variables template (configure these in Netlify dashboard)
+# NEXT_PUBLIC_FIREBASE_API_KEY = "your_firebase_api_key"
+# NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "your_project_id.firebaseapp.com"
+# NEXT_PUBLIC_FIREBASE_PROJECT_ID = "your_project_id"
+# NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "your_project_id.appspot.com"
+# NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "your_sender_id"
+# NEXT_PUBLIC_FIREBASE_APP_ID = "your_app_id"
+# NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID = "your_measurement_id"
+# NEXT_PUBLIC_APP_URL = "https://your-site.netlify.app"
+# NEXT_PUBLIC_SIGNUP_WEBHOOK_URL = "your_webhook_url"

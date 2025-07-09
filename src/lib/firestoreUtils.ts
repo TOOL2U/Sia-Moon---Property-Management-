@@ -1,4 +1,4 @@
-import { doc, getDoc, enableNetwork, disableNetwork } from 'firebase/firestore'
+import { doc, getDoc, enableNetwork } from 'firebase/firestore'
 import { db } from './firebase'
 
 /**
@@ -6,6 +6,11 @@ import { db } from './firebase'
  */
 export async function checkFirestoreConnectivity(): Promise<boolean> {
   try {
+    if (!db) {
+      console.warn('⚠️ Firestore not initialized')
+      return false
+    }
+    
     // Try to enable network first
     await enableNetwork(db)
     
@@ -15,8 +20,9 @@ export async function checkFirestoreConnectivity(): Promise<boolean> {
     
     console.log('✅ Firestore connectivity check passed')
     return true
-  } catch (error: any) {
-    console.warn('⚠️ Firestore connectivity check failed:', error.message)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.warn('⚠️ Firestore connectivity check failed:', errorMessage)
     return false
   }
 }
@@ -29,18 +35,21 @@ export async function retryFirestoreOperation<T>(
   maxRetries: number = 3,
   baseDelay: number = 1000
 ): Promise<T> {
-  let lastError: any
+  let lastError: unknown
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`🔄 Firestore operation attempt ${attempt}/${maxRetries}`)
       return await operation()
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error
-      console.warn(`❌ Firestore operation failed (attempt ${attempt}/${maxRetries}):`, error.message)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : null
+      
+      console.warn(`❌ Firestore operation failed (attempt ${attempt}/${maxRetries}):`, errorMessage)
       
       // Don't retry on certain error types
-      if (error.code === 'permission-denied' || error.code === 'not-found') {
+      if (errorCode === 'permission-denied' || errorCode === 'not-found') {
         throw error
       }
       
@@ -62,7 +71,7 @@ export async function retryFirestoreOperation<T>(
 /**
  * Check if an error is related to connectivity issues
  */
-export function isConnectivityError(error: any): boolean {
+export function isConnectivityError(error: unknown): boolean {
   if (!error) return false
   
   const connectivityErrorCodes = [
@@ -78,11 +87,14 @@ export function isConnectivityError(error: any): boolean {
     'timeout'
   ]
   
+  const errorCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : null
+  const errorMessage = error instanceof Error ? error.message : null
+  
   return (
-    connectivityErrorCodes.includes(error.code) ||
-    connectivityErrorMessages.some(msg => 
-      error.message?.toLowerCase().includes(msg)
-    )
+    (errorCode && connectivityErrorCodes.includes(errorCode)) ||
+    (errorMessage && connectivityErrorMessages.some(msg => 
+      errorMessage.toLowerCase().includes(msg)
+    )) || false
   )
 }
 
@@ -91,6 +103,9 @@ export function isConnectivityError(error: any): boolean {
  */
 export async function getUserDocument(userId: string) {
   return retryFirestoreOperation(async () => {
+    if (!db) {
+      throw new Error('Firestore not initialized')
+    }
     const userDoc = await getDoc(doc(db, 'users', userId))
     return userDoc
   })

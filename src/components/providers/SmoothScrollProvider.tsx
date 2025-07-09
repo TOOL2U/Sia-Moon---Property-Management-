@@ -19,20 +19,10 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       return
     }
 
-    // Initialize Lenis with premium Apple-like settings
+    // Initialize Lenis with basic settings
     const lenis = new Lenis({
       duration: 1.2, // Smooth duration for Apple-like feel
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Apple-like easing curve
-      direction: 'vertical',
-      gestureDirection: 'vertical',
-      smooth: true,
-      mouseMultiplier: 1, // Responsive to mouse wheel
-      smoothTouch: false, // Keep native touch scrolling on mobile
-      touchMultiplier: 2,
-      wheelMultiplier: 1,
-      infinite: false,
-      normalizeWheel: true, // Normalize wheel events across browsers
-      lerp: 0.1, // Linear interpolation factor for smoothness
     })
 
     lenisRef.current = lenis
@@ -50,7 +40,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       if (target.tagName === 'A' && target.hash && target.hostname === window.location.hostname) {
         e.preventDefault()
         const targetElement = document.querySelector(target.hash)
-        if (targetElement) {
+        if (targetElement && targetElement instanceof HTMLElement) {
           lenis.scrollTo(targetElement, {
             offset: -80, // Offset for sticky header
             duration: 1.5,
@@ -81,7 +71,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   useEffect(() => {
     if (lenisRef.current) {
       // Make lenis available globally for other components
-      ;(window as any).lenis = lenisRef.current
+      ;(window as Window & { lenis?: Lenis }).lenis = lenisRef.current
     }
   }, [])
 

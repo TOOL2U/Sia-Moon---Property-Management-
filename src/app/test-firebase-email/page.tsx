@@ -36,6 +36,11 @@ export default function TestFirebaseEmailPage() {
     try {
       console.log('🔄 Testing Firebase password reset email...')
       console.log('📧 Email:', email)
+      
+      if (!auth) {
+        throw new Error('Firebase Auth is not initialized')
+      }
+      
       console.log('🔥 Firebase Auth Domain:', auth.app.options.authDomain)
       console.log('🔥 Firebase Project ID:', auth.app.options.projectId)
 
@@ -52,12 +57,13 @@ export default function TestFirebaseEmailPage() {
       console.log(successMessage)
       setResult(successMessage)
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Firebase email error:', error)
       
       let errorMessage = 'Unknown error occurred'
       
-      switch (error.code) {
+      const firebaseError = error as { code?: string; message?: string }
+      switch (firebaseError.code) {
         case 'auth/user-not-found':
           errorMessage = '❌ No user found with this email address'
           break
@@ -71,7 +77,7 @@ export default function TestFirebaseEmailPage() {
           errorMessage = '❌ Network error. Check your internet connection.'
           break
         default:
-          errorMessage = `❌ Firebase Error: ${error.code} - ${error.message}`
+          errorMessage = `❌ Firebase Error: ${firebaseError.code} - ${firebaseError.message}`
       }
       
       setResult(errorMessage)
@@ -130,9 +136,9 @@ export default function TestFirebaseEmailPage() {
         <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4">🔧 Firebase Configuration Debug</h3>
           <div className="space-y-2 text-sm text-gray-300">
-            <p><strong>Auth Domain:</strong> {auth.app.options.authDomain}</p>
-            <p><strong>Project ID:</strong> {auth.app.options.projectId}</p>
-            <p><strong>API Key:</strong> {auth.app.options.apiKey?.substring(0, 10)}...</p>
+            <p><strong>Auth Domain:</strong> {auth?.app.options.authDomain || 'Not available'}</p>
+            <p><strong>Project ID:</strong> {auth?.app.options.projectId || 'Not available'}</p>
+            <p><strong>API Key:</strong> {auth?.app.options.apiKey?.substring(0, 10) || 'Not available'}...</p>
             <p><strong>Current URL:</strong> {currentUrl || 'Loading...'}</p>
           </div>
         </div>
@@ -155,7 +161,7 @@ export default function TestFirebaseEmailPage() {
             <li>Select project: <code className="bg-neutral-800 px-2 py-1 rounded">operty-b54dc</code></li>
             <li>Navigate to <strong>Authentication</strong> → <strong>Templates</strong></li>
             <li>Click <strong>Password reset</strong> → <strong>Edit template</strong> (pencil icon)</li>
-            <li><strong>IMPORTANT:</strong> Look for "Customize action URL" field</li>
+            <li><strong>IMPORTANT:</strong> Look for &ldquo;Customize action URL&rdquo; field</li>
             <li>Set Action URL to: <code className="bg-neutral-800 px-2 py-1 rounded">http://localhost:3000/auth/reset-password</code></li>
             <li>The %LINK% in the email template will be replaced with this URL + parameters</li>
             <li>Click <strong>Save</strong> button</li>
@@ -170,7 +176,7 @@ export default function TestFirebaseEmailPage() {
             <code className="block bg-neutral-800 p-2 rounded mt-2 text-xs">
               http://localhost:3000/auth/reset-password?mode=resetPassword&oobCode=ABC123&continueUrl=...
             </code>
-            <p className="mt-2">When users click this link in their email, they'll be taken to your password reset page with the necessary parameters to complete the reset.</p>
+            <p className="mt-2">When users click this link in their email, they&apos;ll be taken to your password reset page with the necessary parameters to complete the reset.</p>
           </div>
         </div>
       </div>

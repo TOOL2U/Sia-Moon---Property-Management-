@@ -6,7 +6,7 @@ import { auth, db } from '@/lib/firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
 
 export default function TestFirestore() {
-  const [user, loading, error] = useAuthState(auth)
+  const [user, loading, error] = useAuthState(auth!)
   const [testResult, setTestResult] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -29,7 +29,7 @@ export default function TestFirestore() {
       // Test 3: Try to read from a simple collection (without auth requirement)
       setTestResult(prev => prev + '🔄 Step 3: Testing Firestore read (public collection)...\n')
       try {
-        const testCollection = collection(db, 'public-test')
+        const testCollection = collection(db!, 'public-test')
         const snapshot = await getDocs(testCollection)
         setTestResult(prev => prev + `✅ Step 3: Firestore read successful (${snapshot.size} documents)\n`)
       } catch (readError: any) {
@@ -41,7 +41,7 @@ export default function TestFirestore() {
       if (user) {
         setTestResult(prev => prev + '🔄 Step 4: Testing Firestore write...\n')
         try {
-          const docRef = await addDoc(collection(db, 'test'), {
+          const docRef = await addDoc(collection(db!, 'test'), {
             message: 'Test message',
             timestamp: new Date(),
             userId: user.uid
@@ -55,7 +55,7 @@ export default function TestFirestore() {
         // Test 5: Try to read user document
         setTestResult(prev => prev + '🔄 Step 5: Testing user document read...\n')
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid))
+          const userDoc = await getDoc(doc(db!, 'users', user.uid))
           if (userDoc.exists()) {
             setTestResult(prev => prev + `✅ Step 5: User document exists\n`)
             setTestResult(prev => prev + `✅ Step 5.1: User data: ${JSON.stringify(userDoc.data(), null, 2)}\n`)

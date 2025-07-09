@@ -41,8 +41,7 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
   const {
     register,
     handleSubmit,
-    formState: { errors },
-    setError
+    formState: { errors }
   } = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema)
   })
@@ -61,6 +60,9 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
       setIsLoading(true)
       console.log('🔄 Starting sign in process...')
 
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       // Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
       const user = userCredential.user
@@ -88,6 +90,9 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
       setIsResettingPassword(true)
       console.log('🔄 Sending password reset email to:', data.email)
 
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       await sendPasswordResetEmail(auth, data.email)
 
       console.log('✅ Password reset email sent successfully')
@@ -97,16 +102,21 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
       resetForgotForm()
       setShowForgotPassword(false)
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Password reset error:', error)
 
       // Handle specific Firebase errors
-      if (error.code === 'auth/user-not-found') {
-        toast.error('No account found with this email address.')
-      } else if (error.code === 'auth/invalid-email') {
-        toast.error('Please enter a valid email address.')
-      } else if (error.code === 'auth/too-many-requests') {
-        toast.error('Too many requests. Please try again later.')
+      if (error && typeof error === 'object' && 'code' in error) {
+        const firebaseError = error as { code: string }
+        if (firebaseError.code === 'auth/user-not-found') {
+          toast.error('No account found with this email address.')
+        } else if (firebaseError.code === 'auth/invalid-email') {
+          toast.error('Please enter a valid email address.')
+        } else if (firebaseError.code === 'auth/too-many-requests') {
+          toast.error('Too many requests. Please try again later.')
+        } else {
+          toast.error('Failed to send password reset email. Please try again.')
+        }
       } else {
         toast.error('Failed to send password reset email. Please try again.')
       }
@@ -208,7 +218,7 @@ export default function SignInForm({ onSuccess, className = '' }: SignInFormProp
           <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-white mb-2">Reset Password</h3>
             <p className="text-sm text-neutral-400 mb-4">
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
 
             <form onSubmit={handleSubmitForgot(onForgotPasswordSubmit)} className="space-y-4">

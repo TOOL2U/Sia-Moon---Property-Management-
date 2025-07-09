@@ -150,7 +150,6 @@ export function DateRangePicker({
     const year = currentMonth.getFullYear()
     const month = currentMonth.getMonth()
     const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
     const startDate = new Date(firstDay)
     startDate.setDate(startDate.getDate() - firstDay.getDay())
 
@@ -177,8 +176,8 @@ export function DateRangePicker({
    * Check if date is selected (start or end)
    */
   const isDateSelected = (date: Date): boolean => {
-    return (dateRange.from && date.toDateString() === dateRange.from.toDateString()) ||
-           (dateRange.to && date.toDateString() === dateRange.to.toDateString())
+    return Boolean((dateRange.from && date.toDateString() === dateRange.from.toDateString()) ||
+           (dateRange.to && date.toDateString() === dateRange.to.toDateString()))
   }
 
   const calendarDays = generateCalendarDays()

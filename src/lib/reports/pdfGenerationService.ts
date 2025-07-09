@@ -77,7 +77,7 @@ export class PDFGenerationService {
       yPosition += 5
       
       yPosition = addText(`Property: ${property.name}`, margin, yPosition, { fontSize: 12 })
-      yPosition = addText(`Address: ${property.address}`, margin, yPosition, { fontSize: 12 })
+      yPosition = addText(`Location: ${property.location}`, margin, yPosition, { fontSize: 12 })
       yPosition = addText(`Report Period: ${format(new Date(report.year, report.month - 1), 'MMMM yyyy')}`, margin, yPosition, { fontSize: 12 })
       yPosition = addText(`Generated: ${format(new Date(report.generated_at), 'PPP')}`, margin, yPosition, { fontSize: 12 })
       yPosition += 10

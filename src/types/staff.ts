@@ -54,6 +54,7 @@ export interface StaffFormErrors {
   email?: string
   phone?: string
   role?: string
+  status?: string
   general?: string
 }
 

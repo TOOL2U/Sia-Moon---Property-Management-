@@ -26,7 +26,7 @@ export default function TestForgotPasswordPage() {
       setIsLoading(true)
       console.log('🔄 Testing password reset for:', email)
 
-      await sendPasswordResetEmail(auth, email)
+      await sendPasswordResetEmail(auth!, email)
       
       console.log('✅ Password reset email sent successfully')
       toast.success('Password reset email sent! Check your inbox.')

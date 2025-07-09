@@ -3,8 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
+import { auth } from '@/lib/firebase'
 import { getUserDocument, isConnectivityError } from '@/lib/firestoreUtils'
 
 // Cookie management utilities
@@ -42,6 +41,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Firebase auth state listener
   useEffect(() => {
+    if (!auth) {
+      console.error('Firebase auth not initialized')
+      setLoading(false)
+      return
+    }
+    
     console.log('🔍 Setting up Firebase auth state listener in AuthContext...')
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -81,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.log('⚠️ User profile document does not exist, using basic info')
               // Keep the basic user info we already set
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error('❌ Error fetching user profile:', error)
 
             if (isConnectivityError(error)) {
@@ -113,14 +118,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const signIn = async (email: string, password: string): Promise<boolean> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const signIn = async (_email: string, _password: string): Promise<boolean> => {
     // Note: This function is not used anymore since we use Firebase forms directly
     // Keeping for interface compatibility
     console.log('⚠️ signIn called but Firebase forms handle authentication directly')
     return false
   }
 
-  const signUp = async (email: string, password: string, name: string, role: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const signUp = async (_email: string, _password: string, _name: string, _role: string) => {
     // Note: This function is not used anymore since we use Firebase forms directly
     // Keeping for interface compatibility
     console.log('⚠️ signUp called but Firebase forms handle authentication directly')
@@ -131,6 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔄 Signing out...')
 
+      if (!auth) {
+        throw new Error('Firebase auth not initialized')
+      }
       await firebaseSignOut(auth)
 
       // Clear authentication cookies

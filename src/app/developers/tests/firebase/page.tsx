@@ -90,17 +90,15 @@ export default function TestFirebasePage() {
                 <div className="grid gap-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-400">User ID:</span>
-                    <span className="text-white font-mono">{user.uid}</span>
+                    <span className="text-white font-mono">{user.id}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Email Verified:</span>
-                    <span className={user.emailVerified ? "text-green-400" : "text-red-400"}>
-                      {user.emailVerified ? "Yes" : "No"}
-                    </span>
+                    <span className="text-gray-400">Role:</span>
+                    <span className="text-white capitalize">{user.role}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Created:</span>
-                    <span className="text-white">{new Date(user.metadata.creationTime!).toLocaleDateString()}</span>
+                    <span className="text-gray-400">Full Name:</span>
+                    <span className="text-white">{user.full_name}</span>
                   </div>
                 </div>
                 <Button 
@@ -173,15 +171,10 @@ export default function TestFirebasePage() {
             <CardContent>
               <pre className="bg-neutral-800 p-4 rounded-lg text-sm text-gray-300 overflow-auto">
                 {JSON.stringify({
-                  uid: user.uid,
+                  id: user.id,
                   email: user.email,
-                  emailVerified: user.emailVerified,
-                  displayName: user.displayName,
-                  photoURL: user.photoURL,
-                  metadata: {
-                    creationTime: user.metadata.creationTime,
-                    lastSignInTime: user.metadata.lastSignInTime
-                  }
+                  full_name: user.full_name,
+                  role: user.role
                 }, null, 2)}
               </pre>
             </CardContent>
