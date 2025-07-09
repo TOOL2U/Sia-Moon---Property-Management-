@@ -5,7 +5,7 @@ import "./globals.css";
 import { Navbar } from '@/components/layout/Navbar';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ToasterProvider } from '@/components/providers/ToasterProvider';
-import { FirebaseConnectionStatus } from '@/components/FirebaseConnectionStatus';
+// import { FirebaseConnectionStatus } from '@/components/FirebaseConnectionStatus';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,7 +28,7 @@ export default function RootLayout({
           <Navbar />
           <main className="page-transition">{children}</main>
           <ToasterProvider />
-          <FirebaseConnectionStatus />
+          {/* <FirebaseConnectionStatus /> */}
         </AuthProvider>
       </body>
     </html>
