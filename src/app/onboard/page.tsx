@@ -15,6 +15,7 @@ import { validateVillaOnboarding, validateField } from '@/lib/validations/villa-
 import { useAuth } from '@/contexts/AuthContext'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
+import { VillaPhotoUpload } from '@/components/VillaPhotoUpload'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -969,59 +970,6 @@ function OnboardYourVillaContent() {
               </div>
             </CollapsibleSection>
 
-            {/* Access & Staff Section */}
-            <CollapsibleSection
-              title="Access & Staff"
-              description="Security and on-site personnel information"
-            >
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Key or Access Codes
-                  </label>
-                  <textarea
-                    name="accessDetails"
-                    value={formData.accessDetails}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Key location, access codes, entry instructions..."
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="flex items-center">
-                    <Checkbox
-                      label="Smart Lock Installed"
-                      checked={formData.hasSmartLock}
-                      onChange={(e) => handleCheckboxChange('hasSmartLock', e.target.checked)}
-                    />
-                  </div>
-                  <Input
-                    label="Gate Remote Details"
-                    name="gateRemoteDetails"
-                    value={formData.gateRemoteDetails}
-                    onChange={handleInputChange}
-                    placeholder="Remote location, frequency, etc."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    On-site Staff
-                  </label>
-                  <textarea
-                    name="onsiteStaff"
-                    value={formData.onsiteStaff}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Gardener, maid, pool cleaner, security, etc. Include names and contact details..."
-                  />
-                </div>
-              </div>
-            </CollapsibleSection>
-
             {/* Utilities Section */}
             <CollapsibleSection
               title="Utilities"
@@ -1172,40 +1120,6 @@ function OnboardYourVillaContent() {
               </div>
             </CollapsibleSection>
 
-            {/* Legal Documents Section */}
-            <CollapsibleSection
-              title="Legal Documents"
-              description="Required legal documentation"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <FileUpload
-                  label="Title Deed/Chanote"
-                  onFileSelect={(files) => handleFileUpload('titleDeed', files)}
-                  acceptedTypes={['image/*', '.pdf']}
-                  maxFiles={3}
-                  required
-                />
-                <FileUpload
-                  label="House Registration"
-                  onFileSelect={(files) => handleFileUpload('houseRegistration', files)}
-                  acceptedTypes={['image/*', '.pdf']}
-                  maxFiles={3}
-                />
-                <FileUpload
-                  label="Insurance Policy"
-                  onFileSelect={(files) => handleFileUpload('insurancePolicy', files)}
-                  acceptedTypes={['image/*', '.pdf']}
-                  maxFiles={3}
-                />
-                <FileUpload
-                  label="Licenses (Hotel, Pool, etc.)"
-                  onFileSelect={(files) => handleFileUpload('licenses', files)}
-                  acceptedTypes={['image/*', '.pdf']}
-                  maxFiles={5}
-                />
-              </div>
-            </CollapsibleSection>
-
             {/* Current Condition Section */}
             <CollapsibleSection
               title="Current Condition"
@@ -1248,9 +1162,20 @@ function OnboardYourVillaContent() {
             {/* Photos & Media Section */}
             <CollapsibleSection
               title="Photos & Media"
-              description="Current marketing materials availability"
+              description="Current marketing materials and villa photo uploads"
             >
               <div className="space-y-6">
+                {/* Villa Photo Upload */}
+                <div>
+                  <h4 className="text-lg font-medium text-white mb-4">Villa Photo Upload</h4>
+                  <VillaPhotoUpload 
+                    userId={user?.id || 'anonymous'}
+                    villaId={formData.propertyName ? formData.propertyName.replace(/[^a-zA-Z0-9-_]/g, '_') : undefined}
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* Existing Photo Status Questions */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
