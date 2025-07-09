@@ -1,14 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { collection, addDoc, getDocs, doc, getDoc, connectFirestoreEmulator } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
+import { User } from 'firebase/auth'
 
 export default function TestFirestore() {
-  const [user, loading, error] = useAuthState(auth!)
+  // Only use useAuthState if auth is available
+  const authStateResult = auth ? useAuthState(auth) : [null, false, null]
+  const [user, loading, error] = authStateResult as [User | null | undefined, boolean, Error | undefined]
   const [testResult, setTestResult] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+  const [firebaseReady, setFirebaseReady] = useState(false)
+
+  // Check if Firebase is ready
+  useEffect(() => {
+    setFirebaseReady(!!auth && !!db)
+  }, [])
 
   const testFirestoreConnection = async () => {
     setIsLoading(true)
@@ -18,6 +27,12 @@ export default function TestFirestore() {
       // Test 1: Basic connection test
       setTestResult(prev => prev + '✅ Step 1: Firebase initialized\n')
       setTestResult(prev => prev + `✅ Step 1.1: Database instance: ${db ? 'Connected' : 'Not connected'}\n`)
+
+      // Check if Firebase is properly initialized
+      if (!auth || !db) {
+        setTestResult(prev => prev + '❌ Firebase not properly initialized\n')
+        return
+      }
 
       // Test 2: Check authentication state
       setTestResult(prev => prev + `🔍 Step 2: Auth state - User: ${user ? 'Authenticated' : 'Not authenticated'}\n`)
@@ -82,12 +97,13 @@ export default function TestFirestore() {
     }
   }
 
-  if (loading) {
+  // Show loading state while auth is loading or Firebase is not initialized
+  if (loading || !firebaseReady) {
     return (
       <div className="min-h-screen bg-black text-white p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Firestore Connection Test</h1>
-          <p>Loading authentication state...</p>
+          <p>{loading ? 'Loading authentication state...' : 'Initializing Firebase...'}</p>
         </div>
       </div>
     )

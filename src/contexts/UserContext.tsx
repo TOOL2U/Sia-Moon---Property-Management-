@@ -111,21 +111,27 @@ export function UserProvider({ children }: UserProviderProps) {
           return
         }
 
-        const user = auth.currentUser
-        if (user) {
-          const session = {
-            user: { id: user.uid, email: user.email || '', created_at: user.metadata.creationTime || '' },
-            access_token: await user.getIdToken(),
-            expires_at: Date.now() + 3600000
+        // Use onAuthStateChanged instead of currentUser to avoid SSR issues
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const session = {
+              user: { id: user.uid, email: user.email || '', created_at: user.metadata.creationTime || '' },
+              access_token: await user.getIdToken(),
+              expires_at: Date.now() + 3600000
+            }
+            setSession(session)
+            const profileData = await fetchProfile(user.uid)
+            setProfile(profileData)
+          } else {
+            console.log('📋 Initial session: None')
+            setSession(null)
+            setProfile(null)
           }
-          setSession(session)
-          const profileData = await fetchProfile(user.uid)
-          setProfile(profileData)
-        } else {
-          console.log('📋 Initial session: None')
-          setSession(null)
-          setProfile(null)
-        }
+          setLoading(false)
+        })
+
+        // Clean up the listener
+        return () => unsubscribe()
       } catch (error) {
         console.error('❌ Unexpected error getting initial session:', error)
       } finally {
