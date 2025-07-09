@@ -185,6 +185,7 @@ function OnboardYourVillaContent() {
     insurancePolicy: [],
     licenses: []
   })
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -499,6 +500,7 @@ function OnboardYourVillaContent() {
         professionalPhotosStatus: formData.professionalPhotosStatus,
         floorPlanImagesAvailable: formData.floorPlanImagesAvailable,
         videoWalkthroughAvailable: formData.videoWalkthroughAvailable,
+        uploadedPhotos: uploadedPhotoUrls, // Include uploaded photo URLs
 
         // Emergency Contact
         emergencyContactName: formData.emergencyContactName,
@@ -1259,10 +1261,11 @@ function OnboardYourVillaContent() {
                 {/* Villa Photo Upload */}
                 <div>
                   <h4 className="text-lg font-medium text-white mb-4">Villa Photo Upload</h4>
-                  <VillaPhotoUpload 
+                  <VillaPhotoUpload
                     userId={user?.id || 'anonymous'}
                     villaId={formData.propertyName ? formData.propertyName.replace(/[^a-zA-Z0-9-_]/g, '_') : undefined}
                     disabled={loading}
+                    onPhotosChange={setUploadedPhotoUrls}
                   />
                 </div>
 
