@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseChart'
-import { FullScreenChartModal, useFullScreenChart } from '@/components/dashboard/FullScreenChartModal'
+import { MobileIncomeExpenseChart } from '@/components/dashboard/charts/MobileIncomeExpenseChart'
 import {
   Wrench,
   Calendar,
@@ -51,8 +51,7 @@ export default function ClientDashboard() {
     }
   }, [user, authLoading, router])
 
-  // Full-screen chart functionality
-  const { isModalOpen, isMobile, openChart, closeChart } = useFullScreenChart()
+
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -272,8 +271,25 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* Main Chart Area - Lightspeed Style - Full Screen Width */}
-        <div className="mb-8 -mx-6 md:-mx-12 lg:-mx-[calc(30vw-30%+2rem)] relative w-auto">
+        {/* Mobile Chart - Compact Design */}
+        <div className="block md:hidden mb-8">
+          <Card className="bg-neutral-950 border-neutral-800 overflow-hidden">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-white font-medium text-lg">Financial Overview</h3>
+                  <p className="text-neutral-400 text-sm mt-1">Past 6 months performance</p>
+                </div>
+              </div>
+              <div className="h-[400px] w-full">
+                <MobileIncomeExpenseChart data={chartData} />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Desktop Chart - Original Lightspeed Style - Full Screen Width */}
+        <div className="hidden md:block mb-8 -mx-6 md:-mx-12 lg:-mx-[calc(30vw-30%+2rem)] relative w-auto">
           <Card className="bg-neutral-950 border-neutral-800 p-0 overflow-hidden rounded-none border-x-0 w-auto">
             <div className="px-6 md:px-12 lg:px-16 py-6 border-b border-neutral-800">
               <div className="flex items-center justify-between">
@@ -294,17 +310,8 @@ export default function ClientDashboard() {
               </div>
             </div>
             <div className="px-6 md:px-12 lg:px-16 py-8">
-              <div
-                className={`relative h-96 md:h-[32rem] lg:h-[38rem] w-full ${isMobile ? 'cursor-pointer hover:bg-neutral-900/50 transition-colors rounded-lg' : ''}`}
-                onClick={isMobile ? openChart : undefined}
-              >
+              <div className="relative h-96 md:h-[32rem] lg:h-[38rem] w-full">
                 <IncomeExpenseChart data={chartData} />
-                {/* Mobile tap indicator */}
-                {isMobile && (
-                  <div className="absolute top-4 right-4 bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border border-blue-500/30">
-                    📱 Tap to expand
-                  </div>
-                )}
               </div>
             </div>
           </Card>
@@ -677,15 +684,7 @@ export default function ClientDashboard() {
 
       </div>
 
-      {/* Full-Screen Chart Modal for Mobile */}
-      <FullScreenChartModal
-        isOpen={isModalOpen}
-        onClose={closeChart}
-        title="Income & Expense Chart"
-        subtitle="Detailed view of your property performance"
-      >
-        <IncomeExpenseChart data={chartData} />
-      </FullScreenChartModal>
+
     </DashboardLayout>
   )
 }
