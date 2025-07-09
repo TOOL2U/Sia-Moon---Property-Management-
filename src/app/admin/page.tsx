@@ -6,9 +6,10 @@ import {
   Shield,
   Users,
   Settings,
-  BarChart3
+  BarChart3,
+  Image as ImageIcon
 } from 'lucide-react'
-import Link from 'next/link'
+import { AdminVillaPhotoDownload } from '@/components/AdminVillaPhotoDownload'
 
 export default function AdminDashboard() {
   return (
@@ -24,6 +25,22 @@ export default function AdminDashboard() {
             Administrative tools and system management
           </p>
         </div>
+
+        {/* Villa Photo Management */}
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Villa Photo Management
+            </CardTitle>
+            <CardDescription>
+              Download and manage villa photos uploaded by property owners during onboarding.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminVillaPhotoDownload />
+          </CardContent>
+        </Card>
 
         {/* Placeholder Notice */}
         <Card className="bg-neutral-900 border-neutral-800">

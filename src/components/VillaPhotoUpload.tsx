@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { storage } from '@/lib/firebase'
-import { ref, uploadBytes, getDownloadURL, listAll, deleteObject, getMetadata } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage'
 import { Upload, Trash2, Download, Image as ImageIcon, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import Image from 'next/image'
