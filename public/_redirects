@@ -1,0 +1,8 @@
+# Netlify redirects for Next.js SPA
+# This ensures all routes are handled by Next.js client-side routing
+
+# API routes should be handled first
+/api/* /api/:splat 200
+
+# All other routes should fallback to the Next.js app
+/* /index.html 200

@@ -3,19 +3,18 @@
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20.18.0"
   NPM_FLAGS = "--production=false"
 
 # Next.js plugin configuration
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Redirect rules for Next.js app
+# Redirect rules for Next.js SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = {Role = ["admin"]}
 
 # Headers for security
 [[headers]]
