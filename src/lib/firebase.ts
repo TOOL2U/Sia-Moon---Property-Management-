@@ -41,10 +41,17 @@ if (missingFields.length > 0) {
     console.error('❌ Firebase configuration is missing. Please check environment variables.')
     console.error('Missing fields:', missingFields)
 
+    // Show detailed missing field information
+    missingFields.forEach(field => {
+      const envVarName = `NEXT_PUBLIC_FIREBASE_${field.replace(/([A-Z])/g, '_$1').toUpperCase()}`
+      console.error(`❌ Missing: ${envVarName} (for ${field})`)
+    })
+
     // Create a helpful error message for users
     if (process.env.NODE_ENV === 'production') {
       console.error('🔧 This appears to be a deployment configuration issue.')
       console.error('Please ensure Firebase environment variables are set in your hosting platform.')
+      console.error('🔍 Visit /debug-firebase to see detailed configuration status')
     }
   } else if (process.env.NODE_ENV === 'development') {
     console.error('❌ Firebase configuration is incomplete for development')
