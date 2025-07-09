@@ -15,7 +15,7 @@ import { validateVillaOnboarding, validateField } from '@/lib/validations/villa-
 import { useAuth } from '@/contexts/AuthContext'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
-import { VillaPhotoUpload } from '@/components/VillaPhotoUpload'
+import { VillaPhotoUploadCloudinary } from '@/components/VillaPhotoUploadCloudinary'
 import { OnboardingService } from '@/lib/services/onboardingService'
 import { PropertyService } from '@/lib/services/propertyService'
 import Link from 'next/link'
@@ -60,6 +60,24 @@ interface VillaOnboardingData {
   waterSource: string
   internetPackage: string
 
+  // Smart Electric System
+  hasSmartElectricSystem: boolean
+  smartSystemBrand: string
+  smartDevicesControlled: string[]
+  smartDevicesOther: string
+  canControlManuallyWifiDown: boolean
+  smartSystemAppPlatform: string
+  hasHubGateway: boolean
+  hubGatewayLocation: string
+  linkedToPropertyWifi: boolean
+  controlAccountOwner: string
+  controlAccountOwnerOther: string
+  loginCredentialsProvided: boolean
+  loginCredentialsDetails: string
+  hasActiveSchedulesAutomations: boolean
+  schedulesAutomationsDetails: string
+  smartSystemSpecialInstructions: string
+
   // Rental & Marketing
   rentalRates: string
   platformsListed: string[]
@@ -76,8 +94,6 @@ interface VillaOnboardingData {
 
   // Current Condition
   repairsNeeded: string
-  lastSepticService: string
-  pestControlSchedule: string
 
   // Photos & Media
   professionalPhotosStatus: string
@@ -145,6 +161,24 @@ function OnboardYourVillaContent() {
     waterSource: '',
     internetPackage: '',
 
+    // Smart Electric System
+    hasSmartElectricSystem: false,
+    smartSystemBrand: '',
+    smartDevicesControlled: [],
+    smartDevicesOther: '',
+    canControlManuallyWifiDown: false,
+    smartSystemAppPlatform: '',
+    hasHubGateway: false,
+    hubGatewayLocation: '',
+    linkedToPropertyWifi: false,
+    controlAccountOwner: '',
+    controlAccountOwnerOther: '',
+    loginCredentialsProvided: false,
+    loginCredentialsDetails: '',
+    hasActiveSchedulesAutomations: false,
+    schedulesAutomationsDetails: '',
+    smartSystemSpecialInstructions: '',
+
     // Rental & Marketing
     rentalRates: '',
     platformsListed: [],
@@ -161,8 +195,6 @@ function OnboardYourVillaContent() {
 
     // Current Condition
     repairsNeeded: '',
-    lastSepticService: '',
-    pestControlSchedule: '',
 
     // Photos & Media
     professionalPhotosStatus: '',
@@ -493,8 +525,6 @@ function OnboardYourVillaContent() {
 
         // Current Condition
         repairsNeeded: formData.repairsNeeded,
-        lastSepticService: formData.lastSepticService,
-        pestControlSchedule: formData.pestControlSchedule,
 
         // Photos & Media
         professionalPhotosStatus: formData.professionalPhotosStatus,
@@ -572,6 +602,24 @@ function OnboardYourVillaContent() {
           water_source: formData.waterSource,
           internet_package: formData.internetPackage,
 
+          // Smart Electric System
+          has_smart_electric_system: formData.hasSmartElectricSystem,
+          smart_system_brand: formData.smartSystemBrand,
+          smart_devices_controlled: formData.smartDevicesControlled,
+          smart_devices_other: formData.smartDevicesOther,
+          can_control_manually_wifi_down: formData.canControlManuallyWifiDown,
+          smart_system_app_platform: formData.smartSystemAppPlatform,
+          has_hub_gateway: formData.hasHubGateway,
+          hub_gateway_location: formData.hubGatewayLocation,
+          linked_to_property_wifi: formData.linkedToPropertyWifi,
+          control_account_owner: formData.controlAccountOwner,
+          control_account_owner_other: formData.controlAccountOwnerOther,
+          login_credentials_provided: formData.loginCredentialsProvided,
+          login_credentials_details: formData.loginCredentialsDetails,
+          has_active_schedules_automations: formData.hasActiveSchedulesAutomations,
+          schedules_automations_details: formData.schedulesAutomationsDetails,
+          smart_system_special_instructions: formData.smartSystemSpecialInstructions,
+
           // Rental & Marketing
           rental_rates: formData.rentalRates,
           platforms_listed: formData.platformsListed,
@@ -588,8 +636,6 @@ function OnboardYourVillaContent() {
 
           // Current Condition
           repairs_needed: formData.repairsNeeded,
-          last_septic_service: formData.lastSepticService,
-          pest_control_schedule: formData.pestControlSchedule,
 
           // Photos & Media
           professional_photos_status: formData.professionalPhotosStatus,
@@ -1101,6 +1147,344 @@ function OnboardYourVillaContent() {
               </div>
             </CollapsibleSection>
 
+            {/* Smart Electric System Section */}
+            <CollapsibleSection
+              title="Smart Electric System"
+              description="Smart home and electrical automation details"
+            >
+              <div className="space-y-6">
+                {/* Does property have smart electric system */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-3">
+                      Does the property have a smart electric system?
+                    </label>
+                    <div className="flex items-center space-x-6">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="hasSmartElectricSystem"
+                          value="true"
+                          checked={formData.hasSmartElectricSystem === true}
+                          onChange={() => handleCheckboxChange('hasSmartElectricSystem', true)}
+                          className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                        />
+                        <span className="text-sm text-white">Yes</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="hasSmartElectricSystem"
+                          value="false"
+                          checked={formData.hasSmartElectricSystem === false}
+                          onChange={() => handleCheckboxChange('hasSmartElectricSystem', false)}
+                          className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                        />
+                        <span className="text-sm text-white">No</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div></div>
+                </div>
+
+                {/* Show additional fields only if smart system exists */}
+                {formData.hasSmartElectricSystem && (
+                  <>
+                    {/* Brand/System */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <Input
+                        label="What brand/system is installed?"
+                        name="smartSystemBrand"
+                        value={formData.smartSystemBrand}
+                        onChange={handleInputChange}
+                        placeholder="Philips Hue, Xiaomi, Google Home, etc."
+                      />
+                      <Input
+                        label="App/platform used for control"
+                        name="smartSystemAppPlatform"
+                        value={formData.smartSystemAppPlatform}
+                        onChange={handleInputChange}
+                        placeholder="Mi Home, Google Home, Alexa, etc."
+                      />
+                    </div>
+
+                    {/* Devices controlled */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-3">
+                        Which devices are controlled? (Select all that apply)
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {['Lights', 'Ceiling Fans', 'Curtains/Blinds', 'Air Conditioning'].map((device) => (
+                          <Checkbox
+                            key={device}
+                            label={device}
+                            checked={formData.smartDevicesControlled.includes(device)}
+                            onChange={(e) => handleMultiSelectChange('smartDevicesControlled', device, e.target.checked)}
+                          />
+                        ))}
+                        <Checkbox
+                          label="Other"
+                          checked={formData.smartDevicesControlled.includes('Other')}
+                          onChange={(e) => handleMultiSelectChange('smartDevicesControlled', 'Other', e.target.checked)}
+                        />
+                      </div>
+                      {formData.smartDevicesControlled.includes('Other') && (
+                        <div className="mt-3">
+                          <Input
+                            label="Other devices (specify)"
+                            name="smartDevicesOther"
+                            value={formData.smartDevicesOther}
+                            onChange={handleInputChange}
+                            placeholder="Security cameras, door locks, etc."
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Manual control and Wi-Fi settings */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-3">
+                          Can devices be controlled manually if Wi-Fi is down?
+                        </label>
+                        <div className="flex items-center space-x-6">
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="canControlManuallyWifiDown"
+                              value="true"
+                              checked={formData.canControlManuallyWifiDown === true}
+                              onChange={() => handleCheckboxChange('canControlManuallyWifiDown', true)}
+                              className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                            />
+                            <span className="text-sm text-white">Yes</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="canControlManuallyWifiDown"
+                              value="false"
+                              checked={formData.canControlManuallyWifiDown === false}
+                              onChange={() => handleCheckboxChange('canControlManuallyWifiDown', false)}
+                              className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                            />
+                            <span className="text-sm text-white">No</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-3">
+                          Is the system linked to property Wi-Fi?
+                        </label>
+                        <div className="flex items-center space-x-6">
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="linkedToPropertyWifi"
+                              value="true"
+                              checked={formData.linkedToPropertyWifi === true}
+                              onChange={() => handleCheckboxChange('linkedToPropertyWifi', true)}
+                              className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                            />
+                            <span className="text-sm text-white">Yes</span>
+                          </label>
+                          <label className="flex items-center">
+                            <input
+                              type="radio"
+                              name="linkedToPropertyWifi"
+                              value="false"
+                              checked={formData.linkedToPropertyWifi === false}
+                              onChange={() => handleCheckboxChange('linkedToPropertyWifi', false)}
+                              className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                            />
+                            <span className="text-sm text-white">No</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Hub/Gateway */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-3">
+                        Is there a hub/gateway device?
+                      </label>
+                      <div className="flex items-center space-x-6 mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="hasHubGateway"
+                            value="true"
+                            checked={formData.hasHubGateway === true}
+                            onChange={() => handleCheckboxChange('hasHubGateway', true)}
+                            className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                          />
+                          <span className="text-sm text-white">Yes</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="hasHubGateway"
+                            value="false"
+                            checked={formData.hasHubGateway === false}
+                            onChange={() => handleCheckboxChange('hasHubGateway', false)}
+                            className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                          />
+                          <span className="text-sm text-white">No</span>
+                        </label>
+                      </div>
+                      {formData.hasHubGateway && (
+                        <Input
+                          label="Hub/Gateway location"
+                          name="hubGatewayLocation"
+                          value={formData.hubGatewayLocation}
+                          onChange={handleInputChange}
+                          placeholder="Living room, master bedroom, etc."
+                        />
+                      )}
+                    </div>
+
+                    {/* Control account owner */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-3">
+                        Who owns the control account?
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
+                        {['Owner', 'Property Management', 'Other'].map((owner) => (
+                          <label key={owner} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="controlAccountOwner"
+                              value={owner}
+                              checked={formData.controlAccountOwner === owner}
+                              onChange={(e) => setFormData(prev => ({ ...prev, controlAccountOwner: e.target.value }))}
+                              className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                            />
+                            <span className="text-sm text-white">{owner}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {formData.controlAccountOwner === 'Other' && (
+                        <Input
+                          label="Other account owner (specify)"
+                          name="controlAccountOwnerOther"
+                          value={formData.controlAccountOwnerOther}
+                          onChange={handleInputChange}
+                          placeholder="Maintenance company, previous owner, etc."
+                        />
+                      )}
+                    </div>
+
+                    {/* Login credentials */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-3">
+                        Are login credentials provided for management access?
+                      </label>
+                      <div className="flex items-center space-x-6 mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="loginCredentialsProvided"
+                            value="true"
+                            checked={formData.loginCredentialsProvided === true}
+                            onChange={() => handleCheckboxChange('loginCredentialsProvided', true)}
+                            className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                          />
+                          <span className="text-sm text-white">Yes</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="loginCredentialsProvided"
+                            value="false"
+                            checked={formData.loginCredentialsProvided === false}
+                            onChange={() => handleCheckboxChange('loginCredentialsProvided', false)}
+                            className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                          />
+                          <span className="text-sm text-white">No</span>
+                        </label>
+                      </div>
+                      {formData.loginCredentialsProvided && (
+                        <div>
+                          <label className="block text-sm font-medium text-white mb-2">
+                            Login credentials details
+                          </label>
+                          <textarea
+                            name="loginCredentialsDetails"
+                            value={formData.loginCredentialsDetails}
+                            onChange={handleInputChange}
+                            rows={3}
+                            className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder="Username, password, account details, etc."
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Schedules and automations */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-3">
+                        Are there active schedules or automations?
+                      </label>
+                      <div className="flex items-center space-x-6 mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="hasActiveSchedulesAutomations"
+                            value="true"
+                            checked={formData.hasActiveSchedulesAutomations === true}
+                            onChange={() => handleCheckboxChange('hasActiveSchedulesAutomations', true)}
+                            className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                          />
+                          <span className="text-sm text-white">Yes</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            name="hasActiveSchedulesAutomations"
+                            value="false"
+                            checked={formData.hasActiveSchedulesAutomations === false}
+                            onChange={() => handleCheckboxChange('hasActiveSchedulesAutomations', false)}
+                            className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                          />
+                          <span className="text-sm text-white">No</span>
+                        </label>
+                      </div>
+                      {formData.hasActiveSchedulesAutomations && (
+                        <div>
+                          <label className="block text-sm font-medium text-white mb-2">
+                            Schedule/automation details
+                          </label>
+                          <textarea
+                            name="schedulesAutomationsDetails"
+                            value={formData.schedulesAutomationsDetails}
+                            onChange={handleInputChange}
+                            rows={3}
+                            className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder="Pool lights at 6 PM, AC on at 2 PM, etc."
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Special instructions */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        Special instructions, troubleshooting tips, or issues to note
+                      </label>
+                      <textarea
+                        name="smartSystemSpecialInstructions"
+                        value={formData.smartSystemSpecialInstructions}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Reset instructions, common issues, device locations, etc."
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </CollapsibleSection>
+
             {/* Rental & Marketing Section */}
             <CollapsibleSection
               title="Rental & Marketing"
@@ -1240,23 +1624,6 @@ function OnboardYourVillaContent() {
                     placeholder="Any current issues, planned repairs, or maintenance needed..."
                   />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Last Septic Service Date"
-                    name="lastSepticService"
-                    type="date"
-                    value={formData.lastSepticService}
-                    onChange={handleInputChange}
-                  />
-                  <Input
-                    label="Pest Control Schedule"
-                    name="pestControlSchedule"
-                    value={formData.pestControlSchedule}
-                    onChange={handleInputChange}
-                    placeholder="Monthly, quarterly, etc."
-                  />
-                </div>
               </div>
             </CollapsibleSection>
 
@@ -1269,7 +1636,7 @@ function OnboardYourVillaContent() {
                 {/* Villa Photo Upload */}
                 <div>
                   <h4 className="text-lg font-medium text-white mb-4">Villa Photo Upload</h4>
-                  <VillaPhotoUpload
+                  <VillaPhotoUploadCloudinary
                     userId={user?.id || 'anonymous'}
                     villaId={formData.propertyName ? formData.propertyName.replace(/[^a-zA-Z0-9-_]/g, '_') : undefined}
                     disabled={loading}

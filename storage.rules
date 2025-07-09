@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for Villa Property Management
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Villa photos - users can upload and manage their own villa photos
+    match /villa-photos/{userId}/{villaId}/{fileName} {
+      // Allow authenticated users to read any villa photos
+      allow read: if request.auth != null;
+      
+      // Allow users to upload/update/delete their own villa photos
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Property documents - users can upload property-related documents
+    match /property-documents/{userId}/{propertyId}/{fileName} {
+      // Allow authenticated users to read documents for properties they own
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow users to upload/update/delete their own property documents
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Profile photos - users can manage their profile photos
+    match /profile-photos/{userId}/{fileName} {
+      // Allow users to read and write their own profile photos
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Admin access - admins can read all files
+    match /{allPaths=**} {
+      // Allow admin users to read all files
+      allow read: if request.auth != null && 
+                     request.auth.token.email == 'shaun@siamoon.com';
+    }
+    
+    // Temporary uploads - for testing and development
+    match /temp/{fileName} {
+      // Allow authenticated users to upload temporary files
+      allow read, write: if request.auth != null;
+    }
+    
+    // Default deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -55,6 +55,24 @@ export interface OnboardingSubmission {
   waterSource?: string
   internetPackage?: string
 
+  // Smart Electric System
+  hasSmartElectricSystem?: boolean
+  smartSystemBrand?: string
+  smartDevicesControlled?: string[]
+  smartDevicesOther?: string
+  canControlManuallyWifiDown?: boolean
+  smartSystemAppPlatform?: string
+  hasHubGateway?: boolean
+  hubGatewayLocation?: string
+  linkedToPropertyWifi?: boolean
+  controlAccountOwner?: string
+  controlAccountOwnerOther?: string
+  loginCredentialsProvided?: boolean
+  loginCredentialsDetails?: string
+  hasActiveSchedulesAutomations?: boolean
+  schedulesAutomationsDetails?: string
+  smartSystemSpecialInstructions?: string
+
   // Rental & Marketing
   rentalRates?: string
   platformsListed?: string[]
@@ -71,8 +89,6 @@ export interface OnboardingSubmission {
 
   // Current Condition
   repairsNeeded?: string
-  lastSepticService?: string
-  pestControlSchedule?: string
 
   // Photos & Media
   professionalPhotosStatus?: string

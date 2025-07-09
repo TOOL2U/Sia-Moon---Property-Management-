@@ -480,6 +480,98 @@ Additional Notes: ${submission.notes || submission.repairsNeeded || 'None'}`
           </Card>
         </div>
 
+        {/* Smart Electric System Section */}
+        {submission.hasSmartElectricSystem && (
+          <Card className="bg-neutral-900 border-neutral-800 mt-8">
+            <CardHeader>
+              <CardTitle className="text-white">Smart Electric System</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className={`p-3 rounded-lg ${submission.hasSmartElectricSystem ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className="text-sm font-medium">{submission.hasSmartElectricSystem ? '✓' : '✗'} Smart Electric System</div>
+                </div>
+                <div className={`p-3 rounded-lg ${submission.canControlManuallyWifiDown ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className="text-sm font-medium">{submission.canControlManuallyWifiDown ? '✓' : '✗'} Manual Control (WiFi Down)</div>
+                </div>
+                <div className={`p-3 rounded-lg ${submission.hasHubGateway ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className="text-sm font-medium">{submission.hasHubGateway ? '✓' : '✗'} Hub/Gateway Device</div>
+                </div>
+                <div className={`p-3 rounded-lg ${submission.linkedToPropertyWifi ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className="text-sm font-medium">{submission.linkedToPropertyWifi ? '✓' : '✗'} Linked to Property WiFi</div>
+                </div>
+                <div className={`p-3 rounded-lg ${submission.loginCredentialsProvided ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className="text-sm font-medium">{submission.loginCredentialsProvided ? '✓' : '✗'} Login Credentials Provided</div>
+                </div>
+                <div className={`p-3 rounded-lg ${submission.hasActiveSchedulesAutomations ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className="text-sm font-medium">{submission.hasActiveSchedulesAutomations ? '✓' : '✗'} Active Schedules/Automations</div>
+                </div>
+              </div>
+
+              {submission.smartSystemBrand && (
+                <CopyableField
+                  label="Smart System Brand"
+                  value={submission.smartSystemBrand}
+                />
+              )}
+              {submission.smartSystemAppPlatform && (
+                <CopyableField
+                  label="App/Platform"
+                  value={submission.smartSystemAppPlatform}
+                />
+              )}
+              {submission.smartDevicesControlled && submission.smartDevicesControlled.length > 0 && (
+                <CopyableField
+                  label="Devices Controlled"
+                  value={submission.smartDevicesControlled.join(', ')}
+                />
+              )}
+              {submission.smartDevicesOther && (
+                <CopyableField
+                  label="Other Devices"
+                  value={submission.smartDevicesOther}
+                />
+              )}
+              {submission.hubGatewayLocation && (
+                <CopyableField
+                  label="Hub/Gateway Location"
+                  value={submission.hubGatewayLocation}
+                />
+              )}
+              {submission.controlAccountOwner && (
+                <CopyableField
+                  label="Control Account Owner"
+                  value={submission.controlAccountOwner}
+                />
+              )}
+              {submission.controlAccountOwnerOther && (
+                <CopyableField
+                  label="Other Account Owner"
+                  value={submission.controlAccountOwnerOther}
+                />
+              )}
+              {submission.loginCredentialsDetails && (
+                <CopyableField
+                  label="Login Credentials Details"
+                  value={submission.loginCredentialsDetails}
+                />
+              )}
+              {submission.schedulesAutomationsDetails && (
+                <CopyableField
+                  label="Schedule/Automation Details"
+                  value={submission.schedulesAutomationsDetails}
+                />
+              )}
+              {submission.smartSystemSpecialInstructions && (
+                <CopyableField
+                  label="Special Instructions"
+                  value={submission.smartSystemSpecialInstructions}
+                />
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rental & Marketing Information */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <Card className="bg-neutral-900 border-neutral-800">
@@ -564,18 +656,6 @@ Additional Notes: ${submission.notes || submission.repairsNeeded || 'None'}`
                 <CopyableField
                   label="Repairs Needed"
                   value={submission.repairsNeeded}
-                />
-              )}
-              {submission.lastSepticService && (
-                <CopyableField
-                  label="Last Septic Service"
-                  value={submission.lastSepticService}
-                />
-              )}
-              {submission.pestControlSchedule && (
-                <CopyableField
-                  label="Pest Control Schedule"
-                  value={submission.pestControlSchedule}
                 />
               )}
               {submission.professionalPhotosStatus && (

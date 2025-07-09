@@ -1,12 +1,13 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { storage } from '@/lib/firebase'
-import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage'
+import { uploadToCloudinary, validateImageFile, deleteFromCloudinary } from '@/lib/cloudinary-upload'
 import { Upload, Trash2, Download, Image as ImageIcon, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import { storage } from '@/lib/firebase'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 
 interface VillaPhotoUploadProps {
   userId: string
@@ -19,9 +20,10 @@ interface UploadedPhoto {
   id: string
   name: string
   url: string
-  path: string
+  publicId: string
   size: number
   uploadedAt: Date
+  path: string
 }
 
 export function VillaPhotoUpload({ userId, villaId, disabled = false, onPhotosChange }: VillaPhotoUploadProps) {
@@ -29,54 +31,31 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false, onPhotosCh
   const [isUploading, setIsUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
 
-  // Generate storage path for villa photos
+  // Generate folder path for Cloudinary uploads
+  const getCloudinaryFolder = useCallback(() => {
+    const safeUserId = userId.replace(/[^a-zA-Z0-9-_]/g, '_')
+    const safeVillaId = villaId ? villaId.replace(/[^a-zA-Z0-9-_]/g, '_') : 'temp'
+    return `villa-photos/${safeUserId}/${safeVillaId}`
+  }, [userId, villaId])
+
+  // Generate storage path for Firebase
   const getStoragePath = useCallback((fileName: string) => {
     const safeUserId = userId.replace(/[^a-zA-Z0-9-_]/g, '_')
     const safeVillaId = villaId ? villaId.replace(/[^a-zA-Z0-9-_]/g, '_') : 'temp'
     return `villa-photos/${safeUserId}/${safeVillaId}/${fileName}`
   }, [userId, villaId])
 
-  // Load existing photos from storage
-  const loadExistingPhotos = useCallback(async () => {
-    if (!storage || !userId) return
+  // Note: For Cloudinary, we don't pre-load existing photos since we don't have a direct way
+  // to list files in a folder. Instead, we rely on the parent component to provide
+  // existing photo URLs if needed, or we track uploads in this session only.
 
-    try {
-      if (!storage) throw new Error('Storage not available')
-      const safeUserId = userId.replace(/[^a-zA-Z0-9-_]/g, '_')
-      const safeVillaId = villaId ? villaId.replace(/[^a-zA-Z0-9-_]/g, '_') : 'temp'
-      const folderRef = ref(storage, `villa-photos/${safeUserId}/${safeVillaId}`)
-      
-      const listResult = await listAll(folderRef)
-      const photos: UploadedPhoto[] = []
-
-      for (const itemRef of listResult.items) {
-        try {
-          const url = await getDownloadURL(itemRef)
-          
-          photos.push({
-            id: itemRef.name,
-            name: itemRef.name,
-            url,
-            path: itemRef.fullPath,
-            size: 0, // Size not available without metadata
-            uploadedAt: new Date() // Current date as fallback
-          })
-        } catch (error) {
-          console.warn('Failed to load photo:', error)
-        }
-      }
-
-      setUploadedPhotos(photos.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime()))
-    } catch (error) {
-      console.error('Failed to load existing photos:', error)
-      toast.error('Failed to load existing photos')
-    }
-  }, [userId, villaId])
-
-  // Load existing photos on component mount
+  // Initialize with empty photos array
   React.useEffect(() => {
-    loadExistingPhotos()
-  }, [loadExistingPhotos])
+    // Notify parent of initial empty state
+    if (onPhotosChange) {
+      onPhotosChange([])
+    }
+  }, [onPhotosChange])
 
   // Handle file upload
   const handleFileUpload = useCallback(async (files: FileList | File[]) => {
@@ -123,6 +102,7 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false, onPhotosCh
           name: file.name,
           url: downloadURL,
           path: storagePath,
+          publicId: uniqueFileName, // Use filename as publicId for Firebase
           size: file.size,
           uploadedAt: new Date()
         }
@@ -176,7 +156,7 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false, onPhotosCh
       console.error('Failed to delete photo:', error)
       toast.error('Failed to delete photo')
     }
-  }, [disabled])
+  }, [disabled, onPhotosChange])
 
   // Handle drag and drop
   const handleDrag = useCallback((e: React.DragEvent) => {

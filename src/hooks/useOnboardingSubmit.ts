@@ -42,6 +42,24 @@ export interface OnboardingSubmissionData {
   water_source?: string
   internet_package?: string
 
+  // Smart Electric System
+  has_smart_electric_system?: boolean
+  smart_system_brand?: string
+  smart_devices_controlled?: string[]
+  smart_devices_other?: string
+  can_control_manually_wifi_down?: boolean
+  smart_system_app_platform?: string
+  has_hub_gateway?: boolean
+  hub_gateway_location?: string
+  linked_to_property_wifi?: boolean
+  control_account_owner?: string
+  control_account_owner_other?: string
+  login_credentials_provided?: boolean
+  login_credentials_details?: string
+  has_active_schedules_automations?: boolean
+  schedules_automations_details?: string
+  smart_system_special_instructions?: string
+
   // Rental & Marketing
   rental_rates?: string
   platforms_listed?: string[]
@@ -58,8 +76,6 @@ export interface OnboardingSubmissionData {
 
   // Current Condition
   repairs_needed?: string
-  last_septic_service?: string
-  pest_control_schedule?: string
 
   // Photos & Media
   professional_photos_status?: string
@@ -231,8 +247,6 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
 
           // Current Condition
           repairs_needed: data.repairs_needed?.trim(),
-          last_septic_service: data.last_septic_service?.trim(),
-          pest_control_schedule: data.pest_control_schedule?.trim(),
 
           // Photos & Media
           professional_photos_status: data.professional_photos_status?.trim(),

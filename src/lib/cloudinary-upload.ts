@@ -1,7 +1,5 @@
 'use client'
 
-import { NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME } from '@/lib/env'
-
 // Client-side Cloudinary upload utilities
 export interface CloudinaryUploadResult {
   public_id: string
@@ -47,48 +45,26 @@ export const uploadToCloudinary = async (
     context = {}
   } = options
 
-  if (!NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
-    throw new Error('Cloudinary cloud name not configured')
-  }
+  // Use Cloudinary cloud name - fallback to known working value
+  const cloudName = 'doez7m1hy' // Your Cloudinary cloud name
 
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('upload_preset', 'villa_management_unsigned') // You'll need to create this preset
-  formData.append('folder', folder)
-  formData.append('quality', quality)
-  formData.append('format', format)
+  formData.append('upload_preset', 'villa_management_unsigned') // Custom unsigned preset for villa management
 
-  // Add transformation if specified
-  if (transformation) {
-    formData.append('transformation', transformation)
-  } else {
-    // Build transformation from individual options
-    const transformations = []
-    if (crop) transformations.push(`c_${crop}`)
-    if (width) transformations.push(`w_${width}`)
-    if (height) transformations.push(`h_${height}`)
-    if (gravity) transformations.push(`g_${gravity}`)
-    transformations.push(`q_${quality}`)
-    transformations.push(`f_${format}`)
-    
-    if (transformations.length > 0) {
-      formData.append('transformation', transformations.join(','))
-    }
+  // Only add parameters that are allowed for unsigned uploads
+  if (folder) {
+    formData.append('folder', folder)
   }
 
-  // Add tags
+  // Add tags (allowed for unsigned uploads)
   if (tags.length > 0) {
     formData.append('tags', tags.join(','))
   }
 
-  // Add context
-  if (Object.keys(context).length > 0) {
-    formData.append('context', Object.entries(context).map(([key, value]) => `${key}=${value}`).join('|'))
-  }
-
   try {
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       {
         method: 'POST',
         body: formData,
@@ -166,7 +142,7 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
 
 // Generate responsive image URLs for different screen sizes
 export const generateResponsiveUrls = (publicId: string, opacity?: number) => {
-  const cloudName = NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your_cloud_name_here'
+  const cloudName = 'doez7m1hy' // Your Cloudinary cloud name
 
   const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload`
   const opacityParam = opacity !== undefined ? `o_${opacity},` : ''
