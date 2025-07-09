@@ -83,21 +83,6 @@ export default function AdminDashboard() {
     router.push(`/admin/onboarding/${id}`)
   }
 
-  const handleStatusUpdate = async (id: string, newStatus: 'pending' | 'reviewed' | 'approved' | 'rejected') => {
-    try {
-      await OnboardingService.updateSubmissionStatus(id, newStatus)
-      setSubmissions(prev =>
-        prev.map(sub =>
-          sub.id === id ? { ...sub, status: newStatus } : sub
-        )
-      )
-      toast.success(`Status updated to ${newStatus}`)
-    } catch (error) {
-      console.error('Error updating status:', error)
-      toast.error('Failed to update status')
-    }
-  }
-
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'

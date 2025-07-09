@@ -255,6 +255,7 @@ export interface Notification {
   category: 'report_generated' | 'task_assigned' | 'task_completed' | 'invoice_created' | 'booking_confirmed' | 'maintenance_required' | 'system_alert'
   title: string
   message: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any> // Additional data for the notification
 
   // Delivery Status
@@ -549,7 +550,8 @@ class LocalDatabase {
     const user = this.users.find(u => u.id === id)
     if (user) {
       // Return user without password hash for security
-      const { password_hash, ...userWithoutPassword } = user
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash: _, ...userWithoutPassword } = user
       return {
         data: userWithoutPassword as User,
         error: null
@@ -567,6 +569,7 @@ class LocalDatabase {
     const user = this.users.find(u => u.email === email)
     if (user) {
       // Return user without password hash for security
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password_hash, ...userWithoutPassword } = user
       return {
         data: userWithoutPassword as User,
@@ -583,6 +586,7 @@ class LocalDatabase {
     await this.ensureInitialized()
     await this.delay()
     // Return users without password hashes for security
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const usersWithoutPasswords = this.users.map(({ password_hash, ...user }) => user as User)
     return {
       data: usersWithoutPasswords,
@@ -616,6 +620,7 @@ class LocalDatabase {
     this.saveToStorage()
 
     // Return user without password hash for security
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = newUser
     return {
       data: userWithoutPassword as User,
@@ -670,6 +675,7 @@ class LocalDatabase {
     this.saveToStorage()
 
     // Return user without password hash for security
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: _, ...userWithoutPassword } = newUser
     return {
       data: userWithoutPassword as User,
@@ -699,6 +705,7 @@ class LocalDatabase {
     }
 
     // Return user without password hash for security
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user
     return {
       data: userWithoutPassword as User,

@@ -19,8 +19,7 @@ import {
   DollarSign,
   Phone,
   Mail,
-  Globe,
-  Download
+  Globe
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
@@ -72,7 +71,7 @@ export default function OnboardingSubmissionDetail() {
     try {
       await navigator.clipboard.writeText(text)
       toast.success(`${label} copied to clipboard`)
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy to clipboard')
     }
   }

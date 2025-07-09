@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import WebhookService, { SignupData } from '@/lib/webhookService'
-import { CheckCircle, XCircle, Loader2, Send, User, Mail } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Send, User } from 'lucide-react'
 
 export default function TestWebhookPage() {
   const { isLoading, isSuccess, error, submitOnboarding, reset } = useOnboardingSubmit()

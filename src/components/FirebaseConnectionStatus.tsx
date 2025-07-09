@@ -49,7 +49,7 @@ export function FirebaseConnectionStatus() {
           // Try to read a document (this will fail gracefully if no permissions)
           await getDoc(doc(db, 'test', 'connection'))
           newStatus.firestore = true
-        } catch (error) {
+        } catch {
           // Even if we get a permission error, it means Firestore is connected
           newStatus.firestore = true
         }

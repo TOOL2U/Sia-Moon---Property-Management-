@@ -13,6 +13,7 @@ import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseC
 import { MobileIncomeExpenseChart } from '@/components/dashboard/charts/MobileIncomeExpenseChart'
 import { SummaryCardsGrid, SummaryCardsGridSkeleton } from '@/components/dashboard/SummaryCardsGrid'
 import { BookingPreview, BookingPreviewSkeleton } from '@/components/dashboard/BookingPreview'
+import { PropertyService } from '@/lib/services/propertyService'
 import {
   Wrench,
   Calendar,
@@ -26,6 +27,73 @@ import {
 } from 'lucide-react'
 import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
+
+// Mock data generators for demonstration
+const generateMockReports = (properties: any[]) => {
+  const reports = []
+  const currentDate = new Date()
+
+  // Generate 6 months of mock reports for each property
+  for (let i = 0; i < 6; i++) {
+    const date = subMonths(currentDate, i)
+    const month = date.getMonth() + 1
+    const year = date.getFullYear()
+
+    properties.forEach((property, index) => {
+      const baseIncome = 15000 + (index * 5000) + (Math.random() * 10000)
+      const baseExpenses = baseIncome * (0.3 + Math.random() * 0.2) // 30-50% of income
+
+      reports.push({
+        id: `report-${property.id}-${year}-${month}`,
+        property_id: property.id,
+        month,
+        year,
+        total_income: Math.round(baseIncome),
+        total_expenses: Math.round(baseExpenses),
+        occupancy_rate: Math.round(60 + Math.random() * 35), // 60-95%
+        total_bookings: Math.round(8 + Math.random() * 12), // 8-20 bookings
+        created_at: date.toISOString()
+      })
+    })
+  }
+
+  return reports
+}
+
+const generateMockBookings = (properties: any[]) => {
+  const bookings = []
+  const currentDate = new Date()
+
+  // Generate upcoming bookings for the next 60 days
+  for (let i = 1; i <= 30; i += Math.random() * 7 + 2) {
+    const checkIn = addDays(currentDate, Math.floor(i))
+    const stayLength = Math.floor(Math.random() * 7) + 2 // 2-8 nights
+    const checkOut = addDays(checkIn, stayLength)
+
+    const property = properties[Math.floor(Math.random() * properties.length)]
+    const guestNames = ['John Smith', 'Sarah Johnson', 'Mike Wilson', 'Emma Davis', 'David Brown', 'Lisa Chen', 'Tom Anderson', 'Maria Garcia']
+    const guestName = guestNames[Math.floor(Math.random() * guestNames.length)]
+
+    bookings.push({
+      id: `booking-${Date.now()}-${Math.random()}`,
+      property_id: property.id,
+      guest_name: guestName,
+      guest_email: `${guestName.toLowerCase().replace(' ', '.')}@example.com`,
+      check_in: checkIn.toISOString().split('T')[0],
+      check_out: checkOut.toISOString().split('T')[0],
+      guests: Math.floor(Math.random() * 4) + 1,
+      total_amount: Math.round((property.pricePerNight || 200) * stayLength),
+      currency: 'USD',
+      status: Math.random() > 0.2 ? 'confirmed' : 'pending',
+      property: {
+        id: property.id,
+        name: property.name
+      }
+    })
+  }
+
+  return bookings.sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
+}
 import { Property, Booking, Task, Report } from '@/types'
 
 export default function ClientDashboard() {
@@ -58,24 +126,56 @@ export default function ClientDashboard() {
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
-      console.log('🔄 Loading dashboard data (development mode with mock data)')
+      console.log('🔄 Loading dashboard data from Firebase...')
 
-      // Load user's actual data from Firestore
+      if (!profile?.id) {
+        console.log('⚠️ No user profile available, using empty data')
+        setProperties([])
+        setBookings([])
+        setReports([])
+        setTasks([])
+        return
+      }
 
-      // Load user's actual data from Firestore
-      // For new users, this will be empty arrays
-      setProperties([])
-      setBookings([])
-      setReports([])
-      setTasks([])
+      // Load user's actual data from Firebase/Firestore
+      try {
+        // Fetch properties
+        const userProperties = await PropertyService.getPropertiesByUserId(profile.id)
+        setProperties(userProperties)
+        console.log(`✅ Loaded ${userProperties.length} properties`)
+
+        // For now, use mock data for bookings and reports until those services are implemented
+        // TODO: Replace with actual BookingService and ReportService calls
+
+        // Generate mock data for demonstration if user has properties
+        if (userProperties.length > 0) {
+          const mockReports = generateMockReports(userProperties)
+          const mockBookings = generateMockBookings(userProperties)
+          setReports(mockReports)
+          setBookings(mockBookings)
+        } else {
+          setReports([])
+          setBookings([])
+        }
+        setTasks([])
+
+        console.log('✅ Dashboard data loaded successfully')
+      } catch (serviceError) {
+        console.error('❌ Error loading data from services:', serviceError)
+        // Fallback to empty data for graceful degradation
+        setProperties([])
+        setBookings([])
+        setReports([])
+        setTasks([])
+      }
 
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('❌ Error fetching dashboard data:', error)
       toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [profile?.id])
 
   useEffect(() => {
     // In development mode with session bypass, always fetch data
@@ -324,8 +424,8 @@ export default function ClientDashboard() {
       <div className="max-w-7xl mx-auto">
 
 
-        {/* Summary Cards Grid - Mobile & Desktop */}
-        <div className="mb-8">
+        {/* Mobile Summary Cards Grid - Mobile Only */}
+        <div className="block md:hidden mb-8">
           {loading ? (
             <SummaryCardsGridSkeleton />
           ) : (
@@ -534,8 +634,23 @@ export default function ClientDashboard() {
           </Card>
         </div>
 
-        {/* Upcoming Bookings Section */}
-        <div className="mb-8">
+        {/* Mobile Booking Preview - Compact Design */}
+        <div className="block md:hidden mb-8">
+          {loading ? (
+            <BookingPreviewSkeleton />
+          ) : (
+            <BookingPreview
+              bookings={upcomingBookings}
+              onViewAll={() => {
+                console.log('Navigate to full bookings page')
+                // Could navigate to /bookings or open modal
+              }}
+            />
+          )}
+        </div>
+
+        {/* Desktop Booking Section - Original Layout */}
+        <div className="hidden md:block mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white flex items-center gap-6 mt-3">
               <Calendar className="w-5 h-5 text-primary-400" />

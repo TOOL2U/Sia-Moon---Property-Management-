@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { uploadToCloudinary, validateImageFile, deleteFromCloudinary } from '@/lib/cloudinary-upload'
 import { Upload, Trash2, Download, Image as ImageIcon, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import Image from 'next/image'
@@ -30,13 +29,6 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false, onPhotosCh
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
-
-  // Generate folder path for Cloudinary uploads
-  const getCloudinaryFolder = useCallback(() => {
-    const safeUserId = userId.replace(/[^a-zA-Z0-9-_]/g, '_')
-    const safeVillaId = villaId ? villaId.replace(/[^a-zA-Z0-9-_]/g, '_') : 'temp'
-    return `villa-photos/${safeUserId}/${safeVillaId}`
-  }, [userId, villaId])
 
   // Generate storage path for Firebase
   const getStoragePath = useCallback((fileName: string) => {
