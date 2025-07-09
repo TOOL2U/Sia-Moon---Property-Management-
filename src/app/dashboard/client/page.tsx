@@ -13,7 +13,8 @@ import { IncomeExpenseChart } from '@/components/dashboard/charts/IncomeExpenseC
 import { MobileIncomeExpenseChart } from '@/components/dashboard/charts/MobileIncomeExpenseChart'
 import { SummaryCardsGrid, SummaryCardsGridSkeleton } from '@/components/dashboard/SummaryCardsGrid'
 import { BookingPreview, BookingPreviewSkeleton } from '@/components/dashboard/BookingPreview'
-import { PropertyService } from '@/lib/services/propertyService'
+import { PropertyService, Property as PropertyServiceProperty } from '@/lib/services/propertyService'
+import { Report, Booking, Task } from '@/types'
 import {
   Wrench,
   Calendar,
@@ -29,8 +30,8 @@ import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 
 // Mock data generators for demonstration
-const generateMockReports = (properties: any[]) => {
-  const reports = []
+const generateMockReports = (properties: PropertyServiceProperty[]): Report[] => {
+  const reports: Report[] = []
   const currentDate = new Date()
 
   // Generate 6 months of mock reports for each property
@@ -50,9 +51,12 @@ const generateMockReports = (properties: any[]) => {
         year,
         total_income: Math.round(baseIncome),
         total_expenses: Math.round(baseExpenses),
+        net_income: Math.round(baseIncome - baseExpenses),
         occupancy_rate: Math.round(60 + Math.random() * 35), // 60-95%
         total_bookings: Math.round(8 + Math.random() * 12), // 8-20 bookings
-        created_at: date.toISOString()
+        currency: 'USD',
+        created_at: date.toISOString(),
+        updated_at: date.toISOString()
       })
     })
   }
@@ -60,8 +64,8 @@ const generateMockReports = (properties: any[]) => {
   return reports
 }
 
-const generateMockBookings = (properties: any[]) => {
-  const bookings = []
+const generateMockBookings = (properties: PropertyServiceProperty[]): Booking[] => {
+  const bookings: Booking[] = []
   const currentDate = new Date()
 
   // Generate upcoming bookings for the next 60 days
@@ -84,23 +88,20 @@ const generateMockBookings = (properties: any[]) => {
       guests: Math.floor(Math.random() * 4) + 1,
       total_amount: Math.round((property.pricePerNight || 200) * stayLength),
       currency: 'USD',
-      status: Math.random() > 0.2 ? 'confirmed' : 'pending',
-      property: {
-        id: property.id,
-        name: property.name
-      }
+      status: (Math.random() > 0.2 ? 'confirmed' : 'pending') as 'confirmed' | 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     })
   }
 
   return bookings.sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
 }
-import { Property, Booking, Task, Report } from '@/types'
 
 export default function ClientDashboard() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  const [properties, setProperties] = useState<Property[]>([])
+  const [properties, setProperties] = useState<PropertyServiceProperty[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [reports, setReports] = useState<Report[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
@@ -128,7 +129,7 @@ export default function ClientDashboard() {
       setLoading(true)
       console.log('🔄 Loading dashboard data from Firebase...')
 
-      if (!profile?.id) {
+      if (!user?.id) {
         console.log('⚠️ No user profile available, using empty data')
         setProperties([])
         setBookings([])
@@ -140,7 +141,7 @@ export default function ClientDashboard() {
       // Load user's actual data from Firebase/Firestore
       try {
         // Fetch properties
-        const userProperties = await PropertyService.getPropertiesByUserId(profile.id)
+        const userProperties = await PropertyService.getPropertiesByUserId(user.id)
         setProperties(userProperties)
         console.log(`✅ Loaded ${userProperties.length} properties`)
 
@@ -175,7 +176,7 @@ export default function ClientDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [profile?.id])
+  }, [user?.id])
 
   useEffect(() => {
     // In development mode with session bypass, always fetch data
