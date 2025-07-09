@@ -777,7 +777,7 @@ function OnboardYourVillaContent() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
-                      Bank Details for Payouts
+                      ...
                     </label>
                     <textarea
                       name="bankDetails"
@@ -785,7 +785,7 @@ function OnboardYourVillaContent() {
                       onChange={handleInputChange}
                       rows={3}
                       className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white placeholder:text-neutral-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Bank name, account number, SWIFT code, etc."
+                      placeholder="...."
                     />
                   </div>
                 </div>

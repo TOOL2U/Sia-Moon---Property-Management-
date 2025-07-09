@@ -59,11 +59,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Set basic user info immediately to avoid blocking UI
+        // Check if user is admin based on email
+        const isAdmin = firebaseUser.email === 'shaun@siamoon.com'
         const basicUser = {
           id: firebaseUser.uid,
           email: firebaseUser.email || '',
           full_name: '',
-          role: 'client' as const
+          role: isAdmin ? 'admin' as const : 'client' as const
         }
         setUser(basicUser)
 
@@ -76,11 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (userDoc.exists()) {
               const userData = userDoc.data()
               console.log('✅ User profile fetched successfully')
+              // Override role for admin user
+              const isAdmin = firebaseUser.email === 'shaun@siamoon.com'
               setUser({
                 id: firebaseUser.uid,
                 email: firebaseUser.email || '',
                 full_name: userData.fullName || '',
-                role: userData.role || 'client'
+                role: isAdmin ? 'admin' : (userData.role || 'client')
               })
             } else {
               console.log('⚠️ User profile document does not exist, using basic info')

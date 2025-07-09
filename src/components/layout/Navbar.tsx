@@ -307,7 +307,8 @@ export function Navbar() {
     { href: '/bookings', label: 'Bookings' },
     { href: '/reports', label: 'Reports' },
     { href: '/onboard', label: 'Onbourding Form' },
-    // TODO: Add role-based navigation when auth is implemented
+    // Admin-only navigation
+    ...(user.role === 'admin' ? [{ href: '/admin', label: 'Admin' }] : []),
     { href: 'https://wa.me/', label: 'Contact Us' }, // Added Contact Us tab linking to WhatsApp
   ] : []
 
