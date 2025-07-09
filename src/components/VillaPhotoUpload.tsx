@@ -108,8 +108,9 @@ export function VillaPhotoUpload({ userId, villaId, disabled = false }: VillaPho
         const fileExtension = file.name.split('.').pop() || 'jpg'
         const uniqueFileName = `photo_${timestamp}_${randomId}.${fileExtension}`
         
-        const storagePath = getStoragePath(uniqueFileName)
         if (!storage) throw new Error('Storage not available')
+
+        const storagePath = getStoragePath(uniqueFileName)
         const storageRef = ref(storage, storagePath)
 
         // Upload file
