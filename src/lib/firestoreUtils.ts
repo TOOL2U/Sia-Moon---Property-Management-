@@ -1,4 +1,4 @@
-import { doc, getDoc, enableNetwork } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { db } from './firebase'
 
 /**
@@ -10,14 +10,11 @@ export async function checkFirestoreConnectivity(): Promise<boolean> {
       console.warn('⚠️ Firestore not initialized')
       return false
     }
-    
-    // Try to enable network first
-    await enableNetwork(db)
-    
+
     // Try a simple read operation to test connectivity
     const testDoc = doc(db, 'connectivity-test', 'test')
     await getDoc(testDoc)
-    
+
     console.log('✅ Firestore connectivity check passed')
     return true
   } catch (error: unknown) {

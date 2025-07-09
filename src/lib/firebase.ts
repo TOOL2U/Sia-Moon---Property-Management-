@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { enableNetwork, disableNetwork, initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
+import { initializeFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getAnalytics, isSupported, Analytics } from 'firebase/analytics'
 
@@ -98,34 +98,12 @@ try {
 // Initialize Firebase services (with null checks for build time)
 export const auth = app ? getAuth(app) : null
 
-// Initialize Firestore with custom settings to reduce connection issues
+// Initialize Firestore with simplified settings to avoid state conflicts
 export const db = app ? initializeFirestore(app, {
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-  experimentalForceLongPolling: false, // Use WebSocket when available
   ignoreUndefinedProperties: true,
 }) : null
 
 export const storage = app ? getStorage(app) : null
-
-// Configure Firestore for better offline handling (only if db exists)
-if (typeof window !== 'undefined' && db) {
-  // Add a delay before enabling network to ensure proper initialization
-  setTimeout(() => {
-    enableNetwork(db).catch((error) => {
-      console.warn('⚠️ Firestore network enable failed:', error)
-      // Try to recover by disabling and re-enabling network
-      setTimeout(() => {
-        disableNetwork(db).then(() => {
-          setTimeout(() => {
-            enableNetwork(db).catch((retryError) => {
-              console.warn('⚠️ Firestore network retry failed:', retryError)
-            })
-          }, 1000)
-        })
-      }, 2000)
-    })
-  }, 1000)
-}
 
 // Initialize Analytics (only in browser and if supported)
 let analytics: Analytics | null = null
