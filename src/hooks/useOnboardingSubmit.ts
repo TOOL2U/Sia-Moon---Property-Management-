@@ -231,6 +231,24 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
           water_source: data.water_source?.trim(),
           internet_package: data.internet_package?.trim(),
 
+          // Smart Electric System
+          has_smart_electric_system: data.has_smart_electric_system,
+          smart_system_brand: data.smart_system_brand?.trim(),
+          smart_devices_controlled: data.smart_devices_controlled,
+          smart_devices_other: data.smart_devices_other?.trim(),
+          can_control_manually_wifi_down: data.can_control_manually_wifi_down,
+          smart_system_app_platform: data.smart_system_app_platform?.trim(),
+          has_hub_gateway: data.has_hub_gateway,
+          hub_gateway_location: data.hub_gateway_location?.trim(),
+          linked_to_property_wifi: data.linked_to_property_wifi,
+          control_account_owner: data.control_account_owner?.trim(),
+          control_account_owner_other: data.control_account_owner_other?.trim(),
+          login_credentials_provided: data.login_credentials_provided,
+          login_credentials_details: data.login_credentials_details?.trim(),
+          has_active_schedules_automations: data.has_active_schedules_automations,
+          schedules_automations_details: data.schedules_automations_details?.trim(),
+          smart_system_special_instructions: data.smart_system_special_instructions?.trim(),
+
           // Rental & Marketing
           rental_rates: data.rental_rates?.trim(),
           platforms_listed: data.platforms_listed,
