@@ -35,13 +35,12 @@ export function VillaPhotoUploadCloudinary({ userId, villaId, disabled = false, 
     return `villa-photos/${safeUserId}/${safeVillaId}`
   }, [userId, villaId])
 
-  // Initialize with empty photos array
+  // Notify parent when photos change
   React.useEffect(() => {
-    // Notify parent of initial empty state
     if (onPhotosChange) {
-      onPhotosChange([])
+      onPhotosChange(uploadedPhotos.map(photo => photo.url))
     }
-  }, [onPhotosChange])
+  }, [uploadedPhotos, onPhotosChange])
 
   // Handle file upload using Cloudinary
   const handleFileUpload = useCallback(async (files: FileList | File[]) => {
@@ -82,14 +81,7 @@ export function VillaPhotoUploadCloudinary({ userId, villaId, disabled = false, 
           uploadedAt: new Date()
         }
 
-        setUploadedPhotos(prev => {
-          const updated = [newPhoto, ...prev]
-          // Notify parent component of photo URLs
-          if (onPhotosChange) {
-            onPhotosChange(updated.map(photo => photo.url))
-          }
-          return updated
-        })
+        setUploadedPhotos(prev => [newPhoto, ...prev])
         toast.success(`${file.name} uploaded successfully`)
         
         return newPhoto
@@ -117,14 +109,7 @@ export function VillaPhotoUploadCloudinary({ userId, villaId, disabled = false, 
       // Delete from Cloudinary (this will call the API route)
       await deleteFromCloudinary(photo.publicId)
       
-      setUploadedPhotos(prev => {
-        const updated = prev.filter(p => p.id !== photo.id)
-        // Notify parent component of photo URLs
-        if (onPhotosChange) {
-          onPhotosChange(updated.map(photo => photo.url))
-        }
-        return updated
-      })
+      setUploadedPhotos(prev => prev.filter(p => p.id !== photo.id))
       toast.success('Photo deleted successfully')
     } catch (error) {
       console.error('Delete failed:', error)
