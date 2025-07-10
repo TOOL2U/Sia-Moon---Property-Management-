@@ -324,12 +324,20 @@ export default function AdminDashboard() {
               <p className="text-neutral-400 text-sm mb-4">
                 Run comprehensive tests on the Make.com → Firebase booking pipeline
               </p>
-              <Button
-                onClick={() => window.location.href = '/admin/booking-diagnostics'}
-                className="w-full bg-purple-600 hover:bg-purple-700"
-              >
-                Run Diagnostics
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  onClick={() => window.location.href = '/admin/booking-diagnostics'}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  System Diagnostics
+                </Button>
+                <Button
+                  onClick={() => window.location.href = '/admin/booking-data-flow-test'}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Data Flow Tests
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

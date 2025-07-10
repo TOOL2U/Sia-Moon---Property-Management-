@@ -103,7 +103,15 @@ export const db = app ? initializeFirestore(app, {
   ignoreUndefinedProperties: true,
 }) : null
 
-export const storage = app ? getStorage(app) : null
+// Initialize Storage with additional safety checks
+export const storage = (() => {
+  try {
+    return app && typeof window !== 'undefined' ? getStorage(app) : null
+  } catch (error) {
+    console.warn('⚠️ Firebase Storage initialization failed:', error)
+    return null
+  }
+})()
 
 // Initialize Analytics (only in browser and if supported)
 let analytics: Analytics | null = null
