@@ -31,73 +31,7 @@ import {
 import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 
-// Mock data generators for demonstration
-const generateMockReports = (properties: PropertyServiceProperty[]): Report[] => {
-  const reports: Report[] = []
-  const currentDate = new Date()
-
-  // Generate 6 months of mock reports for each property
-  for (let i = 0; i < 6; i++) {
-    const date = subMonths(currentDate, i)
-    const month = date.getMonth() + 1
-    const year = date.getFullYear()
-
-    properties.forEach((property, index) => {
-      const baseIncome = 15000 + (index * 5000) + (Math.random() * 10000)
-      const baseExpenses = baseIncome * (0.3 + Math.random() * 0.2) // 30-50% of income
-
-      reports.push({
-        id: `report-${property.id}-${year}-${month}`,
-        property_id: property.id,
-        month,
-        year,
-        total_income: Math.round(baseIncome),
-        total_expenses: Math.round(baseExpenses),
-        net_income: Math.round(baseIncome - baseExpenses),
-        occupancy_rate: Math.round(60 + Math.random() * 35), // 60-95%
-        total_bookings: Math.round(8 + Math.random() * 12), // 8-20 bookings
-        currency: 'USD',
-        created_at: date.toISOString(),
-        updated_at: date.toISOString()
-      })
-    })
-  }
-
-  return reports
-}
-
-const generateMockBookings = (properties: PropertyServiceProperty[]): Booking[] => {
-  const bookings: Booking[] = []
-  const currentDate = new Date()
-
-  // Generate upcoming bookings for the next 60 days
-  for (let i = 1; i <= 30; i += Math.random() * 7 + 2) {
-    const checkIn = addDays(currentDate, Math.floor(i))
-    const stayLength = Math.floor(Math.random() * 7) + 2 // 2-8 nights
-    const checkOut = addDays(checkIn, stayLength)
-
-    const property = properties[Math.floor(Math.random() * properties.length)]
-    const guestNames = ['John Smith', 'Sarah Johnson', 'Mike Wilson', 'Emma Davis', 'David Brown', 'Lisa Chen', 'Tom Anderson', 'Maria Garcia']
-    const guestName = guestNames[Math.floor(Math.random() * guestNames.length)]
-
-    bookings.push({
-      id: `booking-${Date.now()}-${Math.random()}`,
-      property_id: property.id,
-      guest_name: guestName,
-      guest_email: `${guestName.toLowerCase().replace(' ', '.')}@example.com`,
-      check_in: checkIn.toISOString().split('T')[0],
-      check_out: checkOut.toISOString().split('T')[0],
-      guests: Math.floor(Math.random() * 4) + 1,
-      total_amount: Math.round((property.pricePerNight || 200) * stayLength),
-      currency: 'USD',
-      status: (Math.random() > 0.2 ? 'confirmed' : 'pending') as 'confirmed' | 'pending',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-  }
-
-  return bookings.sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
-}
+// No mock data - all data comes from live sources only
 
 export default function ClientDashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -106,9 +40,6 @@ export default function ClientDashboard() {
   const [properties, setProperties] = useState<PropertyServiceProperty[]>([])
   const [liveBookings, setLiveBookings] = useState<LiveBooking[]>([])
   const [monthlyMetrics, setMonthlyMetrics] = useState<MonthlyMetrics | null>(null)
-  const [bookings, setBookings] = useState<Booking[]>([]) // Legacy mock data
-  const [reports, setReports] = useState<Report[]>([]) // Legacy mock data
-  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState('revenue')
 
@@ -136,9 +67,8 @@ export default function ClientDashboard() {
       if (!user?.id) {
         console.log('⚠️ No user profile available, using empty data')
         setProperties([])
-        setBookings([])
-        setReports([])
-        setTasks([])
+        setLiveBookings([])
+        setMonthlyMetrics(null)
         return
       }
 
@@ -162,37 +92,25 @@ export default function ClientDashboard() {
           console.log('📊 Monthly metrics loaded:', metrics)
           setMonthlyMetrics(metrics)
 
-          // Generate mock data for backward compatibility (until all components are updated)
-          console.log('🎭 Generating mock data for legacy components...')
-          const mockReports = generateMockReports(userProperties)
-          const mockBookings = generateMockBookings(userProperties)
-          setReports(mockReports)
-          setBookings(mockBookings)
-
-          console.log('✅ Dashboard data loaded:', {
+          // No mock data - only use real live data
+          console.log('✅ Dashboard data loaded (live data only):', {
             properties: userProperties.length,
             liveBookings: clientBookings.length,
-            hasMetrics: !!metrics,
-            mockReports: mockReports.length,
-            mockBookings: mockBookings.length
+            hasMetrics: !!metrics
           })
+
+          // No additional setup needed - live data only
         } else {
           console.log('📝 No properties found - user needs to complete onboarding')
           setLiveBookings([])
           setMonthlyMetrics(null)
-          setReports([])
-          setBookings([])
         }
-        setTasks([])
       } catch (serviceError) {
         console.error('❌ Error loading data from services:', serviceError)
         // Fallback to empty data for graceful degradation
         setProperties([])
         setLiveBookings([])
         setMonthlyMetrics(null)
-        setBookings([])
-        setReports([])
-        setTasks([])
       }
 
     } catch (error) {
@@ -213,52 +131,53 @@ export default function ClientDashboard() {
     }
   }, [user?.id, fetchDashboardData])
 
-  // Calculate dashboard metrics
+  // Calculate dashboard metrics - use live data only, no mock data
   const calculateMetrics = () => {
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
+    // Use live bookings if available, otherwise return zeros
+    if (liveBookings && liveBookings.length > 0) {
+      const now = new Date()
 
-    // Current month metrics
-    const currentMonthReports = reports.filter(r =>
-      r.month === currentMonth + 1 && r.year === currentYear
-    )
+      // Calculate from live bookings
+      const approvedBookings = liveBookings.filter(b => b.status === 'approved')
+      const totalIncome = approvedBookings.reduce((sum, b) => sum + (b.revenue || 0), 0)
 
-    const totalIncome = currentMonthReports.reduce((sum, r) => sum + r.total_income, 0)
-    const totalExpenses = currentMonthReports.reduce((sum, r) => sum + r.total_expenses, 0)
-    const netIncome = totalIncome - totalExpenses
-    const avgOccupancy = currentMonthReports.length > 0
-      ? currentMonthReports.reduce((sum, r) => sum + r.occupancy_rate, 0) / currentMonthReports.length
-      : 0
+      // Upcoming bookings (next 30 days)
+      const upcomingBookings = approvedBookings.filter(booking => {
+        const checkIn = new Date(booking.checkInDate)
+        return isAfter(checkIn, now) && isBefore(checkIn, addDays(now, 30))
+      })
 
-    // Upcoming bookings (next 30 days)
-    const upcomingBookings = bookings.filter(booking => {
-      const checkIn = new Date(booking.check_in)
-      return isAfter(checkIn, now) && isBefore(checkIn, addDays(now, 30))
-    })
+      // Active bookings (currently staying)
+      const activeBookings = approvedBookings.filter(booking => {
+        const checkIn = new Date(booking.checkInDate)
+        const checkOut = new Date(booking.checkOutDate)
+        return isBefore(checkIn, now) && isAfter(checkOut, now)
+      })
 
-    // Active bookings (currently staying)
-    const activeBookings = bookings.filter(booking => {
-      const checkIn = new Date(booking.check_in)
-      const checkOut = new Date(booking.check_out)
-      return isBefore(checkIn, now) && isAfter(checkOut, now)
-    })
+      return {
+        totalIncome,
+        totalExpenses: 0, // Will be calculated from live data later
+        netIncome: totalIncome,
+        avgOccupancy: 0, // Will be calculated from live data later
+        upcomingBookings,
+        activeBookings,
+        pendingTasks: [], // No tasks yet
+        totalProperties: properties.length,
+        totalBookings: liveBookings.length
+      }
+    }
 
-    // Pending maintenance tasks
-    const pendingTasks = tasks.filter(task =>
-      task.status === 'pending' && task.task_type === 'maintenance'
-    )
-
+    // No live data - return clean empty state
     return {
-      totalIncome,
-      totalExpenses,
-      netIncome,
-      avgOccupancy,
-      upcomingBookings,
-      activeBookings,
-      pendingTasks,
+      totalIncome: 0,
+      totalExpenses: 0,
+      netIncome: 0,
+      avgOccupancy: 0,
+      upcomingBookings: [],
+      activeBookings: [],
+      pendingTasks: [],
       totalProperties: properties.length,
-      totalBookings: bookings.length
+      totalBookings: 0
     }
   }
 
@@ -282,137 +201,53 @@ export default function ClientDashboard() {
       }
     }
 
-    // Fallback to mock data calculation
-    console.log('📊 Using mock data for summary cards (no live metrics available)')
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
-    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
-
-    // Current month data
-    const currentMonthReports = reports.filter(r =>
-      r.month === currentMonth + 1 && r.year === currentYear
-    )
-    const currentIncome = currentMonthReports.reduce((sum, r) => sum + r.total_income, 0)
-    const currentExpenses = currentMonthReports.reduce((sum, r) => sum + r.total_expenses, 0)
-    const currentProfit = currentIncome - currentExpenses
-    const currentOccupancy = currentMonthReports.length > 0
-      ? currentMonthReports.reduce((sum, r) => sum + r.occupancy_rate, 0) / currentMonthReports.length
-      : 0
-
-    // Last month data for comparison
-    const lastMonthReports = reports.filter(r =>
-      r.month === lastMonth + 1 && r.year === lastMonthYear
-    )
-    const lastIncome = lastMonthReports.reduce((sum, r) => sum + r.total_income, 0)
-    const lastExpenses = lastMonthReports.reduce((sum, r) => sum + r.total_expenses, 0)
-    const lastProfit = lastIncome - lastExpenses
-    const lastOccupancy = lastMonthReports.length > 0
-      ? lastMonthReports.reduce((sum, r) => sum + r.occupancy_rate, 0) / lastMonthReports.length
-      : 0
-
-    // Calculate percentage changes
-    const incomeChange = lastIncome > 0 ? ((currentIncome - lastIncome) / lastIncome) * 100 : 0
-    const expensesChange = lastExpenses > 0 ? ((currentExpenses - lastExpenses) / lastExpenses) * 100 : 0
-    const profitChange = lastProfit !== 0 ? ((currentProfit - lastProfit) / Math.abs(lastProfit)) * 100 : 0
-    const occupancyChange = lastOccupancy > 0 ? ((currentOccupancy - lastOccupancy) / lastOccupancy) * 100 : 0
-
-    // Upcoming bookings count
-    const upcomingBookingsCount = bookings.filter(booking => {
-      const checkIn = new Date(booking.check_in)
-      return isAfter(checkIn, now) && isBefore(checkIn, addDays(now, 30))
-    }).length
-
-    // Last month's upcoming bookings for comparison
-    const lastMonthDate = subMonths(now, 1)
-    const lastMonthUpcomingCount = bookings.filter(booking => {
-      const checkIn = new Date(booking.check_in)
-      return isAfter(checkIn, lastMonthDate) && isBefore(checkIn, addDays(lastMonthDate, 30))
-    }).length
-
-    const bookingsChange = lastMonthUpcomingCount > 0
-      ? ((upcomingBookingsCount - lastMonthUpcomingCount) / lastMonthUpcomingCount) * 100
-      : 0
+    // No live metrics available - return zeros for clean new account
+    console.log('📊 No live metrics available - showing clean dashboard for new account')
 
     return {
-      totalIncomeThisMonth: currentIncome,
-      totalExpensesThisMonth: currentExpenses,
-      netProfitThisMonth: currentProfit,
-      occupancyRateThisMonth: currentOccupancy,
-      upcomingBookingsCount,
-      incomeChange,
-      expensesChange,
-      profitChange,
-      occupancyChange,
-      bookingsChange,
+      totalIncomeThisMonth: 0,
+      totalExpensesThisMonth: 0,
+      netProfitThisMonth: 0,
+      occupancyRateThisMonth: 0,
+      upcomingBookingsCount: 0,
+      incomeChange: 0,
+      expensesChange: 0,
+      profitChange: 0,
+      occupancyChange: 0,
+      bookingsChange: 0,
       currency: 'USD'
     }
   }
 
-  // Prepare chart data
+  // Prepare chart data - use live data only, no mock data
   const prepareChartData = () => {
     const last6Months = []
     const now = new Date()
 
+    // Generate empty chart data for clean new accounts
     for (let i = 5; i >= 0; i--) {
       const date = subMonths(now, i)
-      const month = date.getMonth() + 1
-      const year = date.getFullYear()
-
-      const monthReports = reports.filter(r => r.month === month && r.year === year)
-      const income = monthReports.reduce((sum, r) => sum + r.total_income, 0)
-      const expenses = monthReports.reduce((sum, r) => sum + r.total_expenses, 0)
-
       last6Months.push({
         month: format(date, 'MMM yyyy'),
-        income,
-        expenses,
-        net: income - expenses
+        income: 0,
+        expenses: 0,
+        net: 0
       })
     }
 
     return last6Months
   }
 
-  // Prepare upcoming bookings data
+  // Prepare upcoming bookings data - use live data only, no mock data
   const prepareUpcomingBookings = () => {
-    const now = new Date()
-    const upcomingBookings = bookings
-      .filter(booking => {
-        const checkIn = new Date(booking.check_in)
-        return isAfter(checkIn, now) && booking.status !== 'cancelled'
-      })
-      .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
-      .slice(0, 10)
-      .map(booking => {
-        const property = properties.find(p => p.id === booking.property_id)
-        return {
-          ...booking,
-          property_name: property?.name || 'Unknown Property'
-        }
-      })
-
-    return upcomingBookings
+    // Return empty array for clean new accounts
+    return []
   }
 
-  // Prepare active maintenance tasks
+  // Prepare active maintenance tasks - use live data only, no mock data
   const prepareMaintenanceTasks = () => {
-    const activeTasks = tasks
-      .filter(task =>
-        task.status === 'pending' || task.status === 'in_progress'
-      )
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 8)
-      .map(task => {
-        const property = properties.find(p => p.id === task.property_id)
-        return {
-          ...task,
-          property_name: property?.name || 'Unknown Property'
-        }
-      })
-
-    return activeTasks
+    // Return empty array for clean new accounts
+    return []
   }
 
   const metrics = calculateMetrics()
@@ -738,49 +573,17 @@ export default function ClientDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          {upcomingBookings.map((booking, index) => (
-                            <tr key={booking.id} className={`border-b border-neutral-800 ${index === upcomingBookings.length - 1 ? 'border-b-0' : ''}`}>
-                              <td className="p-4">
-                                <div className="flex items-center gap-2">
-                                  <User className="w-4 h-4 text-primary-400" />
-                                  <span className="text-white font-medium">{booking.guest_name}</span>
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <Calendar className="w-12 h-12 text-neutral-600" />
+                                <div>
+                                  <p className="text-neutral-400 font-medium">No bookings yet</p>
+                                  <p className="text-neutral-500 text-sm">Bookings will appear here once your Make.com automation processes them</p>
                                 </div>
-                              </td>
-                              <td className="p-4">
-                                <div className="flex items-center gap-2">
-                                  <Home className="w-4 h-4 text-neutral-400" />
-                                  <span className="text-neutral-300">{booking.property_name}</span>
-                                </div>
-                              </td>
-                              <td className="p-4">
-                                <span className="text-neutral-300">
-                                  {format(new Date(booking.check_in), 'MMM dd, yyyy')}
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <span className="text-neutral-300">
-                                  {format(new Date(booking.check_out), 'MMM dd, yyyy')}
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <span className="text-neutral-400 text-sm">
-                                  {booking.source || 'Direct'}
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <Badge
-                                  variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
-                                  className={`${
-                                    booking.status === 'confirmed'
-                                      ? 'bg-green-900 text-green-300 border-green-800'
-                                      : 'bg-yellow-900 text-yellow-300 border-yellow-800'
-                                  }`}
-                                >
-                                  {booking.status}
-                                </Badge>
-                              </td>
-                            </tr>
-                          ))}
+                              </div>
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
@@ -790,53 +593,17 @@ export default function ClientDashboard() {
 
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
-                {upcomingBookings.map((booking) => (
-                  <Card key={booking.id} className="bg-neutral-900 border-neutral-800">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <User className="w-4 h-4 text-primary-400" />
-                            <span className="text-white font-medium">{booking.guest_name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Home className="w-4 h-4 text-neutral-400" />
-                            <span className="text-neutral-300 text-sm">{booking.property_name}</span>
-                          </div>
-                        </div>
-                        <Badge
-                          variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
-                          className={`${
-                            booking.status === 'confirmed'
-                              ? 'bg-green-900 text-green-300 border-green-800'
-                              : 'bg-yellow-900 text-yellow-300 border-yellow-800'
-                          }`}
-                        >
-                          {booking.status}
-                        </Badge>
+                <Card className="bg-neutral-900 border-neutral-800">
+                  <CardContent className="p-8 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Calendar className="w-12 h-12 text-neutral-600" />
+                      <div>
+                        <p className="text-neutral-400 font-medium">No bookings yet</p>
+                        <p className="text-neutral-500 text-sm">Bookings will appear here once your Make.com automation processes them</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <span className="text-neutral-500">Check-in:</span>
-                          <div className="text-neutral-300">
-                            {format(new Date(booking.check_in), 'MMM dd, yyyy')}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Check-out:</span>
-                          <div className="text-neutral-300">
-                            {format(new Date(booking.check_out), 'MMM dd, yyyy')}
-                          </div>
-                        </div>
-                      </div>
-                      {booking.source && (
-                        <div className="mt-2 text-xs text-neutral-400">
-                          Source: {booking.source}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
@@ -854,77 +621,17 @@ export default function ClientDashboard() {
             </span>
           </div>
 
-          {maintenanceTasks.length === 0 ? (
-            <Card className="bg-neutral-900 border-neutral-800">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle2 className="w-8 h-8 text-green-400" />
-                </div>
-                <p className="text-neutral-400">No active maintenance issues</p>
-                <p className="text-sm text-neutral-500 mt-1">
-                  All maintenance tasks are up to date
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {maintenanceTasks.map((task) => (
-                <Card key={task.id} className="bg-neutral-900 border-neutral-800 hover:border-neutral-700 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-white font-medium mb-1 line-clamp-2">
-                          {task.title || task.description}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-neutral-400 mb-2">
-                          <Home className="w-4 h-4 text-neutral-400" />
-                          <span>{task.property_name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-neutral-500">
-                          <Clock className="w-4 h-4 text-neutral-500" />
-                          <span>Reported {format(new Date(task.created_at), 'MMM dd, yyyy')}</span>
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        {task.status === 'pending' ? (
-                          <div className="flex items-center gap-1">
-                            <div className="w-6 h-6 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded flex items-center justify-center">
-                              <AlertCircle className="w-3 h-3 text-red-400" />
-                            </div>
-                            <Badge variant="secondary" className="bg-red-900 text-red-300 border-red-800">
-                              Pending
-                            </Badge>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <div className="w-6 h-6 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 rounded flex items-center justify-center">
-                              <Clock className="w-3 h-3 text-yellow-400" />
-                            </div>
-                            <Badge variant="secondary" className="bg-yellow-900 text-yellow-300 border-yellow-800">
-                              In Progress
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {task.priority && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-neutral-500">
-                          Priority: {task.priority}
-                        </span>
-                        {task.assigned_to && (
-                          <span className="text-xs text-neutral-500">
-                            Assigned to staff
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-8 h-8 text-green-400" />
+              </div>
+              <p className="text-neutral-400">No active maintenance issues</p>
+              <p className="text-sm text-neutral-500 mt-1">
+                All maintenance tasks are up to date
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
 
