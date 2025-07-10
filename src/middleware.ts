@@ -2,7 +2,25 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { isDevelopmentBypass, isDevelopmentSessionBypass } from '@/lib/env'
 
 export async function middleware(request: NextRequest) {
-  console.log('🔍 MIDDLEWARE: Processing request for:', request.nextUrl.pathname)
+  const pathname = request.nextUrl.pathname
+  console.log('🔍 MIDDLEWARE: Processing request for:', pathname)
+
+  // Early return for booking webhook - highest priority
+  if (pathname === '/api/booking-test' || pathname.startsWith('/api/booking-test/')) {
+    console.log('🔓 MIDDLEWARE: Booking webhook detected, allowing access immediately')
+    return NextResponse.next()
+  }
+
+  // Early return for other API test endpoints
+  if (pathname.startsWith('/api/test-') || pathname.startsWith('/api/onboarding-webhook')) {
+    console.log('🔓 MIDDLEWARE: Test API endpoint detected, allowing access')
+    return NextResponse.next()
+  }
+
+  // Early return for Next.js internal routes
+  if (pathname.startsWith('/_next/') || pathname.includes('.') || pathname.startsWith('/favicon')) {
+    return NextResponse.next()
+  }
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -17,25 +35,16 @@ export async function middleware(request: NextRequest) {
     '/test-webhook',
     '/test-signup-webhook',
     '/test-signup-webhook-new',
-    '/api/booking-test',  // Webhook endpoint for Make.com integration
-    '/test-booking-trigger',  // Test interface for webhook testing
-    '/api/booking-test/'  // Webhook endpoint with trailing slash
+    '/test-booking-trigger'
   ]
 
   // Check if current path is public
-  const isPublicRoute = publicRoutes.some(route =>
-    request.nextUrl.pathname === route ||
-    request.nextUrl.pathname.startsWith('/api/test-') ||
-    request.nextUrl.pathname.startsWith('/api/booking-test') ||
-    request.nextUrl.pathname.startsWith('/_next/') ||
-    request.nextUrl.pathname.includes('.') ||
-    request.nextUrl.pathname.startsWith('/favicon')
-  )
+  const isPublicRoute = publicRoutes.some(route => pathname === route)
 
-  console.log('🔍 MIDDLEWARE: isPublicRoute:', isPublicRoute, 'for path:', request.nextUrl.pathname)
+  console.log('🔍 MIDDLEWARE: isPublicRoute:', isPublicRoute, 'for path:', pathname)
 
   if (isPublicRoute) {
-    console.log('🔍 MIDDLEWARE: Public route, allowing access')
+    console.log('🔓 MIDDLEWARE: Public route, allowing access')
     return NextResponse.next()
   }
 
