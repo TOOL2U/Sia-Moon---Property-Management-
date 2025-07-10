@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
-import { getFirestore, collection, addDoc, Timestamp, Firestore } from 'firebase/firestore'
+import { initializeApp, getApps } from 'firebase/app'
+import { getFirestore, collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore'
 
 // Firebase configuration
 const firebaseConfig = {
@@ -34,6 +34,104 @@ try {
 }
 
 /**
+ * Match incoming booking data with existing client profiles
+ */
+async function matchClientProfile(villaName: string, propertyName?: string): Promise<PropertyMatch | null> {
+  if (!db) return null
+
+  try {
+    console.log('🔍 Matching client profile for villa:', villaName, 'or property:', propertyName)
+
+    // Get all client profiles
+    const profilesSnapshot = await getDocs(collection(db, 'profiles'))
+    const profiles: ClientProfile[] = []
+
+    profilesSnapshot.forEach(doc => {
+      profiles.push({ id: doc.id, ...doc.data() } as ClientProfile)
+    })
+
+    console.log(`📋 Found ${profiles.length} client profiles to check`)
+
+    // Try to match by property name
+    const searchTerms = [villaName, propertyName].filter(Boolean).map(term =>
+      term?.toLowerCase().trim()
+    )
+
+    for (const profile of profiles) {
+      if (profile.properties && Array.isArray(profile.properties)) {
+        for (const property of profile.properties) {
+          const propertyNameLower = property.name?.toLowerCase().trim()
+
+          for (const searchTerm of searchTerms) {
+            if (searchTerm && propertyNameLower) {
+              // Exact match
+              if (propertyNameLower === searchTerm) {
+                console.log('✅ Exact match found:', property.name, 'for client:', profile.id)
+                return {
+                  clientId: profile.id,
+                  propertyId: property.id || property.name,
+                  propertyName: property.name,
+                  confidence: 1.0
+                }
+              }
+
+              // Partial match (contains)
+              if (propertyNameLower.includes(searchTerm) || searchTerm.includes(propertyNameLower)) {
+                console.log('🔍 Partial match found:', property.name, 'for client:', profile.id)
+                return {
+                  clientId: profile.id,
+                  propertyId: property.id || property.name,
+                  propertyName: property.name,
+                  confidence: 0.8
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log('❌ No matching client profile found for:', villaName)
+    return null
+
+  } catch (error) {
+    console.error('❌ Error matching client profile:', error)
+    return null
+  }
+}
+
+/**
+ * Parse price string to number (handles various formats)
+ */
+function parsePrice(price: string | number): number {
+  if (typeof price === 'number') return price
+  if (!price) return 0
+
+  // Remove currency symbols and spaces, convert to number
+  const cleanPrice = price.toString()
+    .replace(/[^\d.,]/g, '') // Remove non-numeric except . and ,
+    .replace(/,/g, '.') // Convert comma to dot for decimal
+
+  return parseFloat(cleanPrice) || 0
+}
+
+/**
+ * Normalize date format to YYYY-MM-DD
+ */
+function normalizeDate(dateStr: string): string {
+  if (!dateStr) return ''
+
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr // Return original if invalid
+
+    return date.toISOString().split('T')[0] // YYYY-MM-DD format
+  } catch {
+    return dateStr // Return original if parsing fails
+  }
+}
+
+/**
  * Test Webhook Endpoint for Booking.com Email Data
  * 
  * This endpoint receives parsed booking.com email data from Make.com
@@ -47,6 +145,7 @@ try {
  */
 
 interface BookingTestPayload {
+  // Original fields
   guestName?: string
   guestEmail?: string
   checkIn?: string
@@ -61,7 +160,28 @@ interface BookingTestPayload {
   bookingSource?: string
   rawEmailData?: any
   parsedAt?: string
+
+  // Make.com ChatGPT parsed fields
+  villaName?: string
+  checkInDate?: string
+  checkOutDate?: string
+  price?: string | number
+
   [key: string]: any // Allow additional fields from Make.com
+}
+
+interface ClientProfile {
+  id: string
+  email: string
+  businessName?: string
+  properties?: any[]
+}
+
+interface PropertyMatch {
+  clientId: string
+  propertyId: string
+  propertyName: string
+  confidence: number
 }
 
 export async function POST(request: NextRequest) {
@@ -94,20 +214,33 @@ export async function POST(request: NextRequest) {
     console.log('   Raw payload:', JSON.stringify(payload, null, 2))
     console.log('   Payload size:', JSON.stringify(payload).length, 'bytes')
     
-    // Extract and log key booking information
+    // Extract and normalize booking information from both formats
+    const villaName = payload.villaName || payload.property
+    const guestName = payload.guestName
+    const checkInDate = normalizeDate(payload.checkInDate || payload.checkIn || '')
+    const checkOutDate = normalizeDate(payload.checkOutDate || payload.checkOut || '')
+    const price = parsePrice(payload.price || payload.totalAmount || 0)
+    const specialRequests = payload.specialRequests
+
     const bookingInfo = {
-      guestName: payload.guestName,
+      // Normalized fields
+      villaName,
+      guestName,
+      checkInDate,
+      checkOutDate,
+      price,
+      specialRequests,
+
+      // Original fields for backward compatibility
       guestEmail: payload.guestEmail,
-      checkIn: payload.checkIn,
-      checkOut: payload.checkOut,
-      property: payload.property,
+      property: villaName,
       propertyId: payload.propertyId,
       bookingReference: payload.bookingReference,
-      totalAmount: payload.totalAmount,
-      currency: payload.currency,
+      totalAmount: price,
+      currency: payload.currency || 'USD',
       guests: payload.guests,
       bookingSource: payload.bookingSource || 'booking.com',
-      parsedAt: payload.parsedAt
+      parsedAt: payload.parsedAt || new Date().toISOString()
     }
     
     console.log('📋 Extracted Booking Information:')
@@ -117,16 +250,36 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Validate required fields (basic validation for testing)
-    const requiredFields = ['guestName', 'checkIn', 'checkOut']
-    const missingFields = requiredFields.filter(field => !payload[field])
-    
+    // Validate required fields for live bookings
+    const missingFields = []
+
+    if (!guestName) missingFields.push('guestName')
+    if (!villaName) missingFields.push('villaName')
+    if (!checkInDate) missingFields.push('checkInDate')
+    if (!checkOutDate) missingFields.push('checkOutDate')
+
     if (missingFields.length > 0) {
-      console.log('⚠️ Missing required fields:', missingFields)
+      console.log('⚠️ Missing required fields for live booking:', missingFields)
     }
 
-    // Optional: Store test payload in Firebase for inspection
+    // Attempt to match with client profile
+    console.log('🔍 Attempting to match client profile...')
+    const clientMatch = villaName ? await matchClientProfile(villaName, payload.property) : null
+
+    if (clientMatch) {
+      console.log('✅ Client matched:', {
+        clientId: clientMatch.clientId,
+        propertyName: clientMatch.propertyName,
+        confidence: clientMatch.confidence
+      })
+    } else {
+      console.log('❌ No client match found for villa:', villaName)
+    }
+
+    // Store both test logs and live bookings
     let storedDocId: string | null = null
+    let liveBookingId: string | null = null
+
     try {
       console.log('🔍 Firebase db status:', db ? 'Available' : 'Not available')
 
@@ -155,11 +308,12 @@ export async function POST(request: NextRequest) {
       }
 
       if (db) {
-        console.log('💾 Attempting to store test payload in Firebase...')
-
+        // 1. Store test log for debugging
+        console.log('💾 Storing test log in Firebase...')
         const testPayloadDoc = {
           payload,
           extractedInfo: bookingInfo,
+          clientMatch,
           receivedAt: Timestamp.now(),
           processingTimeMs: Date.now() - startTime,
           payloadSize: JSON.stringify(payload).length,
@@ -168,16 +322,64 @@ export async function POST(request: NextRequest) {
           type: 'booking-test'
         }
 
-        console.log('📄 Document to store:', JSON.stringify(testPayloadDoc, null, 2))
+        const testDocRef = await addDoc(collection(db, 'booking_test_logs'), testPayloadDoc)
+        storedDocId = testDocRef.id
+        console.log('✅ Test log stored:', storedDocId)
 
-        const docRef = await addDoc(collection(db, 'booking_test_logs'), testPayloadDoc)
-        storedDocId = docRef.id
-        console.log('✅ Test payload stored in Firebase successfully:', storedDocId)
+        // 2. Store live booking if we have required data
+        if (villaName && guestName && checkInDate && checkOutDate) {
+          console.log('💾 Storing live booking in Firebase...')
+
+          const liveBookingDoc = {
+            // Core booking data
+            villaName,
+            guestName,
+            checkInDate,
+            checkOutDate,
+            price,
+            specialRequests: specialRequests || null,
+
+            // Client matching
+            clientId: clientMatch?.clientId || null,
+            propertyId: clientMatch?.propertyId || null,
+            matchConfidence: clientMatch?.confidence || 0,
+
+            // Metadata
+            bookingSource: 'booking.com',
+            status: 'pending_approval',
+            receivedAt: Timestamp.now(),
+            processedAt: Timestamp.now(),
+
+            // Original payload for reference
+            originalPayload: payload,
+
+            // Financial data
+            revenue: price,
+            currency: payload.currency || 'USD',
+
+            // Additional fields
+            guestEmail: payload.guestEmail || null,
+            bookingReference: payload.bookingReference || null,
+            guests: payload.guests || null
+          }
+
+          const liveDocRef = await addDoc(collection(db, 'live_bookings'), liveBookingDoc)
+          liveBookingId = liveDocRef.id
+          console.log('✅ Live booking stored:', liveBookingId)
+
+          if (clientMatch) {
+            console.log('🎯 Booking linked to client:', clientMatch.clientId)
+          } else {
+            console.log('⚠️ Booking stored without client match - requires manual assignment')
+          }
+        } else {
+          console.log('⚠️ Insufficient data for live booking - storing test log only')
+        }
       } else {
         console.warn('⚠️ Firebase db is still not available after reinitialization attempt')
       }
     } catch (storageError) {
-      console.error('❌ Failed to store test payload in Firebase:', storageError)
+      console.error('❌ Failed to store booking data in Firebase:', storageError)
       console.error('   Error details:', storageError instanceof Error ? storageError.message : 'Unknown error')
       console.error('   Error stack:', storageError instanceof Error ? storageError.stack : 'No stack trace')
       // Don't fail the request if storage fails
@@ -198,8 +400,22 @@ export async function POST(request: NextRequest) {
         payloadSize: JSON.stringify(payload).length,
         missingFields: missingFields.length > 0 ? missingFields : undefined,
         extractedInfo: bookingInfo,
+
+        // Storage information
         storedInFirebase: storedDocId ? true : false,
-        firebaseDocId: storedDocId
+        firebaseDocId: storedDocId,
+        liveBookingCreated: liveBookingId ? true : false,
+        liveBookingId: liveBookingId,
+
+        // Client matching information
+        clientMatch: clientMatch ? {
+          clientId: clientMatch.clientId,
+          propertyName: clientMatch.propertyName,
+          confidence: clientMatch.confidence
+        } : null,
+
+        // Booking status
+        bookingStatus: liveBookingId ? 'pending_approval' : 'test_only'
       }
     }
 
