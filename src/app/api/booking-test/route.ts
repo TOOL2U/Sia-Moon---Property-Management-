@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase'
-import { collection, addDoc, Timestamp } from 'firebase/firestore'
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
+import { getFirestore, collection, addDoc, Timestamp, Firestore } from 'firebase/firestore'
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+}
+
+// Initialize Firebase for this API route
+let app: any = null
+let db: any = null
+
+try {
+  console.log('🔥 Initializing Firebase in API route...')
+  console.log('📋 Firebase config check:', {
+    apiKey: firebaseConfig.apiKey ? 'Present' : 'Missing',
+    projectId: firebaseConfig.projectId ? 'Present' : 'Missing',
+    authDomain: firebaseConfig.authDomain ? 'Present' : 'Missing'
+  })
+
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+  db = getFirestore(app)
+  console.log('✅ Firebase initialized successfully in API route')
+} catch (error) {
+  console.error('❌ Firebase initialization failed in API route:', error)
+  db = null
+}
 
 /**
  * Test Webhook Endpoint for Booking.com Email Data
@@ -97,7 +128,35 @@ export async function POST(request: NextRequest) {
     // Optional: Store test payload in Firebase for inspection
     let storedDocId: string | null = null
     try {
+      console.log('🔍 Firebase db status:', db ? 'Available' : 'Not available')
+
+      if (!db) {
+        console.warn('⚠️ Firebase db is not available - attempting to reinitialize...')
+        try {
+          // Try to reinitialize Firebase
+          const { initializeApp, getApps } = require('firebase/app')
+          const { getFirestore } = require('firebase/firestore')
+
+          const config = {
+            apiKey: "AIzaSyCDaTQsNpWw0y-g6VeXDYG57eCNtfloxxw",
+            authDomain: "operty-b54dc.firebaseapp.com",
+            projectId: "operty-b54dc",
+            storageBucket: "operty-b54dc.firebasestorage.app",
+            messagingSenderId: "914547669275",
+            appId: "1:914547669275:web:0897d32d59b17134a53bbe"
+          }
+
+          const tempApp = getApps().length === 0 ? initializeApp(config) : getApps()[0]
+          db = getFirestore(tempApp)
+          console.log('✅ Firebase reinitialized successfully')
+        } catch (reinitError) {
+          console.error('❌ Firebase reinitialization failed:', reinitError)
+        }
+      }
+
       if (db) {
+        console.log('💾 Attempting to store test payload in Firebase...')
+
         const testPayloadDoc = {
           payload,
           extractedInfo: bookingInfo,
@@ -109,12 +168,18 @@ export async function POST(request: NextRequest) {
           type: 'booking-test'
         }
 
+        console.log('📄 Document to store:', JSON.stringify(testPayloadDoc, null, 2))
+
         const docRef = await addDoc(collection(db, 'booking_test_logs'), testPayloadDoc)
         storedDocId = docRef.id
-        console.log('💾 Test payload stored in Firebase:', storedDocId)
+        console.log('✅ Test payload stored in Firebase successfully:', storedDocId)
+      } else {
+        console.warn('⚠️ Firebase db is still not available after reinitialization attempt')
       }
     } catch (storageError) {
-      console.warn('⚠️ Failed to store test payload in Firebase:', storageError)
+      console.error('❌ Failed to store test payload in Firebase:', storageError)
+      console.error('   Error details:', storageError instanceof Error ? storageError.message : 'Unknown error')
+      console.error('   Error stack:', storageError instanceof Error ? storageError.stack : 'No stack trace')
       // Don't fail the request if storage fails
     }
 
