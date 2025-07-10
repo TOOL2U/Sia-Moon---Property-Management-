@@ -345,10 +345,18 @@ export async function POST(request: NextRequest) {
             matchConfidence: clientMatch?.confidence || 0,
 
             // Metadata
-            bookingSource: 'booking.com',
+            bookingSource: 'guest_booking', // All HTTP module bookings are guest bookings
+            bookingType: 'guest_booking',
             status: 'pending_approval',
             receivedAt: Timestamp.now(),
             processedAt: Timestamp.now(),
+
+            // Source tracking
+            sourceDetails: {
+              platform: 'booking.com',
+              method: 'make_com_http',
+              automation: true
+            },
 
             // Original payload for reference
             originalPayload: payload,

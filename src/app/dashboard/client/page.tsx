@@ -40,6 +40,9 @@ export default function ClientDashboard() {
   const [properties, setProperties] = useState<PropertyServiceProperty[]>([])
   const [liveBookings, setLiveBookings] = useState<LiveBooking[]>([])
   const [monthlyMetrics, setMonthlyMetrics] = useState<MonthlyMetrics | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>([]) // Legacy mock data
+  const [reports, setReports] = useState<Report[]>([]) // Legacy mock data
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState('revenue')
 
@@ -67,8 +70,9 @@ export default function ClientDashboard() {
       if (!user?.id) {
         console.log('⚠️ No user profile available, using empty data')
         setProperties([])
-        setLiveBookings([])
-        setMonthlyMetrics(null)
+        setBookings([])
+        setReports([])
+        setTasks([])
         return
       }
 
@@ -99,18 +103,26 @@ export default function ClientDashboard() {
             hasMetrics: !!metrics
           })
 
-          // No additional setup needed - live data only
+          // Set empty arrays for legacy components - no mock data
+          setReports([])
+          setBookings([])
         } else {
           console.log('📝 No properties found - user needs to complete onboarding')
           setLiveBookings([])
           setMonthlyMetrics(null)
+          setReports([])
+          setBookings([])
         }
+        setTasks([])
       } catch (serviceError) {
         console.error('❌ Error loading data from services:', serviceError)
         // Fallback to empty data for graceful degradation
         setProperties([])
         setLiveBookings([])
         setMonthlyMetrics(null)
+        setBookings([])
+        setReports([])
+        setTasks([])
       }
 
     } catch (error) {
@@ -238,16 +250,44 @@ export default function ClientDashboard() {
     return last6Months
   }
 
-  // Prepare upcoming bookings data - use live data only, no mock data
+  // Prepare upcoming bookings data
   const prepareUpcomingBookings = () => {
-    // Return empty array for clean new accounts
-    return []
+    const now = new Date()
+    const upcomingBookings = bookings
+      .filter(booking => {
+        const checkIn = new Date(booking.check_in)
+        return isAfter(checkIn, now) && booking.status !== 'cancelled'
+      })
+      .sort((a, b) => new Date(a.check_in).getTime() - new Date(b.check_in).getTime())
+      .slice(0, 10)
+      .map(booking => {
+        const property = properties.find(p => p.id === booking.property_id)
+        return {
+          ...booking,
+          property_name: property?.name || 'Unknown Property'
+        }
+      })
+
+    return upcomingBookings
   }
 
-  // Prepare active maintenance tasks - use live data only, no mock data
+  // Prepare active maintenance tasks
   const prepareMaintenanceTasks = () => {
-    // Return empty array for clean new accounts
-    return []
+    const activeTasks = tasks
+      .filter(task =>
+        task.status === 'pending' || task.status === 'in_progress'
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 8)
+      .map(task => {
+        const property = properties.find(p => p.id === task.property_id)
+        return {
+          ...task,
+          property_name: property?.name || 'Unknown Property'
+        }
+      })
+
+    return activeTasks
   }
 
   const metrics = calculateMetrics()
@@ -573,17 +613,49 @@ export default function ClientDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td colSpan={6} className="p-8 text-center">
-                              <div className="flex flex-col items-center gap-3">
-                                <Calendar className="w-12 h-12 text-neutral-600" />
-                                <div>
-                                  <p className="text-neutral-400 font-medium">No bookings yet</p>
-                                  <p className="text-neutral-500 text-sm">Bookings will appear here once your Make.com automation processes them</p>
+                          {upcomingBookings.map((booking, index) => (
+                            <tr key={booking.id} className={`border-b border-neutral-800 ${index === upcomingBookings.length - 1 ? 'border-b-0' : ''}`}>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4 text-primary-400" />
+                                  <span className="text-white font-medium">{booking.guest_name}</span>
                                 </div>
-                              </div>
-                            </td>
-                          </tr>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <Home className="w-4 h-4 text-neutral-400" />
+                                  <span className="text-neutral-300">{booking.property_name}</span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-neutral-300">
+                                  {format(new Date(booking.check_in), 'MMM dd, yyyy')}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-neutral-300">
+                                  {format(new Date(booking.check_out), 'MMM dd, yyyy')}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-neutral-400 text-sm">
+                                  {booking.source || 'Direct'}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <Badge
+                                  variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
+                                  className={`${
+                                    booking.status === 'confirmed'
+                                      ? 'bg-green-900 text-green-300 border-green-800'
+                                      : 'bg-yellow-900 text-yellow-300 border-yellow-800'
+                                  }`}
+                                >
+                                  {booking.status}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -593,17 +665,53 @@ export default function ClientDashboard() {
 
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
-                <Card className="bg-neutral-900 border-neutral-800">
-                  <CardContent className="p-8 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Calendar className="w-12 h-12 text-neutral-600" />
-                      <div>
-                        <p className="text-neutral-400 font-medium">No bookings yet</p>
-                        <p className="text-neutral-500 text-sm">Bookings will appear here once your Make.com automation processes them</p>
+                {upcomingBookings.map((booking) => (
+                  <Card key={booking.id} className="bg-neutral-900 border-neutral-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <User className="w-4 h-4 text-primary-400" />
+                            <span className="text-white font-medium">{booking.guest_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Home className="w-4 h-4 text-neutral-400" />
+                            <span className="text-neutral-300 text-sm">{booking.property_name}</span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
+                          className={`${
+                            booking.status === 'confirmed'
+                              ? 'bg-green-900 text-green-300 border-green-800'
+                              : 'bg-yellow-900 text-yellow-300 border-yellow-800'
+                          }`}
+                        >
+                          {booking.status}
+                        </Badge>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-neutral-500">Check-in:</span>
+                          <div className="text-neutral-300">
+                            {format(new Date(booking.check_in), 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-neutral-500">Check-out:</span>
+                          <div className="text-neutral-300">
+                            {format(new Date(booking.check_out), 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                      </div>
+                      {booking.source && (
+                        <div className="mt-2 text-xs text-neutral-400">
+                          Source: {booking.source}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
@@ -621,17 +729,77 @@ export default function ClientDashboard() {
             </span>
           </div>
 
-          <Card className="bg-neutral-900 border-neutral-800">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <CheckCircle2 className="w-8 h-8 text-green-400" />
-              </div>
-              <p className="text-neutral-400">No active maintenance issues</p>
-              <p className="text-sm text-neutral-500 mt-1">
-                All maintenance tasks are up to date
-              </p>
-            </CardContent>
-          </Card>
+          {maintenanceTasks.length === 0 ? (
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle2 className="w-8 h-8 text-green-400" />
+                </div>
+                <p className="text-neutral-400">No active maintenance issues</p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  All maintenance tasks are up to date
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {maintenanceTasks.map((task) => (
+                <Card key={task.id} className="bg-neutral-900 border-neutral-800 hover:border-neutral-700 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-white font-medium mb-1 line-clamp-2">
+                          {task.title || task.description}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-neutral-400 mb-2">
+                          <Home className="w-4 h-4 text-neutral-400" />
+                          <span>{task.property_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-neutral-500">
+                          <Clock className="w-4 h-4 text-neutral-500" />
+                          <span>Reported {format(new Date(task.created_at), 'MMM dd, yyyy')}</span>
+                        </div>
+                      </div>
+                      <div className="ml-3">
+                        {task.status === 'pending' ? (
+                          <div className="flex items-center gap-1">
+                            <div className="w-6 h-6 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded flex items-center justify-center">
+                              <AlertCircle className="w-3 h-3 text-red-400" />
+                            </div>
+                            <Badge variant="secondary" className="bg-red-900 text-red-300 border-red-800">
+                              Pending
+                            </Badge>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <div className="w-6 h-6 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 rounded flex items-center justify-center">
+                              <Clock className="w-3 h-3 text-yellow-400" />
+                            </div>
+                            <Badge variant="secondary" className="bg-yellow-900 text-yellow-300 border-yellow-800">
+                              In Progress
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {task.priority && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-neutral-500">
+                          Priority: {task.priority}
+                        </span>
+                        {task.assigned_to && (
+                          <span className="text-xs text-neutral-500">
+                            Assigned to staff
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
 

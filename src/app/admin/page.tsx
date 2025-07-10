@@ -16,7 +16,9 @@ import {
   Filter,
   Search,
   BarChart3,
-  Image as ImageIcon
+  Image as ImageIcon,
+  TestTube,
+  AlertCircle
 } from 'lucide-react'
 import { AdminVillaPhotoDownload } from '@/components/AdminVillaPhotoDownload'
 import BookingApprovalPanel from '@/components/admin/BookingApprovalPanel'
@@ -287,9 +289,62 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Future Sections Placeholders */}
-        {/* Live Booking Approval Panel */}
-        <div className="mt-8">
-          <BookingApprovalPanel />
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Booking Management
+              </CardTitle>
+              <CardDescription>Manage guest bookings from Make.com</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-neutral-400 text-sm mb-4">
+                View, approve, and manage all guest bookings from the automation pipeline
+              </p>
+              <Button
+                onClick={() => window.location.href = '/admin/bookings'}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Manage Bookings
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <TestTube className="h-5 w-5" />
+                System Diagnostics
+              </CardTitle>
+              <CardDescription>Test booking pipeline</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-neutral-400 text-sm mb-4">
+                Run comprehensive tests on the Make.com → Firebase booking pipeline
+              </p>
+              <Button
+                onClick={() => window.location.href = '/admin/booking-diagnostics'}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                Run Diagnostics
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Pending Approvals
+              </CardTitle>
+              <CardDescription>Quick approval panel</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BookingApprovalPanel />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
