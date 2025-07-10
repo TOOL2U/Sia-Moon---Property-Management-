@@ -26,6 +26,7 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route =>
     request.nextUrl.pathname === route ||
     request.nextUrl.pathname.startsWith('/api/test-') ||
+    request.nextUrl.pathname.startsWith('/api/booking-test') ||
     request.nextUrl.pathname.startsWith('/_next/') ||
     request.nextUrl.pathname.includes('.') ||
     request.nextUrl.pathname.startsWith('/favicon')
