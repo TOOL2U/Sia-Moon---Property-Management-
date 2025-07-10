@@ -18,7 +18,8 @@ export async function middleware(request: NextRequest) {
     '/test-signup-webhook',
     '/test-signup-webhook-new',
     '/api/booking-test',  // Webhook endpoint for Make.com integration
-    '/test-booking-trigger'  // Test interface for webhook testing
+    '/test-booking-trigger',  // Test interface for webhook testing
+    '/api/booking-test/'  // Webhook endpoint with trailing slash
   ]
 
   // Check if current path is public
