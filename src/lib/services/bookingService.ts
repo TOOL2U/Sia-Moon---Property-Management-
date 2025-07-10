@@ -69,26 +69,33 @@ export class BookingService {
   static async getBookingsByClientId(clientId: string): Promise<LiveBooking[]> {
     try {
       console.log('📋 Fetching live bookings for client:', clientId)
-      
+
+      // Use simple query without orderBy to avoid index requirement
       const bookingsQuery = query(
         collection(db, 'live_bookings'),
-        where('clientId', '==', clientId),
-        orderBy('receivedAt', 'desc')
+        where('clientId', '==', clientId)
       )
-      
+
       const snapshot = await getDocs(bookingsQuery)
       const bookings: LiveBooking[] = []
-      
+
       snapshot.forEach(doc => {
         bookings.push({
           id: doc.id,
           ...doc.data()
         } as LiveBooking)
       })
-      
+
+      // Sort in memory by receivedAt (most recent first)
+      bookings.sort((a, b) => {
+        const aTime = a.receivedAt?.toDate?.() || new Date(a.receivedAt)
+        const bTime = b.receivedAt?.toDate?.() || new Date(b.receivedAt)
+        return bTime.getTime() - aTime.getTime()
+      })
+
       console.log(`✅ Found ${bookings.length} live bookings for client ${clientId}`)
       return bookings
-      
+
     } catch (error) {
       console.error('❌ Error fetching client bookings:', error)
       return []
@@ -101,26 +108,33 @@ export class BookingService {
   static async getPendingBookings(): Promise<LiveBooking[]> {
     try {
       console.log('📋 Fetching pending bookings for admin review')
-      
+
+      // Use simple query without orderBy to avoid index requirement
       const pendingQuery = query(
         collection(db, 'live_bookings'),
-        where('status', '==', 'pending_approval'),
-        orderBy('receivedAt', 'desc')
+        where('status', '==', 'pending_approval')
       )
-      
+
       const snapshot = await getDocs(pendingQuery)
       const bookings: LiveBooking[] = []
-      
+
       snapshot.forEach(doc => {
         bookings.push({
           id: doc.id,
           ...doc.data()
         } as LiveBooking)
       })
-      
+
+      // Sort in memory by receivedAt (most recent first)
+      bookings.sort((a, b) => {
+        const aTime = a.receivedAt?.toDate?.() || new Date(a.receivedAt)
+        const bTime = b.receivedAt?.toDate?.() || new Date(b.receivedAt)
+        return bTime.getTime() - aTime.getTime()
+      })
+
       console.log(`✅ Found ${bookings.length} pending bookings`)
       return bookings
-      
+
     } catch (error) {
       console.error('❌ Error fetching pending bookings:', error)
       return []
@@ -133,25 +147,30 @@ export class BookingService {
   static async getAllBookings(): Promise<LiveBooking[]> {
     try {
       console.log('📋 Fetching all live bookings')
-      
-      const allBookingsQuery = query(
-        collection(db, 'live_bookings'),
-        orderBy('receivedAt', 'desc')
-      )
-      
+
+      // Use simple query without orderBy to avoid index requirement
+      const allBookingsQuery = collection(db, 'live_bookings')
+
       const snapshot = await getDocs(allBookingsQuery)
       const bookings: LiveBooking[] = []
-      
+
       snapshot.forEach(doc => {
         bookings.push({
           id: doc.id,
           ...doc.data()
         } as LiveBooking)
       })
-      
+
+      // Sort in memory by receivedAt (most recent first)
+      bookings.sort((a, b) => {
+        const aTime = a.receivedAt?.toDate?.() || new Date(a.receivedAt)
+        const bTime = b.receivedAt?.toDate?.() || new Date(b.receivedAt)
+        return bTime.getTime() - aTime.getTime()
+      })
+
       console.log(`✅ Found ${bookings.length} total live bookings`)
       return bookings
-      
+
     } catch (error) {
       console.error('❌ Error fetching all bookings:', error)
       return []
@@ -277,40 +296,40 @@ export class BookingService {
   ): Promise<LiveBooking[]> {
     try {
       console.log(`📅 Fetching bookings from ${startDate} to ${endDate}`)
-      
+
       let bookingsQuery
       if (clientId) {
+        // Use simple query without orderBy to avoid index requirement
         bookingsQuery = query(
           collection(db, 'live_bookings'),
-          where('clientId', '==', clientId),
-          orderBy('checkInDate', 'asc')
+          where('clientId', '==', clientId)
         )
       } else {
-        bookingsQuery = query(
-          collection(db, 'live_bookings'),
-          orderBy('checkInDate', 'asc')
-        )
+        // Use simple collection query
+        bookingsQuery = collection(db, 'live_bookings')
       }
-      
+
       const snapshot = await getDocs(bookingsQuery)
       const allBookings: LiveBooking[] = []
-      
+
       snapshot.forEach(doc => {
         allBookings.push({
           id: doc.id,
           ...doc.data()
         } as LiveBooking)
       })
-      
-      // Filter by date range
-      const filteredBookings = allBookings.filter(booking => {
-        const checkIn = booking.checkInDate
-        return checkIn >= startDate && checkIn <= endDate
-      })
-      
+
+      // Filter by date range and sort in memory
+      const filteredBookings = allBookings
+        .filter(booking => {
+          const checkIn = booking.checkInDate
+          return checkIn >= startDate && checkIn <= endDate
+        })
+        .sort((a, b) => a.checkInDate.localeCompare(b.checkInDate))
+
       console.log(`✅ Found ${filteredBookings.length} bookings in date range`)
       return filteredBookings
-      
+
     } catch (error) {
       console.error('❌ Error fetching bookings by date range:', error)
       return []
