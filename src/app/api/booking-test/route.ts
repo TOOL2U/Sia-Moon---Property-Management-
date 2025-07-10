@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore, collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore'
+import { BookingDataFlowService } from '@/lib/services/bookingDataFlowService'
+import { LiveBooking } from '@/lib/services/bookingService'
 
 // Firebase configuration
 const firebaseConfig = {
@@ -345,18 +347,10 @@ export async function POST(request: NextRequest) {
             matchConfidence: clientMatch?.confidence || 0,
 
             // Metadata
-            bookingSource: 'guest_booking', // All HTTP module bookings are guest bookings
-            bookingType: 'guest_booking',
+            bookingSource: 'booking.com',
             status: 'pending_approval',
             receivedAt: Timestamp.now(),
             processedAt: Timestamp.now(),
-
-            // Source tracking
-            sourceDetails: {
-              platform: 'booking.com',
-              method: 'make_com_http',
-              automation: true
-            },
 
             // Original payload for reference
             originalPayload: payload,

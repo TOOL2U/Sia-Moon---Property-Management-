@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, getDocs, doc, updateDoc, query, where, orderBy, Timestamp } from 'firebase/firestore'
+import { getFirestore, collection, getDocs, doc, updateDoc, query, where, orderBy, addDoc, Timestamp } from 'firebase/firestore'
 
 // Firebase configuration
 const firebaseConfig = {
@@ -24,29 +24,52 @@ export interface LiveBooking {
   checkOutDate: string
   price: number
   specialRequests?: string
-  
+
   // Client matching
   clientId?: string
   propertyId?: string
   matchConfidence: number
-  
+
   // Metadata
   bookingSource: string
-  status: 'pending_approval' | 'approved' | 'rejected' | 'completed'
+  bookingType: 'guest_booking' | 'direct_booking' | 'platform_booking'
+  status: 'pending_approval' | 'approved' | 'rejected' | 'completed' | 'cancelled'
   receivedAt: any // Firestore Timestamp
   processedAt: any // Firestore Timestamp
-  
+  approvedAt?: any // Firestore Timestamp
+
   // Financial data
   revenue: number
   currency: string
-  
+
   // Additional fields
   guestEmail?: string
   bookingReference?: string
   guests?: number
-  
+  paymentStatus?: string
+
+  // Source tracking
+  sourceDetails?: {
+    platform: string
+    method: string
+    automation: boolean
+    originalSource?: string
+  }
+
+  // Parsing metadata
+  parsingConfidence?: number
+  parsingWarnings?: string[]
+
+  // Admin notes
+  adminNotes?: string
+
   // Original payload for reference
   originalPayload?: any
+
+  // Duplicate prevention
+  duplicateCheckHash?: string
+  isDuplicate?: boolean
+  originalBookingId?: string
 }
 
 export interface BookingStats {
@@ -62,7 +85,142 @@ export interface BookingStats {
  * Service for managing live bookings from Make.com automation
  */
 export class BookingService {
-  
+
+  /**
+   * Create a new live booking with idempotency and error handling
+   */
+  static async createLiveBooking(bookingData: Omit<LiveBooking, 'id'>): Promise<{
+    success: boolean
+    bookingId?: string
+    isDuplicate?: boolean
+    error?: string
+    retryCount?: number
+  }> {
+    const maxRetries = 3
+    let retryCount = 0
+
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`💾 BOOKING: Creating live booking (attempt ${retryCount + 1}/${maxRetries})`)
+        console.log('💾 BOOKING: Guest:', bookingData.guestName)
+        console.log('💾 BOOKING: Property:', bookingData.villaName)
+        console.log('💾 BOOKING: Dates:', bookingData.checkInDate, '→', bookingData.checkOutDate)
+
+        // Generate duplicate check hash
+        const duplicateHash = this.generateDuplicateHash(bookingData)
+
+        // Check for existing booking with same hash
+        const existingBooking = await this.findBookingByHash(duplicateHash)
+        if (existingBooking) {
+          console.log('⚠️ BOOKING: Duplicate booking detected, skipping creation')
+          return {
+            success: true,
+            bookingId: existingBooking.id,
+            isDuplicate: true
+          }
+        }
+
+        // Add duplicate prevention data
+        const bookingWithHash: LiveBooking = {
+          ...bookingData,
+          id: '', // Will be set by Firestore
+          duplicateCheckHash: duplicateHash,
+          isDuplicate: false
+        }
+
+        // Store in Firebase with retry logic
+        const docRef = await addDoc(collection(db, 'live_bookings'), bookingWithHash)
+        const bookingId = docRef.id
+
+        console.log('✅ BOOKING: Live booking created successfully')
+        console.log('✅ BOOKING: ID:', bookingId)
+        console.log('✅ BOOKING: Hash:', duplicateHash)
+
+        return {
+          success: true,
+          bookingId,
+          isDuplicate: false,
+          retryCount
+        }
+
+      } catch (error) {
+        retryCount++
+        console.error(`❌ BOOKING: Creation attempt ${retryCount} failed:`, error)
+
+        if (retryCount >= maxRetries) {
+          console.error('❌ BOOKING: All retry attempts exhausted')
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            retryCount
+          }
+        }
+
+        // Wait before retry (exponential backoff)
+        const waitTime = Math.pow(2, retryCount) * 1000
+        console.log(`⏳ BOOKING: Waiting ${waitTime}ms before retry...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Maximum retries exceeded',
+      retryCount
+    }
+  }
+
+  /**
+   * Generate a hash for duplicate detection
+   */
+  private static generateDuplicateHash(booking: Omit<LiveBooking, 'id'>): string {
+    const hashData = {
+      guestName: booking.guestName?.toLowerCase().trim(),
+      villaName: booking.villaName?.toLowerCase().trim(),
+      checkInDate: booking.checkInDate,
+      checkOutDate: booking.checkOutDate,
+      price: booking.price
+    }
+
+    // Simple hash generation (in production, use a proper hash function)
+    const hashString = JSON.stringify(hashData)
+    let hash = 0
+    for (let i = 0; i < hashString.length; i++) {
+      const char = hashString.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+
+    return Math.abs(hash).toString(36)
+  }
+
+  /**
+   * Find booking by duplicate hash
+   */
+  private static async findBookingByHash(hash: string): Promise<LiveBooking | null> {
+    try {
+      const hashQuery = query(
+        collection(db, 'live_bookings'),
+        where('duplicateCheckHash', '==', hash)
+      )
+
+      const snapshot = await getDocs(hashQuery)
+
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0]
+        return {
+          id: doc.id,
+          ...doc.data()
+        } as LiveBooking
+      }
+
+      return null
+    } catch (error) {
+      console.error('❌ BOOKING: Error checking for duplicates:', error)
+      return null
+    }
+  }
+
   /**
    * Get all live bookings for a specific client
    */
@@ -178,10 +336,44 @@ export class BookingService {
   }
   
   /**
+   * Update booking client matching information
+   */
+  static async updateBookingClientMatch(
+    bookingId: string,
+    clientMatch: {
+      clientId: string
+      propertyId?: string
+      propertyName?: string
+      confidence: number
+      matchMethod: string
+    }
+  ): Promise<boolean> {
+    try {
+      console.log('🎯 BOOKING: Updating client match for booking:', bookingId)
+
+      const bookingRef = doc(db, 'live_bookings', bookingId)
+      await updateDoc(bookingRef, {
+        clientId: clientMatch.clientId,
+        propertyId: clientMatch.propertyId || null,
+        matchConfidence: clientMatch.confidence,
+        matchMethod: clientMatch.matchMethod,
+        matchedAt: Timestamp.now()
+      })
+
+      console.log('✅ BOOKING: Client match updated successfully')
+      return true
+
+    } catch (error) {
+      console.error('❌ BOOKING: Error updating client match:', error)
+      return false
+    }
+  }
+
+  /**
    * Update booking status (approve/reject)
    */
   static async updateBookingStatus(
-    bookingId: string, 
+    bookingId: string,
     status: 'approved' | 'rejected',
     adminNotes?: string
   ): Promise<boolean> {

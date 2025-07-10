@@ -36,19 +36,28 @@ export interface FinancialReport {
 }
 
 export interface MonthlyMetrics {
+  clientId: string
+  month: string
+  totalRevenue: number
+  totalBookings: number
+  totalNights: number
+  avgOccupancy: number
+  topProperty: string
+  lastUpdated: string
+
   totalIncomeThisMonth: number
   totalExpensesThisMonth: number
   netProfitThisMonth: number
   occupancyRateThisMonth: number
   upcomingBookingsCount: number
-  
+
   // Month-over-month changes
   incomeChange: number
   expensesChange: number
   profitChange: number
   occupancyChange: number
   bookingsChange: number
-  
+
   currency: string
 }
 
@@ -56,7 +65,45 @@ export interface MonthlyMetrics {
  * Service for generating financial reports from live booking data
  */
 export class ReportService {
-  
+
+  /**
+   * Add booking data to monthly metrics
+   */
+  static async addBookingToMetrics(
+    clientId: string,
+    bookingData: {
+      revenue: number
+      currency: string
+      checkInDate: string
+      checkOutDate: string
+      propertyId?: string
+      bookingSource: string
+    }
+  ): Promise<void> {
+    try {
+      console.log('📊 REPORTS: Adding booking to monthly metrics for client:', clientId)
+
+      // Get current month metrics
+      const currentMetrics = await this.getMonthlyMetrics(clientId)
+
+      // Calculate booking duration
+      const checkIn = new Date(bookingData.checkInDate)
+      const checkOut = new Date(bookingData.checkOutDate)
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+
+      // For now, just log the update (in production, this would update stored metrics)
+      console.log('✅ REPORTS: Monthly metrics would be updated with:', {
+        additionalRevenue: bookingData.revenue,
+        additionalNights: nights,
+        currency: bookingData.currency
+      })
+
+    } catch (error) {
+      console.error('❌ REPORTS: Error adding booking to metrics:', error)
+      throw error
+    }
+  }
+
   /**
    * Generate monthly financial report for a client
    */
@@ -223,18 +270,27 @@ export class ReportService {
       )
       
       const metrics: MonthlyMetrics = {
+        clientId,
+        month: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
+        totalRevenue: currentReport.totalIncome,
+        totalBookings: currentReport.totalBookings,
+        totalNights: currentReport.totalBookings * 2, // Estimate
+        avgOccupancy: currentReport.occupancyRate,
+        topProperty: 'unknown', // Would be calculated from bookings
+        lastUpdated: new Date().toISOString(),
+
         totalIncomeThisMonth: currentReport.totalIncome,
         totalExpensesThisMonth: currentReport.totalExpenses,
         netProfitThisMonth: currentReport.netProfit,
         occupancyRateThisMonth: currentReport.occupancyRate,
         upcomingBookingsCount: upcomingBookings.filter(b => b.status === 'approved').length,
-        
+
         incomeChange,
         expensesChange,
         profitChange,
         occupancyChange,
         bookingsChange,
-        
+
         currency: 'USD'
       }
       
@@ -245,6 +301,15 @@ export class ReportService {
       console.error('❌ Error calculating monthly metrics:', error)
       
       return {
+        clientId,
+        month: new Date().toISOString().slice(0, 7),
+        totalRevenue: 0,
+        totalBookings: 0,
+        totalNights: 0,
+        avgOccupancy: 0,
+        topProperty: 'unknown',
+        lastUpdated: new Date().toISOString(),
+
         totalIncomeThisMonth: 0,
         totalExpensesThisMonth: 0,
         netProfitThisMonth: 0,
