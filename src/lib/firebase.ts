@@ -106,7 +106,11 @@ export const db = app ? initializeFirestore(app, {
 // Initialize Storage with additional safety checks
 export const storage = (() => {
   try {
-    return app && typeof window !== 'undefined' ? getStorage(app) : null
+    // Only initialize storage in browser environment and when app is available
+    if (typeof window !== 'undefined' && app && typeof getStorage === 'function') {
+      return getStorage(app)
+    }
+    return null
   } catch (error) {
     console.warn('⚠️ Firebase Storage initialization failed:', error)
     return null
