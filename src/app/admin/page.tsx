@@ -19,6 +19,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react'
 import { AdminVillaPhotoDownload } from '@/components/AdminVillaPhotoDownload'
+import BookingApprovalPanel from '@/components/admin/BookingApprovalPanel'
 import toast from 'react-hot-toast'
 
 export default function AdminDashboard() {
@@ -286,33 +287,23 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Future Sections Placeholders */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <Card className="bg-neutral-900 border-neutral-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Bookings Management
-              </CardTitle>
-              <CardDescription>Coming Soon</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-neutral-400 text-sm">
-                Manage property bookings and reservations
-              </p>
-            </CardContent>
-          </Card>
+        {/* Live Booking Approval Panel */}
+        <div className="mt-8">
+          <BookingApprovalPanel />
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Maintenance Jobs
+                Staff Task Management
               </CardTitle>
               <CardDescription>Coming Soon</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-neutral-400 text-sm">
-                Track and assign maintenance tasks
+                Assign and track cleaning, maintenance, and preparation tasks
               </p>
             </CardContent>
           </Card>
@@ -321,13 +312,13 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Analytics
+                Financial Analytics
               </CardTitle>
               <CardDescription>Coming Soon</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-neutral-400 text-sm">
-                View performance metrics and reports
+                View booking revenue, occupancy rates, and performance metrics
               </p>
             </CardContent>
           </Card>

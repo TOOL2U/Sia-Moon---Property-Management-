@@ -14,6 +14,8 @@ import { MobileIncomeExpenseChart } from '@/components/dashboard/charts/MobileIn
 import { SummaryCardsGrid, SummaryCardsGridSkeleton } from '@/components/dashboard/SummaryCardsGrid'
 import { BookingPreview, BookingPreviewSkeleton } from '@/components/dashboard/BookingPreview'
 import { PropertyService, Property as PropertyServiceProperty } from '@/lib/services/propertyService'
+import { BookingService, LiveBooking } from '@/lib/services/bookingService'
+import { ReportService, MonthlyMetrics } from '@/lib/services/reportService'
 import { Report, Booking, Task } from '@/types'
 import {
   Wrench,
@@ -102,8 +104,10 @@ export default function ClientDashboard() {
   const router = useRouter()
 
   const [properties, setProperties] = useState<PropertyServiceProperty[]>([])
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [reports, setReports] = useState<Report[]>([])
+  const [liveBookings, setLiveBookings] = useState<LiveBooking[]>([])
+  const [monthlyMetrics, setMonthlyMetrics] = useState<MonthlyMetrics | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>([]) // Legacy mock data
+  const [reports, setReports] = useState<Report[]>([]) // Legacy mock data
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMetric, setSelectedMetric] = useState('revenue')
@@ -145,26 +149,47 @@ export default function ClientDashboard() {
         setProperties(userProperties)
         console.log(`✅ Loaded ${userProperties.length} properties`)
 
-        // For now, use mock data for bookings and reports until those services are implemented
-        // TODO: Replace with actual BookingService and ReportService calls
-
-        // Generate mock data for demonstration if user has properties
         if (userProperties.length > 0) {
+          console.log('🔄 Loading live booking data...')
+
+          // Fetch live bookings for this client
+          const clientBookings = await BookingService.getBookingsByClientId(user.id)
+          console.log('📋 Live bookings loaded:', clientBookings.length)
+          setLiveBookings(clientBookings)
+
+          // Fetch monthly financial metrics
+          const metrics = await ReportService.getMonthlyMetrics(user.id)
+          console.log('📊 Monthly metrics loaded:', metrics)
+          setMonthlyMetrics(metrics)
+
+          // Generate mock data for backward compatibility (until all components are updated)
+          console.log('🎭 Generating mock data for legacy components...')
           const mockReports = generateMockReports(userProperties)
           const mockBookings = generateMockBookings(userProperties)
           setReports(mockReports)
           setBookings(mockBookings)
+
+          console.log('✅ Dashboard data loaded:', {
+            properties: userProperties.length,
+            liveBookings: clientBookings.length,
+            hasMetrics: !!metrics,
+            mockReports: mockReports.length,
+            mockBookings: mockBookings.length
+          })
         } else {
+          console.log('📝 No properties found - user needs to complete onboarding')
+          setLiveBookings([])
+          setMonthlyMetrics(null)
           setReports([])
           setBookings([])
         }
         setTasks([])
-
-        console.log('✅ Dashboard data loaded successfully')
       } catch (serviceError) {
         console.error('❌ Error loading data from services:', serviceError)
         // Fallback to empty data for graceful degradation
         setProperties([])
+        setLiveBookings([])
+        setMonthlyMetrics(null)
         setBookings([])
         setReports([])
         setTasks([])
@@ -239,6 +264,26 @@ export default function ClientDashboard() {
 
   // Calculate summary metrics for cards
   const calculateSummaryMetrics = () => {
+    // Use live data if available, otherwise fall back to mock data
+    if (monthlyMetrics) {
+      console.log('📊 Using live monthly metrics for summary cards')
+      return {
+        totalIncomeThisMonth: monthlyMetrics.totalIncomeThisMonth,
+        totalExpensesThisMonth: monthlyMetrics.totalExpensesThisMonth,
+        netProfitThisMonth: monthlyMetrics.netProfitThisMonth,
+        occupancyRateThisMonth: monthlyMetrics.occupancyRateThisMonth,
+        upcomingBookingsCount: monthlyMetrics.upcomingBookingsCount,
+        incomeChange: monthlyMetrics.incomeChange,
+        expensesChange: monthlyMetrics.expensesChange,
+        profitChange: monthlyMetrics.profitChange,
+        occupancyChange: monthlyMetrics.occupancyChange,
+        bookingsChange: monthlyMetrics.bookingsChange,
+        currency: monthlyMetrics.currency
+      }
+    }
+
+    // Fallback to mock data calculation
+    console.log('📊 Using mock data for summary cards (no live metrics available)')
     const now = new Date()
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
