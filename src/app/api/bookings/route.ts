@@ -147,7 +147,7 @@ function normalizeBookingData(data: BookingData): ProcessedBooking {
 async function checkForDuplicate(bookingData: ProcessedBooking): Promise<boolean> {
   try {
     const q = query(
-      collection(db, 'bookings'),
+      collection(db, 'live_bookings'),
       where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
     )
     
@@ -238,8 +238,8 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Create booking in Firebase
-    const docRef = await addDoc(collection(db, 'bookings'), processedBooking)
+    // Create booking in Firebase (using live_bookings collection for consistency)
+    const docRef = await addDoc(collection(db, 'live_bookings'), processedBooking)
     const bookingId = docRef.id
     
     console.log('✅ BOOKINGS API: Booking created successfully')

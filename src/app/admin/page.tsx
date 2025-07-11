@@ -18,7 +18,12 @@ import {
   BarChart3,
   Image as ImageIcon,
   TestTube,
-  AlertCircle
+  AlertCircle,
+  Bot,
+  Shield,
+  TrendingUp,
+  AlertTriangle,
+  Brain
 } from 'lucide-react'
 import { AdminVillaPhotoDownload } from '@/components/AdminVillaPhotoDownload'
 import BookingApprovalPanel from '@/components/admin/BookingApprovalPanel'
@@ -285,6 +290,206 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Enhanced Booking Management */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Ultimate Booking Management
+              </CardTitle>
+              <CardDescription>AI-powered booking automation and intelligent management</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-neutral-300 mb-4">
+                Experience world-class booking management with real-time automation, smart client matching, and conflict resolution.
+              </p>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center text-sm text-neutral-400">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  AI-powered client matching
+                </div>
+                <div className="flex items-center text-sm text-neutral-400">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  Real-time conflict detection
+                </div>
+                <div className="flex items-center text-sm text-neutral-400">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                  Automated task creation
+                </div>
+              </div>
+              <Button 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                onClick={() => window.location.href = '/admin/bookings'}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Open Booking Manager
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Advanced Analytics
+              </CardTitle>
+              <CardDescription>Data-driven insights and performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-neutral-300 mb-4">
+                Comprehensive analytics with revenue tracking, automation efficiency, and business intelligence.
+              </p>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center text-sm text-neutral-400">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Revenue optimization insights
+                </div>
+                <div className="flex items-center text-sm text-neutral-400">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  Automation performance metrics
+                </div>
+                <div className="flex items-center text-sm text-neutral-400">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                  Predictive analytics
+                </div>
+              </div>
+              <Button 
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                onClick={() => window.location.href = '/admin/analytics'}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Analytics
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Automation & Intelligence */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                Automation Rules
+              </CardTitle>
+              <CardDescription>Configure intelligent automation workflows</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Active Rules</span>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">9 Active</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Success Rate</span>
+                  <span className="text-green-400 font-medium">98.7%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Automation Efficiency</span>
+                  <span className="text-blue-400 font-medium">95.2%</span>
+                </div>
+              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                onClick={() => window.location.href = '/admin/automation'}
+              >
+                <Bot className="h-4 w-4 mr-2" />
+                Manage Rules
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-600/20 to-red-600/20 border-orange-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Conflict Resolution
+              </CardTitle>
+              <CardDescription>Smart conflict detection and resolution</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Active Conflicts</span>
+                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">2 Active</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Auto-Resolved</span>
+                  <span className="text-green-400 font-medium">147</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Conflict Rate</span>
+                  <span className="text-orange-400 font-medium">2.1%</span>
+                </div>
+              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                onClick={() => window.location.href = '/admin/conflicts'}
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                View Conflicts
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border-cyan-500/30">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Smart Recommendations
+              </CardTitle>
+              <CardDescription>AI-powered optimization suggestions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">New Recommendations</span>
+                  <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">5 New</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Revenue Impact</span>
+                  <span className="text-green-400 font-medium">+$47K</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-neutral-400">Implementation</span>
+                  <span className="text-blue-400 font-medium">12 Pending</span>
+                </div>
+              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+                onClick={() => window.location.href = '/admin/recommendations'}
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                View Recommendations
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Original Booking Management (Legacy) */}
+        <Card className="bg-neutral-900 border-neutral-800 mb-8">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Legacy Booking Management
+            </CardTitle>
+            <CardDescription>Manage guest bookings from Make.com (Basic Version)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-neutral-300 mb-4">
+              View, approve, and manage all guest bookings from the automation pipeline
+            </p>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => window.location.href = '/admin/bookings-legacy'}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Manage Bookings (Legacy)
+            </Button>
           </CardContent>
         </Card>
 

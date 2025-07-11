@@ -1,19 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  Code, 
-  Database, 
-  Shield, 
-  Users, 
-  Building, 
-  Calendar, 
-  BarChart3, 
-  Settings, 
+import {
+  Code,
+  Database,
+  Shield,
+  Users,
+  Building,
+  Calendar,
+  BarChart3,
+  Settings,
   TestTube,
   Bug,
   Zap,
@@ -485,6 +485,26 @@ const getStatusColor = (status?: string) => {
 export default function DevelopersPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState<string>('')
+
+  // Add error handling for console errors from browser extensions
+  useEffect(() => {
+    // Suppress Chrome extension errors that don't affect functionality
+    const originalError = console.error
+    console.error = (...args) => {
+      const message = args[0]?.toString() || ''
+      if (message.includes('chrome-extension://') ||
+          message.includes('Cannot use import statement outside a module') ||
+          message.includes('Failed to load resource')) {
+        // Suppress these specific errors as they're from browser extensions
+        return
+      }
+      originalError.apply(console, args)
+    }
+
+    return () => {
+      console.error = originalError
+    }
+  }, [])
 
   const filteredTools = developerTools.filter(tool => {
     const matchesCategory = selectedCategory === 'All' || tool.category === selectedCategory

@@ -14,6 +14,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Villa Property Management",
   description: "Professional villa property management system",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -23,6 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className={`${inter.className} antialiased bg-black text-white transition-colors duration-200`}>
         <AuthProvider>
           <Navbar />

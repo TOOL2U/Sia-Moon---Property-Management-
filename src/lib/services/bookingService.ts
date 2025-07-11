@@ -1,20 +1,15 @@
-import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, getDocs, doc, updateDoc, query, where, orderBy, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, Timestamp, Firestore } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+// Use the centralized Firebase db instance
+
+// Helper function to ensure db is available
+function getDb(): Firestore {
+  if (!db) {
+    throw new Error('Firebase database not initialized')
+  }
+  return db
 }
-
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-const db = getFirestore(app)
 
 export interface LiveBooking {
   id: string
@@ -154,7 +149,7 @@ export class BookingService {
         console.log('🧹 BOOKING: Cleaned booking data for Firebase storage')
 
         // Store in Firebase with retry logic
-        const docRef = await addDoc(collection(db, 'live_bookings'), cleanedBookingData)
+        const docRef = await addDoc(collection(getDb(), 'live_bookings'), cleanedBookingData)
         const bookingId = docRef.id
 
         console.log('✅ BOOKING: Live booking created successfully')
@@ -225,7 +220,7 @@ export class BookingService {
   private static async findBookingByHash(hash: string): Promise<LiveBooking | null> {
     try {
       const hashQuery = query(
-        collection(db, 'live_bookings'),
+        collection(getDb(), 'live_bookings'),
         where('duplicateCheckHash', '==', hash)
       )
 
@@ -255,7 +250,7 @@ export class BookingService {
 
       // Use simple query without orderBy to avoid index requirement
       const bookingsQuery = query(
-        collection(db, 'live_bookings'),
+        collection(getDb(), 'live_bookings'),
         where('clientId', '==', clientId)
       )
 
@@ -294,7 +289,7 @@ export class BookingService {
 
       // Use simple query without orderBy to avoid index requirement
       const pendingQuery = query(
-        collection(db, 'live_bookings'),
+        collection(getDb(), 'live_bookings'),
         where('status', '==', 'pending_approval')
       )
 
@@ -332,7 +327,7 @@ export class BookingService {
       console.log('📋 Fetching all live bookings')
 
       // Use simple query without orderBy to avoid index requirement
-      const allBookingsQuery = collection(db, 'live_bookings')
+      const allBookingsQuery = collection(getDb(), 'live_bookings')
 
       const snapshot = await getDocs(allBookingsQuery)
       const bookings: LiveBooking[] = []
@@ -376,7 +371,7 @@ export class BookingService {
     try {
       console.log('🎯 BOOKING: Updating client match for booking:', bookingId)
 
-      const bookingRef = doc(db, 'live_bookings', bookingId)
+      const bookingRef = doc(getDb(), 'live_bookings', bookingId)
       await updateDoc(bookingRef, {
         clientId: clientMatch.clientId,
         propertyId: clientMatch.propertyId || null,
@@ -405,7 +400,7 @@ export class BookingService {
     try {
       console.log(`📝 Updating booking ${bookingId} status to ${status}`)
       
-      const bookingRef = doc(db, 'live_bookings', bookingId)
+      const bookingRef = doc(getDb(), 'live_bookings', bookingId)
       await updateDoc(bookingRef, {
         status,
         adminNotes: adminNotes || null,
@@ -432,11 +427,11 @@ export class BookingService {
       let bookingsQuery
       if (clientId) {
         bookingsQuery = query(
-          collection(db, 'live_bookings'),
+          collection(getDb(), 'live_bookings'),
           where('clientId', '==', clientId)
         )
       } else {
-        bookingsQuery = collection(db, 'live_bookings')
+        bookingsQuery = collection(getDb(), 'live_bookings')
       }
       
       const snapshot = await getDocs(bookingsQuery)
@@ -518,12 +513,12 @@ export class BookingService {
       if (clientId) {
         // Use simple query without orderBy to avoid index requirement
         bookingsQuery = query(
-          collection(db, 'live_bookings'),
+          collection(getDb(), 'live_bookings'),
           where('clientId', '==', clientId)
         )
       } else {
         // Use simple collection query
-        bookingsQuery = collection(db, 'live_bookings')
+        bookingsQuery = collection(getDb(), 'live_bookings')
       }
 
       const snapshot = await getDocs(bookingsQuery)
