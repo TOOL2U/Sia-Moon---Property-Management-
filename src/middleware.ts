@@ -5,9 +5,10 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   console.log('🔍 MIDDLEWARE: Processing request for:', pathname)
 
-  // Early return for booking webhook - highest priority
-  if (pathname === '/api/booking-test' || pathname.startsWith('/api/booking-test/')) {
-    console.log('🔓 MIDDLEWARE: Booking webhook detected, allowing access immediately')
+  // Early return for booking webhooks and APIs - highest priority
+  if (pathname === '/api/booking-test' || pathname.startsWith('/api/booking-test/') ||
+      pathname === '/api/bookings' || pathname.startsWith('/api/bookings/')) {
+    console.log('🔓 MIDDLEWARE: Booking API endpoint detected, allowing access immediately')
     return NextResponse.next()
   }
 
