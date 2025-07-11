@@ -80,11 +80,42 @@ const developerTools: DeveloperTool[] = [
     href: '/staff',
     icon: Users,
     category: 'Core Application',
-    status: 'stable',
-    isNew: true
+    status: 'stable'
+  },
+  {
+    title: 'Reports & Analytics',
+    description: 'Financial reports, property analytics, and business insights',
+    href: '/reports',
+    icon: BarChart3,
+    category: 'Core Application',
+    status: 'stable'
+  },
+  {
+    title: 'User Profile',
+    description: 'User account settings and profile management',
+    href: '/profile',
+    icon: UserCheck,
+    category: 'Core Application',
+    status: 'stable'
+  },
+  {
+    title: 'Settings',
+    description: 'Application settings and configuration',
+    href: '/settings',
+    icon: Settings,
+    category: 'Core Application',
+    status: 'stable'
   },
 
   // Dashboards
+  {
+    title: 'Main Dashboard',
+    description: 'Central dashboard with navigation to all areas',
+    href: '/dashboard',
+    icon: BarChart3,
+    category: 'Dashboards',
+    status: 'stable'
+  },
   {
     title: 'Client Dashboard',
     description: 'Property owner dashboard with villa management tools',
@@ -94,38 +125,82 @@ const developerTools: DeveloperTool[] = [
     status: 'stable'
   },
   {
-    title: 'Staff Dashboard',
-    description: 'Staff management interface with task coordination',
-    href: '/dashboard/staff',
-    icon: Users,
+    title: 'Client Onboarding',
+    description: 'Client property onboarding and setup process',
+    href: '/dashboard/client/onboarding',
+    icon: FileText,
     category: 'Dashboards',
     status: 'stable'
   },
   {
     title: 'Admin Dashboard',
-    description: 'Administrative interface for task and user management',
-    href: '/dashboard/admin',
+    description: 'Administrative interface for system management',
+    href: '/admin',
     icon: Settings,
     category: 'Dashboards',
     status: 'stable'
   },
   {
-    title: 'Staff Tasks',
-    description: 'Task management interface for staff members',
-    href: '/dashboard/staff/tasks',
-    icon: Terminal,
+    title: 'Admin Bookings',
+    description: 'Admin booking management and approval system',
+    href: '/admin/bookings',
+    icon: Calendar,
     category: 'Dashboards',
+    status: 'stable'
+  },
+  {
+    title: 'Admin Accounts',
+    description: 'User account management and administration',
+    href: '/admin/accounts',
+    icon: Users,
+    category: 'Dashboards',
+    status: 'stable'
+  },
+
+  // Admin Tools & Testing
+  {
+    title: 'Booking Data Flow Test',
+    description: 'Test complete booking automation flow from email to database',
+    href: '/admin/booking-data-flow-test',
+    icon: Server,
+    category: 'Admin Tools',
     status: 'stable',
     isNew: true
   },
   {
-    title: 'Booking Sync Admin',
-    description: 'Manage iCal integration with Airbnb and Booking.com',
-    href: '/dashboard/admin/booking-sync',
-    icon: Server,
-    category: 'Dashboards',
+    title: 'Booking Diagnostics',
+    description: 'Diagnose booking processing issues and system health',
+    href: '/admin/booking-diagnostics',
+    icon: Bug,
+    category: 'Admin Tools',
     status: 'stable',
     isNew: true
+  },
+  {
+    title: 'Booking Parser Test',
+    description: 'Test email parsing and data extraction from booking emails',
+    href: '/admin/booking-parser-test',
+    icon: TestTube,
+    category: 'Admin Tools',
+    status: 'stable',
+    isNew: true
+  },
+  {
+    title: 'Client Matching Debug',
+    description: 'Debug property-to-client matching issues (Donkey House fix)',
+    href: '/admin/client-matching-debug',
+    icon: Search,
+    category: 'Admin Tools',
+    status: 'stable',
+    isNew: true
+  },
+  {
+    title: 'Villa Reviews',
+    description: 'Admin interface for reviewing and approving villa submissions',
+    href: '/admin/villa-reviews',
+    icon: Eye,
+    category: 'Admin Tools',
+    status: 'stable'
   },
 
   // Onboarding & Forms
@@ -199,10 +274,50 @@ const developerTools: DeveloperTool[] = [
     status: 'stable'
   },
   {
+    title: 'Firebase Connections Test',
+    description: 'Test Firebase database connectivity and configuration',
+    href: '/test-firebase-connections',
+    icon: Database,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Firebase Email Test',
+    description: 'Test Firebase email functionality and notifications',
+    href: '/test-firebase-email',
+    icon: Bell,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Firestore Test',
+    description: 'Test Firestore database operations and queries',
+    href: '/test-firestore',
+    icon: Database,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
     title: 'Webhook Test',
     description: 'Test Make.com webhook integration and email automation',
     href: '/test-webhook',
     icon: Server,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Browser Webhook Test',
+    description: 'Test webhook functionality directly in browser',
+    href: '/test-browser-webhook',
+    icon: Globe,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Booking Trigger Test',
+    description: 'Test booking automation triggers and workflows',
+    href: '/test-booking-trigger',
+    icon: Zap,
     category: 'Testing',
     status: 'stable'
   },
@@ -215,10 +330,50 @@ const developerTools: DeveloperTool[] = [
     status: 'stable'
   },
   {
-    title: 'Firestore Test',
-    description: 'Test Firestore database operations',
-    href: '/test-firestore',
-    icon: Database,
+    title: 'Signup Direct Test',
+    description: 'Test direct user signup without webhook',
+    href: '/test-signup-direct',
+    icon: UserCheck,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Signup Webhook Test',
+    description: 'Test user signup with webhook integration',
+    href: '/test-signup-webhook',
+    icon: Server,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Forgot Password Test',
+    description: 'Test password reset functionality',
+    href: '/test-forgot-password',
+    icon: Lock,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Onboarding Data Test',
+    description: 'Test onboarding form data processing',
+    href: '/test-onboarding-data',
+    icon: FileText,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Simple Test',
+    description: 'Basic functionality test page',
+    href: '/simple-test',
+    icon: TestTube,
+    category: 'Testing',
+    status: 'stable'
+  },
+  {
+    title: 'Smooth Scroll Test',
+    description: 'Test smooth scrolling animations and effects',
+    href: '/smooth-scroll-test',
+    icon: Eye,
     category: 'Testing',
     status: 'stable'
   },
@@ -234,25 +389,88 @@ const developerTools: DeveloperTool[] = [
     isNew: true
   },
   {
-    title: 'User Debug Console',
-    description: 'View current user state, session info, and profile data',
-    href: '/debug-user',
-    icon: UserCheck,
+    title: 'Debug Environment',
+    description: 'View environment variables and configuration',
+    href: '/debug-env',
+    icon: Settings,
     category: 'Debug Tools',
+    status: 'stable'
+  },
+  {
+    title: 'Debug Firebase',
+    description: 'Debug Firebase connection and configuration',
+    href: '/debug-firebase',
+    icon: Database,
+    category: 'Debug Tools',
+    status: 'stable'
+  },
+  {
+    title: 'Dev Dashboard',
+    description: 'Development dashboard with system overview',
+    href: '/dev-dashboard',
+    icon: BarChart3,
+    category: 'Debug Tools',
+    status: 'stable'
+  },
+  {
+    title: 'Dev Console',
+    description: 'Basic development console and utilities',
+    href: '/dev',
+    icon: Terminal,
+    category: 'Debug Tools',
+    status: 'stable'
+  },
+  {
+    title: 'Status Page',
+    description: 'System status and health monitoring',
+    href: '/status',
+    icon: Eye,
+    category: 'Debug Tools',
+    status: 'stable'
+  },
+  {
+    title: 'Email Test',
+    description: 'Test email functionality and templates',
+    href: '/developers/email-test',
+    icon: Bell,
+    category: 'Debug Tools',
+    status: 'stable'
+  },
+
+  // Staff Tools
+  {
+    title: 'Staff Test Data',
+    description: 'Generate and manage test data for staff system',
+    href: '/staff/test-data',
+    icon: Users,
+    category: 'Staff Tools',
     status: 'stable'
   }
 ]
 
-const categories = ['Core Application', 'Dashboards', 'Onboarding', 'Authentication', 'Testing', 'Debug Tools']
+const categories = [
+  'Core Application',
+  'Dashboards',
+  'Admin Tools',
+  'Onboarding',
+  'Authentication',
+  'Testing',
+  'Debug Tools',
+  'Staff Tools'
+]
 
 // Frequently used development tools
 const favoriteTools = [
   'Test Suite',
   'Debug Tools',
-  'Staff Management',
   'Admin Dashboard',
+  'Booking Data Flow Test',
+  'Client Matching Debug',
+  'Firebase Authentication Test',
+  'Staff Management',
   'Webhook Test',
-  'Firebase Authentication Test'
+  'Booking Diagnostics',
+  'Client Dashboard'
 ]
 
 const getStatusColor = (status?: string) => {
@@ -500,6 +718,24 @@ export default function DevelopersPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/admin">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Admin Dashboard
+                </Button>
+              </Link>
+              <Link href="/admin/booking-data-flow-test">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <Server className="mr-2 h-4 w-4" />
+                  Booking Flow Test
+                </Button>
+              </Link>
+              <Link href="/admin/client-matching-debug">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <Search className="mr-2 h-4 w-4" />
+                  Client Matching
+                </Button>
+              </Link>
               <Link href="/developers/tests">
                 <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <TestTube className="mr-2 h-4 w-4" />
@@ -512,16 +748,22 @@ export default function DevelopersPage() {
                   Debug Tools
                 </Button>
               </Link>
+              <Link href="/dashboard/client">
+                <Button variant="outline" className="w-full justify-start h-11" size="lg">
+                  <Building className="mr-2 h-4 w-4" />
+                  Client Dashboard
+                </Button>
+              </Link>
               <Link href="/staff">
                 <Button variant="outline" className="w-full justify-start h-11" size="lg">
                   <Users className="mr-2 h-4 w-4" />
                   Staff Management
                 </Button>
               </Link>
-              <Link href="/onboard">
+              <Link href="/test-firebase">
                 <Button variant="outline" className="w-full justify-start h-11" size="lg">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Villa Survey
+                  <Shield className="mr-2 h-4 w-4" />
+                  Firebase Test
                 </Button>
               </Link>
             </div>
@@ -535,10 +777,12 @@ export default function DevelopersPage() {
               <div>
                 <h4 className="font-medium text-white mb-2">Development Status</h4>
                 <div className="space-y-1 text-neutral-400">
+                  <p>• Gmail Booking Automation: ✅ Complete</p>
+                  <p>• Client Matching System: ✅ Fixed</p>
+                  <p>• API Endpoints: ✅ Complete</p>
+                  <p>• Admin Tools: ✅ Complete</p>
                   <p>• Staff Management: ✅ Complete</p>
-                  <p>• Firebase Auth: ✅ Complete</p>
-                  <p>• Email Notifications: ✅ Complete</p>
-                  <p>• Test Suite: ✅ Organized</p>
+                  <p>• Firebase Integration: ✅ Complete</p>
                 </div>
               </div>
 
@@ -547,8 +791,10 @@ export default function DevelopersPage() {
                 <div className="space-y-1 text-neutral-400">
                   <p>• Use search to find specific tools</p>
                   <p>• Check "NEW" badges for latest features</p>
+                  <p>• Admin Tools for booking automation</p>
                   <p>• Test pages validate functionality</p>
                   <p>• Debug tools help troubleshoot issues</p>
+                  <p>• All pages organized by category</p>
                 </div>
               </div>
 
@@ -556,9 +802,11 @@ export default function DevelopersPage() {
                 <h4 className="font-medium text-white mb-2">Environment</h4>
                 <div className="space-y-1 text-neutral-400">
                   <p>• Mode: Development</p>
-                  <p>• Database: Firebase/localStorage</p>
-                  <p>• Auth: Firebase</p>
-                  <p>• Webhooks: Make.com</p>
+                  <p>• Database: Firebase Firestore</p>
+                  <p>• Auth: Firebase Authentication</p>
+                  <p>• Webhooks: Make.com Gmail Watch</p>
+                  <p>• API: /api/bookings endpoint</p>
+                  <p>• Storage: Cloudinary + Firebase</p>
                 </div>
               </div>
             </div>
