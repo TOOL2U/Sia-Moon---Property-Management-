@@ -20,7 +20,10 @@ export async function matchClientProfile(
     
     // Get all properties from the system
     const allProperties = await PropertyService.getAllProperties()
-    
+
+    console.log(`🔍 CLIENT MATCHING: Found ${allProperties.length} properties in system`)
+    console.log('🔍 CLIENT MATCHING: Property names:', allProperties.map(p => `"${p.name}"`))
+
     if (allProperties.length === 0) {
       console.log('⚠️ CLIENT MATCHING: No properties found in system')
       return null
@@ -41,10 +44,18 @@ export async function matchClientProfile(
       }
     }
     
-    // Try exact name match
-    const exactNameMatch = allProperties.find(p => 
-      p.name.toLowerCase().trim() === villaName.toLowerCase().trim()
-    )
+    // Try exact name match with enhanced trimming
+    console.log('🔍 CLIENT MATCHING: Testing exact name match...')
+    console.log('🔍 CLIENT MATCHING: Looking for villa:', `"${villaName}"`)
+
+    const exactNameMatch = allProperties.find(p => {
+      const dbName = p.name?.toLowerCase().trim() || ''
+      const searchName = villaName.toLowerCase().trim()
+
+      console.log(`🔍 CLIENT MATCHING: Comparing "${searchName}" with "${dbName}"`)
+
+      return dbName === searchName
+    })
     
     if (exactNameMatch) {
       console.log('✅ CLIENT MATCHING: Exact property name match found')
