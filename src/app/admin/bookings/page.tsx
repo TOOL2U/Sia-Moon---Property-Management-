@@ -93,22 +93,9 @@ export default function AdminBookingsPage() {
       console.log('✅ Analytics loaded successfully')
     } catch (error) {
       console.error('❌ Error loading analytics:', error)
-      // Fallback to basic analytics if enhanced service fails
-      const basicAnalytics: BookingAnalytics = {
-        totalBookings: allBookings.length,
-        pendingApproval: allBookings.filter(b => b.status === 'pending_approval').length,
-        approved: allBookings.filter(b => b.status === 'approved').length,
-        rejected: allBookings.filter(b => b.status === 'rejected').length,
-        totalRevenue: allBookings.filter(b => b.status === 'approved').reduce((sum, b) => sum + (b.revenue || b.price || 0), 0),
-        averageBookingValue: 0,
-        automationEfficiency: 95.2,
-        conflictRate: 2.1,
-        averageProcessingTime: 4.3,
-        revenueGrowth: 12.7,
-        conversionRate: 85.0,
-        clientMatchingAccuracy: 92.3
-      }
-      setAnalytics(basicAnalytics)
+      // Set null analytics on error - no fallback mock data
+      setAnalytics(null)
+      toast.error('Failed to load booking analytics')
     }
   }
 
