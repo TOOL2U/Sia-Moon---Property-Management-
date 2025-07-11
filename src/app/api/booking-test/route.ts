@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, Timestamp } from 'firebase/firestore'
 import { BookingDataFlowService } from '@/lib/services/bookingDataFlowService'
 import { LiveBooking } from '@/lib/services/bookingService'
 
@@ -16,8 +16,8 @@ const firebaseConfig = {
 }
 
 // Initialize Firebase for this API route
-let app: any = null
-let db: any = null
+let app: ReturnType<typeof initializeApp> | null = null
+let db: ReturnType<typeof getFirestore> | null = null
 
 try {
   console.log('🔥 Initializing Firebase in API route...')
@@ -160,7 +160,7 @@ interface BookingTestPayload {
   guests?: number
   specialRequests?: string
   bookingSource?: string
-  rawEmailData?: any
+  rawEmailData?: Record<string, unknown>
   parsedAt?: string
 
   // Make.com ChatGPT parsed fields
@@ -169,14 +169,14 @@ interface BookingTestPayload {
   checkOutDate?: string
   price?: string | number
 
-  [key: string]: any // Allow additional fields from Make.com
+  [key: string]: unknown // Allow additional fields from Make.com
 }
 
 interface ClientProfile {
   id: string
   email: string
   businessName?: string
-  properties?: any[]
+  properties?: Array<{ id?: string; name: string }>
 }
 
 interface PropertyMatch {
@@ -190,7 +190,8 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
   
   try {
-    console.log('🔄 Booking Test Webhook - Incoming request')
+    console.log('📧 GMAIL BOOKING PARSER - Incoming request from Make.com')
+    console.log('   Flow: Gmail Watch → Text Parser → HTTP Module')
     console.log('   Timestamp:', new Date().toISOString())
     console.log('   User-Agent:', request.headers.get('user-agent'))
     console.log('   Content-Type:', request.headers.get('content-type'))
@@ -216,33 +217,58 @@ export async function POST(request: NextRequest) {
     console.log('   Raw payload:', JSON.stringify(payload, null, 2))
     console.log('   Payload size:', JSON.stringify(payload).length, 'bytes')
     
-    // Extract and normalize booking information from both formats
-    const villaName = payload.villaName || payload.property
-    const guestName = payload.guestName
+    // Extract and normalize booking information from Gmail-parsed data
+    console.log('📧 Processing Gmail-parsed booking data...')
+
+    // NEW STRUCTURE: Gmail Watch → Text Parser → HTTP
+    const villaName = payload.property || payload.villaName || null
+    const propertyAddress = payload.address || null
+    const guestName = payload.guestName || null
+    const guestEmail = payload.guestEmail || null
     const checkInDate = normalizeDate(payload.checkInDate || payload.checkIn || '')
     const checkOutDate = normalizeDate(payload.checkOutDate || payload.checkOut || '')
+    const nights = payload.nights ? parseInt(payload.nights.toString()) : null
+    const guests = payload.guests ? parseInt(payload.guests.toString()) : 1
     const price = parsePrice(payload.price || payload.totalAmount || 0)
-    const specialRequests = payload.specialRequests
+
+    // Email metadata from Gmail Watch
+    const emailSubject = payload.subject || null
+    const emailDate = payload.date || null
+
+    // Legacy fields for backward compatibility
+    const specialRequests = payload.specialRequests || payload.requests || null
 
     const bookingInfo = {
-      // Normalized fields
+      // Core booking fields from Gmail-parsed data
       villaName,
+      propertyAddress,
       guestName,
+      guestEmail,
       checkInDate,
       checkOutDate,
+      nights,
+      guests,
       price,
       specialRequests,
 
-      // Original fields for backward compatibility
-      guestEmail: payload.guestEmail,
-      property: villaName,
-      propertyId: payload.propertyId,
-      bookingReference: payload.bookingReference,
+      // Email metadata from Gmail Watch
+      emailSubject,
+      emailDate,
+
+      // Derived/calculated fields
+      property: villaName, // Alias for compatibility
       totalAmount: price,
       currency: payload.currency || 'USD',
-      guests: payload.guests,
-      bookingSource: payload.bookingSource || 'booking.com',
-      parsedAt: payload.parsedAt || new Date().toISOString()
+
+      // Source tracking for Gmail flow
+      bookingSource: 'gmail_watch',
+      dataSource: 'gmail_text_parser',
+      automationFlow: 'gmail_watch_to_text_parser_to_http',
+
+      // Legacy compatibility fields
+      propertyId: payload.propertyId || null,
+      bookingReference: payload.bookingReference || null,
+      parsedAt: new Date().toISOString()
     }
     
     console.log('📋 Extracted Booking Information:')
@@ -278,7 +304,112 @@ export async function POST(request: NextRequest) {
       console.log('❌ No client match found for villa:', villaName)
     }
 
-    // Store both test logs and live bookings
+    // Prepare booking data for comprehensive data flow
+    const bookingData: Omit<LiveBooking, 'id'> = {
+      // Core booking data from Gmail parsing
+      villaName: villaName || 'Unknown Property',
+      guestName: guestName || 'Unknown Guest',
+      checkInDate: checkInDate || '',
+      checkOutDate: checkOutDate || '',
+      price: price || 0,
+
+      // Gmail-specific fields
+      guestEmail: guestEmail || undefined,
+      specialRequests: (typeof specialRequests === 'string' && specialRequests) ? specialRequests : undefined,
+      bookingReference: (typeof payload.bookingReference === 'string' && payload.bookingReference) ? payload.bookingReference : undefined,
+      guests: guests || 1,
+      paymentStatus: (typeof payload.paymentStatus === 'string' && payload.paymentStatus) ? payload.paymentStatus : undefined,
+
+      // Client matching
+      clientId: clientMatch?.clientId || undefined,
+      propertyId: clientMatch?.propertyId || payload.propertyId || undefined,
+      matchConfidence: clientMatch?.confidence || 0,
+
+      // Metadata for Gmail flow
+      bookingSource: 'gmail_watch',
+      bookingType: 'guest_booking', // Use valid enum value
+      status: 'pending_approval',
+      receivedAt: Timestamp.now(),
+      processedAt: Timestamp.now(),
+
+      // Source tracking
+      sourceDetails: {
+        platform: 'gmail',
+        method: 'gmail_watch_text_parser',
+        automation: true,
+        originalSource: `${emailSubject} - ${emailDate}`
+      },
+
+      // Financial data
+      revenue: price || 0,
+      currency: payload.currency || 'USD',
+
+      // Original payload for reference
+      originalPayload: payload
+    }
+
+    // Process comprehensive booking data flow
+    console.log('🔄 GMAIL FLOW: Starting comprehensive booking data flow...')
+    const dataFlowResult = await BookingDataFlowService.processBookingFlow(
+      bookingData,
+      clientMatch ? {
+        clientId: clientMatch.clientId,
+        propertyId: clientMatch.propertyId,
+        propertyName: clientMatch.propertyName,
+        confidence: clientMatch.confidence,
+        matchMethod: 'property_name_matching'
+      } : undefined
+    )
+
+    // Handle data flow results
+    if (dataFlowResult.success) {
+      console.log('✅ GMAIL FLOW: Comprehensive booking data flow completed successfully')
+
+      // Store test log for debugging (legacy support)
+      let storedDocId: string | null = null
+      try {
+        if (db) {
+          const testPayloadDoc = {
+            payload,
+            extractedInfo: bookingInfo,
+            clientMatch,
+            dataFlowResult,
+            receivedAt: Timestamp.now(),
+            processingTimeMs: Date.now() - startTime,
+            payloadSize: JSON.stringify(payload).length,
+            source: 'gmail_watch',
+            type: 'gmail-booking-parser',
+            version: '3.0' // Gmail flow version
+          }
+
+          const testDocRef = await addDoc(collection(db, 'booking_test_logs'), testPayloadDoc)
+          storedDocId = testDocRef.id
+          console.log('✅ GMAIL FLOW: Test log stored with ID:', storedDocId)
+        }
+      } catch (logError) {
+        console.warn('⚠️ GMAIL FLOW: Failed to store test log (non-critical):', logError)
+      }
+    } else {
+      console.error('❌ GMAIL FLOW: Comprehensive booking data flow failed')
+      console.error('❌ GMAIL FLOW: Errors:', dataFlowResult.errors)
+
+      // Try fallback booking creation
+      console.log('🆘 GMAIL FLOW: Attempting fallback booking creation...')
+      const fallbackResult = await BookingDataFlowService.createFallbackBooking(
+        bookingData,
+        dataFlowResult.errors.join('; ')
+      )
+
+      if (fallbackResult.success) {
+        console.log('✅ GMAIL FLOW: Fallback booking created:', fallbackResult.fallbackId)
+        dataFlowResult.bookingId = fallbackResult.fallbackId
+        dataFlowResult.warnings.push('Booking created via fallback mechanism - requires manual processing')
+      } else {
+        console.error('❌ GMAIL FLOW: Fallback booking creation also failed')
+      }
+    }
+
+    // Store legacy test logs for backward compatibility
     let storedDocId: string | null = null
     let liveBookingId: string | null = null
 
@@ -288,20 +419,8 @@ export async function POST(request: NextRequest) {
       if (!db) {
         console.warn('⚠️ Firebase db is not available - attempting to reinitialize...')
         try {
-          // Try to reinitialize Firebase
-          const { initializeApp, getApps } = require('firebase/app')
-          const { getFirestore } = require('firebase/firestore')
-
-          const config = {
-            apiKey: "AIzaSyCDaTQsNpWw0y-g6VeXDYG57eCNtfloxxw",
-            authDomain: "operty-b54dc.firebaseapp.com",
-            projectId: "operty-b54dc",
-            storageBucket: "operty-b54dc.firebasestorage.app",
-            messagingSenderId: "914547669275",
-            appId: "1:914547669275:web:0897d32d59b17134a53bbe"
-          }
-
-          const tempApp = getApps().length === 0 ? initializeApp(config) : getApps()[0]
+          // Try to reinitialize Firebase using existing imports
+          const tempApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
           db = getFirestore(tempApp)
           console.log('✅ Firebase reinitialized successfully')
         } catch (reinitError) {
@@ -389,25 +508,46 @@ export async function POST(request: NextRequest) {
 
     // Calculate processing time
     const processingTime = Date.now() - startTime
-    console.log(`✅ Booking test webhook processed in ${processingTime}ms`)
+    console.log(`✅ Gmail booking parser processed in ${processingTime}ms`)
 
-    // Prepare response
+    // Prepare comprehensive response for Gmail flow
     const response = {
-      status: 'success',
-      message: 'Booking test payload received and logged',
+      status: dataFlowResult?.success ? 'success' : 'partial_success',
+      message: dataFlowResult?.success
+        ? 'Gmail booking processed successfully through comprehensive data flow'
+        : 'Gmail booking processed with warnings - manual review may be required',
+      flow: 'Gmail Watch → Text Parser → HTTP Module',
       received: payload,
+
+      // Gmail flow data flow results
+      dataFlow: dataFlowResult ? {
+        success: dataFlowResult.success,
+        bookingId: dataFlowResult.bookingId,
+        isDuplicate: dataFlowResult.isDuplicate,
+        clientMatched: dataFlowResult.clientMatched,
+        notificationsSent: dataFlowResult.notificationsSent,
+        dashboardUpdated: dataFlowResult.dashboardUpdated,
+        reportsUpdated: dataFlowResult.reportsUpdated,
+        errors: dataFlowResult.errors,
+        warnings: dataFlowResult.warnings,
+        processingMetadata: dataFlowResult.metadata
+      } : null,
+
+      // Gmail-specific metadata
+      gmailFlow: {
+        emailSubject: emailSubject,
+        emailDate: emailDate,
+        propertyAddress: propertyAddress,
+        nights: nights,
+        automationSource: 'gmail_watch_text_parser'
+      },
+
+      // Legacy metadata for backward compatibility
       metadata: {
         timestamp: new Date().toISOString(),
         processingTimeMs: processingTime,
         payloadSize: JSON.stringify(payload).length,
-        missingFields: missingFields.length > 0 ? missingFields : undefined,
         extractedInfo: bookingInfo,
-
-        // Storage information
-        storedInFirebase: storedDocId ? true : false,
-        firebaseDocId: storedDocId,
-        liveBookingCreated: liveBookingId ? true : false,
-        liveBookingId: liveBookingId,
 
         // Client matching information
         clientMatch: clientMatch ? {
@@ -416,15 +556,20 @@ export async function POST(request: NextRequest) {
           confidence: clientMatch.confidence
         } : null,
 
-        // Booking status
-        bookingStatus: liveBookingId ? 'pending_approval' : 'test_only'
+        // Enhanced booking status for Gmail flow
+        bookingStatus: dataFlowResult?.bookingId ? 'pending_approval' : 'processing_failed',
+        liveBookingCreated: dataFlowResult?.success && !dataFlowResult?.isDuplicate,
+        liveBookingId: dataFlowResult?.bookingId,
+        duplicateDetected: dataFlowResult?.isDuplicate,
+        fallbackUsed: dataFlowResult?.warnings?.some(w => w.includes('fallback')) || false
       }
     }
 
-    console.log('📤 Sending response:', {
+    console.log('📤 GMAIL FLOW: Sending response:', {
       status: response.status,
-      message: response.message,
-      payloadSize: response.metadata.payloadSize,
+      flow: response.flow,
+      bookingId: dataFlowResult?.bookingId,
+      clientMatched: dataFlowResult?.clientMatched,
       processingTime: response.metadata.processingTimeMs
     })
 
@@ -432,8 +577,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const processingTime = Date.now() - startTime
-    
-    console.error('❌ Booking Test Webhook Error:')
+
+    console.error('❌ GMAIL BOOKING PARSER ERROR:')
+    console.error('   Flow: Gmail Watch → Text Parser → HTTP Module')
     console.error('   Error:', error)
     console.error('   Processing time:', processingTime, 'ms')
     console.error('   Stack:', error instanceof Error ? error.stack : 'No stack trace')
@@ -441,10 +587,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         status: 'error',
+        flow: 'Gmail Watch → Text Parser → HTTP Module',
         error: error instanceof Error ? error.message : 'Unknown error occurred',
+        message: 'Gmail booking parsing failed - manual intervention required',
         metadata: {
           timestamp: new Date().toISOString(),
-          processingTimeMs: processingTime
+          processingTimeMs: processingTime,
+          automationSource: 'gmail_watch_text_parser'
         }
       },
       { status: 500 }
