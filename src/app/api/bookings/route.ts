@@ -168,7 +168,7 @@ function authenticateRequest(request: NextRequest): boolean {
   const vercelBypass = request.headers.get('x-vercel-protection-bypass')
   
   // Allow requests with valid API key or Vercel bypass header
-  if (apiKey === process.env.MAKE_COM_API_KEY) {
+  if (apiKey === process.env.BOOKING_API_KEY) {
     return true
   }
   
