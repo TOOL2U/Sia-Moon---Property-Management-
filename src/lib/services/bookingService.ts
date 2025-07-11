@@ -87,6 +87,27 @@ export interface BookingStats {
 export class BookingService {
 
   /**
+   * Clean booking data by removing undefined values for Firebase compatibility
+   */
+  private static cleanBookingData(data: any): any {
+    const cleaned: any = {}
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          // Recursively clean nested objects
+          const cleanedNested = this.cleanBookingData(value)
+          if (Object.keys(cleanedNested).length > 0) {
+            cleaned[key] = cleanedNested
+          }
+        } else {
+          cleaned[key] = value
+        }
+      }
+    }
+    return cleaned
+  }
+
+  /**
    * Create a new live booking with idempotency and error handling
    */
   static async createLiveBooking(bookingData: Omit<LiveBooking, 'id'>): Promise<{
@@ -128,8 +149,12 @@ export class BookingService {
           isDuplicate: false
         }
 
+        // Clean data to remove undefined values for Firebase compatibility
+        const cleanedBookingData = this.cleanBookingData(bookingWithHash)
+        console.log('🧹 BOOKING: Cleaned booking data for Firebase storage')
+
         // Store in Firebase with retry logic
-        const docRef = await addDoc(collection(db, 'live_bookings'), bookingWithHash)
+        const docRef = await addDoc(collection(db, 'live_bookings'), cleanedBookingData)
         const bookingId = docRef.id
 
         console.log('✅ BOOKING: Live booking created successfully')
