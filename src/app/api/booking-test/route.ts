@@ -382,7 +382,7 @@ export async function POST(request: NextRequest) {
             version: '3.0' // Gmail flow version
           }
 
-          const testDocRef = await addDoc(collection(db, 'booking_test_logs'), testPayloadDoc)
+          const testDocRef = await addDoc(collection(db, 'booking_logs'), testPayloadDoc)
           storedDocId = testDocRef.id
           console.log('✅ GMAIL FLOW: Test log stored with ID:', storedDocId)
         }
@@ -443,7 +443,7 @@ export async function POST(request: NextRequest) {
           type: 'booking-test'
         }
 
-        const testDocRef = await addDoc(collection(db, 'booking_test_logs'), testPayloadDoc)
+        const testDocRef = await addDoc(collection(db, 'booking_logs'), testPayloadDoc)
         storedDocId = testDocRef.id
         console.log('✅ Test log stored:', storedDocId)
 

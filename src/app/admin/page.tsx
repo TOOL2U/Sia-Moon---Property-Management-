@@ -337,6 +337,12 @@ export default function AdminDashboard() {
                 >
                   Data Flow Tests
                 </Button>
+                <Button
+                  onClick={() => window.location.href = '/admin/client-matching-debug'}
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                >
+                  Client Matching Debug
+                </Button>
               </div>
             </CardContent>
           </Card>
