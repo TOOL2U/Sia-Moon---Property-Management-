@@ -1,39 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, getDocs, Timestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { BookingDataFlowService } from '@/lib/services/bookingDataFlowService'
 import { LiveBooking } from '@/lib/services/bookingService'
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-}
-
-// Initialize Firebase for this API route
-let app: ReturnType<typeof initializeApp> | null = null
-let db: ReturnType<typeof getFirestore> | null = null
-
-try {
-  console.log('🔥 Initializing Firebase in API route...')
-  console.log('📋 Firebase config check:', {
-    apiKey: firebaseConfig.apiKey ? 'Present' : 'Missing',
-    projectId: firebaseConfig.projectId ? 'Present' : 'Missing',
-    authDomain: firebaseConfig.authDomain ? 'Present' : 'Missing'
-  })
-
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-  db = getFirestore(app)
-  console.log('✅ Firebase initialized successfully in API route')
-} catch (error) {
-  console.error('❌ Firebase initialization failed in API route:', error)
-  db = null
-}
+// Use the centralized Firebase db instance
 
 /**
  * Match incoming booking data with existing client profiles
@@ -417,15 +388,8 @@ export async function POST(request: NextRequest) {
       console.log('🔍 Firebase db status:', db ? 'Available' : 'Not available')
 
       if (!db) {
-        console.warn('⚠️ Firebase db is not available - attempting to reinitialize...')
-        try {
-          // Try to reinitialize Firebase using existing imports
-          const tempApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-          db = getFirestore(tempApp)
-          console.log('✅ Firebase reinitialized successfully')
-        } catch (reinitError) {
-          console.error('❌ Firebase reinitialization failed:', reinitError)
-        }
+        console.warn('⚠️ Firebase db is not available - database not initialized')
+        throw new Error('Firebase database not initialized')
       }
 
       if (db) {

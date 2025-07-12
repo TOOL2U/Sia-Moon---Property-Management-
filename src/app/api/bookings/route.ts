@@ -1,28 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, getApps } from 'firebase/app'
 import { 
-  getFirestore, 
   collection, 
   addDoc, 
   query, 
   where, 
   getDocs,
-  Timestamp 
+  Timestamp,
+  Firestore 
 } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+// Use the centralized Firebase db instance
+
+// Helper function to ensure db is available
+function getDb(): Firestore {
+  if (!db) {
+    throw new Error('Firebase database not initialized')
+  }
+  return db
 }
-
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-const db = getFirestore(app)
 
 // Booking interface
 interface BookingData {
@@ -148,8 +144,9 @@ function normalizeBookingData(data: BookingData): ProcessedBooking {
  */
 async function checkForDuplicate(bookingData: ProcessedBooking): Promise<boolean> {
   try {
+    const database = getDb()
     const q = query(
-      collection(db, 'live_bookings'),
+      collection(database, 'live_bookings'),
       where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
     )
     
@@ -241,7 +238,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Create booking in Firebase (using live_bookings collection for consistency)
-    const docRef = await addDoc(collection(db, 'live_bookings'), processedBooking)
+    const database = getDb()
+    const docRef = await addDoc(collection(database, 'live_bookings'), processedBooking)
     const bookingId = docRef.id
     
     console.log('✅ BOOKINGS API: Booking created successfully')
@@ -298,6 +296,7 @@ export async function GET() {
       }
     })
   } catch (error) {
+    console.error('Service health check failed:', error)
     return NextResponse.json(
       { success: false, error: 'Service unavailable' },
       { status: 503 }

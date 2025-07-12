@@ -13,6 +13,7 @@ import {
   AutomationRule,
   BookingInsight
 } from '@/lib/services/enhancedBookingService'
+import { BookingSyncService } from '@/lib/services/bookingSyncService'
 import { 
   Calendar,
   User,
@@ -167,7 +168,7 @@ export default function AdminBookingsPage() {
 
       console.log(`📝 ${action === 'approved' ? 'Approving' : 'Rejecting'} booking ${bookingId}`)
       
-      // Enhanced processing with automation
+      // Enhanced processing with automation and client matching
       if (automationEnabled && action === 'approved') {
         console.log('🤖 Running automation rules...')
         const automationSuccess = await EnhancedBookingService.processAutomationRules(bookingId)
@@ -175,6 +176,24 @@ export default function AdminBookingsPage() {
           toast.success('Automation rules executed successfully')
         } else {
           toast.error('Some automation rules failed to execute')
+        }
+
+        // NEW: Automatic client matching and booking sync
+        console.log('🔗 Starting automatic client matching and booking sync...')
+        const syncResult = await BookingSyncService.processApprovedBooking(bookingId)
+
+        if (syncResult.success && syncResult.clientMatched && syncResult.bookingSynced) {
+          toast.success(`✅ Booking synced to client profile! Client ID: ${syncResult.clientId}`)
+          console.log('🎉 COMPLETE SUCCESS: Booking approved, matched, and synced!')
+        } else if (syncResult.clientMatched && !syncResult.bookingSynced) {
+          toast.success('✅ Client matched but sync failed. Check logs.')
+          console.log('⚠️ PARTIAL SUCCESS: Client matched but booking sync failed')
+        } else if (!syncResult.clientMatched) {
+          toast.success('✅ Booking approved but no matching client profile found')
+          console.log('⚠️ NO MATCH: Booking approved but no client profile matched')
+        } else {
+          toast.error(`❌ Client matching/sync failed: ${syncResult.error}`)
+          console.error('❌ SYNC FAILED:', syncResult.error)
         }
       }
       

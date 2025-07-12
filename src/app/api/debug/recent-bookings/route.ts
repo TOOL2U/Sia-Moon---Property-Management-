@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, limit, Firestore } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+// Use the centralized Firebase db instance
+
+// Helper function to ensure db is available
+function getDb(): Firestore {
+  if (!db) {
+    throw new Error('Firebase database not initialized')
+  }
+  return db
 }
-
-// Initialize Firebase app
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-const db = getFirestore(app)
 
 export async function GET() {
   try {
