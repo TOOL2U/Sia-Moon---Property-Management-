@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
+import { collection, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
 export async function GET() {
@@ -10,10 +10,9 @@ export async function GET() {
       throw new Error('Firebase not initialized')
     }
 
-    // Get recent onboarding submissions
+    // Get recent onboarding submissions (without orderBy to avoid index issues)
     const onboardingRef = collection(db, 'onboarding_submissions')
-    const onboardingQuery = query(onboardingRef, orderBy('createdAt', 'desc'), limit(5))
-    const onboardingSnapshot = await getDocs(onboardingQuery)
+    const onboardingSnapshot = await getDocs(onboardingRef)
     
     const onboardingSubmissions = onboardingSnapshot.docs.map(doc => ({
       id: doc.id,
@@ -60,7 +59,9 @@ export async function GET() {
     console.error('❌ DEBUG: Error fetching data:', error)
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      details: 'Error occurred while fetching Firebase data'
     }, { status: 500 })
   }
 }
