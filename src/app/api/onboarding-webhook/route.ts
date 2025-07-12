@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OnboardingService } from '@/lib/services/onboardingService'
 
+// Helper function to safely convert values for Firebase (no undefined values allowed)
+function safeValue(value: any, defaultValue: any) {
+  if (value === undefined || value === null) {
+    return defaultValue
+  }
+  return value
+}
+
 /**
  * Webhook endpoint to receive onboarding data from Make.com and store in Firebase
  * This endpoint should be called by Make.com after processing the onboarding form data
@@ -33,90 +41,90 @@ export async function POST(request: NextRequest) {
     // Convert the webhook data to match our OnboardingSubmission interface
     const submissionData = {
       // Owner Details
-      ownerFullName: data.name || '',
-      ownerEmail: data.email || '',
-      ownerContactNumber: data.phone || '',
-      ownerNationality: data.nationality || '',
-      preferredContactMethod: data.preferred_contact_method || '',
-      bankDetails: data.bank_details || '',
+      ownerFullName: safeValue(data.name, ''),
+      ownerEmail: safeValue(data.email, ''),
+      ownerContactNumber: safeValue(data.phone, ''),
+      ownerNationality: safeValue(data.nationality, ''),
+      preferredContactMethod: safeValue(data.preferred_contact_method, ''),
+      bankDetails: safeValue(data.bank_details, ''),
 
       // Property Details
-      propertyName: data.property_name || '',
-      propertyAddress: data.property_address || '',
-      googleMapsUrl: data.google_maps_url || '',
-      bedrooms: data.bedrooms || 0,
-      bathrooms: data.bathrooms || 0,
-      landSizeSqm: data.land_size_sqm || 0,
-      villaSizeSqm: data.villa_size_sqm || 0,
-      yearBuilt: data.year_built || 0,
+      propertyName: safeValue(data.property_name, ''),
+      propertyAddress: safeValue(data.property_address, ''),
+      googleMapsUrl: safeValue(data.google_maps_url, ''),
+      bedrooms: safeValue(data.bedrooms, 0),
+      bathrooms: safeValue(data.bathrooms, 0),
+      landSizeSqm: safeValue(data.land_size_sqm, 0),
+      villaSizeSqm: safeValue(data.villa_size_sqm, 0),
+      yearBuilt: safeValue(data.year_built, 0),
 
       // Amenities
-      hasPool: data.has_pool || false,
-      hasGarden: data.has_garden || false,
-      hasAirConditioning: data.has_air_conditioning || false,
-      internetProvider: data.internet_provider || '',
-      hasParking: data.has_parking || false,
-      hasLaundry: data.has_laundry || false,
-      hasBackupPower: data.has_backup_power || false,
+      hasPool: safeValue(data.has_pool, false),
+      hasGarden: safeValue(data.has_garden, false),
+      hasAirConditioning: safeValue(data.has_air_conditioning, false),
+      internetProvider: safeValue(data.internet_provider, ''),
+      hasParking: safeValue(data.has_parking, false),
+      hasLaundry: safeValue(data.has_laundry, false),
+      hasBackupPower: safeValue(data.has_backup_power, false),
 
       // Access & Staff
-      accessDetails: data.access_details || '',
-      hasSmartLock: data.has_smart_lock || false,
-      gateRemoteDetails: data.gate_remote_details || '',
-      onsiteStaff: data.onsite_staff || '',
+      accessDetails: safeValue(data.access_details, ''),
+      hasSmartLock: safeValue(data.has_smart_lock, false),
+      gateRemoteDetails: safeValue(data.gate_remote_details, ''),
+      onsiteStaff: safeValue(data.onsite_staff, ''),
 
       // Utilities
-      electricityProvider: data.electricity_provider || '',
-      waterSource: data.water_source || '',
-      internetPackage: data.internet_package || '',
+      electricityProvider: safeValue(data.electricity_provider, ''),
+      waterSource: safeValue(data.water_source, ''),
+      internetPackage: safeValue(data.internet_package, ''),
 
       // Smart Electric System
-      hasSmartElectricSystem: data.has_smart_electric_system || false,
-      smartSystemBrand: data.smart_system_brand || '',
-      smartDevicesControlled: data.smart_devices_controlled || [],
-      smartDevicesOther: data.smart_devices_other || '',
-      canControlManuallyWifiDown: data.can_control_manually_wifi_down || false,
-      smartSystemAppPlatform: data.smart_system_app_platform || '',
-      hasHubGateway: data.has_hub_gateway || false,
-      hubGatewayLocation: data.hub_gateway_location || '',
-      linkedToPropertyWifi: data.linked_to_property_wifi || false,
-      controlAccountOwner: data.control_account_owner || '',
-      controlAccountOwnerOther: data.control_account_owner_other || '',
-      loginCredentialsProvided: data.login_credentials_provided || false,
-      loginCredentialsDetails: data.login_credentials_details || '',
-      hasActiveSchedulesAutomations: data.has_active_schedules_automations || false,
-      schedulesAutomationsDetails: data.schedules_automations_details || '',
-      smartSystemSpecialInstructions: data.smart_system_special_instructions || '',
+      hasSmartElectricSystem: safeValue(data.has_smart_electric_system, false),
+      smartSystemBrand: safeValue(data.smart_system_brand, ''),
+      smartDevicesControlled: safeValue(data.smart_devices_controlled, []),
+      smartDevicesOther: safeValue(data.smart_devices_other, ''),
+      canControlManuallyWifiDown: safeValue(data.can_control_manually_wifi_down, false),
+      smartSystemAppPlatform: safeValue(data.smart_system_app_platform, ''),
+      hasHubGateway: safeValue(data.has_hub_gateway, false),
+      hubGatewayLocation: safeValue(data.hub_gateway_location, ''),
+      linkedToPropertyWifi: safeValue(data.linked_to_property_wifi, false),
+      controlAccountOwner: safeValue(data.control_account_owner, ''),
+      controlAccountOwnerOther: safeValue(data.control_account_owner_other, ''),
+      loginCredentialsProvided: safeValue(data.login_credentials_provided, false),
+      loginCredentialsDetails: safeValue(data.login_credentials_details, ''),
+      hasActiveSchedulesAutomations: safeValue(data.has_active_schedules_automations, false),
+      schedulesAutomationsDetails: safeValue(data.schedules_automations_details, ''),
+      smartSystemSpecialInstructions: safeValue(data.smart_system_special_instructions, ''),
 
       // Rental & Marketing
-      rentalRates: data.rental_rates || '',
-      platformsListed: data.platforms_listed || [],
-      averageOccupancyRate: data.average_occupancy_rate || '',
-      minimumStayRequirements: data.minimum_stay_requirements || '',
-      targetGuests: data.target_guests || '',
-      ownerBlackoutDates: data.owner_blackout_dates || '',
+      rentalRates: safeValue(data.rental_rates, ''),
+      platformsListed: safeValue(data.platforms_listed, []),
+      averageOccupancyRate: safeValue(data.average_occupancy_rate, ''),
+      minimumStayRequirements: safeValue(data.minimum_stay_requirements, ''),
+      targetGuests: safeValue(data.target_guests, ''),
+      ownerBlackoutDates: safeValue(data.owner_blackout_dates, ''),
 
       // Preferences & Rules
-      petsAllowed: data.pets_allowed || false,
-      partiesAllowed: data.parties_allowed || false,
-      smokingAllowed: data.smoking_allowed || false,
-      maintenanceAutoApprovalLimit: data.maintenance_auto_approval_limit || '',
+      petsAllowed: safeValue(data.pets_allowed, false),
+      partiesAllowed: safeValue(data.parties_allowed, false),
+      smokingAllowed: safeValue(data.smoking_allowed, false),
+      maintenanceAutoApprovalLimit: safeValue(data.maintenance_auto_approval_limit, ''),
 
       // Current Condition
-      repairsNeeded: data.repairs_needed || '',
+      repairsNeeded: safeValue(data.repairs_needed, ''),
 
       // Photos & Media
-      professionalPhotosStatus: data.professional_photos_status || '',
-      floorPlanImagesAvailable: data.floor_plan_images_available || false,
-      videoWalkthroughAvailable: data.video_walkthrough_available || false,
-      uploadedPhotos: data.uploaded_photos || [],
+      professionalPhotosStatus: safeValue(data.professional_photos_status, ''),
+      floorPlanImagesAvailable: safeValue(data.floor_plan_images_available, false),
+      videoWalkthroughAvailable: safeValue(data.video_walkthrough_available, false),
+      uploadedPhotos: safeValue(data.uploaded_photos, []),
 
       // Emergency Contact
-      emergencyContactName: data.emergency_contact_name || '',
-      emergencyContactPhone: data.emergency_contact_phone || '',
+      emergencyContactName: safeValue(data.emergency_contact_name, ''),
+      emergencyContactPhone: safeValue(data.emergency_contact_phone, ''),
 
       // Additional Notes
-      notes: data.notes || '',
+      notes: safeValue(data.notes, ''),
 
       // Status
       status: 'pending' as const
@@ -135,15 +143,15 @@ export async function POST(request: NextRequest) {
 
       // Create property data for profile
       const propertyData = {
-        name: data.property_name,
-        address: data.property_address,
-        description: `Property managed by Sia Moon Property Management. ${data.notes || ''}`.trim(),
-        bedrooms: data.bedrooms,
-        bathrooms: data.bathrooms,
-        maxGuests: data.bedrooms ? data.bedrooms * 2 : 4,
+        name: safeValue(data.property_name, ''),
+        address: safeValue(data.property_address, ''),
+        description: `Property managed by Sia Moon Property Management. ${safeValue(data.notes, '')}`.trim(),
+        bedrooms: safeValue(data.bedrooms, 0),
+        bathrooms: safeValue(data.bathrooms, 0),
+        maxGuests: safeValue(data.bedrooms, 0) ? safeValue(data.bedrooms, 0) * 2 : 4,
         amenities: [],
-        images: data.uploaded_photos || [],
-        coverPhoto: data.uploaded_photos && data.uploaded_photos.length > 0 ? data.uploaded_photos[0] : undefined,
+        images: safeValue(data.uploaded_photos, []),
+        coverPhoto: Array.isArray(data.uploaded_photos) && data.uploaded_photos.length > 0 ? data.uploaded_photos[0] : undefined,
         pricePerNight: 0,
         currency: 'THB',
         status: 'pending_approval' as const
