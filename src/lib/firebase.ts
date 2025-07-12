@@ -62,7 +62,7 @@ if (missingFields.length > 0) {
 }
 
 // Initialize Firebase with singleton pattern (both client and server side)
-let app
+let app = null as any
 try {
   // Initialize if we have the required configuration (both browser and server)
   if (missingFields.length === 0) {
@@ -77,7 +77,7 @@ try {
   } else {
     console.log('⏳ Firebase initialization skipped - configuration incomplete')
     console.log('Missing fields:', missingFields)
-    app = null
+    app = undefined
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
@@ -87,7 +87,31 @@ try {
     environment: process.env.NODE_ENV,
     isBrowser
   })
-  app = null
+  app = undefined
+}
+
+// Function to ensure Firebase is initialized (for serverless environments)
+export function ensureFirebaseInitialized() {
+  if (!app && missingFields.length === 0) {
+    try {
+      if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig)
+        console.log('✅ Firebase lazy initialized for serverless')
+      } else {
+        app = getApp()
+        console.log('✅ Firebase app retrieved for serverless')
+      }
+    } catch (error) {
+      console.error('❌ Firebase lazy initialization failed:', error)
+      throw new Error('Firebase initialization failed')
+    }
+  }
+
+  if (!app) {
+    throw new Error('Firebase not initialized')
+  }
+
+  return app
 }
 
 // Initialize Firebase services (with null checks for build time)
@@ -95,6 +119,15 @@ export const auth = app ? getAuth(app) : null
 
 // Initialize Firestore with getFirestore (consistent with all other services)
 export const db = app ? getFirestore(app) : null
+
+// Function to get Firestore instance with lazy initialization
+export function getDb() {
+  if (!db) {
+    const firebaseApp = ensureFirebaseInitialized()
+    return getFirestore(firebaseApp)
+  }
+  return db
+}
 
 // Initialize Storage with additional safety checks (both client and server)
 export const storage = (() => {

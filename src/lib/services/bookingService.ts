@@ -1,5 +1,6 @@
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, Timestamp, Firestore } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, query, where, addDoc, Timestamp, Firestore, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { ProfileBasedClientMatching } from './profileBasedClientMatching'
 
 // Use the centralized Firebase db instance
 
@@ -391,6 +392,7 @@ export class BookingService {
 
   /**
    * Update booking status (approve/reject)
+   * When approved, automatically triggers client profile matching
    */
   static async updateBookingStatus(
     bookingId: string,
@@ -408,6 +410,8 @@ export class BookingService {
 
       console.log(`🔍 Creating document reference for booking: ${bookingId}`)
       const bookingRef = doc(getDb(), 'live_bookings', bookingId)
+      
+      // Update the booking status
       await updateDoc(bookingRef, {
         status,
         adminNotes: adminNotes || null,
@@ -416,11 +420,129 @@ export class BookingService {
       })
       
       console.log(`✅ Booking ${bookingId} status updated to ${status}`)
+
+      // 🚀 NEW: Trigger client profile matching when booking is approved
+      if (status === 'approved') {
+        await this.triggerClientProfileMatching(bookingId)
+      }
+      
       return true
       
     } catch (error) {
       console.error('❌ Error updating booking status:', error)
       return false
+    }
+  }
+
+  /**
+   * 🚀 NEW: Trigger client profile matching for approved bookings
+   */
+  private static async triggerClientProfileMatching(bookingId: string): Promise<void> {
+    try {
+      console.log(`🎯 Starting client profile matching for booking: ${bookingId}`)
+      
+      // Get the booking details
+      const bookingRef = doc(getDb(), 'live_bookings', bookingId)
+      const bookingSnap = await getDoc(bookingRef)
+      
+      if (!bookingSnap.exists()) {
+        console.error('❌ Booking not found:', bookingId)
+        return
+      }
+      
+      const booking = bookingSnap.data() as LiveBooking
+      console.log(`🔍 Found booking for property: ${booking.villaName}`)
+      
+      // Attempt to match the property to a client profile
+      const clientMatch = await ProfileBasedClientMatching.matchClientByPropertyName(booking.villaName)
+      
+      if (clientMatch) {
+        console.log(`✅ Client match found! Property "${booking.villaName}" matches client: ${clientMatch.profileEmail}`)
+        console.log(`📊 Match confidence: ${clientMatch.confidence}%`)
+        console.log(`🔧 Match method: ${clientMatch.matchMethod}`)
+        
+        // Add the booking to the client's profile
+        await this.addBookingToClientProfile(clientMatch.clientId, booking, bookingId)
+        
+        // Update the booking with client match info
+        await updateDoc(bookingRef, {
+          clientMatchId: clientMatch.clientId,
+          clientMatchEmail: clientMatch.profileEmail,
+          clientMatchConfidence: clientMatch.confidence,
+          clientMatchMethod: clientMatch.matchMethod,
+          clientMatchedAt: Timestamp.now()
+        })
+        
+        console.log(`🎉 Booking successfully linked to client profile: ${clientMatch.profileEmail}`)
+      } else {
+        console.log(`⚠️ No client match found for property: ${booking.villaName}`)
+        
+        // Update booking to indicate no match was found
+        await updateDoc(bookingRef, {
+          clientMatchAttempted: true,
+          clientMatchedAt: Timestamp.now(),
+          clientMatchResult: 'no_match_found'
+        })
+      }
+      
+    } catch (error) {
+      console.error('❌ Error in client profile matching:', error)
+      
+      // Update booking to indicate matching failed
+      try {
+        const bookingRef = doc(getDb(), 'live_bookings', bookingId)
+        await updateDoc(bookingRef, {
+          clientMatchAttempted: true,
+          clientMatchedAt: Timestamp.now(),
+          clientMatchResult: 'matching_failed',
+          clientMatchError: error instanceof Error ? error.message : 'Unknown error'
+        })
+      } catch (updateError) {
+        console.error('❌ Failed to update booking with match error:', updateError)
+      }
+    }
+  }
+
+  /**
+   * 🚀 NEW: Add a booking to a client's profile
+   */
+  private static async addBookingToClientProfile(
+    clientId: string, 
+    booking: LiveBooking, 
+    bookingId: string
+  ): Promise<void> {
+    try {
+      console.log(`📝 Adding booking to client profile: ${clientId}`)
+      
+      // Create a client booking record
+      const clientBookingData = {
+        bookingId: bookingId,
+        originalBookingId: booking.id || bookingId,
+        villaName: booking.villaName,
+        guestName: booking.guestName,
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+        price: booking.price,
+        status: booking.status,
+        source: 'automated_matching',
+        propertyId: booking.propertyId,
+        addedToProfileAt: Timestamp.now(),
+        addedBy: 'automated_approval_system'
+      }
+      
+      // Add to client_bookings collection
+      const clientBookingsRef = collection(getDb(), 'client_bookings')
+      await addDoc(clientBookingsRef, {
+        ...clientBookingData,
+        clientId: clientId,
+        createdAt: Timestamp.now()
+      })
+      
+      console.log(`✅ Booking successfully added to client profile`)
+      
+    } catch (error) {
+      console.error('❌ Error adding booking to client profile:', error)
+      throw error
     }
   }
   

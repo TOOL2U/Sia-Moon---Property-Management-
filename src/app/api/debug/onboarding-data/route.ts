@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
 
 export async function GET() {
   try {
     console.log('🔍 DEBUG: Fetching onboarding submissions and profiles')
 
-    if (!db) {
-      throw new Error('Firebase not initialized')
-    }
+    // Get Firestore instance with lazy initialization
+    const db = getDb()
 
     // Get recent onboarding submissions (without orderBy to avoid index issues)
     const onboardingRef = collection(db, 'onboarding_submissions')

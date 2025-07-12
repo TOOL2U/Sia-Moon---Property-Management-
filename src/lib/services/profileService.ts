@@ -1,13 +1,5 @@
 import { collection, doc, setDoc, getDoc, updateDoc, arrayUnion, getDocs, Timestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-
-// Helper function to ensure db is available
-function getDb() {
-  if (!db) {
-    throw new Error('Firebase database not initialized')
-  }
-  return db
-}
+import { getDb } from '@/lib/firebase'
 
 export interface ProfileProperty {
   id: string
