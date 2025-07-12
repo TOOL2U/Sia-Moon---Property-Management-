@@ -15,16 +15,16 @@ function getDb(): Firestore {
 export async function GET() {
   try {
     console.log('🔍 PROPERTIES DEBUG: Fetching all properties from Firebase...')
-    
+
     // Get all properties directly from Firebase
     const q = query(
       collection(getDb(), 'properties'),
       orderBy('createdAt', 'desc')
     )
-    
+
     const querySnapshot = await getDocs(q)
     const properties: any[] = []
-    
+
     querySnapshot.forEach((doc) => {
       const data = doc.data()
       properties.push({
@@ -38,47 +38,24 @@ export async function GET() {
         allData: data
       })
     })
-    
-    console.log(`🔍 PROPERTIES DEBUG: Found ${properties.length} properties`)
-    
-    // Look specifically for "Donkey House" variations
-    const donkeyHouseVariations = properties.filter(p => 
-      p.name && p.name.toLowerCase().includes('donkey')
-    )
-    
-    console.log('🔍 PROPERTIES DEBUG: Donkey House variations:', donkeyHouseVariations)
-    
-    // Also check for properties with donkey@gmail.com
-    const donkeyEmailProperties = properties.filter(p => 
-      (p.userId && p.userId.includes('donkey')) || 
-      (p.email && p.email.includes('donkey'))
-    )
-    
-    console.log('🔍 PROPERTIES DEBUG: Properties with donkey email:', donkeyEmailProperties)
-    
+
+    console.log(`✅ PROPERTIES DEBUG: Found ${properties.length} properties`)
+
     return NextResponse.json({
       success: true,
-      totalProperties: properties.length,
-      allProperties: properties,
-      donkeyHouseVariations,
-      donkeyEmailProperties,
-      debug: {
-        searchTerms: ['donkey', 'Donkey House', 'donkey house'],
-        exactMatches: properties.filter(p => 
-          p.name && p.name.toLowerCase().trim() === 'donkey house'
-        ),
-        partialMatches: properties.filter(p => 
-          p.name && p.name.toLowerCase().includes('donkey house')
-        )
-      }
+      count: properties.length,
+      properties,
+      timestamp: new Date().toISOString()
     })
-    
+
   } catch (error) {
-    console.error('❌ PROPERTIES DEBUG: Error:', error)
+    console.error('❌ PROPERTIES DEBUG: Error fetching properties:', error)
     return NextResponse.json(
-      { 
+      {
+        success: false,
         error: 'Failed to fetch properties',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     )
