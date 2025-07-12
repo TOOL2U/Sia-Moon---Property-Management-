@@ -74,15 +74,27 @@ export class ProfileService {
       const profilesRef = collection(getDb(), 'profiles')
       const snapshot = await getDocs(profilesRef)
 
+      console.log('🔍 PROFILE: Total profiles found:', snapshot.docs.length)
+
+      const allEmails: string[] = []
       for (const doc of snapshot.docs) {
         const profile = doc.data() as UserProfile
-        if (profile.email.toLowerCase() === email.toLowerCase()) {
+        allEmails.push(profile.email || 'no-email')
+
+        console.log('🔍 PROFILE: Checking profile:', {
+          id: profile.id,
+          email: profile.email,
+          matches: profile.email?.toLowerCase() === email.toLowerCase()
+        })
+
+        if (profile.email && profile.email.toLowerCase() === email.toLowerCase()) {
           console.log('✅ PROFILE: Found user by email:', profile.id)
           return profile.id
         }
       }
 
       console.log('❌ PROFILE: No user found with email:', email)
+      console.log('❌ PROFILE: Available emails:', allEmails)
       return null
 
     } catch (error) {

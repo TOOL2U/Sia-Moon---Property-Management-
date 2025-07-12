@@ -39,11 +39,14 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     
     console.log('📦 Received onboarding data:', {
+      user_id: data.user_id,
       name: data.name,
       email: data.email,
       property_name: data.property_name,
       timestamp: new Date().toISOString()
     })
+
+    console.log('🔍 Full webhook data keys:', Object.keys(data))
 
     // Convert the webhook data to match our OnboardingSubmission interface
     const submissionData = {
@@ -151,11 +154,20 @@ export async function POST(request: NextRequest) {
 
       // Find user by email if user_id is not provided
       let userId = data.user_id
-      if (!userId && data.email) {
-        console.log('🔍 User ID not provided, finding user by email:', data.email)
-        userId = await ProfileService.findUserByEmail(data.email)
+      const emailToSearch = data.email || data.ownerEmail
+
+      console.log('🔍 User lookup details:', {
+        provided_user_id: data.user_id,
+        email_field: data.email,
+        ownerEmail_field: data.ownerEmail,
+        email_to_search: emailToSearch
+      })
+
+      if (!userId && emailToSearch) {
+        console.log('🔍 User ID not provided, finding user by email:', emailToSearch)
+        userId = await ProfileService.findUserByEmail(emailToSearch)
         if (!userId) {
-          console.log('⚠️ No user found with email:', data.email)
+          console.log('⚠️ No user found with email:', emailToSearch)
           console.log('💡 User may need to sign up first before onboarding')
           return NextResponse.json({
             success: true,
