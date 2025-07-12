@@ -41,6 +41,7 @@ interface BookingData {
 
 interface ProcessedBooking {
   property: string
+  villaName: string // Add villaName for compatibility with LiveBooking interface
   address: string
   guestName: string
   guestEmail: string
@@ -123,6 +124,7 @@ function normalizeBookingData(data: BookingData): ProcessedBooking {
   
   return {
     property: data.property.trim(),
+    villaName: data.property.trim(), // Add villaName field for compatibility
     address: data.address.trim(),
     guestName: data.guestName.trim(),
     guestEmail: data.guestEmail.toLowerCase().trim(),
