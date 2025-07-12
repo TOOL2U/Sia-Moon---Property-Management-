@@ -17,14 +17,15 @@ export async function GET() {
     console.log('🔍 BOOKINGS DEBUG: Fetching recent bookings from Firebase...')
     
     // Get recent bookings from live_bookings collection
+    const database = getDb()
     const q = query(
-      collection(db, 'live_bookings'),
+      collection(database, 'live_bookings'),
       orderBy('receivedAt', 'desc'),
       limit(10)
     )
     
     const querySnapshot = await getDocs(q)
-    const bookings: any[] = []
+    const bookings: Array<{ id: string; [key: string]: unknown }> = []
     
     querySnapshot.forEach((doc) => {
       const data = doc.data()
@@ -46,7 +47,7 @@ export async function GET() {
     
     // Look specifically for "Donkey House" bookings
     const donkeyBookings = bookings.filter(b => 
-      b.villaName && b.villaName.toLowerCase().includes('donkey')
+      b.villaName && typeof b.villaName === 'string' && b.villaName.toLowerCase().includes('donkey')
     )
     
     console.log('🔍 BOOKINGS DEBUG: Donkey House bookings:', donkeyBookings)
