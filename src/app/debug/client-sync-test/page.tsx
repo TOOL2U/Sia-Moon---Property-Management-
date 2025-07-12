@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { BookingSyncService } from '@/lib/services/bookingSyncService'
-import { enhancedClientMatching } from '@/lib/clientMatching'
-import { PropertyService } from '@/lib/services/propertyService'
+import { ProfileBasedClientMatching } from '@/lib/services/profileBasedClientMatching'
 import { toast } from 'react-hot-toast'
 
 export default function ClientSyncTestPage() {
@@ -20,19 +19,19 @@ export default function ClientSyncTestPage() {
     try {
       console.log('🔍 Testing client matching for:', propertyName)
       
-      // Get all properties first
-      const properties = await PropertyService.getAllProperties()
-      setAllProperties(properties)
-      console.log('📋 Found properties:', properties)
-      
-      // Test client matching
-      const matchResult = await enhancedClientMatching(propertyName)
+      // Get all profiles first
+      const profiles = await ProfileBasedClientMatching.getAllProfiles()
+      setAllProperties(profiles) // Using profiles instead of properties
+      console.log('📋 Found profiles:', profiles)
+
+      // Test profile-based client matching
+      const matchResult = await ProfileBasedClientMatching.enhancedClientMatching(propertyName)
       console.log('🎯 Match result:', matchResult)
       
       setResults({
         searchTerm: propertyName,
-        totalProperties: properties.length,
-        allProperties: properties,
+        totalProperties: profiles.length,
+        allProperties: profiles,
         matchResult
       })
       
@@ -165,15 +164,27 @@ export default function ClientSyncTestPage() {
                 {results.totalProperties !== undefined && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2">
-                      Properties Found ({results.totalProperties})
+                      User Profiles Found ({results.totalProperties})
                     </h3>
                     <div className="space-y-2">
-                      {results.allProperties?.map((prop: any, index: number) => (
+                      {results.allProperties?.map((profile: any, index: number) => (
                         <div key={index} className="bg-neutral-800 p-3 rounded">
-                          <p className="text-white font-medium">"{prop.name}"</p>
+                          <p className="text-white font-medium">{profile.email}</p>
                           <p className="text-neutral-400 text-sm">
-                            ID: {prop.id} | Owner: {prop.userId}
+                            ID: {profile.id} | Name: {profile.fullName || 'N/A'}
                           </p>
+                          {profile.properties && Array.isArray(profile.properties) && (
+                            <div className="mt-2">
+                              <p className="text-neutral-300 text-sm font-medium">
+                                Properties ({profile.properties.length}):
+                              </p>
+                              {profile.properties.map((prop: any, propIndex: number) => (
+                                <p key={propIndex} className="text-neutral-400 text-xs ml-2">
+                                  • "{prop.name}"
+                                </p>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

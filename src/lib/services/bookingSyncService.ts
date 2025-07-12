@@ -1,7 +1,7 @@
 import { collection, addDoc, Timestamp, doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { BookingService, LiveBooking } from './bookingService'
-import { enhancedClientMatching } from '@/lib/clientMatching'
+import { ProfileBasedClientMatching } from './profileBasedClientMatching'
 
 // Helper function to ensure db is available
 function getDb() {
@@ -60,12 +60,11 @@ export class BookingSyncService {
       
       console.log('📋 BOOKING SYNC: Found booking for:', booking.guestName, 'at', booking.villaName)
       
-      // Step 2: Attempt client matching
-      console.log('🔍 BOOKING SYNC: Attempting client matching...')
-      const clientMatch = await enhancedClientMatching(
+      // Step 2: Attempt client matching using profile-based matching
+      console.log('🔍 BOOKING SYNC: Attempting profile-based client matching...')
+      const clientMatch = await ProfileBasedClientMatching.enhancedClientMatching(
         booking.villaName,
-        booking.guestEmail,
-        booking.propertyId
+        booking.guestEmail
       )
       
       if (!clientMatch) {
