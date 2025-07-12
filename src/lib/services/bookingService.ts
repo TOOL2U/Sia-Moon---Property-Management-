@@ -399,7 +399,14 @@ export class BookingService {
   ): Promise<boolean> {
     try {
       console.log(`📝 Updating booking ${bookingId} status to ${status}`)
-      
+
+      // Validate bookingId
+      if (!bookingId || typeof bookingId !== 'string' || bookingId.trim() === '') {
+        console.error('❌ Invalid booking ID:', bookingId)
+        throw new Error('Invalid booking ID provided')
+      }
+
+      console.log(`🔍 Creating document reference for booking: ${bookingId}`)
       const bookingRef = doc(getDb(), 'live_bookings', bookingId)
       await updateDoc(bookingRef, {
         status,
