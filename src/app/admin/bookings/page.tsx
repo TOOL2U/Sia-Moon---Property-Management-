@@ -72,10 +72,20 @@ export default function AdminBookingsPage() {
     try {
       setLoading(true)
       console.log('📋 Loading all bookings for ultimate admin management...')
-      
+
       const bookings = await BookingService.getAllBookings()
+
+      // Debug: Check booking structure
+      console.log('🔍 DEBUG: First booking structure:', bookings[0])
+      bookings.forEach((booking, index) => {
+        console.log(`🔍 DEBUG: Booking ${index} ID:`, booking.id, 'Type:', typeof booking.id)
+        if (!booking.id) {
+          console.error(`❌ DEBUG: Booking ${index} missing ID:`, booking)
+        }
+      })
+
       setAllBookings(bookings)
-      
+
       console.log(`✅ Loaded ${bookings.length} total bookings`)
     } catch (error) {
       console.error('❌ Error loading bookings:', error)
@@ -138,8 +148,23 @@ export default function AdminBookingsPage() {
     adminNotes?: string
   ) => {
     try {
+      // Debug: Check what bookingId we received
+      console.log('🔍 DEBUG: handleBookingAction called with:', {
+        bookingId,
+        bookingIdType: typeof bookingId,
+        bookingIdLength: bookingId?.length,
+        action,
+        adminNotes
+      })
+
+      if (!bookingId) {
+        console.error('❌ DEBUG: No booking ID provided to handleBookingAction')
+        toast.error('Invalid booking ID')
+        return
+      }
+
       setProcessingBookings(prev => new Set(prev).add(bookingId))
-      
+
       console.log(`📝 ${action === 'approved' ? 'Approving' : 'Rejecting'} booking ${bookingId}`)
       
       // Enhanced processing with automation
@@ -694,7 +719,14 @@ export default function AdminBookingsPage() {
                       {booking.status === 'pending_approval' && (
                         <div className="flex flex-col sm:flex-row gap-3">
                           <Button
-                            onClick={() => handleBookingAction(booking.id, 'approved')}
+                            onClick={() => {
+                              console.log('🔍 DEBUG: Button clicked for booking:', {
+                                bookingId: booking.id,
+                                bookingObject: booking,
+                                hasId: !!booking.id
+                              })
+                              handleBookingAction(booking.id, 'approved')
+                            }}
                             disabled={isProcessing}
                             className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0"
                           >
