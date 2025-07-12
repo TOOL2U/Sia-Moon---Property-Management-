@@ -18,11 +18,11 @@ function getDb(): Firestore {
 export async function DELETE(request: NextRequest) {
   try {
     console.log('🧹 ADMIN: Clear bookings request received')
-    
+
     // Simple authentication check - only allow in development or with admin key
     const adminKey = request.headers.get('x-admin-key')
     const isDevelopment = process.env.NODE_ENV === 'development'
-    
+
     if (!isDevelopment && adminKey !== 'sia-moon-admin-clear-2025') {
       console.log('❌ ADMIN: Unauthorized clear bookings request')
       return NextResponse.json(
@@ -30,17 +30,22 @@ export async function DELETE(request: NextRequest) {
         { status: 401 }
       )
     }
-    
-    if (!db) {
-      console.log('❌ ADMIN: Firebase not initialized')
+
+    // Check Firebase initialization with better error handling
+    let database
+    try {
+      database = getDb()
+      console.log('✅ ADMIN: Firebase database initialized successfully')
+    } catch (error) {
+      console.error('❌ ADMIN: Firebase initialization failed:', error)
       return NextResponse.json(
-        { success: false, error: 'Database not available' },
+        { success: false, error: 'Database not available', details: error instanceof Error ? error.message : 'Unknown error' },
         { status: 500 }
       )
     }
     
     console.log('📋 ADMIN: Fetching all bookings from live_bookings collection...')
-    const bookingsRef = collection(getDb(), 'live_bookings')
+    const bookingsRef = collection(database, 'live_bookings')
     const snapshot = await getDocs(bookingsRef)
     
     console.log(`📊 ADMIN: Found ${snapshot.size} bookings to delete`)
@@ -61,7 +66,7 @@ export async function DELETE(request: NextRequest) {
     snapshot.forEach((docSnapshot) => {
       console.log(`🗑️ ADMIN: Queuing deletion of booking: ${docSnapshot.id}`)
       deletedIds.push(docSnapshot.id)
-      deletePromises.push(deleteDoc(doc(getDb(), 'live_bookings', docSnapshot.id)))
+      deletePromises.push(deleteDoc(doc(database, 'live_bookings', docSnapshot.id)))
     })
     
     await Promise.all(deletePromises)
