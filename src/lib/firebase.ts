@@ -61,37 +61,32 @@ if (missingFields.length > 0) {
   }
 }
 
-// Initialize Firebase with singleton pattern (only if config is complete and not during build)
+// Initialize Firebase with singleton pattern (both client and server side)
 let app
 try {
-  // Only initialize if we have the required configuration and we're in browser
-  if (missingFields.length === 0 && isBrowser) {
+  // Initialize if we have the required configuration (both browser and server)
+  if (missingFields.length === 0) {
     // Check if Firebase app is already initialized
     if (getApps().length === 0) {
       app = initializeApp(firebaseConfig)
-      console.log('✅ Firebase initialized successfully')
+      console.log('✅ Firebase initialized successfully', isBrowser ? '(browser)' : '(server)')
     } else {
       app = getApp()
-      console.log('✅ Firebase app already initialized, using existing instance')
+      console.log('✅ Firebase app already initialized, using existing instance', isBrowser ? '(browser)' : '(server)')
     }
   } else {
-    if (!isBrowser) {
-      console.log('🔧 Server-side: Firebase initialization skipped')
-    } else {
-      console.log('⏳ Firebase initialization skipped - configuration incomplete')
-    }
+    console.log('⏳ Firebase initialization skipped - configuration incomplete')
+    console.log('Missing fields:', missingFields)
     app = null
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
-  // Only throw in browser environment
-  if (isBrowser) {
-    console.error('🔧 Firebase initialization error details:', {
-      missingFields,
-      configKeys: Object.keys(firebaseConfig),
-      environment: process.env.NODE_ENV
-    })
-  }
+  console.error('🔧 Firebase initialization error details:', {
+    missingFields,
+    configKeys: Object.keys(firebaseConfig),
+    environment: process.env.NODE_ENV,
+    isBrowser
+  })
   app = null
 }
 
@@ -101,11 +96,11 @@ export const auth = app ? getAuth(app) : null
 // Initialize Firestore with getFirestore (consistent with all other services)
 export const db = app ? getFirestore(app) : null
 
-// Initialize Storage with additional safety checks
+// Initialize Storage with additional safety checks (both client and server)
 export const storage = (() => {
   try {
-    // Only initialize storage in browser environment and when app is available
-    if (typeof window !== 'undefined' && app && typeof getStorage === 'function') {
+    // Initialize storage when app is available (both browser and server)
+    if (app && typeof getStorage === 'function') {
       return getStorage(app)
     }
     return null
