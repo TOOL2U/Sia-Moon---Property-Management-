@@ -444,6 +444,30 @@ function OnboardYourVillaContent() {
     return uploadedUrls
   }
 
+  // Utility function to sanitize form data and remove undefined values
+  const sanitizeFormData = (obj: Record<string, unknown>): Record<string, unknown> => {
+    const sanitized: Record<string, unknown> = {}
+    
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        // Keep all non-undefined values
+        sanitized[key] = value
+      } else {
+        // Log missing fields for debugging
+        console.log(`⚠️ Removing undefined field: ${key}`)
+      }
+    }
+    
+    return sanitized
+  }
+
+  // Alternative: Convert undefined to null for numeric fields that might be optional
+  const sanitizeNumericField = (value: string | undefined): number | undefined => {
+    if (!value || value.trim() === '') return undefined
+    const parsed = Number(value)
+    return isNaN(parsed) ? undefined : parsed
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -467,7 +491,7 @@ function OnboardYourVillaContent() {
         return
       }
 
-      // Save to Firestore first
+      // Save to Firestore first - sanitize numeric fields to prevent undefined errors
       const submissionData = {
         userId: user?.id,
         user_id: user?.id, // Include for webhook compatibility
@@ -480,15 +504,15 @@ function OnboardYourVillaContent() {
         preferredContactMethod: formData.preferredContactMethod,
         bankDetails: formData.bankDetails,
 
-        // Property Details
+        // Property Details - use sanitizeNumericField to prevent undefined values
         propertyName: formData.propertyName,
         propertyAddress: formData.propertyAddress,
         googleMapsUrl: formData.googleMapsUrl,
-        bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
-        bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
-        landSizeSqm: formData.landSizeSqm ? Number(formData.landSizeSqm) : undefined,
-        villaSizeSqm: formData.villaSizeSqm ? Number(formData.villaSizeSqm) : undefined,
-        yearBuilt: formData.yearBuilt ? Number(formData.yearBuilt) : undefined,
+        bedrooms: sanitizeNumericField(formData.bedrooms),
+        bathrooms: sanitizeNumericField(formData.bathrooms),
+        landSizeSqm: sanitizeNumericField(formData.landSizeSqm),
+        villaSizeSqm: sanitizeNumericField(formData.villaSizeSqm),
+        yearBuilt: sanitizeNumericField(formData.yearBuilt),
 
         // Amenities
         hasPool: formData.hasPool,
@@ -497,7 +521,6 @@ function OnboardYourVillaContent() {
         internetProvider: formData.internetProvider,
         hasParking: formData.hasParking,
         hasLaundry: formData.hasLaundry,
-        hasBackupPower: formData.hasBackupPower,
 
         // Access & Staff
         accessDetails: formData.accessDetails,
@@ -589,11 +612,11 @@ function OnboardYourVillaContent() {
           property_name: formData.propertyName,
           property_address: formData.propertyAddress,
           google_maps_url: formData.googleMapsUrl,
-          bedrooms: formData.bedrooms ? Number(formData.bedrooms) : undefined,
-          bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
-          land_size_sqm: formData.landSizeSqm ? Number(formData.landSizeSqm) : undefined,
-          villa_size_sqm: formData.villaSizeSqm ? Number(formData.villaSizeSqm) : undefined,
-          year_built: formData.yearBuilt ? Number(formData.yearBuilt) : undefined,
+          bedrooms: sanitizeNumericField(formData.bedrooms),
+          bathrooms: sanitizeNumericField(formData.bathrooms),
+          land_size_sqm: sanitizeNumericField(formData.landSizeSqm),
+          villa_size_sqm: sanitizeNumericField(formData.villaSizeSqm),
+          year_built: sanitizeNumericField(formData.yearBuilt),
 
           // Amenities
           has_pool: formData.hasPool,

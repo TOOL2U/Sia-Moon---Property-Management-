@@ -25,6 +25,29 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
 }
 
+// Utility function to sanitize data for Firestore (removes undefined values)
+function sanitizeForFirestore(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item)).filter(item => item !== undefined)
+  }
+
+  if (typeof obj === 'object') {
+    const sanitized: any = {}
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        sanitized[key] = sanitizeForFirestore(value)
+      }
+    }
+    return sanitized
+  }
+
+  return obj
+}
+
 export interface Property {
   id: string
   userId: string // Owner of the property
@@ -259,26 +282,39 @@ export class PropertyService {
       if (!userId) {
         throw new Error('User ID is required')
       }
-      if (!onboardingData.propertyName) {
-        throw new Error('Property name is required')
+      if (!onboardingData.propertyName || typeof onboardingData.propertyName !== 'string') {
+        throw new Error('Property name is required and must be a string')
       }
-      if (!onboardingData.propertyAddress) {
-        throw new Error('Property address is required')
+      if (!onboardingData.propertyAddress || typeof onboardingData.propertyAddress !== 'string') {
+        throw new Error('Property address is required and must be a string')
       }
+
+      // Log incoming data for debugging
+      console.log('📋 Incoming onboarding data types:')
+      console.log('- propertyName:', typeof onboardingData.propertyName, onboardingData.propertyName)
+      console.log('- propertyAddress:', typeof onboardingData.propertyAddress, onboardingData.propertyAddress)
+      console.log('- bedrooms:', typeof onboardingData.bedrooms, onboardingData.bedrooms)
+      console.log('- bathrooms:', typeof onboardingData.bathrooms, onboardingData.bathrooms)
+      console.log('- landSizeSqm:', typeof onboardingData.landSizeSqm, onboardingData.landSizeSqm)
+      console.log('- villaSizeSqm:', typeof onboardingData.villaSizeSqm, onboardingData.villaSizeSqm)
 
       // Generate property ID using slugify
       const propertyId = slugify(onboardingData.propertyName + ' ' + onboardingData.propertyAddress)
       console.log('🔑 Generated property ID:', propertyId)
 
-      // Prepare property data for user subcollection
-      const propertyData = {
+      // Prepare property data for user subcollection with safe fallbacks
+      const rawPropertyData = {
         // Basic Information
         name: onboardingData.propertyName,
         address: onboardingData.propertyAddress,
-        bedrooms: onboardingData.bedrooms || 0,
-        bathrooms: onboardingData.bathrooms || 0,
-        landSizeSqm: onboardingData.landSizeSqm || 0,
-        villaSizeSqm: onboardingData.villaSizeSqm || 0,
+        bedrooms: typeof onboardingData.bedrooms === 'number' ? onboardingData.bedrooms :
+                 (onboardingData.bedrooms ? parseInt(String(onboardingData.bedrooms)) : 0),
+        bathrooms: typeof onboardingData.bathrooms === 'number' ? onboardingData.bathrooms :
+                  (onboardingData.bathrooms ? parseInt(String(onboardingData.bathrooms)) : 0),
+        landSizeSqm: typeof onboardingData.landSizeSqm === 'number' ? onboardingData.landSizeSqm :
+                    (onboardingData.landSizeSqm ? parseFloat(String(onboardingData.landSizeSqm)) : 0),
+        villaSizeSqm: typeof onboardingData.villaSizeSqm === 'number' ? onboardingData.villaSizeSqm :
+                     (onboardingData.villaSizeSqm ? parseFloat(String(onboardingData.villaSizeSqm)) : 0),
 
         // Amenities (convert to array)
         amenities: this.extractAmenities(onboardingData),
@@ -291,13 +327,13 @@ export class PropertyService {
           internetPackage: onboardingData.internetPackage || ''
         },
 
-        // Additional fields
-        hasPool: onboardingData.hasPool || false,
-        hasGarden: onboardingData.hasGarden || false,
-        hasAirConditioning: onboardingData.hasAirConditioning || false,
-        hasParking: onboardingData.hasParking || false,
-        hasLaundry: onboardingData.hasLaundry || false,
-        hasBackupPower: onboardingData.hasBackupPower || false,
+        // Additional fields (ensure boolean values)
+        hasPool: Boolean(onboardingData.hasPool),
+        hasGarden: Boolean(onboardingData.hasGarden),
+        hasAirConditioning: Boolean(onboardingData.hasAirConditioning),
+        hasParking: Boolean(onboardingData.hasParking),
+        hasLaundry: Boolean(onboardingData.hasLaundry),
+        hasBackupPower: Boolean(onboardingData.hasBackupPower),
 
         // Media - Set cover photo as first uploaded image
         coverPhoto: Array.isArray(onboardingData.uploadedPhotos) && onboardingData.uploadedPhotos.length > 0
@@ -313,6 +349,12 @@ export class PropertyService {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }
+
+      // Sanitize data to remove any undefined values
+      const propertyData = sanitizeForFirestore(rawPropertyData)
+
+      console.log('🧹 Raw property data:', rawPropertyData)
+      console.log('💾 Sanitized property data:', propertyData)
 
       console.log('💾 Property data to save:', propertyData)
 
