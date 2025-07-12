@@ -101,9 +101,26 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
 
       console.log('✅ User created successfully:', user.uid)
 
-      // Create user profile in Firestore
+      // Create user profile in Firestore profiles collection
       console.log('📊 Attempting to create Firestore profile...')
       try {
+        // Import ProfileService dynamically to avoid build issues
+        const { ProfileService } = await import('@/lib/services/profileService')
+
+        const profileCreated = await ProfileService.createUserProfile(
+          user.uid,
+          data.email,
+          data.fullName,
+          'client'
+        )
+
+        if (profileCreated) {
+          console.log('✅ User profile created in profiles collection successfully')
+        } else {
+          console.error('❌ Failed to create user profile')
+        }
+
+        // Also create in users collection for backward compatibility
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
           email: data.email,
@@ -111,7 +128,6 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
           role: 'client',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          // Initialize empty data for new users
           properties: [],
           bookings: [],
           preferences: {
@@ -119,7 +135,8 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
             emailUpdates: true
           }
         })
-        console.log('✅ User profile created in Firestore successfully')
+        console.log('✅ User document created in users collection for compatibility')
+
       } catch (firestoreError) {
         console.error('❌ Firestore profile creation failed:', firestoreError)
         console.warn('⚠️ Continuing with signup despite Firestore error - webhook will still run')

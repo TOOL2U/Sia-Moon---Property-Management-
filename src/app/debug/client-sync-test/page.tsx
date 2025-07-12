@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { BookingSyncService } from '@/lib/services/bookingSyncService'
-import { ProfileBasedClientMatching } from '@/lib/services/profileBasedClientMatching'
+import { EndToEndBookingAutomation } from '@/lib/services/endToEndBookingAutomation'
+import { ProfileService } from '@/lib/services/profileService'
 import { toast } from 'react-hot-toast'
 
 export default function ClientSyncTestPage() {
@@ -19,24 +19,26 @@ export default function ClientSyncTestPage() {
     try {
       console.log('🔍 Testing client matching for:', propertyName)
       
-      // Get all profiles first
-      const profiles = await ProfileBasedClientMatching.getAllProfiles()
-      setAllProperties(profiles) // Using profiles instead of properties
-      console.log('📋 Found profiles:', profiles)
+      // Test the complete end-to-end automation
+      const testResult = await EndToEndBookingAutomation.testAutomation(propertyName)
 
-      // Test profile-based client matching
-      const matchResult = await ProfileBasedClientMatching.enhancedClientMatching(propertyName)
-      console.log('🎯 Match result:', matchResult)
+      // Get all profiles for display
+      const profiles = await ProfileService.getAllProfiles()
+      setAllProperties(profiles)
+      console.log('📋 Found profiles:', profiles)
+      console.log('🧪 Test result:', testResult)
+      console.log('🎯 Match result:', testResult.matchResult)
       
       setResults({
         searchTerm: propertyName,
         totalProperties: profiles.length,
         allProperties: profiles,
-        matchResult
+        matchResult: testResult.matchResult,
+        testResult
       })
       
-      if (matchResult) {
-        toast.success(`✅ Match found! Client: ${matchResult.clientId}`)
+      if (testResult.matchResult) {
+        toast.success(`✅ Match found! Client: ${testResult.matchResult.profile.email}`)
       } else {
         toast.error('❌ No client match found')
       }
@@ -78,9 +80,23 @@ export default function ClientSyncTestPage() {
         processedAt: new Date()
       }
 
-      const clientBookingId = await BookingSyncService.createClientBooking(
-        mockBooking as any,
-        results.matchResult.clientId
+      const clientBookingId = await ProfileService.createClientBooking(
+        results.matchResult.profile.id,
+        {
+          propertyName: mockBooking.villaName,
+          propertyId: results.matchResult.property.id,
+          guestName: mockBooking.guestName,
+          guestEmail: mockBooking.guestEmail || '',
+          checkInDate: mockBooking.checkInDate,
+          checkOutDate: mockBooking.checkOutDate,
+          nights: 2,
+          guests: mockBooking.guests || 2,
+          price: mockBooking.price || 0,
+          status: 'confirmed',
+          bookingSource: 'test',
+          adminBookingId: mockBooking.id,
+          syncedAt: new Date()
+        }
       )
 
       if (clientBookingId) {

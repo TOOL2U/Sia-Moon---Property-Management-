@@ -15,7 +15,7 @@ import { toast } from 'react-hot-toast'
 interface TestCase {
   name: string
   description: string
-  payload: any
+  payload: Record<string, unknown>
   expectedResult: 'success' | 'error' | 'warning'
 }
 
@@ -135,11 +135,18 @@ const testCases: TestCase[] = [
   }
 ]
 
+interface TestResult {
+  testCase: TestCase
+  response: Record<string, unknown>
+  status: number
+  success: boolean
+  timestamp: string
+}
+
 export default function BookingParserTestPage() {
-  const [results, setResults] = useState<any[]>([])
+  const [results, setResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [customPayload, setCustomPayload] = useState('')
-  const [selectedTest, setSelectedTest] = useState<TestCase | null>(null)
 
   const runSingleTest = async (testCase: TestCase) => {
     try {
@@ -212,11 +219,12 @@ export default function BookingParserTestPage() {
       setResults([result])
       toast.success('Custom test completed')
     } catch (error) {
+      console.error('Invalid JSON payload:', error)
       toast.error('Invalid JSON payload')
     }
   }
 
-  const getResultBadge = (result: any) => {
+  const getResultBadge = (result: TestResult) => {
     if (result.success) {
       return <Badge className="bg-green-500/20 text-green-400">Success</Badge>
     } else {
@@ -307,7 +315,6 @@ export default function BookingParserTestPage() {
                   <div
                     key={index}
                     className="p-3 bg-neutral-900 rounded border border-neutral-700 cursor-pointer hover:border-neutral-600"
-                    onClick={() => setSelectedTest(testCase)}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-white">{testCase.name}</span>

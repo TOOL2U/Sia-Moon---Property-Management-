@@ -5,7 +5,6 @@ import {
   doc, 
   getDoc, 
   updateDoc, 
-  deleteDoc, 
   query, 
   orderBy, 
   where,
@@ -92,6 +91,28 @@ export interface Property {
   updatedAt: Timestamp
 }
 
+interface OnboardingData {
+  propertyName?: string
+  propertyAddress?: string
+  bedrooms?: number
+  bathrooms?: number
+  landSizeSqm?: number
+  villaSizeSqm?: number
+  yearBuilt?: number
+  hasPool?: boolean
+  hasGarden?: boolean
+  hasAirConditioning?: boolean
+  hasParking?: boolean
+  hasLaundry?: boolean
+  hasBackupPower?: boolean
+  electricityProvider?: string
+  waterSource?: string
+  internetProvider?: string
+  internetPackage?: string
+  accessDetails?: string
+  [key: string]: unknown
+}
+
 export class PropertyService {
   private static collection = 'properties'
 
@@ -125,7 +146,7 @@ export class PropertyService {
    * Create property from onboarding submission
    */
   static async createPropertyFromOnboarding(
-    onboardingData: any, 
+    onboardingData: OnboardingData, 
     userId: string, 
     submissionId: string
   ): Promise<string> {
@@ -135,9 +156,9 @@ export class PropertyService {
         onboardingSubmissionId: submissionId,
         
         // Basic Information
-        name: onboardingData.propertyName,
+        name: onboardingData.propertyName || '',
         description: `Property managed by Sia Moon Property Management. ${onboardingData.notes || ''}`.trim(),
-        address: onboardingData.propertyAddress,
+        address: onboardingData.propertyAddress || '',
         city: onboardingData.propertyAddress?.split(',')[1]?.trim() || '',
         country: 'Thailand',
         
@@ -165,33 +186,33 @@ export class PropertyService {
         internetPackage: onboardingData.internetPackage,
         
         // Access & Staff
-        accessDetails: onboardingData.accessDetails,
-        hasSmartLock: onboardingData.hasSmartLock,
-        gateRemoteDetails: onboardingData.gateRemoteDetails,
-        onsiteStaff: onboardingData.onsiteStaff,
+        accessDetails: String(onboardingData.accessDetails || ''),
+        hasSmartLock: Boolean(onboardingData.hasSmartLock),
+        gateRemoteDetails: String(onboardingData.gateRemoteDetails || ''),
+        onsiteStaff: String(onboardingData.onsiteStaff || ''),
         
         // Rental Information
         currency: 'THB',
-        platformsListed: onboardingData.platformsListed,
-        averageOccupancyRate: onboardingData.averageOccupancyRate,
-        
+        platformsListed: Array.isArray(onboardingData.platformsListed) ? onboardingData.platformsListed : [],
+        averageOccupancyRate: String(onboardingData.averageOccupancyRate || ''),
+
         // Rules & Preferences
-        petsAllowed: onboardingData.petsAllowed,
-        partiesAllowed: onboardingData.partiesAllowed,
-        smokingAllowed: onboardingData.smokingAllowed,
-        
+        petsAllowed: Boolean(onboardingData.petsAllowed),
+        partiesAllowed: Boolean(onboardingData.partiesAllowed),
+        smokingAllowed: Boolean(onboardingData.smokingAllowed),
+
         // Emergency Contact
-        emergencyContactName: onboardingData.emergencyContactName,
-        emergencyContactPhone: onboardingData.emergencyContactPhone,
+        emergencyContactName: String(onboardingData.emergencyContactName || ''),
+        emergencyContactPhone: String(onboardingData.emergencyContactPhone || ''),
         
         // Media - Set cover photo as first uploaded image
-        coverPhoto: onboardingData.uploadedPhotos && onboardingData.uploadedPhotos.length > 0
+        coverPhoto: Array.isArray(onboardingData.uploadedPhotos) && onboardingData.uploadedPhotos.length > 0
           ? onboardingData.uploadedPhotos[0]
           : undefined,
-        images: onboardingData.uploadedPhotos || [],
-        professionalPhotosStatus: onboardingData.professionalPhotosStatus,
-        floorPlanImagesAvailable: onboardingData.floorPlanImagesAvailable,
-        videoWalkthroughAvailable: onboardingData.videoWalkthroughAvailable,
+        images: Array.isArray(onboardingData.uploadedPhotos) ? onboardingData.uploadedPhotos : [],
+        professionalPhotosStatus: String(onboardingData.professionalPhotosStatus || ''),
+        floorPlanImagesAvailable: Boolean(onboardingData.floorPlanImagesAvailable),
+        videoWalkthroughAvailable: Boolean(onboardingData.videoWalkthroughAvailable),
         
         // Status
         status: 'pending_approval',
@@ -347,7 +368,7 @@ export class PropertyService {
   /**
    * Extract amenities from onboarding data
    */
-  private static extractAmenities(data: any): string[] {
+  private static extractAmenities(data: OnboardingData): string[] {
     const amenities: string[] = []
 
     if (data.hasPool) amenities.push('Pool')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -9,11 +9,9 @@ import { BookingService, LiveBooking } from '@/lib/services/bookingService'
 import {
   EnhancedBookingService,
   BookingAnalytics,
-  BookingConflict,
-  AutomationRule,
-  BookingInsight
+  BookingConflict
 } from '@/lib/services/enhancedBookingService'
-import { BookingSyncService } from '@/lib/services/bookingSyncService'
+import { EndToEndBookingAutomation } from '@/lib/services/endToEndBookingAutomation'
 import { 
   Calendar,
   User,
@@ -24,20 +22,17 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  Filter,
   Search,
   RefreshCw,
   Eye,
   Loader2,
   Bot,
   Zap,
-  TrendingUp,
   Brain,
   Settings,
   Shield,
   Target,
   BarChart3,
-  PieChart,
   Activity,
   Sparkles
 } from 'lucide-react'
@@ -52,7 +47,6 @@ export default function AdminBookingsPage() {
   const [processingBookings, setProcessingBookings] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'cards' | 'table' | 'analytics'>('cards')
   const [automationEnabled, setAutomationEnabled] = useState(true)
   const [conflicts, setConflicts] = useState<BookingConflict[]>([])
   const [analytics, setAnalytics] = useState<BookingAnalytics | null>(null)
@@ -64,10 +58,7 @@ export default function AdminBookingsPage() {
     loadConflicts()
   }, [])
 
-  // Filter bookings when dependencies change
-  useEffect(() => {
-    filterBookings()
-  }, [allBookings, searchTerm, statusFilter])
+
 
   const loadAllBookings = async () => {
     try {
@@ -122,7 +113,7 @@ export default function AdminBookingsPage() {
     }
   }
 
-  const filterBookings = () => {
+  const filterBookings = useCallback(() => {
     let filtered = allBookings
 
     // Filter by status
@@ -141,7 +132,12 @@ export default function AdminBookingsPage() {
     }
 
     setFilteredBookings(filtered)
-  }
+  }, [allBookings, searchTerm, statusFilter])
+
+  // Filter bookings when dependencies change
+  useEffect(() => {
+    filterBookings()
+  }, [filterBookings])
 
   const handleBookingAction = async (
     bookingId: string,
@@ -178,22 +174,24 @@ export default function AdminBookingsPage() {
           toast.error('Some automation rules failed to execute')
         }
 
-        // NEW: Automatic client matching and booking sync
-        console.log('🔗 Starting automatic client matching and booking sync...')
-        const syncResult = await BookingSyncService.processApprovedBooking(bookingId)
+        // NEW: Complete end-to-end booking automation
+        console.log('🚀 Starting complete end-to-end booking automation...')
+        const automationResult = await EndToEndBookingAutomation.processBookingApproval(bookingId)
 
-        if (syncResult.success && syncResult.clientMatched && syncResult.bookingSynced) {
-          toast.success(`✅ Booking synced to client profile! Client ID: ${syncResult.clientId}`)
+        if (automationResult.success && automationResult.clientMatched) {
+          toast.success(`🎉 Complete Success! Booking synced to ${automationResult.clientEmail}`)
           console.log('🎉 COMPLETE SUCCESS: Booking approved, matched, and synced!')
-        } else if (syncResult.clientMatched && !syncResult.bookingSynced) {
-          toast.success('✅ Client matched but sync failed. Check logs.')
-          console.log('⚠️ PARTIAL SUCCESS: Client matched but booking sync failed')
-        } else if (!syncResult.clientMatched) {
+          console.log('🎉 Client:', automationResult.clientEmail)
+          console.log('🎉 Property:', automationResult.propertyName)
+          console.log('🎉 Confidence:', (automationResult.confidence! * 100).toFixed(1) + '%')
+          console.log('🎉 Processing time:', automationResult.processingTime, 'ms')
+        } else if (automationResult.success && !automationResult.clientMatched) {
           toast.success('✅ Booking approved but no matching client profile found')
           console.log('⚠️ NO MATCH: Booking approved but no client profile matched')
+          console.log('⚠️ Property searched:', automationResult.propertyName)
         } else {
-          toast.error(`❌ Client matching/sync failed: ${syncResult.error}`)
-          console.error('❌ SYNC FAILED:', syncResult.error)
+          toast.error(`❌ Automation failed: ${automationResult.error}`)
+          console.error('❌ AUTOMATION FAILED:', automationResult.error)
         }
       }
       
@@ -303,32 +301,6 @@ export default function AdminBookingsPage() {
         Low Priority - {daysUntilCheckIn} days
       </Badge>
     }
-  }
-
-  const getSmartMatchBadge = (booking: LiveBooking) => {
-    if (booking.clientId) {
-      const confidence = booking.matchConfidence || 0
-      if (confidence > 0.9) {
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-          <Brain className="w-3 h-3 mr-1" />
-          AI Match (97% confidence)
-        </Badge>
-      } else if (confidence > 0.7) {
-        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-          <Target className="w-3 h-3 mr-1" />
-          Good Match ({(confidence * 100).toFixed(0)}%)
-        </Badge>
-      } else {
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-          <Shield className="w-3 h-3 mr-1" />
-          Needs Review
-        </Badge>
-      }
-    }
-    return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-      <AlertCircle className="w-3 h-3 mr-1" />
-      No Match
-    </Badge>
   }
 
   const stats = {

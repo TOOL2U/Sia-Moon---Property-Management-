@@ -124,8 +124,44 @@ export async function POST(request: NextRequest) {
 
     // Store in Firebase
     const submissionId = await OnboardingService.createSubmission(submissionData)
-    
     console.log('✅ Onboarding submission stored in Firebase:', submissionId)
+
+    // Also add property to user's profile for client matching
+    try {
+      console.log('🏠 Adding property to user profile for client matching...')
+
+      // Import ProfileService
+      const { ProfileService } = await import('@/lib/services/profileService')
+
+      // Create property data for profile
+      const propertyData = {
+        name: data.property_name,
+        address: data.property_address,
+        description: `Property managed by Sia Moon Property Management. ${data.notes || ''}`.trim(),
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        maxGuests: data.bedrooms ? data.bedrooms * 2 : 4,
+        amenities: [],
+        images: data.uploaded_photos || [],
+        coverPhoto: data.uploaded_photos && data.uploaded_photos.length > 0 ? data.uploaded_photos[0] : undefined,
+        pricePerNight: 0,
+        currency: 'THB',
+        status: 'pending_approval' as const
+      }
+
+      // Add property to user's profile
+      const propertyId = await ProfileService.addPropertyToProfile(data.user_id, propertyData)
+
+      if (propertyId) {
+        console.log('✅ Property added to user profile successfully:', propertyId)
+      } else {
+        console.error('❌ Failed to add property to user profile')
+      }
+
+    } catch (profileError) {
+      console.error('❌ Error adding property to profile:', profileError)
+      // Don't fail the whole request if profile update fails
+    }
 
     return NextResponse.json({
       status: 'success',

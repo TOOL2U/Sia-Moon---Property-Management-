@@ -16,7 +16,6 @@ import {
   Filter,
   Search,
   BarChart3,
-  Image as ImageIcon,
   TestTube,
   AlertCircle,
   Bot,
@@ -25,7 +24,6 @@ import {
   AlertTriangle,
   Brain
 } from 'lucide-react'
-import { AdminVillaPhotoDownload } from '@/components/AdminVillaPhotoDownload'
 import BookingApprovalPanel from '@/components/admin/BookingApprovalPanel'
 import toast from 'react-hot-toast'
 

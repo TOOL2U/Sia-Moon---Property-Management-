@@ -9,9 +9,7 @@ import {
   Search, 
   CheckCircle, 
   XCircle, 
-  AlertTriangle,
   Database,
-  User,
   Home
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -21,7 +19,7 @@ interface Property {
   userId: string
   name: string
   address: string
-  createdAt: any
+  createdAt: Date | null
 }
 
 interface MatchResult {
@@ -47,8 +45,7 @@ export default function ClientMatchingDebugPage() {
       const { collection, getDocs, query, orderBy } = await import('firebase/firestore')
       
       // Import the centralized Firebase db instance
-      const firebaseModule = await import('@/lib/firebase')
-      const db = firebaseModule.db
+      const { db } = await import('@/lib/firebase')
       
       if (!db) {
         throw new Error('Firebase database not initialized')
@@ -200,7 +197,7 @@ export default function ClientMatchingDebugPage() {
             Client Matching Debug Tool
           </h1>
           <p className="text-neutral-400">
-            Debug why "Donkey House" booking failed to match with donkey@gmail.com's property
+            Debug why &quot;Donkey House&quot; booking failed to match with donkey@gmail.com&apos;s property
           </p>
         </div>
 
