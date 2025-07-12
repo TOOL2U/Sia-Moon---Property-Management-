@@ -37,7 +37,7 @@ function ResetPasswordContent() {
   const mode = searchParams.get('mode')           // Should be 'resetPassword'
   const oobCode = searchParams.get('oobCode')     // The one-time operation code
   const continueUrl = searchParams.get('continueUrl') // Optional: redirect URL after reset
-  const lang = searchParams.get('lang')           // Optional: locale
+  // const lang = searchParams.get('lang')           // Optional: locale (unused)
 
   // Component state
   const [email, setEmail] = useState('')
@@ -153,20 +153,26 @@ function ResetPasswordContent() {
         }
       }, 3000)
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error confirming password reset:', err)
 
       // Handle specific confirmation errors
-      if (err.code === 'auth/expired-action-code') {
-        setError('The password reset link has expired. Please request a new one.')
-      } else if (err.code === 'auth/invalid-action-code') {
-        setError('The password reset link is invalid. Please request a new one.')
-      } else if (err.code === 'auth/user-disabled') {
-        setError('Your account has been disabled. Please contact support.')
-      } else if (err.code === 'auth/weak-password') {
-        setError('The password is too weak. Please choose a stronger password.')
+      if (err && typeof err === 'object' && 'code' in err) {
+        const firebaseError = err as { code: string; message?: string }
+        
+        if (firebaseError.code === 'auth/expired-action-code') {
+          setError('The password reset link has expired. Please request a new one.')
+        } else if (firebaseError.code === 'auth/invalid-action-code') {
+          setError('The password reset link is invalid. Please request a new one.')
+        } else if (firebaseError.code === 'auth/user-disabled') {
+          setError('Your account has been disabled. Please contact support.')
+        } else if (firebaseError.code === 'auth/weak-password') {
+          setError('The password is too weak. Please choose a stronger password.')
+        } else {
+          setError(firebaseError.message || 'Failed to reset password. Please try again.')
+        }
       } else {
-        setError(err.message || 'Failed to reset password. Please try again.')
+        setError('Failed to reset password. Please try again.')
       }
 
       toast.error('Failed to reset password')

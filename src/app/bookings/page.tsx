@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Calendar, User, Building, Phone, Mail } from 'lucide-react'
+import { Calendar, User, Building, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Booking {
@@ -30,7 +30,7 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all')
-  const { user } = useAuth()
+  const { } = useAuth() // Keep auth context for potential future use
 
   useEffect(() => {
     fetchBookings()

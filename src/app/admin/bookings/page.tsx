@@ -30,7 +30,6 @@ import {
   Zap,
   Brain,
   Settings,
-  Shield,
   Target,
   BarChart3,
   Activity,

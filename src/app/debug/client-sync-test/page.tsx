@@ -8,11 +8,45 @@ import { EndToEndBookingAutomation } from '@/lib/services/endToEndBookingAutomat
 import { ProfileService } from '@/lib/services/profileService'
 import { toast } from 'react-hot-toast'
 
+interface Profile {
+  id: string;
+  email: string;
+  fullName?: string;
+  properties?: Property[];
+}
+
+interface Property {
+  id: string;
+  name: string;
+}
+
+interface MatchResult {
+  clientId: string;
+  propertyId: string;
+  propertyName: string;
+  confidence: number;
+  matchMethod: string;
+  profile: Profile;
+  property: Property;
+}
+
+interface TestResult {
+  matchResult: MatchResult | null;
+}
+
+interface Results {
+  searchTerm: string;
+  totalProperties: number;
+  allProperties: Profile[];
+  matchResult: MatchResult | null;
+  testResult: TestResult;
+  error?: string;
+}
+
 export default function ClientSyncTestPage() {
   const [propertyName, setPropertyName] = useState('Donkey House')
   const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState<any>(null)
-  const [allProperties, setAllProperties] = useState<any[]>([])
+  const [results, setResults] = useState<Results | null>(null)
 
   const testClientMatching = async () => {
     setIsLoading(true)
@@ -24,7 +58,6 @@ export default function ClientSyncTestPage() {
 
       // Get all profiles for display
       const profiles = await ProfileService.getAllProfiles()
-      setAllProperties(profiles)
       console.log('📋 Found profiles:', profiles)
       console.log('🧪 Test result:', testResult)
       console.log('🎯 Match result:', testResult.matchResult)
@@ -46,7 +79,14 @@ export default function ClientSyncTestPage() {
     } catch (error) {
       console.error('❌ Error testing client matching:', error)
       toast.error('Error testing client matching')
-      setResults({ error: error instanceof Error ? error.message : 'Unknown error' })
+      setResults({ 
+        searchTerm: propertyName,
+        totalProperties: 0,
+        allProperties: [],
+        matchResult: null,
+        testResult: { matchResult: null },
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      })
     } finally {
       setIsLoading(false)
     }
@@ -174,7 +214,7 @@ export default function ClientSyncTestPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2">Search Term</h3>
-                  <p className="text-neutral-300">"{results.searchTerm}"</p>
+                  <p className="text-neutral-300">&quot;{results.searchTerm}&quot;</p>
                 </div>
 
                 {results.totalProperties !== undefined && (
@@ -183,7 +223,7 @@ export default function ClientSyncTestPage() {
                       User Profiles Found ({results.totalProperties})
                     </h3>
                     <div className="space-y-2">
-                      {results.allProperties?.map((profile: any, index: number) => (
+                      {results.allProperties?.map((profile: Profile, index: number) => (
                         <div key={index} className="bg-neutral-800 p-3 rounded">
                           <p className="text-white font-medium">{profile.email}</p>
                           <p className="text-neutral-400 text-sm">
@@ -194,9 +234,9 @@ export default function ClientSyncTestPage() {
                               <p className="text-neutral-300 text-sm font-medium">
                                 Properties ({profile.properties.length}):
                               </p>
-                              {profile.properties.map((prop: any, propIndex: number) => (
+                              {profile.properties.map((prop: Property, propIndex: number) => (
                                 <p key={propIndex} className="text-neutral-400 text-xs ml-2">
-                                  • "{prop.name}"
+                                  • &quot;{prop.name}&quot;
                                 </p>
                               ))}
                             </div>
@@ -224,7 +264,7 @@ export default function ClientSyncTestPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-red-400 mb-2">❌ No Match Found</h3>
                     <p className="text-neutral-300">
-                      No client profile found with a property matching "{results.searchTerm}"
+                      No client profile found with a property matching &quot;{results.searchTerm}&quot;
                     </p>
                   </div>
                 )}

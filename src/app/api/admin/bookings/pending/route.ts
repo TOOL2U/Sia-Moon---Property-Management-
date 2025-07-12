@@ -7,7 +7,7 @@ import { BookingService } from '@/lib/services/bookingService'
  * Fetch all pending bookings for admin review
  * This endpoint is used by the admin dashboard and diagnostic tools
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('📋 Admin API: Fetching pending bookings...')
     

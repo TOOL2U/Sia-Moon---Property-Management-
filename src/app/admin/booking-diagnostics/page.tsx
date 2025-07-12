@@ -12,20 +12,16 @@ import {
   XCircle, 
   Clock, 
   AlertTriangle,
-  Database,
-  Webhook,
   Settings,
   RefreshCw,
-  Eye,
-  Send
+  Eye
 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
 
 interface DiagnosticResult {
   test: string
   status: 'success' | 'error' | 'warning' | 'pending'
   message: string
-  details?: any
+  details?: Record<string, unknown>
   timestamp: string
 }
 
@@ -41,7 +37,7 @@ export default function BookingDiagnosticsPage() {
     specialRequests: 'Diagnostic test booking from admin panel'
   })
 
-  const addResult = (test: string, status: DiagnosticResult['status'], message: string, details?: any) => {
+  const addResult = (test: string, status: DiagnosticResult['status'], message: string, details?: Record<string, unknown>) => {
     const result: DiagnosticResult = {
       test,
       status,
@@ -111,7 +107,7 @@ export default function BookingDiagnosticsPage() {
         return data
       } else {
         const errorText = await response.text()
-        addResult('Booking Submission', 'error', `Booking submission failed: ${response.status} ${response.statusText}`, errorText)
+        addResult('Booking Submission', 'error', `Booking submission failed: ${response.status} ${response.statusText}`, { error: errorText })
         return null
       }
     } catch (error) {

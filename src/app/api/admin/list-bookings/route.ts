@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 /**
  * GET /api/admin/list-bookings
  * Simple endpoint to check what bookings exist
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('📋 ADMIN: List bookings request received')
     

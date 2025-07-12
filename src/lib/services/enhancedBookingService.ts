@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, orderBy, Timestamp, Firestore, doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, Timestamp, Firestore, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { BookingService, LiveBooking } from './bookingService'
 
@@ -41,8 +41,8 @@ export interface AutomationRule {
   name: string
   description: string
   enabled: boolean
-  conditions: any[]
-  actions: any[]
+  conditions: Record<string, unknown>[]
+  actions: Record<string, unknown>[]
   executionCount: number
   successRate: number
 }
@@ -237,7 +237,7 @@ export class EnhancedBookingService {
           console.log(`✅ Loaded ${rules.length} automation rules from Firebase`)
           return rules
         }
-      } catch (error) {
+      } catch {
         console.log('⚠️ No automation rules collection found, using default rules')
       }
 

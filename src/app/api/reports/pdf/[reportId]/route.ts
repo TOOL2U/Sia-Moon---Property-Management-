@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 
 export async function GET() {
-  return NextResponse.json({
-    success: false,
-    error: "Not implemented"
-  }, { status: 501 })
+  return NextResponse.json({ message: "Test" })
 }

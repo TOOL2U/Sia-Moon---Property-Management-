@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import DatabaseService from '@/lib/dbService'
 
 /**
  * API Route: GET /api/reports/property/[propertyId]

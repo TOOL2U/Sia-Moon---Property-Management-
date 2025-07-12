@@ -12,7 +12,11 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Starting sync for all properties via API')
 
     // Optional: Add authentication/authorization here
-    // const authHeader = request.headers.get('authorization')
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) {
+      // For now, we'll proceed without auth but this should be implemented
+      console.log('⚠️  No authorization header provided')
+    }
     // if (!authHeader || authHeader !== `Bearer ${process.env.SYNC_API_KEY}`) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     // }

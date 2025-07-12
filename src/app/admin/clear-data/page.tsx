@@ -8,7 +8,13 @@ import { toast } from 'react-hot-toast'
 
 export default function ClearDataPage() {
   const [isClearing, setIsClearing] = useState(false)
-  const [lastClearResult, setLastClearResult] = useState<any>(null)
+  const [lastClearResult, setLastClearResult] = useState<{ 
+    success: boolean; 
+    message: string; 
+    deletedCount?: number;
+    deletedIds?: string[];
+    details?: Record<string, unknown> 
+  } | null>(null)
 
   const clearAllBookings = async () => {
     if (!confirm('⚠️ Are you sure you want to delete ALL bookings? This cannot be undone!')) {

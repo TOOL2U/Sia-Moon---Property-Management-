@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   console.log('🧹 Clearing all authentication cookies...')
   
   const response = NextResponse.json({ 
@@ -30,6 +30,6 @@ export async function POST(request: NextRequest) {
   return response
 }
 
-export async function GET(request: NextRequest) {
-  return POST(request)
+export async function GET() {
+  return POST()
 }

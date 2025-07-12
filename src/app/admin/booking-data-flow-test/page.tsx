@@ -8,7 +8,6 @@ import {
   TestTube, 
   CheckCircle, 
   XCircle, 
-  AlertTriangle,
   Play,
   Database,
   Bell,
@@ -96,7 +95,6 @@ const testScenarios = [
 export default function BookingDataFlowTestPage() {
   const [results, setResults] = useState<DataFlowTestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
-  const [selectedScenario, setSelectedScenario] = useState<number | null>(null)
 
   const runSingleTest = async (scenario: typeof testScenarios[0], isDuplicate = false) => {
     try {
@@ -187,7 +185,7 @@ export default function BookingDataFlowTestPage() {
     )
   }
 
-  const getDataFlowBadge = (dataFlow: any) => {
+  const getDataFlowBadge = (dataFlow: DataFlowTestResult['dataFlow']) => {
     if (dataFlow.success) {
       return <Badge className="bg-green-500/20 text-green-400">Complete</Badge>
     } else if (dataFlow.warnings?.length > 0) {
