@@ -12,9 +12,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Early return for other API test endpoints
-  if (pathname.startsWith('/api/test-') || pathname.startsWith('/api/onboarding-webhook')) {
-    console.log('🔓 MIDDLEWARE: Test API endpoint detected, allowing access')
+  // Early return for other API test endpoints and debug endpoints
+  if (pathname.startsWith('/api/test-') ||
+      pathname.startsWith('/api/test/') ||
+      pathname.startsWith('/api/onboarding-webhook') ||
+      pathname.startsWith('/api/debug/')) {
+    console.log('🔓 MIDDLEWARE: Test/Debug API endpoint detected, allowing access')
     return NextResponse.next()
   }
 

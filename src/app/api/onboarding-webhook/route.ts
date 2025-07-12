@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OnboardingService } from '@/lib/services/onboardingService'
 
 // Helper function to safely convert values for Firebase (no undefined values allowed)
-function safeValue(value: any, defaultValue: any) {
+function safeValue(value: unknown, defaultValue: unknown): unknown {
   if (value === undefined || value === null) {
     return defaultValue
   }
@@ -10,9 +10,9 @@ function safeValue(value: any, defaultValue: any) {
 }
 
 // Utility function to remove all undefined fields from data object
-function removeUndefined(obj: Record<string, any>): Record<string, any> {
+function removeUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(obj).filter(([_, v]) => v !== undefined)
+    Object.entries(obj).filter(([, v]) => v !== undefined)
   )
 }
 
@@ -141,8 +141,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Store in Firebase - remove undefined values before submission
-    const cleanedData = removeUndefined(submissionData) as typeof submissionData
-    const submissionId = await OnboardingService.createSubmission(cleanedData)
+    const cleanedData = removeUndefined(submissionData)
+    const submissionId = await OnboardingService.createSubmission(cleanedData as Parameters<typeof OnboardingService.createSubmission>[0])
     console.log('✅ Onboarding submission stored in Firebase:', submissionId)
 
     // Also add property to user's profile for client matching
@@ -214,23 +214,45 @@ export async function POST(request: NextRequest) {
       }
 
       // Create property data for profile
+      const propertyName = data.property_name || data.propertyName || 'Unnamed Property'
+      const propertyAddress = data.property_address || data.propertyAddress || 'Address not provided'
+      const bedrooms = parseInt(String(data.bedrooms || 0)) || 0
+      const bathrooms = parseInt(String(data.bathrooms || 0)) || 0
+
+      console.log('🔍 Property data mapping:', {
+        property_name: data.property_name,
+        propertyName: data.propertyName,
+        final_name: propertyName,
+        property_address: data.property_address,
+        propertyAddress: data.propertyAddress,
+        final_address: propertyAddress,
+        bedrooms,
+        bathrooms
+      })
+
       const propertyData = {
-        name: safeValue(data.property_name, ''),
-        address: safeValue(data.property_address, ''),
-        description: `Property managed by Sia Moon Property Management. ${safeValue(data.notes, '')}`.trim(),
-        bedrooms: safeValue(data.bedrooms, 0),
-        bathrooms: safeValue(data.bathrooms, 0),
-        maxGuests: safeValue(data.bedrooms, 0) ? safeValue(data.bedrooms, 0) * 2 : 4,
+        name: propertyName,
+        address: propertyAddress,
+        description: `Property managed by Sia Moon Property Management. ${String(data.notes || '')}`.trim(),
+        bedrooms,
+        bathrooms,
+        maxGuests: bedrooms ? bedrooms * 2 : 4,
         amenities: [],
-        images: safeValue(data.uploaded_photos, []),
-        coverPhoto: Array.isArray(data.uploaded_photos) && data.uploaded_photos.length > 0 ? data.uploaded_photos[0] : undefined,
+        images: Array.isArray(data.uploaded_photos) ? data.uploaded_photos : [],
         pricePerNight: 0,
         currency: 'THB',
         status: 'pending_approval' as const
       }
 
-      // Add property to user's profile
-      const propertyId = await ProfileService.addPropertyToProfile(userId, propertyData)
+      // Create property in user's properties subcollection using new method
+      console.log('🏠 Creating property in user subcollection with full onboarding data')
+      const propertyId = await ProfileService.createPropertyInUserSubcollection(userId, data)
+
+      // Also add to legacy profile array for backward compatibility
+      if (propertyId) {
+        console.log('🏠 Adding to legacy profile array for backward compatibility')
+        await ProfileService.addPropertyToProfile(userId, propertyData)
+      }
 
       if (propertyId) {
         console.log('✅ Property added to user profile successfully:', propertyId)

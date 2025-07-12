@@ -6,7 +6,7 @@ import { useForm, FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, Timestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -120,22 +120,30 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
           console.error('❌ Failed to create user profile')
         }
 
-        // Also create in users collection for backward compatibility
+        // Create in users collection with proper structure for property subcollections
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
           email: data.email,
           fullName: data.fullName,
           role: 'client',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          properties: [],
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          properties: [], // Legacy array for backward compatibility
           bookings: [],
           preferences: {
             notifications: true,
             emailUpdates: true
+          },
+          // Additional fields for property management
+          contactNumber: '',
+          nationality: '',
+          bankDetails: '',
+          emergencyContact: {
+            name: '',
+            phone: ''
           }
         })
-        console.log('✅ User document created in users collection for compatibility')
+        console.log('✅ User document created in users collection with property subcollection support')
 
       } catch (firestoreError) {
         console.error('❌ Firestore profile creation failed:', firestoreError)

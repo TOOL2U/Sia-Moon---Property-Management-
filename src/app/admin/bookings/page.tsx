@@ -12,6 +12,7 @@ import {
   BookingConflict
 } from '@/lib/services/enhancedBookingService'
 import { EndToEndBookingAutomation } from '@/lib/services/endToEndBookingAutomation'
+import { AIPropertyMatchingService } from '@/lib/services/aiPropertyMatchingService'
 import { 
   Calendar,
   User,
@@ -41,11 +42,15 @@ import { toast } from 'react-hot-toast'
 
 export default function AdminBookingsPage() {
   const [allBookings, setAllBookings] = useState<LiveBooking[]>([])
+  const [pendingBookings, setPendingBookings] = useState<any[]>([])
+  const [confirmedBookings, setConfirmedBookings] = useState<any[]>([])
+  const [unassignedBookings, setUnassignedBookings] = useState<any[]>([])
   const [filteredBookings, setFilteredBookings] = useState<LiveBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [processingBookings, setProcessingBookings] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [collectionFilter, setCollectionFilter] = useState('all') // New filter for collections
   const [automationEnabled, setAutomationEnabled] = useState(true)
   const [conflicts, setConflicts] = useState<BookingConflict[]>([])
   const [analytics, setAnalytics] = useState<BookingAnalytics | null>(null)
@@ -53,6 +58,7 @@ export default function AdminBookingsPage() {
   // Load all data on component mount
   useEffect(() => {
     loadAllBookings()
+    loadEnhancedBookings()
     loadAnalytics()
     loadConflicts()
   }, [])
@@ -83,6 +89,36 @@ export default function AdminBookingsPage() {
       toast.error('Failed to load bookings')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadEnhancedBookings = async () => {
+    try {
+      console.log('📋 Loading enhanced bookings from all collections...')
+
+      // Load from pending_bookings collection
+      const pendingResponse = await fetch('/api/admin/bookings/pending')
+      if (pendingResponse.ok) {
+        const pendingData = await pendingResponse.json()
+        setPendingBookings(pendingData.bookings || [])
+        console.log(`✅ Loaded ${pendingData.bookings?.length || 0} pending bookings`)
+      }
+
+      // Load from confirmed_bookings collection
+      const confirmedResponse = await fetch('/api/admin/bookings/confirmed')
+      if (confirmedResponse.ok) {
+        const confirmedData = await confirmedResponse.json()
+        setConfirmedBookings(confirmedData.bookings || [])
+        console.log(`✅ Loaded ${confirmedData.bookings?.length || 0} confirmed bookings`)
+      }
+
+      // Filter unassigned bookings (status = 'unassigned')
+      const allPending = pendingBookings.filter(booking => booking.status === 'unassigned')
+      setUnassignedBookings(allPending)
+      console.log(`✅ Found ${allPending.length} unassigned bookings`)
+
+    } catch (error) {
+      console.error('❌ Error loading enhanced bookings:', error)
     }
   }
 
@@ -246,6 +282,67 @@ export default function AdminBookingsPage() {
     toast.success(`Automation ${!automationEnabled ? 'enabled' : 'disabled'}`)
   }
 
+  const handleManualReassignment = async (bookingId: string, newUserId: string) => {
+    try {
+      console.log(`🔄 Manually reassigning booking ${bookingId} to user ${newUserId}`)
+
+      // Get booking data
+      const booking = pendingBookings.find(b => b.id === bookingId) ||
+                     confirmedBookings.find(b => b.id === bookingId) ||
+                     allBookings.find(b => b.id === bookingId)
+
+      if (!booking) {
+        toast.error('Booking not found')
+        return
+      }
+
+      // Use AI matching service to assign to specific user
+      const matchResult = await AIPropertyMatchingService.matchAndAssignBooking(bookingId, {
+        ...booking,
+        manualAssignment: true,
+        assignedUserId: newUserId
+      })
+
+      if (matchResult.success) {
+        toast.success('Booking reassigned successfully')
+        loadEnhancedBookings() // Reload data
+      } else {
+        toast.error('Failed to reassign booking')
+      }
+
+    } catch (error) {
+      console.error('❌ Error reassigning booking:', error)
+      toast.error('Failed to reassign booking')
+    }
+  }
+
+  const triggerAIMatching = async (bookingId: string) => {
+    try {
+      console.log(`🤖 Triggering AI matching for booking ${bookingId}`)
+
+      const booking = pendingBookings.find(b => b.id === bookingId) ||
+                     unassignedBookings.find(b => b.id === bookingId)
+
+      if (!booking) {
+        toast.error('Booking not found')
+        return
+      }
+
+      const matchResult = await AIPropertyMatchingService.matchAndAssignBooking(bookingId, booking)
+
+      if (matchResult.success && matchResult.status === 'assigned') {
+        toast.success(`Booking assigned to ${matchResult.match?.userEmail}`)
+        loadEnhancedBookings() // Reload data
+      } else {
+        toast.error('No matching property found')
+      }
+
+    } catch (error) {
+      console.error('❌ Error triggering AI matching:', error)
+      toast.error('Failed to trigger AI matching')
+    }
+  }
+
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('en-US', {
@@ -404,6 +501,37 @@ export default function AdminBookingsPage() {
             </CardContent>
           </Card>
 
+          {/* Enhanced AI Matching Stats */}
+          <Card className="bg-gradient-to-r from-purple-600/20 to-purple-800/20 border-purple-500/30">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-purple-400">{pendingBookings.length}</div>
+              <p className="text-sm text-purple-300">Pending</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-emerald-600/20 to-emerald-800/20 border-emerald-500/30">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-emerald-400">{confirmedBookings.length}</div>
+              <p className="text-sm text-emerald-300">Confirmed</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-orange-600/20 to-orange-800/20 border-orange-500/30">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-orange-400">{unassignedBookings.length}</div>
+              <p className="text-sm text-orange-300">Unassigned</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-cyan-600/20 to-cyan-800/20 border-cyan-500/30">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-cyan-400">
+                {pendingBookings.filter(b => b.matchConfidence).length}
+              </div>
+              <p className="text-sm text-cyan-300">AI Matched</p>
+            </CardContent>
+          </Card>
+
           {/* Advanced Stats */}
           <Card className="bg-gradient-to-r from-purple-600/20 to-purple-800/20 border-purple-500/30">
             <CardContent className="p-4">
@@ -456,17 +584,33 @@ export default function AdminBookingsPage() {
                   />
                 </div>
                 
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending_approval">Pending Approval</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="completed">Completed</option>
-                </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending_approval">Pending Approval</option>
+                    <option value="approved">Approved</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="unassigned">Unassigned</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="completed">Completed</option>
+                  </select>
+
+                  <select
+                    value={collectionFilter}
+                    onChange={(e) => setCollectionFilter(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-md text-white"
+                  >
+                    <option value="all">All Collections</option>
+                    <option value="pending">Pending Bookings</option>
+                    <option value="confirmed">Confirmed Bookings</option>
+                    <option value="unassigned">Unassigned Only</option>
+                    <option value="live">Live Bookings (Legacy)</option>
+                  </select>
+                </div>
               </div>
             </CardContent>
           </Card>

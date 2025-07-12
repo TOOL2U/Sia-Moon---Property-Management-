@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
+import {
+  collection,
+  addDoc,
+  query,
+  where,
   getDocs,
   Timestamp,
-  Firestore 
+  Firestore,
+  serverTimestamp
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
 
-// Use the centralized Firebase db instance
-
-// Helper function to ensure db is available
-function getDb(): Firestore {
-  if (!db) {
-    throw new Error('Firebase database not initialized')
-  }
-  return db
-}
+// Use the centralized Firebase db instance with lazy initialization
 
 // Booking interface
 interface BookingData {
@@ -50,8 +43,8 @@ interface ProcessedBooking {
   emailDate: string
   status: 'pending_approval'
   source: 'make_com_automation'
-  createdAt: Timestamp
-  updatedAt: Timestamp
+  createdAt: any // Use serverTimestamp() for Firestore
+  updatedAt: any // Use serverTimestamp() for Firestore
   duplicateCheckHash: string
 }
 
@@ -115,9 +108,7 @@ function normalizeBookingData(data: BookingData): ProcessedBooking {
   
   // Create duplicate check hash
   const duplicateCheckHash = `${data.property.toLowerCase().trim()}-${data.guestName.toLowerCase().trim()}-${checkInDate}-${checkOutDate}`
-  
-  const now = Timestamp.now()
-  
+
   return {
     property: data.property.trim(),
     villaName: data.property.trim(), // Add villaName field for compatibility
@@ -133,25 +124,37 @@ function normalizeBookingData(data: BookingData): ProcessedBooking {
     emailDate: data.date || new Date().toISOString(),
     status: 'pending_approval',
     source: 'make_com_automation',
-    createdAt: now,
-    updatedAt: now,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
     duplicateCheckHash
   }
 }
 
 /**
- * Check for duplicate bookings
+ * Check for duplicate bookings in both collections
  */
 async function checkForDuplicate(bookingData: ProcessedBooking): Promise<boolean> {
   try {
     const database = getDb()
-    const q = query(
+
+    // Check in pending_bookings collection
+    const pendingQuery = query(
+      collection(database, 'pending_bookings'),
+      where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
+    )
+
+    // Check in live_bookings collection
+    const liveQuery = query(
       collection(database, 'live_bookings'),
       where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
     )
-    
-    const querySnapshot = await getDocs(q)
-    return !querySnapshot.empty
+
+    const [pendingSnapshot, liveSnapshot] = await Promise.all([
+      getDocs(pendingQuery),
+      getDocs(liveQuery)
+    ])
+
+    return !pendingSnapshot.empty || !liveSnapshot.empty
   } catch (error) {
     console.error('Error checking for duplicates:', error)
     return false
@@ -237,13 +240,20 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Create booking in Firebase (using live_bookings collection for consistency)
+    // Create booking in Firebase - save to both collections for compatibility
     const database = getDb()
-    const docRef = await addDoc(collection(database, 'live_bookings'), processedBooking)
-    const bookingId = docRef.id
-    
-    console.log('✅ BOOKINGS API: Booking created successfully')
-    console.log('✅ BOOKINGS API: Booking ID:', bookingId)
+
+    // Save to pending_bookings collection (as requested)
+    const pendingDocRef = await addDoc(collection(database, 'pending_bookings'), processedBooking)
+    const pendingBookingId = pendingDocRef.id
+
+    // Also save to live_bookings collection (for existing admin dashboard compatibility)
+    const liveDocRef = await addDoc(collection(database, 'live_bookings'), processedBooking)
+    const liveBookingId = liveDocRef.id
+
+    console.log('✅ BOOKINGS API: Booking created successfully in both collections')
+    console.log('✅ BOOKINGS API: Pending Booking ID:', pendingBookingId)
+    console.log('✅ BOOKINGS API: Live Booking ID:', liveBookingId)
     
     // TODO: Future notification hooks can be added here
     // await sendAdminNotification(bookingId, processedBooking)
@@ -251,8 +261,9 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Booking created successfully.',
-      bookingId,
+      message: 'Booking created successfully in pending_bookings and live_bookings collections.',
+      pendingBookingId,
+      liveBookingId,
       processingTime: Date.now() - startTime,
       bookingDetails: {
         property: processedBooking.property,
@@ -261,6 +272,10 @@ export async function POST(request: NextRequest) {
         checkOut: processedBooking.checkOutDate,
         price: processedBooking.price,
         status: processedBooking.status
+      },
+      collections: {
+        pending_bookings: pendingBookingId,
+        live_bookings: liveBookingId
       }
     })
     
@@ -281,7 +296,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/bookings
- * Get recent bookings (for testing and monitoring)
+ * Health check and API documentation
  */
 export async function GET() {
   try {
@@ -291,8 +306,28 @@ export async function GET() {
       message: 'Bookings API is operational',
       timestamp: new Date().toISOString(),
       endpoints: {
-        POST: 'Create new booking',
-        GET: 'Health check'
+        POST: 'Create new booking from Make.com',
+        GET: 'Health check and API documentation'
+      },
+      features: {
+        validation: 'Input validation and sanitization',
+        duplicateCheck: 'Prevents duplicate bookings',
+        dualStorage: 'Saves to both pending_bookings and live_bookings collections',
+        authentication: 'API key or development mode authentication',
+        compatibility: 'Maintains compatibility with existing admin dashboards'
+      },
+      expectedFormat: {
+        property: 'Villa Mango Beach',
+        address: '55/45 Moo 8 Koh Phangan',
+        guestName: 'John Smith',
+        guestEmail: 'john@example.com',
+        checkInDate: '2025-07-20',
+        checkOutDate: '2025-07-25',
+        nights: '5',
+        guests: '2',
+        price: '25000',
+        subject: 'New Booking',
+        date: '2025-07-01'
       }
     })
   } catch (error) {

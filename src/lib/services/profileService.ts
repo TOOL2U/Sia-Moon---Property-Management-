@@ -1,6 +1,26 @@
 import { collection, doc, setDoc, getDoc, updateDoc, arrayUnion, getDocs, Timestamp } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
 
+/**
+ * Generate a property ID using slugify(property name + address)
+ */
+function generatePropertyId(propertyName: string, propertyAddress: string): string {
+  const combined = `${propertyName} ${propertyAddress}`.toLowerCase()
+
+  // Remove special characters and replace spaces with hyphens
+  const slugified = combined
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+    .substring(0, 50) // Limit length
+
+  // Add timestamp suffix to ensure uniqueness
+  const timestamp = Date.now().toString().slice(-6) // Last 6 digits of timestamp
+
+  return `${slugified}-${timestamp}`
+}
+
 export interface ProfileProperty {
   id: string
   name: string
@@ -138,20 +158,142 @@ export class ProfileService {
   }
   
   /**
-   * Add a property to user's profile from onboarding
+   * Create property in user subcollection from onboarding data
+   */
+  static async createPropertyInUserSubcollection(
+    userId: string,
+    onboardingData: any
+  ): Promise<string | null> {
+    try {
+      console.log('🏠 PROFILE: Creating property in user subcollection')
+      console.log('🏠 PROFILE: User ID:', userId)
+      console.log('🏠 PROFILE: Property Name:', onboardingData.propertyName)
+
+      // Generate property ID using slugify
+      const propertyId = generatePropertyId(
+        onboardingData.propertyName || 'unnamed-property',
+        onboardingData.propertyAddress || 'no-address'
+      )
+
+      console.log('🏠 PROFILE: Generated Property ID:', propertyId)
+
+      // Create comprehensive property document
+      const propertyDoc = {
+        // Basic Info
+        id: propertyId,
+        name: onboardingData.propertyName,
+        address: onboardingData.propertyAddress,
+        googleMapsUrl: onboardingData.googleMapsUrl || '',
+
+        // Property Details
+        bedrooms: parseInt(onboardingData.bedrooms) || 0,
+        bathrooms: parseInt(onboardingData.bathrooms) || 0,
+        landSizeSqm: parseInt(onboardingData.landSizeSqm) || 0,
+        villaSizeSqm: parseInt(onboardingData.villaSizeSqm) || 0,
+        yearBuilt: parseInt(onboardingData.yearBuilt) || null,
+
+        // Amenities
+        hasPool: onboardingData.hasPool || false,
+        hasGarden: onboardingData.hasGarden || false,
+        hasAirConditioning: onboardingData.hasAirConditioning || false,
+        hasParking: onboardingData.hasParking || false,
+        hasLaundry: onboardingData.hasLaundry || false,
+        hasBackupPower: onboardingData.hasBackupPower || false,
+        hasSmartLock: onboardingData.hasSmartLock || false,
+
+        // Utilities
+        internetProvider: onboardingData.internetProvider || '',
+        internetPackage: onboardingData.internetPackage || '',
+        electricityProvider: onboardingData.electricityProvider || '',
+        waterSource: onboardingData.waterSource || '',
+
+        // Access & Staff
+        accessDetails: onboardingData.accessDetails || '',
+        gateRemoteDetails: onboardingData.gateRemoteDetails || '',
+        onsiteStaff: onboardingData.onsiteStaff || '',
+
+        // Smart Electric System
+        hasSmartElectricSystem: onboardingData.hasSmartElectricSystem || false,
+        smartSystemBrand: onboardingData.smartSystemBrand || '',
+        smartDevicesControlled: onboardingData.smartDevicesControlled || [],
+        smartSystemAppPlatform: onboardingData.smartSystemAppPlatform || '',
+        hasHubGateway: onboardingData.hasHubGateway || false,
+        hubGatewayLocation: onboardingData.hubGatewayLocation || '',
+        linkedToPropertyWifi: onboardingData.linkedToPropertyWifi || false,
+        controlAccountOwner: onboardingData.controlAccountOwner || '',
+        loginCredentialsProvided: onboardingData.loginCredentialsProvided || false,
+        loginCredentialsDetails: onboardingData.loginCredentialsDetails || '',
+        hasActiveSchedulesAutomations: onboardingData.hasActiveSchedulesAutomations || false,
+        schedulesAutomationsDetails: onboardingData.schedulesAutomationsDetails || '',
+        smartSystemSpecialInstructions: onboardingData.smartSystemSpecialInstructions || '',
+
+        // Rental & Marketing
+        rentalRates: onboardingData.rentalRates || '',
+        platformsListed: onboardingData.platformsListed || [],
+        averageOccupancyRate: onboardingData.averageOccupancyRate || '',
+        minimumStayRequirements: onboardingData.minimumStayRequirements || '',
+        targetGuests: onboardingData.targetGuests || '',
+        ownerBlackoutDates: onboardingData.ownerBlackoutDates || '',
+
+        // Preferences & Rules
+        petsAllowed: onboardingData.petsAllowed || false,
+        partiesAllowed: onboardingData.partiesAllowed || false,
+        smokingAllowed: onboardingData.smokingAllowed || false,
+        maintenanceAutoApprovalLimit: onboardingData.maintenanceAutoApprovalLimit || '',
+
+        // Current Condition
+        repairsNeeded: onboardingData.repairsNeeded || '',
+
+        // Photos & Media
+        professionalPhotosStatus: onboardingData.professionalPhotosStatus || '',
+        floorPlanImagesAvailable: onboardingData.floorPlanImagesAvailable || false,
+        videoWalkthroughAvailable: onboardingData.videoWalkthroughAvailable || false,
+        uploadedPhotos: onboardingData.uploadedPhotos || [],
+
+        // Emergency Contact
+        emergencyContactName: onboardingData.emergencyContactName || '',
+        emergencyContactPhone: onboardingData.emergencyContactPhone || '',
+
+        // Owner Information (for reference)
+        ownerUserId: userId,
+
+        // Status and Timestamps
+        status: 'pending_approval',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+
+        // Additional Notes
+        notes: onboardingData.notes || onboardingData.repairsNeeded || ''
+      }
+
+      // Save to user's properties subcollection
+      const propertyRef = doc(getDb(), 'users', userId, 'properties', propertyId)
+      await setDoc(propertyRef, propertyDoc)
+
+      console.log('✅ PROFILE: Property created in user subcollection successfully')
+      return propertyId
+
+    } catch (error) {
+      console.error('❌ PROFILE: Error creating property in user subcollection:', error)
+      return null
+    }
+  }
+
+  /**
+   * Add a property to user's profile from onboarding (legacy method - still used for backward compatibility)
    */
   static async addPropertyToProfile(
     userId: string,
     propertyData: Omit<ProfileProperty, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<string | null> {
     try {
-      console.log('🏠 PROFILE: Adding property to user profile')
+      console.log('🏠 PROFILE: Adding property to user profile (legacy)')
       console.log('🏠 PROFILE: User ID:', userId)
       console.log('🏠 PROFILE: Property:', propertyData.name)
-      
+
       // Generate property ID
       const propertyId = `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      
+
       // Create complete property object
       const property: ProfileProperty = {
         ...propertyData,
@@ -342,6 +484,60 @@ export class ProfileService {
       
     } catch (error) {
       console.error('❌ PROFILE: Error creating client booking:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get all properties from user's subcollection
+   */
+  static async getUserProperties(userId: string): Promise<any[]> {
+    try {
+      console.log('🏠 PROFILE: Getting user properties from subcollection')
+      console.log('🏠 PROFILE: User ID:', userId)
+
+      const propertiesRef = collection(getDb(), 'users', userId, 'properties')
+      const snapshot = await getDocs(propertiesRef)
+
+      const properties = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+
+      console.log('✅ PROFILE: Found properties in subcollection:', properties.length)
+      return properties
+
+    } catch (error) {
+      console.error('❌ PROFILE: Error getting user properties:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get a specific property from user's subcollection
+   */
+  static async getUserProperty(userId: string, propertyId: string): Promise<any | null> {
+    try {
+      console.log('🏠 PROFILE: Getting specific user property')
+      console.log('🏠 PROFILE: User ID:', userId)
+      console.log('🏠 PROFILE: Property ID:', propertyId)
+
+      const propertyRef = doc(getDb(), 'users', userId, 'properties', propertyId)
+      const propertyDoc = await getDoc(propertyRef)
+
+      if (propertyDoc.exists()) {
+        console.log('✅ PROFILE: Found property in subcollection')
+        return {
+          id: propertyDoc.id,
+          ...propertyDoc.data()
+        }
+      } else {
+        console.log('❌ PROFILE: Property not found in subcollection')
+        return null
+      }
+
+    } catch (error) {
+      console.error('❌ PROFILE: Error getting user property:', error)
       return null
     }
   }

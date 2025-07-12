@@ -16,6 +16,7 @@ import { BookingPreview, BookingPreviewSkeleton } from '@/components/dashboard/B
 import { PropertyService, Property as PropertyServiceProperty } from '@/lib/services/propertyService'
 import { BookingService, LiveBooking } from '@/lib/services/bookingService'
 import { ReportService, MonthlyMetrics } from '@/lib/services/reportService'
+import { ClientBookingService, ClientBooking, ClientBookingStats } from '@/lib/services/clientBookingService'
 import { Report, Booking, Task } from '@/types'
 import {
   Wrench,
@@ -23,12 +24,15 @@ import {
   Home,
   Clock,
   User,
+  Users,
+  DollarSign,
   AlertCircle,
   CheckCircle2,
   Settings,
   TrendingUp
 } from 'lucide-react'
 import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
+import { cn } from '@/utils/cn'
 import toast from 'react-hot-toast'
 
 // No mock data - all data comes from live sources only
@@ -39,6 +43,8 @@ export default function ClientDashboard() {
 
   const [properties, setProperties] = useState<PropertyServiceProperty[]>([])
   const [liveBookings, setLiveBookings] = useState<LiveBooking[]>([])
+  const [clientBookings, setClientBookings] = useState<ClientBooking[]>([])
+  const [clientBookingStats, setClientBookingStats] = useState<ClientBookingStats | null>(null)
   const [monthlyMetrics, setMonthlyMetrics] = useState<MonthlyMetrics | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([]) // Legacy mock data
   const [reports, setReports] = useState<Report[]>([]) // Legacy mock data
@@ -86,10 +92,20 @@ export default function ClientDashboard() {
         if (userProperties.length > 0) {
           console.log('🔄 Loading live booking data...')
 
-          // Fetch live bookings for this client
-          const clientBookings = await BookingService.getBookingsByClientId(user.id)
-          console.log('📋 Live bookings loaded:', clientBookings.length)
-          setLiveBookings(clientBookings)
+          // Fetch live bookings for this client (legacy)
+          const legacyBookings = await BookingService.getBookingsByClientId(user.id)
+          console.log('📋 Legacy bookings loaded:', legacyBookings.length)
+          setLiveBookings(legacyBookings)
+
+          // Fetch enhanced client bookings from user subcollection
+          const enhancedBookings = await ClientBookingService.getUserBookings(user.id)
+          console.log('📋 Enhanced client bookings loaded:', enhancedBookings.length)
+          setClientBookings(enhancedBookings)
+
+          // Fetch client booking statistics
+          const bookingStats = await ClientBookingService.getBookingStats(user.id)
+          console.log('📊 Client booking stats loaded:', bookingStats)
+          setClientBookingStats(bookingStats)
 
           // Fetch monthly financial metrics
           const metrics = await ReportService.getMonthlyMetrics(user.id)
@@ -713,6 +729,120 @@ export default function ClientDashboard() {
                   </Card>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Enhanced Client Bookings Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Your Bookings
+              {clientBookingStats && (
+                <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                  {clientBookingStats.total}
+                </Badge>
+              )}
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/bookings')}
+              className="text-neutral-400 hover:text-white"
+            >
+              View All
+            </Button>
+          </div>
+
+          {/* Booking Stats Cards */}
+          {clientBookingStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-blue-400">{clientBookingStats.upcoming}</div>
+                  <p className="text-sm text-blue-300">Upcoming</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-green-400">{clientBookingStats.active}</div>
+                  <p className="text-sm text-green-300">Active</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-purple-400">{clientBookingStats.completed}</div>
+                  <p className="text-sm text-purple-300">Completed</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="p-4">
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {clientBookingStats.occupancyRate.toFixed(0)}%
+                  </div>
+                  <p className="text-sm text-yellow-300">Occupancy</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Recent Bookings */}
+          {clientBookings.length === 0 ? (
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500/10 to-blue-600/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-8 h-8 text-blue-400" />
+                </div>
+                <p className="text-neutral-400">No bookings found</p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Bookings assigned to your properties will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {clientBookings.slice(0, 5).map((booking) => (
+                <div key={booking.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="text-white font-medium">{booking.guestName}</h4>
+                      <p className="text-sm text-neutral-400">{booking.assignedPropertyName || booking.property}</p>
+                    </div>
+                    <Badge className={cn(
+                      'border',
+                      booking.status === 'assigned' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                      booking.status === 'confirmed' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                      'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                    )}>
+                      {booking.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div className="flex items-center text-neutral-300">
+                      <Calendar className="w-4 h-4 mr-2 text-blue-400" />
+                      <span>{format(new Date(booking.checkInDate), 'MMM dd')}</span>
+                    </div>
+                    <div className="flex items-center text-neutral-300">
+                      <Users className="w-4 h-4 mr-2 text-green-400" />
+                      <span>{booking.guests} guests</span>
+                    </div>
+                    <div className="flex items-center text-neutral-300">
+                      <Clock className="w-4 h-4 mr-2 text-purple-400" />
+                      <span>{booking.nights} nights</span>
+                    </div>
+                    <div className="flex items-center text-green-400 font-medium">
+                      <DollarSign className="w-4 h-4 mr-1" />
+                      <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 }).format(booking.price)}</span>
+                    </div>
+                  </div>
+                  {booking.matchConfidence && (
+                    <div className="mt-2 text-xs text-blue-400">
+                      AI Match: {(booking.matchConfidence * 100).toFixed(0)}% confidence ({booking.matchMethod})
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

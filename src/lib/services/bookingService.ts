@@ -1,6 +1,6 @@
 import { collection, getDocs, doc, updateDoc, query, where, addDoc, Timestamp, Firestore, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import { ProfileBasedClientMatching } from './profileBasedClientMatching'
+import { AIPropertyMatchingService } from './aiPropertyMatchingService'
 
 // Use the centralized Firebase db instance
 
@@ -435,54 +435,86 @@ export class BookingService {
   }
 
   /**
-   * 🚀 NEW: Trigger client profile matching for approved bookings
+   * 🚀 ENHANCED: AI-powered property matching for approved bookings
    */
   private static async triggerClientProfileMatching(bookingId: string): Promise<void> {
     try {
-      console.log(`🎯 Starting client profile matching for booking: ${bookingId}`)
-      
-      // Get the booking details
-      const bookingRef = doc(getDb(), 'live_bookings', bookingId)
-      const bookingSnap = await getDoc(bookingRef)
-      
-      if (!bookingSnap.exists()) {
-        console.error('❌ Booking not found:', bookingId)
+      console.log(`🎯 AI MATCHING: Starting enhanced property matching for booking: ${bookingId}`)
+
+      // Get the booking details from both pending_bookings and live_bookings
+      let booking: any = null
+      let bookingRef: any = null
+
+      // Try pending_bookings first
+      const pendingRef = doc(getDb(), 'pending_bookings', bookingId)
+      const pendingSnap = await getDoc(pendingRef)
+
+      if (pendingSnap.exists()) {
+        booking = pendingSnap.data()
+        bookingRef = pendingRef
+        console.log('📋 Found booking in pending_bookings collection')
+      } else {
+        // Fallback to live_bookings
+        const liveRef = doc(getDb(), 'live_bookings', bookingId)
+        const liveSnap = await getDoc(liveRef)
+
+        if (liveSnap.exists()) {
+          booking = liveSnap.data()
+          bookingRef = liveRef
+          console.log('📋 Found booking in live_bookings collection')
+        }
+      }
+
+      if (!booking) {
+        console.error('❌ Booking not found in any collection:', bookingId)
         return
       }
-      
-      const booking = bookingSnap.data() as LiveBooking
-      console.log(`🔍 Found booking for property: ${booking.villaName}`)
-      
-      // Attempt to match the property to a client profile
-      const clientMatch = await ProfileBasedClientMatching.matchClientByPropertyName(booking.villaName)
-      
-      if (clientMatch) {
-        console.log(`✅ Client match found! Property "${booking.villaName}" matches client: ${clientMatch.profileEmail}`)
-        console.log(`📊 Match confidence: ${clientMatch.confidence}%`)
-        console.log(`🔧 Match method: ${clientMatch.matchMethod}`)
-        
-        // Add the booking to the client's profile
-        await this.addBookingToClientProfile(clientMatch.clientId, booking, bookingId)
-        
-        // Update the booking with client match info
+
+      const propertyName = booking.property || booking.villaName || ''
+      console.log(`🔍 Found booking for property: ${propertyName}`)
+
+      // 🚀 NEW: Use AI-powered property matching
+      const matchResult = await AIPropertyMatchingService.matchAndAssignBooking(bookingId, booking)
+
+      if (matchResult.success && matchResult.status === 'assigned' && matchResult.match) {
+        console.log(`✅ AI MATCHING: Property successfully assigned!`)
+        console.log(`👤 User: ${matchResult.match.userEmail}`)
+        console.log(`🏠 Property: ${matchResult.match.propertyName}`)
+        console.log(`📊 Confidence: ${(matchResult.match.confidence * 100).toFixed(1)}%`)
+        console.log(`🔧 Method: ${matchResult.match.matchMethod}`)
+
+        // Update the original booking with assignment info
         await updateDoc(bookingRef, {
-          clientMatchId: clientMatch.clientId,
-          clientMatchEmail: clientMatch.profileEmail,
-          clientMatchConfidence: clientMatch.confidence,
-          clientMatchMethod: clientMatch.matchMethod,
-          clientMatchedAt: Timestamp.now()
+          status: 'assigned',
+          assignedUserId: matchResult.match.userId,
+          assignedUserEmail: matchResult.match.userEmail,
+          assignedPropertyId: matchResult.match.propertyId,
+          assignedPropertyName: matchResult.match.propertyName,
+          matchConfidence: matchResult.match.confidence,
+          matchMethod: matchResult.match.matchMethod,
+          matchDetails: matchResult.match.matchDetails,
+          userBookingId: matchResult.userBookingId,
+          confirmedBookingId: matchResult.confirmedBookingId,
+          assignedAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
         })
-        
-        console.log(`🎉 Booking successfully linked to client profile: ${clientMatch.profileEmail}`)
+
+        console.log(`🎉 Booking successfully assigned to user: ${matchResult.match.userEmail}`)
       } else {
-        console.log(`⚠️ No client match found for property: ${booking.villaName}`)
-        
+        console.log(`⚠️ AI MATCHING: No property match found for: ${propertyName}`)
+        console.log(`❌ Error: ${matchResult.error || 'Unknown error'}`)
+
         // Update booking to indicate no match was found
         await updateDoc(bookingRef, {
-          clientMatchAttempted: true,
-          clientMatchedAt: Timestamp.now(),
-          clientMatchResult: 'no_match_found'
+          status: 'unassigned',
+          matchAttempted: true,
+          matchError: matchResult.error || 'No matching property found',
+          matchAttemptedAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          adminAlert: true // Flag for admin attention
         })
+
+        console.log(`🚨 Booking marked as unassigned - requires admin attention`)
       }
       
     } catch (error) {
@@ -503,48 +535,7 @@ export class BookingService {
     }
   }
 
-  /**
-   * 🚀 NEW: Add a booking to a client's profile
-   */
-  private static async addBookingToClientProfile(
-    clientId: string, 
-    booking: LiveBooking, 
-    bookingId: string
-  ): Promise<void> {
-    try {
-      console.log(`📝 Adding booking to client profile: ${clientId}`)
-      
-      // Create a client booking record
-      const clientBookingData = {
-        bookingId: bookingId,
-        originalBookingId: booking.id || bookingId,
-        villaName: booking.villaName,
-        guestName: booking.guestName,
-        checkInDate: booking.checkInDate,
-        checkOutDate: booking.checkOutDate,
-        price: booking.price,
-        status: booking.status,
-        source: 'automated_matching',
-        propertyId: booking.propertyId,
-        addedToProfileAt: Timestamp.now(),
-        addedBy: 'automated_approval_system'
-      }
-      
-      // Add to client_bookings collection
-      const clientBookingsRef = collection(getDb(), 'client_bookings')
-      await addDoc(clientBookingsRef, {
-        ...clientBookingData,
-        clientId: clientId,
-        createdAt: Timestamp.now()
-      })
-      
-      console.log(`✅ Booking successfully added to client profile`)
-      
-    } catch (error) {
-      console.error('❌ Error adding booking to client profile:', error)
-      throw error
-    }
-  }
+  // Legacy method removed - now using AIPropertyMatchingService for booking assignment
   
   /**
    * Get booking statistics for dashboard

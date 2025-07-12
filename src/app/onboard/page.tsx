@@ -470,6 +470,7 @@ function OnboardYourVillaContent() {
       // Save to Firestore first
       const submissionData = {
         userId: user?.id,
+        user_id: user?.id, // Include for webhook compatibility
 
         // Owner Details
         ownerFullName: formData.ownerFullName,
