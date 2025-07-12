@@ -166,8 +166,34 @@ export async function POST(request: NextRequest) {
       if (!userId && emailToSearch) {
         console.log('🔍 User ID not provided, finding user by email:', emailToSearch)
         userId = await ProfileService.findUserByEmail(emailToSearch)
+
+        // If not found with primary email, try alternative email patterns
         if (!userId) {
-          console.log('⚠️ No user found with email:', emailToSearch)
+          console.log('🔍 Primary email not found, trying alternative email patterns...')
+
+          // Try different email variations
+          const emailVariations = [
+            data.email,
+            data.ownerEmail,
+            // Try switching domains
+            emailToSearch.includes('@siamoon.com') ? emailToSearch.replace('@siamoon.com', '@gmail.com') : null,
+            emailToSearch.includes('@gmail.com') ? emailToSearch.replace('@gmail.com', '@siamoon.com') : null
+          ].filter(Boolean)
+
+          for (const emailVariation of emailVariations) {
+            if (emailVariation && emailVariation !== emailToSearch) {
+              console.log('🔍 Trying email variation:', emailVariation)
+              userId = await ProfileService.findUserByEmail(emailVariation)
+              if (userId) {
+                console.log('✅ Found user with email variation:', emailVariation)
+                break
+              }
+            }
+          }
+        }
+
+        if (!userId) {
+          console.log('⚠️ No user found with any email variation')
           console.log('💡 User may need to sign up first before onboarding')
           return NextResponse.json({
             success: true,
