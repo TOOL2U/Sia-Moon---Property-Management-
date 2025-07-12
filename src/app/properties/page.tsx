@@ -26,10 +26,11 @@ export default function PropertiesPage() {
         console.log('🔍 Loading properties for user:', user.id)
         setLoading(true)
 
-        // Load user's actual properties from Firestore
-        const userProperties = await PropertyService.getPropertiesByUserId(user.id)
+        // Load user's properties from their profile subcollection
+        const userProperties = await PropertyService.getPropertiesFromUserProfile(user.id)
         setProperties(userProperties)
-        console.log('✅ Properties loaded:', userProperties.length)
+        console.log('✅ Properties loaded from user profile:', userProperties.length)
+        console.log('📍 Loaded from: /users/' + user.id + '/properties')
       } catch (error) {
         console.error('❌ Error loading properties:', error)
         toast.error('Failed to load properties')

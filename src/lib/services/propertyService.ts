@@ -1,16 +1,29 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  query, 
-  orderBy, 
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  query,
+  orderBy,
   where,
-  Timestamp 
+  Timestamp,
+  setDoc,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { getAuth } from 'firebase/auth'
+
+// Utility function to create URL-friendly slugs
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+}
 
 export interface Property {
   id: string
@@ -230,6 +243,99 @@ export class PropertyService {
   }
 
   /**
+   * Create property directly in user's subcollection from onboarding data
+   * This is the NEW method that saves to /users/{userId}/properties/{propertyId}
+   */
+  static async createPropertyInUserProfile(
+    onboardingData: OnboardingData,
+    userId: string
+  ): Promise<string> {
+    try {
+      console.log('🏠 Creating property in user profile subcollection')
+      console.log('👤 User ID:', userId)
+      console.log('📋 Onboarding data:', onboardingData)
+
+      // Validate required data
+      if (!userId) {
+        throw new Error('User ID is required')
+      }
+      if (!onboardingData.propertyName) {
+        throw new Error('Property name is required')
+      }
+      if (!onboardingData.propertyAddress) {
+        throw new Error('Property address is required')
+      }
+
+      // Generate property ID using slugify
+      const propertyId = slugify(onboardingData.propertyName + ' ' + onboardingData.propertyAddress)
+      console.log('🔑 Generated property ID:', propertyId)
+
+      // Prepare property data for user subcollection
+      const propertyData = {
+        // Basic Information
+        name: onboardingData.propertyName,
+        address: onboardingData.propertyAddress,
+        bedrooms: onboardingData.bedrooms || 0,
+        bathrooms: onboardingData.bathrooms || 0,
+        landSizeSqm: onboardingData.landSizeSqm || 0,
+        villaSizeSqm: onboardingData.villaSizeSqm || 0,
+
+        // Amenities (convert to array)
+        amenities: this.extractAmenities(onboardingData),
+
+        // Utilities (as object)
+        utilities: {
+          electricityProvider: onboardingData.electricityProvider || '',
+          waterSource: onboardingData.waterSource || '',
+          internetProvider: onboardingData.internetProvider || '',
+          internetPackage: onboardingData.internetPackage || ''
+        },
+
+        // Additional fields
+        hasPool: onboardingData.hasPool || false,
+        hasGarden: onboardingData.hasGarden || false,
+        hasAirConditioning: onboardingData.hasAirConditioning || false,
+        hasParking: onboardingData.hasParking || false,
+        hasLaundry: onboardingData.hasLaundry || false,
+        hasBackupPower: onboardingData.hasBackupPower || false,
+
+        // Media - Set cover photo as first uploaded image
+        coverPhoto: Array.isArray(onboardingData.uploadedPhotos) && onboardingData.uploadedPhotos.length > 0
+          ? onboardingData.uploadedPhotos[0]
+          : null,
+        images: Array.isArray(onboardingData.uploadedPhotos) ? onboardingData.uploadedPhotos : [],
+
+        // Status
+        status: 'active',
+        isActive: true,
+
+        // Timestamps
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }
+
+      console.log('💾 Property data to save:', propertyData)
+
+      // Validate Firestore connection
+      if (!db) {
+        throw new Error('Firebase Firestore not initialized')
+      }
+
+      // Save to user's properties subcollection
+      const propertyRef = doc(db, 'users', userId, 'properties', propertyId)
+      await setDoc(propertyRef, propertyData)
+
+      console.log('✅ Property saved to user profile:', propertyId)
+      console.log('📍 Firestore path: /users/' + userId + '/properties/' + propertyId)
+
+      return propertyId
+    } catch (error) {
+      console.error('❌ Error creating property in user profile:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get all properties for a user
    */
   static async getPropertiesByUserId(userId: string): Promise<Property[]> {
@@ -258,6 +364,47 @@ export class PropertyService {
       return properties
     } catch (error) {
       console.error('❌ Error fetching user properties:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get properties from user's subcollection (NEW METHOD)
+   * Reads from /users/{userId}/properties
+   */
+  static async getPropertiesFromUserProfile(userId: string): Promise<any[]> {
+    try {
+      console.log('🏠 Loading properties from user profile subcollection')
+      console.log('👤 User ID:', userId)
+
+      if (!userId) {
+        throw new Error('User ID is required')
+      }
+
+      // Validate Firestore connection
+      if (!db) {
+        throw new Error('Firebase Firestore not initialized')
+      }
+
+      // Query user's properties subcollection
+      const propertiesRef = collection(db, 'users', userId, 'properties')
+      const q = query(propertiesRef, orderBy('createdAt', 'desc'))
+
+      const querySnapshot = await getDocs(q)
+      const properties: any[] = []
+
+      querySnapshot.forEach((doc) => {
+        properties.push({
+          id: doc.id,
+          ...doc.data()
+        })
+      })
+
+      console.log(`✅ Retrieved ${properties.length} properties from user profile`)
+      console.log('📍 Firestore path: /users/' + userId + '/properties')
+      return properties
+    } catch (error) {
+      console.error('❌ Error fetching properties from user profile:', error)
       throw error
     }
   }

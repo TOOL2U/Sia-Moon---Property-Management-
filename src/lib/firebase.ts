@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from 'firebase/app'
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
@@ -62,7 +62,7 @@ if (missingFields.length > 0) {
 }
 
 // Initialize Firebase with singleton pattern (both client and server side)
-let app = null as any
+let app: FirebaseApp | null = null
 try {
   // Initialize if we have the required configuration (both browser and server)
   if (missingFields.length === 0) {
@@ -77,7 +77,7 @@ try {
   } else {
     console.log('⏳ Firebase initialization skipped - configuration incomplete')
     console.log('Missing fields:', missingFields)
-    app = undefined
+    app = null
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
@@ -87,7 +87,7 @@ try {
     environment: process.env.NODE_ENV,
     isBrowser
   })
-  app = undefined
+  app = null
 }
 
 // Function to ensure Firebase is initialized (for serverless environments)
@@ -148,7 +148,7 @@ let analytics: Analytics | null = null
 if (typeof window !== 'undefined' && app) {
   isSupported().then((supported) => {
     if (supported) {
-      analytics = getAnalytics(app)
+      analytics = getAnalytics(app!)
       console.log('📊 Firebase Analytics initialized')
     } else {
       console.log('📊 Firebase Analytics not supported in this environment')

@@ -548,17 +548,26 @@ function OnboardYourVillaContent() {
       const submissionId = await OnboardingService.createSubmission(submissionData)
       console.log('✅ Onboarding submission saved to Firestore:', submissionId)
 
-      // Create property from onboarding data
+      // Create property directly in user's profile subcollection
       let propertyId: string | null = null
       try {
-        propertyId = await PropertyService.createPropertyFromOnboarding(
+        console.log('🏠 Creating property in user profile subcollection...')
+        console.log('👤 User ID:', user?.id)
+        console.log('📋 Submission data:', submissionData)
+
+        if (!user?.id) {
+          throw new Error('User ID is required to save property')
+        }
+
+        propertyId = await PropertyService.createPropertyInUserProfile(
           submissionData,
-          user?.id || '',
-          submissionId
+          user.id
         )
-        console.log('✅ Property created from onboarding:', propertyId)
+        console.log('✅ Property created in user profile with ID:', propertyId)
+        console.log('📍 Saved to: /users/' + user.id + '/properties/' + propertyId)
       } catch (propertyError) {
-        console.warn('⚠️ Failed to create property, but onboarding submission saved:', propertyError)
+        console.error('❌ Failed to create property in user profile:', propertyError)
+        console.warn('⚠️ Property creation failed, but onboarding submission saved')
         // Don't fail the entire submission if property creation fails
       }
 
