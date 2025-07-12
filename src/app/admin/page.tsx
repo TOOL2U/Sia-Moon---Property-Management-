@@ -172,7 +172,14 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-blue-400">
                 {submissions.filter(s => {
-                  const submissionDate = s.createdAt.toDate()
+                  let submissionDate: Date
+                  if (s.createdAt && typeof s.createdAt.toDate === 'function') {
+                    submissionDate = s.createdAt.toDate()
+                  } else if (s.createdAt) {
+                    submissionDate = new Date(s.createdAt as any)
+                  } else {
+                    submissionDate = new Date()
+                  }
                   const now = new Date()
                   return submissionDate.getMonth() === now.getMonth() &&
                          submissionDate.getFullYear() === now.getFullYear()
@@ -254,7 +261,17 @@ export default function AdminDashboard() {
                           <strong>Address:</strong> {submission.propertyAddress}
                         </p>
                         <p className="text-xs text-neutral-500">
-                          Submitted: {submission.createdAt.toDate().toLocaleDateString()}
+                          Submitted: {
+                            (() => {
+                              if (submission.createdAt && typeof submission.createdAt.toDate === 'function') {
+                                return submission.createdAt.toDate().toLocaleDateString()
+                              } else if (submission.createdAt) {
+                                return new Date(submission.createdAt as any).toLocaleDateString()
+                              } else {
+                                return new Date().toLocaleDateString()
+                              }
+                            })()
+                          }
                         </p>
                       </div>
                       <div className="flex items-center gap-2">

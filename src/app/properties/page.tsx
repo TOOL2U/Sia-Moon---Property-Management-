@@ -188,7 +188,17 @@ export default function PropertiesPage() {
                     )}
 
                     <div className="text-sm text-neutral-500">
-                      Added {property.createdAt.toDate().toLocaleDateString()}
+                      Added {
+                        (() => {
+                          if (property.createdAt && typeof property.createdAt.toDate === 'function') {
+                            return property.createdAt.toDate().toLocaleDateString()
+                          } else if (property.createdAt) {
+                            return new Date(property.createdAt as any).toLocaleDateString()
+                          } else {
+                            return new Date().toLocaleDateString()
+                          }
+                        })()
+                      }
                     </div>
 
                     <div className="space-y-3 pt-2">

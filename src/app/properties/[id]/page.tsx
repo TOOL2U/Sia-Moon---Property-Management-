@@ -301,11 +301,31 @@ export default function PropertyDetailsPage() {
 
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Created</label>
-                    <p className="text-white">{property.createdAt.toDate().toLocaleDateString()}</p>
+                    <p className="text-white">
+                      {(() => {
+                        if (property.createdAt && typeof property.createdAt.toDate === 'function') {
+                          return property.createdAt.toDate().toLocaleDateString()
+                        } else if (property.createdAt) {
+                          return new Date(property.createdAt as any).toLocaleDateString()
+                        } else {
+                          return new Date().toLocaleDateString()
+                        }
+                      })()}
+                    </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Last Updated</label>
-                    <p className="text-white">{property.updatedAt.toDate().toLocaleDateString()}</p>
+                    <p className="text-white">
+                      {(() => {
+                        if (property.updatedAt && typeof property.updatedAt.toDate === 'function') {
+                          return property.updatedAt.toDate().toLocaleDateString()
+                        } else if (property.updatedAt) {
+                          return new Date(property.updatedAt as any).toLocaleDateString()
+                        } else {
+                          return new Date().toLocaleDateString()
+                        }
+                      })()}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -378,7 +398,15 @@ export default function PropertyDetailsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400">Created Date</span>
                   <span className="font-medium text-white">
-                    {property.createdAt.toDate().toLocaleDateString()}
+                    {(() => {
+                      if (property.createdAt && typeof property.createdAt.toDate === 'function') {
+                        return property.createdAt.toDate().toLocaleDateString()
+                      } else if (property.createdAt) {
+                        return new Date(property.createdAt as any).toLocaleDateString()
+                      } else {
+                        return new Date().toLocaleDateString()
+                      }
+                    })()}
                   </span>
                 </div>
               </CardContent>
