@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
+import { useAuth } from '@/contexts/AuthContext'
 import { Building, CheckCircle, ArrowLeft, Send, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -20,6 +21,7 @@ interface FormData {
 
 export default function SimpleOnboardingPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const { isLoading, isSuccess, error, submitOnboarding, reset } = useOnboardingSubmit()
   
   const [formData, setFormData] = useState<FormData>({
@@ -87,8 +89,11 @@ export default function SimpleOnboardingPage() {
     }
 
     try {
-      // Submit to Make.com webhook
-      await submitOnboarding(formData as OnboardingSubmissionData)
+      // Submit to Make.com webhook with user ID
+      await submitOnboarding({
+        ...formData,
+        user_id: user?.id
+      } as OnboardingSubmissionData)
       
       // Show success message
       toast.success('Thank you! Your villa onboarding request has been submitted successfully. You will receive a confirmation email shortly.')

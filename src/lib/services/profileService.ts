@@ -65,6 +65,33 @@ export interface ClientBooking {
 export class ProfileService {
   
   /**
+   * Find user by email address
+   */
+  static async findUserByEmail(email: string): Promise<string | null> {
+    try {
+      console.log('🔍 PROFILE: Finding user by email:', email)
+
+      const profilesRef = collection(getDb(), 'profiles')
+      const snapshot = await getDocs(profilesRef)
+
+      for (const doc of snapshot.docs) {
+        const profile = doc.data() as UserProfile
+        if (profile.email.toLowerCase() === email.toLowerCase()) {
+          console.log('✅ PROFILE: Found user by email:', profile.id)
+          return profile.id
+        }
+      }
+
+      console.log('❌ PROFILE: No user found with email:', email)
+      return null
+
+    } catch (error) {
+      console.error('❌ PROFILE: Error finding user by email:', error)
+      return null
+    }
+  }
+
+  /**
    * Create a new user profile during registration
    */
   static async createUserProfile(

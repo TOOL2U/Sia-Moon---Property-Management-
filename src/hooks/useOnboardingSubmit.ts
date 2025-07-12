@@ -4,6 +4,9 @@ import { useState } from 'react'
  * Type definition for the comprehensive villa onboarding data that will be sent to Make.com
  */
 export interface OnboardingSubmissionData {
+  // User Information
+  user_id?: string
+
   // Owner Details
   name: string
   email: string
@@ -193,6 +196,9 @@ export const useOnboardingSubmit = (): UseOnboardingSubmitReturn => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          // User Information
+          user_id: data.user_id,
+
           // Owner Details
           name: data.name?.trim(),
           email: data.email?.trim(),

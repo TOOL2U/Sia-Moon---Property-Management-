@@ -149,6 +149,32 @@ export async function POST(request: NextRequest) {
       // Import ProfileService
       const { ProfileService } = await import('@/lib/services/profileService')
 
+      // Find user by email if user_id is not provided
+      let userId = data.user_id
+      if (!userId && data.email) {
+        console.log('🔍 User ID not provided, finding user by email:', data.email)
+        userId = await ProfileService.findUserByEmail(data.email)
+        if (!userId) {
+          console.log('⚠️ No user found with email:', data.email)
+          console.log('💡 User may need to sign up first before onboarding')
+          return NextResponse.json({
+            success: true,
+            message: 'Onboarding submitted successfully. Please sign up to link this property to your account.',
+            submissionId
+          })
+        }
+        console.log('✅ Found user by email:', userId)
+      }
+
+      if (!userId) {
+        console.log('⚠️ No user ID available, skipping property creation')
+        return NextResponse.json({
+          success: true,
+          message: 'Onboarding submitted successfully. Property will be linked when you sign up.',
+          submissionId
+        })
+      }
+
       // Create property data for profile
       const propertyData = {
         name: safeValue(data.property_name, ''),
@@ -166,25 +192,34 @@ export async function POST(request: NextRequest) {
       }
 
       // Add property to user's profile
-      const propertyId = await ProfileService.addPropertyToProfile(data.user_id, propertyData)
+      const propertyId = await ProfileService.addPropertyToProfile(userId, propertyData)
 
       if (propertyId) {
         console.log('✅ Property added to user profile successfully:', propertyId)
+        return NextResponse.json({
+          success: true,
+          message: 'Onboarding submitted successfully and property created!',
+          submissionId,
+          propertyId
+        })
       } else {
         console.error('❌ Failed to add property to user profile')
+        return NextResponse.json({
+          success: true,
+          message: 'Onboarding submitted successfully, but property creation failed.',
+          submissionId
+        })
       }
 
     } catch (profileError) {
       console.error('❌ Error adding property to profile:', profileError)
       // Don't fail the whole request if profile update fails
+      return NextResponse.json({
+        success: true,
+        message: 'Onboarding submitted successfully, but property creation failed.',
+        submissionId
+      })
     }
-
-    return NextResponse.json({
-      status: 'success',
-      message: 'Onboarding data received and stored successfully',
-      submissionId,
-      timestamp: new Date().toISOString()
-    })
 
   } catch (error) {
     console.error('❌ Error processing onboarding webhook:', error)

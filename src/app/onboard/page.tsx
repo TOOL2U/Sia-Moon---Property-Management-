@@ -564,6 +564,9 @@ function OnboardYourVillaContent() {
       // Send confirmation email via Make.com webhook
       try {
         const makeData: OnboardingSubmissionData = {
+          // User Information
+          user_id: user?.id,
+
           // Owner Details
           name: formData.ownerFullName,
           email: formData.ownerEmail,
