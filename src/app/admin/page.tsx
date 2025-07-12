@@ -184,22 +184,7 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Villa Photo Management */}
-        <Card className="bg-neutral-900 border-neutral-800 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              Villa Photo Management
-            </CardTitle>
-            <CardDescription>
-              Download and manage villa photos uploaded by property owners during onboarding.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AdminVillaPhotoDownload />
-          </CardContent>
-        </Card>
-
+    
         {/* Filters and Search */}
         <Card className="bg-neutral-900 border-neutral-800 mb-6">
           <CardContent className="pt-6">
