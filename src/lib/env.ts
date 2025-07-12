@@ -73,6 +73,9 @@ const envSchema = z.object({
     { message: "Invalid public error webhook URL format" }
   ),
 
+  // AI Configuration
+  OPENAI_API_KEY: z.string().optional(),
+
   // Feature flags
   ENABLE_BOOKING_SYNC_CRON: z.string().optional().transform(val => val === "true"),
   ENABLE_REPORT_CRON: z.string().optional().transform(val => val === "true"),
@@ -132,6 +135,9 @@ try {
       NEXT_PUBLIC_MAKE_WEBHOOK_URL: process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL,
       SYNC_API_KEY: process.env.SYNC_API_KEY,
 
+      // AI Configuration
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+
       // Push notifications
       NEXT_PUBLIC_ONESIGNAL_APP_ID: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
       ONESIGNAL_REST_API_KEY: process.env.ONESIGNAL_REST_API_KEY,
@@ -186,6 +192,9 @@ export const ADMIN_EMAIL = env.ADMIN_EMAIL;
 // Webhooks
 export const NEXT_PUBLIC_MAKE_WEBHOOK_URL = env.NEXT_PUBLIC_MAKE_WEBHOOK_URL;
 export const SYNC_API_KEY = env.SYNC_API_KEY;
+
+// AI Configuration
+export const OPENAI_API_KEY = env.OPENAI_API_KEY;
 
 // Push notifications
 export const NEXT_PUBLIC_ONESIGNAL_APP_ID = env.NEXT_PUBLIC_ONESIGNAL_APP_ID;

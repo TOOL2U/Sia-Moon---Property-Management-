@@ -570,6 +570,27 @@ export default function AdminDashboard() {
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                AI Property Agent
+              </CardTitle>
+              <CardDescription>AI-powered booking analysis and insights</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-neutral-400 text-sm mb-4">
+                Review AI analysis of booking-property matching, provide feedback, and monitor automation performance
+              </p>
+              <Button
+                onClick={() => window.location.href = '/admin/ai-log'}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                View AI Analysis Log
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
                 <Settings className="h-5 w-5" />
                 Staff Task Management
               </CardTitle>

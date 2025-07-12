@@ -189,3 +189,30 @@ export interface ReportFilters {
   status?: 'all' | 'completed' | 'pending' | 'cancelled';
   searchQuery: string;
 }
+
+// AI Log interface for property management agent
+export interface AILog {
+  id: string;
+  booking_id: string;
+  property_id: string | null;
+  confidence_score: number;
+  ai_summary: string;
+  suggested_actions: string[];
+  status: 'success' | 'error' | 'needs_review';
+  ai_reasoning: string;
+  feedback?: 'positive' | 'negative' | null;
+  feedback_comment?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// AI Analysis Result interface
+export interface AIAnalysisResult {
+  matched_property_id: string | null;
+  confidence_score: number;
+  suggested_actions: string[];
+  summary: string;
+  reasoning: string;
+  status: 'success' | 'error' | 'needs_review';
+  error_message?: string;
+}

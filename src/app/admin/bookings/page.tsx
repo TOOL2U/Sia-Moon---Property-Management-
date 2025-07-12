@@ -841,7 +841,12 @@ export default function AdminBookingsPage() {
                               <span className="text-yellow-400 font-medium">⚠️ No Client Match Found</span>
                               <p className="text-sm text-yellow-300 mt-1">Requires manual client assignment</p>
                             </div>
-                            <Button size="sm" variant="outline" className="border-yellow-500/50 text-yellow-400">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                              onClick={() => triggerAIMatching(booking.id)}
+                            >
                               <Target className="w-4 h-4 mr-1" />
                               Match Client
                             </Button>
