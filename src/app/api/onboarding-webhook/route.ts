@@ -9,6 +9,13 @@ function safeValue(value: any, defaultValue: any) {
   return value
 }
 
+// Utility function to remove all undefined fields from data object
+function removeUndefined(obj: Record<string, any>): Record<string, any> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  )
+}
+
 /**
  * Webhook endpoint to receive onboarding data from Make.com and store in Firebase
  * This endpoint should be called by Make.com after processing the onboarding form data
@@ -130,8 +137,9 @@ export async function POST(request: NextRequest) {
       status: 'pending' as const
     }
 
-    // Store in Firebase
-    const submissionId = await OnboardingService.createSubmission(submissionData)
+    // Store in Firebase - remove undefined values before submission
+    const cleanedData = removeUndefined(submissionData) as typeof submissionData
+    const submissionId = await OnboardingService.createSubmission(cleanedData)
     console.log('✅ Onboarding submission stored in Firebase:', submissionId)
 
     // Also add property to user's profile for client matching

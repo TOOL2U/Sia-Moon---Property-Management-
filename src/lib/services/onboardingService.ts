@@ -1,19 +1,26 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  orderBy, 
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
   where,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
 // Use the centralized Firebase db instance
+
+// Utility function to remove all undefined fields from data object
+function removeUndefined(obj: Record<string, any>): Record<string, any> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  )
+}
 
 export interface OnboardingSubmission {
   id: string
@@ -131,7 +138,9 @@ export class OnboardingService {
         updatedAt: Timestamp.now()
       }
 
-      const docRef = await addDoc(collection(db, this.collection), submissionData)
+      // Remove undefined values before submitting to Firestore
+      const cleanedData = removeUndefined(submissionData)
+      const docRef = await addDoc(collection(db, this.collection), cleanedData)
       console.log('✅ Onboarding submission created:', docRef.id)
       return docRef.id
     } catch (error) {
