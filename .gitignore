@@ -1,0 +1,191 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# firebase
+.firebase/
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# dependency directories
+node_modules/
+jspm_packages/
+
+# optional npm cache directory
+.npm
+
+# optional eslint cache
+.eslintcache
+
+# microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# optional REPL history
+.node_repl_history
+
+# output of 'npm pack'
+*.tgz
+
+# yarn integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# serverless directories
+.serverless/
+
+# fusebox cache
+.fusebox/
+
+# dynamodb local files
+.dynamodb/
+
+# ternjs port file
+.tern-port
+
+# stores vscode versions used for testing vscode extensions
+.vscode-test
+
+# temporary folders
+tmp/
+temp/
+
+# editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# os generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# production secrets (never commit these)
+.env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# database dumps
+*.sql.backup
+*.dump
+
+# certificates
+*.pem
+*.key
+*.crt
+
+# build artifacts
+dist/
+build/
+out/
+
+# test artifacts
+test-results/
+playwright-report/
+test-results.xml
+
+# project-specific test and debug files
+test-*.js
+debug-*.js
+debug-*.mjs
+*.debug.log
+pglite-debug.log
+test-results-summary.md
+
+# temporary email templates (keep only the ones in email-templates/)
+signup-email-*.html
+onboarding-survey-email.html
+
+# database and setup files (development only)
+setup-*.sql
+setup-*.js
+
+# HTML files in root (keep only in proper directories)
+*.html
+
+# Netlify
+.netlify/
+netlify-debug.log
