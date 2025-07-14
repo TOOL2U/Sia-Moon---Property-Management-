@@ -3,11 +3,11 @@
  * Handles CRUD operations for staff profiles with Supabase/localStorage fallback
  */
 
-import { 
-  StaffProfile, 
-  CreateStaffData, 
-  UpdateStaffData, 
-  StaffFilters, 
+import {
+  StaffProfile,
+  CreateStaffData,
+  UpdateStaffData,
+  StaffFilters,
   StaffStats,
   StaffApiResponse,
   StaffListResponse,
@@ -76,7 +76,16 @@ class StaffService {
         maintenance: 0,
         admin: 0,
         supervisor: 0
-      }
+      },
+      totalTasks: 0,
+      pendingTasks: 0,
+      inProgressTasks: 0,
+      completedTasks: 0,
+      overdueeTasks: 0,
+      todayTasks: 0,
+      upcomingTasks: 0,
+      averageCompletionTime: 0,
+      completionRate: 0
     }
 
     staff.forEach(member => {
@@ -102,26 +111,46 @@ class StaffService {
     }
 
     // Role filter
-    if (filters.role && filters.role !== 'all') {
+    if (filters.role) {
       filtered = filtered.filter(member => member.role === filters.role)
     }
 
     // Status filter
-    if (filters.status && filters.status !== 'all') {
+    if (filters.status) {
       filtered = filtered.filter(member => member.status === filters.status)
     }
 
     // Sorting
     if (filters.sortBy) {
       filtered.sort((a, b) => {
-        const aValue = a[filters.sortBy!]
-        const bValue = b[filters.sortBy!]
-        
+        let aValue: any, bValue: any
+
+        switch (filters.sortBy) {
+          case 'name':
+            aValue = a.name
+            bValue = b.name
+            break
+          case 'role':
+            aValue = a.role
+            bValue = b.role
+            break
+          case 'status':
+            aValue = a.status
+            bValue = b.status
+            break
+          case 'created':
+            aValue = a.created_at || ''
+            bValue = b.created_at || ''
+            break
+          default:
+            return 0
+        }
+
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue)
           return filters.sortOrder === 'desc' ? -comparison : comparison
         }
-        
+
         return 0
       })
     }
@@ -199,7 +228,21 @@ class StaffService {
       return {
         success: false,
         data: [],
-        stats: { total: 0, active: 0, inactive: 0, byRole: { cleaner: 0, maintenance: 0, admin: 0, supervisor: 0 } },
+        stats: {
+          total: 0,
+          active: 0,
+          inactive: 0,
+          byRole: { cleaner: 0, maintenance: 0, admin: 0, supervisor: 0 },
+          totalTasks: 0,
+          pendingTasks: 0,
+          inProgressTasks: 0,
+          completedTasks: 0,
+          overdueeTasks: 0,
+          todayTasks: 0,
+          upcomingTasks: 0,
+          averageCompletionTime: 0,
+          completionRate: 0
+        },
         error: error instanceof Error ? error.message : 'Failed to fetch staff'
       }
     }

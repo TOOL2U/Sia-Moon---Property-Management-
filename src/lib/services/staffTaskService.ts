@@ -52,14 +52,14 @@ export class StaffTaskService {
       const taskIds: string[] = []
       
       // Determine task template based on booking characteristics
-      let taskTemplate = TASK_TEMPLATES.standard_checkin
-      
+      let taskTemplate: any[] = [...TASK_TEMPLATES.standard_checkin]
+
       // Use luxury template for high-value bookings
       if (bookingData.price && bookingData.price > 15000) {
-        taskTemplate = TASK_TEMPLATES.luxury_booking
+        taskTemplate = [...TASK_TEMPLATES.luxury_booking]
         console.log('💎 Using luxury booking template for high-value booking')
       }
-      
+
       // Add maintenance tasks if special requests indicate need
       if (bookingData.specialRequests?.toLowerCase().includes('maintenance') ||
           bookingData.specialRequests?.toLowerCase().includes('repair')) {
@@ -266,7 +266,7 @@ export class StaffTaskService {
       const database = getDb()
       const taskRef = doc(database, 'staff_tasks', taskId)
       
-      const updateData: Record<string, unknown> = {
+      const updateData: Record<string, any> = {
         status,
         updatedAt: serverTimestamp()
       }
@@ -354,18 +354,18 @@ export class StaffTaskService {
   private static getAssignedStaffForProperty(propertyName: string): string[] {
     // Check specific property assignments first
     if (PROPERTY_STAFF_ASSIGNMENTS[propertyName as keyof typeof PROPERTY_STAFF_ASSIGNMENTS]) {
-      return PROPERTY_STAFF_ASSIGNMENTS[propertyName as keyof typeof PROPERTY_STAFF_ASSIGNMENTS] as string[]
+      return [...PROPERTY_STAFF_ASSIGNMENTS[propertyName as keyof typeof PROPERTY_STAFF_ASSIGNMENTS]]
     }
     
     // Fallback to region-based assignments
     if (propertyName.toLowerCase().includes('beach') || propertyName.toLowerCase().includes('ocean')) {
-      return PROPERTY_STAFF_ASSIGNMENTS.default_beach as string[]
+      return [...PROPERTY_STAFF_ASSIGNMENTS.default_beach]
     } else if (propertyName.toLowerCase().includes('mountain') || propertyName.toLowerCase().includes('highland')) {
-      return PROPERTY_STAFF_ASSIGNMENTS.default_mountain as string[]
+      return [...PROPERTY_STAFF_ASSIGNMENTS.default_mountain]
     } else if (propertyName.toLowerCase().includes('downtown') || propertyName.toLowerCase().includes('urban')) {
-      return PROPERTY_STAFF_ASSIGNMENTS.default_city as string[]
+      return [...PROPERTY_STAFF_ASSIGNMENTS.default_city]
     }
-    
+
     // Default assignment
     return ['staff_cleaner_001', 'staff_maintenance_001']
   }
@@ -393,6 +393,10 @@ export class StaffTaskService {
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
     const stats: StaffStats = {
+      total: 0, // Will be calculated from staff data
+      active: 0, // Will be calculated from staff data
+      inactive: 0, // Will be calculated from staff data
+      byRole: {}, // Will be calculated from staff data
       totalTasks: tasks.length,
       pendingTasks: tasks.filter(t => t.status === 'assigned').length,
       inProgressTasks: tasks.filter(t => t.status === 'in_progress').length,
@@ -431,6 +435,10 @@ export class StaffTaskService {
    */
   private static getEmptyStats(): StaffStats {
     return {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      byRole: {},
       totalTasks: 0,
       pendingTasks: 0,
       inProgressTasks: 0,
@@ -454,7 +462,7 @@ export class StaffTaskService {
     try {
       const response = await this.getTasksForStaff(staffId, {
         dateRange: { start: startDate, end: endDate },
-        sortBy: 'scheduledDate',
+        sortBy: 'scheduled',
         sortOrder: 'asc'
       })
       

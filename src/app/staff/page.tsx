@@ -56,6 +56,10 @@ export default function StaffDashboard() {
   const [tasks, setTasks] = useState<StaffTask[]>([])
   const [filteredTasks, setFilteredTasks] = useState<StaffTask[]>([])
   const [stats, setStats] = useState<StaffStats>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    byRole: {},
     totalTasks: 0,
     pendingTasks: 0,
     inProgressTasks: 0,

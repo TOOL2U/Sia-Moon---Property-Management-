@@ -19,17 +19,22 @@ export default function VerifyCloudinaryPage() {
 
   const testUrl = (name: string, url: string) => {
     addLog(`Testing ${name}: ${url}`)
-    
-    const img = new Image()
-    img.onload = () => {
-      addLog(`✅ ${name} loaded successfully`)
-      setTestResults(prev => ({ ...prev, [name]: true }))
-    }
-    img.onerror = () => {
-      addLog(`❌ ${name} failed to load`)
+
+    if (typeof window !== 'undefined') {
+      const img = new window.Image()
+      img.onload = () => {
+        addLog(`✅ ${name} loaded successfully`)
+        setTestResults(prev => ({ ...prev, [name]: true }))
+      }
+      img.onerror = () => {
+        addLog(`❌ ${name} failed to load`)
+        setTestResults(prev => ({ ...prev, [name]: false }))
+      }
+      img.src = url
+    } else {
+      addLog(`❌ ${name} - Image testing not available on server`)
       setTestResults(prev => ({ ...prev, [name]: false }))
     }
-    img.src = url
   }
 
   const runAllTests = () => {

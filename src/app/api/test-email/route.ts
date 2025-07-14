@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuth } from 'firebase-admin/auth'
-import { initializeApp, getApps, cert } from 'firebase-admin/app'
 
-// Initialize Firebase Admin (for server-side operations)
-if (getApps().length === 0) {
-  try {
-    // For development, we'll use the client SDK instead
-    console.log('Firebase Admin not configured for development')
-  } catch (error) {
-    console.error('Firebase Admin initialization failed:', error)
-  }
-}
+// Note: Firebase Admin SDK removed for deployment compatibility
+// This endpoint provides configuration testing without server-side Firebase operations
 
 export async function POST(request: NextRequest) {
   try {

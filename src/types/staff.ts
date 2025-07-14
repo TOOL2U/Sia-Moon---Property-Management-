@@ -93,7 +93,22 @@ export interface StaffTaskFilters {
   sortOrder?: 'asc' | 'desc'
 }
 
+export interface StaffFilters {
+  search?: string
+  role?: 'cleaner' | 'maintenance' | 'admin' | 'supervisor'
+  status?: 'active' | 'inactive'
+  region?: string
+  sortBy?: 'name' | 'role' | 'status' | 'created'
+  sortOrder?: 'asc' | 'desc'
+  limit?: number
+  offset?: number
+}
+
 export interface StaffStats {
+  total: number
+  active: number
+  inactive: number
+  byRole: Record<string, number>
   totalTasks: number
   pendingTasks: number
   inProgressTasks: number
@@ -123,6 +138,17 @@ export interface UpdateStaffData {
   status?: 'active' | 'inactive'
   assignedProperties?: string[]
   assignedRegions?: string[]
+}
+
+export interface StaffFormErrors {
+  name?: string
+  email?: string
+  phone?: string
+  role?: string
+  status?: string
+  assignedProperties?: string
+  assignedRegions?: string
+  general?: string
 }
 
 export interface StaffApiResponse {
@@ -155,10 +181,10 @@ export interface StaffTaskListResponse {
 
 // Constants for dropdowns and validation
 export const STAFF_ROLES = [
-  { value: 'cleaner', label: 'Cleaner' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'supervisor', label: 'Supervisor' },
-  { value: 'admin', label: 'Admin' }
+  { value: 'cleaner', label: 'Cleaner', description: 'Responsible for cleaning and housekeeping tasks' },
+  { value: 'maintenance', label: 'Maintenance', description: 'Handles property maintenance and repairs' },
+  { value: 'supervisor', label: 'Supervisor', description: 'Oversees staff operations and quality control' },
+  { value: 'admin', label: 'Admin', description: 'Administrative access and system management' }
 ] as const
 
 export const STAFF_STATUSES = [
