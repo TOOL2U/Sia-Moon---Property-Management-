@@ -121,11 +121,10 @@ export const useUserSync = () => {
       
       console.log('🔄 Auto-syncing user on auth:', firebaseUser.email)
       
-      const role = firebaseUser.email === 'shaun@siamoon.com' ? 'admin' : 'client'
       const userData = {
         email: firebaseUser.email || '',
         fullName: firebaseUser.displayName || 'Unknown User',
-        role: role as 'admin' | 'client'
+        role: (firebaseUser.email === 'shaun@siamoon.com' ? 'admin' : 'client') as 'admin' | 'client'
       }
       
       return await syncUserProfile(firebaseUser.uid, userData)

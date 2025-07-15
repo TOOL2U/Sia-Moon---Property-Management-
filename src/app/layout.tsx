@@ -1,6 +1,8 @@
+import './globals'; // Import global polyfills first
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import '@/lib/polyfills'; // Import polyfills for server-side compatibility
 import { Navbar } from '@/components/layout/Navbar';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ToasterProvider } from '@/components/providers/ToasterProvider';

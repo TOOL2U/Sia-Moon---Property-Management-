@@ -5,27 +5,53 @@
 
 export interface StaffProfile {
   id: string
+  userId?: string // Firebase Auth user ID if linked
   name: string
   email: string
   phone?: string
-  role: 'cleaner' | 'maintenance' | 'admin' | 'supervisor'
-  status: 'active' | 'inactive'
+  address?: string
+  role: 'cleaner' | 'maintenance' | 'admin' | 'supervisor' | 'housekeeper' | 'concierge' | 'security' | 'gardener' | 'chef' | 'driver' | 'manager'
+  status: 'active' | 'inactive' | 'on-leave' | 'suspended' | 'terminated' | 'pending'
   created_at: string
   updated_at: string
-  
+
   // Assignment data
   assignedProperties?: string[]
   assignedRegions?: string[]
+  skills?: string[]
   workingHours?: {
     start: string
     end: string
     days: string[]
   }
-  
+
+  // Personal details
+  emergencyContact?: {
+    name: string
+    phone: string
+    relationship: string
+  }
+  personalDetails?: {
+    dateOfBirth?: string
+    nationalId?: string
+    profileImage?: string
+  }
+  employment?: {
+    startDate: string
+    endDate?: string
+    employmentType: 'full-time' | 'part-time' | 'contract' | 'temporary'
+    hourlyRate?: number
+    salary?: number
+  }
+
   // Performance tracking
   completedTasks?: number
+  totalAssignedTasks?: number
   averageRating?: number
+  completionRate?: number
   lastActive?: string
+  createdBy?: string
+  lastModifiedBy?: string
 }
 
 export interface StaffTask {
@@ -80,6 +106,15 @@ export interface StaffTask {
   automationRules?: string[]
 }
 
+export interface StaffFilters {
+  search?: string
+  role?: string
+  status?: string
+  department?: string
+  sortBy?: 'name' | 'role' | 'status' | 'created_at'
+  sortOrder?: 'asc' | 'desc'
+}
+
 export interface StaffTaskFilters {
   status?: string
   taskType?: string
@@ -93,21 +128,11 @@ export interface StaffTaskFilters {
   sortOrder?: 'asc' | 'desc'
 }
 
-export interface StaffFilters {
-  search?: string
-  role?: 'cleaner' | 'maintenance' | 'admin' | 'supervisor'
-  status?: 'active' | 'inactive'
-  region?: string
-  sortBy?: 'name' | 'role' | 'status' | 'created'
-  sortOrder?: 'asc' | 'desc'
-  limit?: number
-  offset?: number
-}
-
 export interface StaffStats {
   total: number
   active: number
   inactive: number
+  onLeave: number
   byRole: Record<string, number>
   totalTasks: number
   pendingTasks: number
@@ -118,37 +143,79 @@ export interface StaffStats {
   upcomingTasks: number
   averageCompletionTime: number
   completionRate: number
+  averageRating: number
+  performanceMetrics: {
+    topPerformers: StaffProfile[]
+    lowPerformers: StaffProfile[]
+    recentHires: StaffProfile[]
+    staffUtilization: number
+    averageTasksPerStaff: number
+  }
+}
+
+export interface StaffFormErrors {
+  name?: string
+  email?: string
+  role?: string
+  phone?: string
+  status?: string
+  assignedProperties?: string
+  assignedRegions?: string
+  general?: string
 }
 
 export interface CreateStaffData {
   name: string
   email: string
   phone?: string
-  role: 'cleaner' | 'maintenance' | 'admin' | 'supervisor'
-  status?: 'active' | 'inactive'
+  address?: string
+  role: 'cleaner' | 'maintenance' | 'admin' | 'supervisor' | 'housekeeper' | 'concierge' | 'security' | 'gardener' | 'chef' | 'driver' | 'manager'
+  status?: 'active' | 'inactive' | 'on-leave' | 'suspended' | 'terminated' | 'pending'
   assignedProperties?: string[]
   assignedRegions?: string[]
+  skills?: string[]
+  emergencyContact?: {
+    name: string
+    phone: string
+    relationship: string
+  }
+  employment?: {
+    employmentType: 'full-time' | 'part-time' | 'contract' | 'temporary'
+    hourlyRate?: number
+    salary?: number
+    startDate: string
+  }
+  personalDetails?: {
+    dateOfBirth?: string
+    nationalId?: string
+  }
 }
 
 export interface UpdateStaffData {
   name?: string
   email?: string
   phone?: string
-  role?: 'cleaner' | 'maintenance' | 'admin' | 'supervisor'
-  status?: 'active' | 'inactive'
+  address?: string
+  role?: 'cleaner' | 'maintenance' | 'admin' | 'supervisor' | 'housekeeper' | 'concierge' | 'security' | 'gardener' | 'chef' | 'driver' | 'manager'
+  status?: 'active' | 'inactive' | 'on-leave' | 'suspended' | 'terminated' | 'pending'
   assignedProperties?: string[]
   assignedRegions?: string[]
-}
-
-export interface StaffFormErrors {
-  name?: string
-  email?: string
-  phone?: string
-  role?: string
-  status?: string
-  assignedProperties?: string
-  assignedRegions?: string
-  general?: string
+  skills?: string[]
+  emergencyContact?: {
+    name: string
+    phone: string
+    relationship: string
+  }
+  employment?: {
+    employmentType: 'full-time' | 'part-time' | 'contract' | 'temporary'
+    hourlyRate?: number
+    salary?: number
+    startDate: string
+  }
+  personalDetails?: {
+    dateOfBirth?: string
+    nationalId?: string
+  }
 }
 
 export interface StaffApiResponse {
@@ -182,14 +249,50 @@ export interface StaffTaskListResponse {
 // Constants for dropdowns and validation
 export const STAFF_ROLES = [
   { value: 'cleaner', label: 'Cleaner', description: 'Responsible for cleaning and housekeeping tasks' },
+  { value: 'housekeeper', label: 'Housekeeper', description: 'Professional housekeeping services' },
   { value: 'maintenance', label: 'Maintenance', description: 'Handles property maintenance and repairs' },
-  { value: 'supervisor', label: 'Supervisor', description: 'Oversees staff operations and quality control' },
-  { value: 'admin', label: 'Admin', description: 'Administrative access and system management' }
+  { value: 'manager', label: 'Manager', description: 'Property and operations management' },
+  { value: 'concierge', label: 'Concierge', description: 'Guest services and assistance' },
+  { value: 'security', label: 'Security', description: 'Property security and safety' },
+  { value: 'gardener', label: 'Gardener', description: 'Landscaping and garden maintenance' },
+  { value: 'chef', label: 'Chef', description: 'Culinary services and meal preparation' },
+  { value: 'driver', label: 'Driver', description: 'Transportation services' },
+  { value: 'supervisor', label: 'Supervisor', description: 'Oversees staff and operations' },
+  { value: 'admin', label: 'Admin', description: 'Administrative and management tasks' }
 ] as const
 
 export const STAFF_STATUSES = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' }
+  { value: 'active', label: 'Active', color: 'green' },
+  { value: 'inactive', label: 'Inactive', color: 'gray' },
+  { value: 'on-leave', label: 'On Leave', color: 'yellow' },
+  { value: 'suspended', label: 'Suspended', color: 'red' },
+  { value: 'terminated', label: 'Terminated', color: 'red' },
+  { value: 'pending', label: 'Pending', color: 'blue' }
+] as const
+
+export const EMPLOYMENT_TYPES = [
+  { value: 'full-time', label: 'Full Time' },
+  { value: 'part-time', label: 'Part Time' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'temporary', label: 'Temporary' }
+] as const
+
+export const COMMON_SKILLS = [
+  'Cleaning',
+  'Maintenance',
+  'Plumbing',
+  'Electrical',
+  'Gardening',
+  'Cooking',
+  'Customer Service',
+  'Security',
+  'First Aid',
+  'Languages',
+  'Driving',
+  'Pool Maintenance',
+  'HVAC',
+  'Painting',
+  'Carpentry'
 ] as const
 
 export const TASK_TYPES = [

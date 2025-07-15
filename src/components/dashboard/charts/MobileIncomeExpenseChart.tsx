@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts'
+import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react'
+import { DynamicChartWrapper } from './DynamicChartWrapper'
 
 interface ChartData {
   month: string
@@ -33,6 +33,14 @@ interface CustomTooltipProps {
 
 export function MobileIncomeExpenseChart({ data, currency = 'USD' }: MobileIncomeExpenseChartProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('6m')
+  const [ChartComponents, setChartComponents] = useState<any>(null)
+
+  useEffect(() => {
+    // Dynamically import recharts to avoid SSR issues
+    import('recharts').then((recharts) => {
+      setChartComponents(recharts)
+    })
+  }, [])
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -179,8 +187,14 @@ export function MobileIncomeExpenseChart({ data, currency = 'USD' }: MobileIncom
         </div>
         
         <div className="h-[160px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
+          {!ChartComponents ? (
+            <DynamicChartWrapper>{null}</DynamicChartWrapper>
+          ) : (
+            (() => {
+              const { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } = ChartComponents
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
               data={data}
               margin={{
                 top: 5,
@@ -223,8 +237,11 @@ export function MobileIncomeExpenseChart({ data, currency = 'USD' }: MobileIncom
                 dot={{ fill: '#EF4444', strokeWidth: 0, r: 3 }}
                 activeDot={{ r: 4, stroke: '#EF4444', strokeWidth: 2, fill: '#EF4444' }}
               />
-            </LineChart>
-          </ResponsiveContainer>
+                  </LineChart>
+                </ResponsiveContainer>
+              )
+            })()
+          )}
         </div>
       </div>
 

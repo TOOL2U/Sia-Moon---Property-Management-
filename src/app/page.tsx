@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import CloudinaryImage from '@/components/ui/CloudinaryImage'
-import Image from 'next/image'
-import { NEXT_PUBLIC_HERO_IMAGE_PUBLIC_ID } from '@/lib/env'
+import HeroSlideshow from '@/components/ui/HeroSlideshow'
 // TODO: Replace with new auth system when implemented
 import {
   ArrowRight,
@@ -41,6 +40,30 @@ export default function Home() {
   useEffect(() => {
     console.log('🎬 Animation state:', { animationPhase, skipAnimations })
   }, [animationPhase, skipAnimations])
+
+  // Hero slideshow configuration
+  const heroSlides = [
+    {
+      id: 'original-hero',
+      publicId: 'e36eb55c-9c04-4d51-b1aa-8ce78e49ec97_s5opqn',
+      alt: 'Luxury villa hero background - Original'
+    },
+    {
+      id: 'villa-2',
+      publicId: 'second hero image',
+      alt: 'Luxury villa property - Premium management services'
+    },
+    {
+      id: 'prestige-golfshire',
+      publicId: 'Prestige-Golfshire-Villa-1_pf6ibk',
+      alt: 'Prestige Golfshire Villa - Exclusive property management'
+    },
+    {
+      id: 'villa-4',
+      publicId: 'e36eb55c-9c04-4d51-b1aa-8ce78e49ec97_n90qpl',
+      alt: 'Elegant villa exterior - Professional property services'
+    }
+  ]
 
 
   // Redirect authenticated users to dashboard
@@ -84,32 +107,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section - Linear style with preserved background */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Hero Background with Fallback */}
+      {/* Hero Section - Enhanced with slideshow */}
+<section className="relative min-h-screen lg:min-h-[95vh] flex items-center justify-center overflow-hidden">        {/* Hero Slideshow Background - Always visible with animation */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900"
+          className="absolute inset-0"
           variants={heroAnimationVariants.backgroundImage}
           initial="initial"
           animate={skipAnimations ? { opacity: 1, scale: 1 } : (animationPhase !== 'loading' ? "animate" : { opacity: 1, scale: 1 })}
         >
-          {/* Try multiple image sources with fallbacks */}
-          <CloudinaryImage
-            publicId={NEXT_PUBLIC_HERO_IMAGE_PUBLIC_ID || "villa-photos/iKCKOZIYz4RRSHvXymP4ziDhpgS2/Alesia_House/e36eb55c-9c04-4d51-b1aa-8ce78e49ec97_n90qpl"}
-            alt="Luxury villa hero background"
-            fill
-            priority
-            quality={100}
-            format="webp"
-            crop="fill"
-            gravity="center"
-            className="object-cover opacity-30"
-            sizes="100vw"
+          <HeroSlideshow
+            slides={heroSlides}
+            autoPlayInterval={6000}
+            showDots={true}
+            showArrows={false}
+            className="w-full h-full"
           />
         </motion.div>
-
-        {/* Preserved gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-transparent"></div>
 
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">

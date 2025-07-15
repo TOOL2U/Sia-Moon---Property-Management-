@@ -7,6 +7,9 @@ export function useLenis() {
   const [lenis, setLenis] = useState<Lenis | null>(null)
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return
+
     // Get lenis instance from global window object
     const lenisInstance = (window as any).lenis
     if (lenisInstance) {
@@ -22,7 +25,7 @@ export function useLenis() {
     }
 
     const interval = setInterval(checkLenis, 100)
-    
+
     return () => {
       clearInterval(interval)
     }
@@ -33,6 +36,9 @@ export function useLenis() {
 
 // Utility function for smooth scrolling to elements
 export function scrollToElement(selector: string, offset: number = -80) {
+  // Only run on client side
+  if (typeof window === 'undefined') return
+
   const lenis = (window as any).lenis
   if (lenis) {
     const element = document.querySelector(selector)
@@ -54,6 +60,9 @@ export function scrollToElement(selector: string, offset: number = -80) {
 
 // Utility function for smooth scrolling to top
 export function scrollToTop() {
+  // Only run on client side
+  if (typeof window === 'undefined') return
+
   const lenis = (window as any).lenis
   if (lenis) {
     lenis.scrollTo(0, {

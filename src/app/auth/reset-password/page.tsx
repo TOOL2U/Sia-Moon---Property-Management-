@@ -146,7 +146,7 @@ function ResetPasswordContent() {
 
       // Redirect after a delay
       setTimeout(() => {
-        if (continueUrl) {
+        if (continueUrl && typeof window !== 'undefined') {
           window.location.href = continueUrl
         } else {
           router.push('/auth/login')

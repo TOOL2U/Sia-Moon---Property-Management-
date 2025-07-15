@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: 'prd-lifullconnect-projects-admin-images.cloudinary.com',
         port: '',
         pathname: '/**',
       },
@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
+
+
   // Webpack configuration to handle chunk loading issues
   webpack: (config, { dev, isServer }) => {
     // Fix for chunk loading errors
@@ -40,6 +42,17 @@ const nextConfig: NextConfig = {
         net: false,
         tls: false,
       };
+    }
+
+    // Exclude problematic browser-only libraries from server bundle
+    if (isServer) {
+      config.externals = config.externals || [];
+      // Temporarily disable externals to test
+      // config.externals.push({
+      //   'lenis': 'lenis',
+      //   'framer-motion': 'framer-motion',
+      //   'recharts': 'recharts'
+      // });
     }
 
     // Optimize chunk splitting

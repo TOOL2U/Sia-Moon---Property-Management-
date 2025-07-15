@@ -5,13 +5,52 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  updateDoc,
+  getDoc,
+  orderBy,
+  limit
 } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
+import { SyncBooking, BookingStatus, SyncEvent } from '@/types/booking-sync'
+import { withMobileAuth, createMobileSuccessResponse, createMobileErrorResponse } from '@/lib/middleware/mobileAuth'
 
 // Use the centralized Firebase db instance with lazy initialization
 
-// Booking interface
+// Mobile API interfaces
+interface ApprovedBookingData {
+  id: string
+  propertyId: string
+  propertyName: string
+  propertyAddress: string
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+  checkIn: string // ISO date
+  checkOut: string // ISO date
+  status: 'approved' | 'confirmed' | 'in-progress' | 'completed'
+  totalAmount: number
+  paymentStatus: string
+  specialRequests?: string
+  assignedStaff?: string[]
+  tasks?: BookingTask[]
+  createdAt: string
+  approvedAt: string
+}
+
+interface BookingTask {
+  id: string
+  type: 'cleaning' | 'maintenance' | 'inspection' | 'setup' | 'checkout'
+  title: string
+  description: string
+  assignedTo?: string
+  dueDate: string
+  priority: 'low' | 'medium' | 'high'
+  status: 'pending' | 'in-progress' | 'completed'
+}
+
+// Booking interface for incoming data
 interface BookingData {
   property: string
   address: string
@@ -26,7 +65,7 @@ interface BookingData {
   date: string
 }
 
-interface ProcessedBooking {
+interface ProcessedBooking extends Omit<SyncBooking, 'id' | 'createdAt' | 'updatedAt'> {
   property: string
   villaName: string // Add villaName for compatibility with LiveBooking interface
   address: string
@@ -35,15 +74,19 @@ interface ProcessedBooking {
   checkInDate: string
   checkOutDate: string
   nights: number
-  guests: number
+  guestCount: number
   price: number
+  totalAmount: number
+  currency: string
   subject: string
   emailDate: string
-  status: 'pending_approval'
-  source: 'make_com_automation'
+  status: BookingStatus
+  source: string
   createdAt: unknown // Use serverTimestamp() for Firestore
   updatedAt: unknown // Use serverTimestamp() for Firestore
   duplicateCheckHash: string
+  syncVersion: number
+  lastSyncedAt: unknown
 }
 
 /**
@@ -83,7 +126,7 @@ function validateBookingData(data: Record<string, unknown>): { isValid: boolean;
 }
 
 /**
- * Normalize and parse booking data
+ * Normalize and parse booking data with enhanced sync support
  */
 function normalizeBookingData(data: BookingData): ProcessedBooking {
   // Parse price - remove currency symbols and convert to number
@@ -93,38 +136,43 @@ function normalizeBookingData(data: BookingData): ProcessedBooking {
   } else {
     price = Number(data.price) || 0
   }
-  
+
   // Parse guests - convert to integer
-  const guests = parseInt(String(data.guests)) || 1
-  
+  const guestCount = parseInt(String(data.guests)) || 1
+
   // Parse nights - convert to integer
   const nights = parseInt(String(data.nights)) || 1
-  
+
   // Normalize dates to ISO format
   const checkInDate = new Date(data.checkInDate).toISOString().split('T')[0]
   const checkOutDate = new Date(data.checkOutDate).toISOString().split('T')[0]
-  
+
   // Create duplicate check hash
   const duplicateCheckHash = `${data.property.toLowerCase().trim()}-${data.guestName.toLowerCase().trim()}-${checkInDate}-${checkOutDate}`
 
   return {
     property: data.property.trim(),
+    propertyName: data.property.trim(),
     villaName: data.property.trim(), // Add villaName field for compatibility
-    address: data.address.trim(),
+    address: data.address?.trim() || '',
     guestName: data.guestName.trim(),
     guestEmail: data.guestEmail.toLowerCase().trim(),
     checkInDate,
     checkOutDate,
     nights,
-    guests,
+    guestCount,
     price,
+    totalAmount: price, // Same as price for now
+    currency: 'USD', // Default currency, can be enhanced later
     subject: data.subject || 'Booking Confirmation',
     emailDate: data.date || new Date().toISOString(),
-    status: 'pending_approval',
+    status: 'pending_approval' as BookingStatus,
     source: 'make_com_automation',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-    duplicateCheckHash
+    lastSyncedAt: serverTimestamp(),
+    duplicateCheckHash,
+    syncVersion: 1
   }
 }
 
@@ -135,27 +183,66 @@ async function checkForDuplicate(bookingData: ProcessedBooking): Promise<boolean
   try {
     const database = getDb()
 
-    // Check in pending_bookings collection
+    // Check in bookings collection (unified collection for sync)
+    const bookingsQuery = query(
+      collection(database, 'bookings'),
+      where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
+    )
+
+    // Check in legacy collections for backward compatibility
     const pendingQuery = query(
       collection(database, 'pending_bookings'),
       where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
     )
 
-    // Check in live_bookings collection
     const liveQuery = query(
       collection(database, 'live_bookings'),
       where('duplicateCheckHash', '==', bookingData.duplicateCheckHash)
     )
 
-    const [pendingSnapshot, liveSnapshot] = await Promise.all([
+    const [bookingsSnapshot, pendingSnapshot, liveSnapshot] = await Promise.all([
+      getDocs(bookingsQuery),
       getDocs(pendingQuery),
       getDocs(liveQuery)
     ])
 
-    return !pendingSnapshot.empty || !liveSnapshot.empty
+    return !bookingsSnapshot.empty || !pendingSnapshot.empty || !liveSnapshot.empty
   } catch (error) {
     console.error('Error checking for duplicates:', error)
     return false
+  }
+}
+
+/**
+ * Create a sync event for cross-platform tracking
+ */
+async function createSyncEvent(
+  type: SyncEvent['type'],
+  entityId: string,
+  entityType: SyncEvent['entityType'],
+  triggeredBy: string = 'system',
+  changes: Record<string, any> = {}
+): Promise<void> {
+  try {
+    const database = getDb()
+
+    const syncEvent: Omit<SyncEvent, 'id'> = {
+      type,
+      entityId,
+      entityType,
+      triggeredBy,
+      triggeredByName: triggeredBy === 'system' ? 'System' : 'Unknown',
+      timestamp: serverTimestamp() as any,
+      changes,
+      platform: 'web',
+      synced: false
+    }
+
+    await addDoc(collection(database, 'sync_events'), syncEvent)
+    console.log(`✅ Sync event created: ${type} for ${entityType} ${entityId}`)
+  } catch (error) {
+    console.error('❌ Error creating sync event:', error)
+    // Don't throw error to avoid breaking the main flow
   }
 }
 
@@ -238,28 +325,43 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Create booking in Firebase - save to both collections for compatibility
+    // Create booking in Firebase with enhanced sync support
     const database = getDb()
 
-    // Save to pending_bookings collection (as requested)
+    // Save to unified bookings collection (primary for mobile sync)
+    const bookingDocRef = await addDoc(collection(database, 'bookings'), processedBooking)
+    const bookingId = bookingDocRef.id
+
+    // Save to legacy collections for backward compatibility
     const pendingDocRef = await addDoc(collection(database, 'pending_bookings'), processedBooking)
     const pendingBookingId = pendingDocRef.id
 
-    // Also save to live_bookings collection (for existing admin dashboard compatibility)
     const liveDocRef = await addDoc(collection(database, 'live_bookings'), processedBooking)
     const liveBookingId = liveDocRef.id
 
-    console.log('✅ BOOKINGS API: Booking created successfully in both collections')
+    console.log('✅ BOOKINGS API: Booking created successfully in all collections')
+    console.log('✅ BOOKINGS API: Primary Booking ID:', bookingId)
     console.log('✅ BOOKINGS API: Pending Booking ID:', pendingBookingId)
     console.log('✅ BOOKINGS API: Live Booking ID:', liveBookingId)
-    
-    // TODO: Future notification hooks can be added here
-    // await sendAdminNotification(bookingId, processedBooking)
-    // await sendStaffNotification(bookingId, processedBooking)
-    
+
+    // Create sync event for mobile app notification
+    await createSyncEvent(
+      'booking_updated',
+      bookingId,
+      'booking',
+      'make_com_automation',
+      {
+        action: 'created',
+        status: processedBooking.status,
+        property: processedBooking.property,
+        guest: processedBooking.guestName
+      }
+    )
+
     return NextResponse.json({
       success: true,
-      message: 'Booking created successfully in pending_bookings and live_bookings collections.',
+      message: 'Booking created successfully with cross-platform sync support.',
+      bookingId,
       pendingBookingId,
       liveBookingId,
       processingTime: Date.now() - startTime,
@@ -272,9 +374,11 @@ export async function POST(request: NextRequest) {
         status: processedBooking.status
       },
       collections: {
+        bookings: bookingId, // Primary collection for mobile sync
         pending_bookings: pendingBookingId,
         live_bookings: liveBookingId
-      }
+      },
+      syncEnabled: true
     })
     
   } catch (error) {
@@ -293,19 +397,92 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/bookings
- * Health check and API documentation
+ * Convert Firestore booking to mobile API format
  */
-export async function GET() {
+function convertToMobileFormat(booking: any): ApprovedBookingData {
+  return {
+    id: booking.id,
+    propertyId: booking.id, // Use booking ID as property ID for now
+    propertyName: booking.property || booking.propertyName || 'Unknown Property',
+    propertyAddress: booking.address || 'Address not available',
+    guestName: booking.guestName || 'Unknown Guest',
+    guestEmail: booking.guestEmail || '',
+    guestPhone: booking.guestPhone || booking.phone || '',
+    checkIn: booking.checkInDate || booking.checkIn || '',
+    checkOut: booking.checkOutDate || booking.checkOut || '',
+    status: booking.status || 'approved',
+    totalAmount: booking.totalAmount || booking.price || 0,
+    paymentStatus: booking.paymentStatus || 'pending',
+    specialRequests: booking.specialRequests || booking.notes || '',
+    assignedStaff: booking.assignedStaff || [],
+    tasks: booking.tasks || [],
+    createdAt: booking.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+    approvedAt: booking.approvedAt?.toDate?.()?.toISOString() || booking.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+  }
+}
+
+/**
+ * GET /api/bookings
+ * Enhanced endpoint supporting both web dashboard and mobile app
+ */
+export async function GET(request: NextRequest) {
   try {
-    // This endpoint can be used for health checks and monitoring
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status')
+    const mobile = searchParams.get('mobile')
+    const limitParam = searchParams.get('limit')
+
+    // Check if this is a mobile API request
+    if (mobile === 'true') {
+      return withMobileAuth(async (req, auth) => {
+        console.log('📱 Mobile API: Fetching bookings with status:', status)
+
+        const database = getDb()
+        const maxResults = limitParam ? parseInt(limitParam) : 50
+
+        // Build query for approved bookings
+        let bookingsQuery = query(
+          collection(database, 'bookings'),
+          orderBy('createdAt', 'desc'),
+          limit(maxResults)
+        )
+
+        // Add status filter if specified
+        if (status) {
+          bookingsQuery = query(
+            collection(database, 'bookings'),
+            where('status', '==', status),
+            orderBy('createdAt', 'desc'),
+            limit(maxResults)
+          )
+        }
+
+        const snapshot = await getDocs(bookingsQuery)
+        const bookings = snapshot.docs.map(doc => {
+          const data = doc.data()
+          return convertToMobileFormat({ id: doc.id, ...data })
+        })
+
+        console.log(`✅ Mobile API: Returning ${bookings.length} bookings`)
+
+        return createMobileSuccessResponse({
+          bookings,
+          count: bookings.length,
+          status: status || 'all',
+          lastSync: Date.now()
+        })
+      })(request)
+    }
+
+    // Original health check and API documentation for web
     return NextResponse.json({
       success: true,
       message: 'Bookings API is operational',
       timestamp: new Date().toISOString(),
       endpoints: {
         POST: 'Create new booking from Make.com',
-        GET: 'Health check and API documentation'
+        GET: 'Health check and API documentation',
+        'GET?mobile=true&status=approved': 'Mobile API: Fetch approved bookings'
       },
       features: {
         validation: 'Input validation and sanitization',

@@ -11,6 +11,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Early return for mobile API endpoints
+  if (pathname === '/api/health' ||
+      pathname.startsWith('/api/mobile/') ||
+      pathname.startsWith('/api/admin/mobile-schema-update')) {
+    console.log('🔓 MIDDLEWARE: Mobile API endpoint detected, allowing access immediately')
+    return NextResponse.next()
+  }
+
   // Early return for other API test endpoints and debug endpoints
   if (pathname.startsWith('/api/test-') ||
       pathname.startsWith('/api/test/') ||

@@ -57,13 +57,11 @@ export const SMTP_PASS = process.env.SMTP_PASS
 export const NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET
-export const NEXT_PUBLIC_HERO_IMAGE_PUBLIC_ID = process.env.NEXT_PUBLIC_HERO_IMAGE_PUBLIC_ID
 
 export const cloudinaryConfig = {
   cloudName: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   apiKey: CLOUDINARY_API_KEY,
   apiSecret: CLOUDINARY_API_SECRET,
-  heroImagePublicId: NEXT_PUBLIC_HERO_IMAGE_PUBLIC_ID,
 }
 
 // Application URLs

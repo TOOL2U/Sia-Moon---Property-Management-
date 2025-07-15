@@ -6,15 +6,17 @@ import { X, Plus, User, Mail, Phone, UserCog, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { Badge } from '@/components/ui/Badge'
 import StaffService from '@/lib/staffService'
-import { CreateStaffData, STAFF_ROLES, StaffFormErrors } from '@/types/staff'
+import { CreateStaffData, STAFF_ROLES, STAFF_STATUSES, EMPLOYMENT_TYPES, COMMON_SKILLS, StaffFormErrors } from '@/types/staff'
+import toast from 'react-hot-toast'
 
 interface AddStaffModalProps {
   isOpen: boolean
@@ -27,8 +29,24 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
     name: '',
     email: '',
     phone: '',
-    role: 'cleaner',
-    status: 'active'
+    address: '',
+    role: 'housekeeper',
+    status: 'active',
+    assignedProperties: [],
+    skills: [],
+    emergencyContact: {
+      name: '',
+      phone: '',
+      relationship: ''
+    },
+    employment: {
+      employmentType: 'full-time',
+      startDate: new Date().toISOString().split('T')[0]
+    },
+    personalDetails: {
+      dateOfBirth: '',
+      nationalId: ''
+    }
   })
   const [errors, setErrors] = useState<StaffFormErrors>({})
   const [loading, setLoading] = useState(false)
@@ -88,25 +106,53 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
       })
 
       if (response.success) {
+        toast.success('Staff member added successfully!')
         // Reset form
         setFormData({
           name: '',
           email: '',
           phone: '',
-          role: 'cleaner',
-          status: 'active'
+          address: '',
+          role: 'housekeeper',
+          status: 'active',
+          assignedProperties: [],
+          skills: [],
+          emergencyContact: {
+            name: '',
+            phone: '',
+            relationship: ''
+          },
+          employment: {
+            employmentType: 'full-time',
+            startDate: new Date().toISOString().split('T')[0]
+          },
+          personalDetails: {
+            dateOfBirth: '',
+            nationalId: ''
+          }
         })
         setErrors({})
         onSuccess()
         onClose()
       } else {
+        toast.error(response.error || 'Failed to create staff member')
         setErrors({ general: response.error || 'Failed to create staff member' })
       }
     } catch (error) {
+      toast.error('An unexpected error occurred')
       setErrors({ general: 'An unexpected error occurred' })
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSkillToggle = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills?.includes(skill)
+        ? prev.skills.filter(s => s !== skill)
+        : [...(prev.skills || []), skill]
+    }))
   }
 
   const handleClose = () => {
@@ -115,8 +161,24 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
         name: '',
         email: '',
         phone: '',
-        role: 'cleaner',
-        status: 'active'
+        address: '',
+        role: 'housekeeper',
+        status: 'active',
+        assignedProperties: [],
+        skills: [],
+        emergencyContact: {
+          name: '',
+          phone: '',
+          relationship: ''
+        },
+        employment: {
+          employmentType: 'full-time',
+          startDate: new Date().toISOString().split('T')[0]
+        },
+        personalDetails: {
+          dateOfBirth: '',
+          nationalId: ''
+        }
       })
       setErrors({})
       onClose()
@@ -143,7 +205,7 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl w-full max-w-md">
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-neutral-800">
                 <div className="flex items-center gap-3">
@@ -233,6 +295,42 @@ export default function AddStaffModal({ isOpen, onClose, onSuccess }: AddStaffMo
                   {errors.phone && (
                     <p className="text-sm text-red-400">{errors.phone}</p>
                   )}
+                </div>
+
+                {/* Address */}
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="text-white">
+                    Address
+                  </Label>
+                  <Input
+                    id="address"
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Enter address (optional)"
+                    className="bg-neutral-800 border-neutral-700 text-white"
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* Skills */}
+                <div className="space-y-2">
+                  <Label className="text-white">Skills & Expertise</Label>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                    {COMMON_SKILLS.slice(0, 10).map(skill => (
+                      <Badge
+                        key={skill}
+                        onClick={() => handleSkillToggle(skill)}
+                        className={`cursor-pointer transition-colors text-xs ${
+                          formData.skills?.includes(skill)
+                            ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                            : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:bg-neutral-700'
+                        }`}
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Role */}

@@ -10,6 +10,9 @@ export function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return
+
     const toggleVisibility = () => {
       // Show button when page is scrolled down 300px
       if (window.pageYOffset > 300) {

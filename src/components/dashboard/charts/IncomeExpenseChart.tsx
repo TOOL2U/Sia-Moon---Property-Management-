@@ -1,6 +1,7 @@
 'use client'
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { useState, useEffect } from 'react'
+import { DynamicChartWrapper } from './DynamicChartWrapper'
 
 interface ChartData {
   month: string
@@ -30,6 +31,15 @@ interface CustomTooltipProps {
 }
 
 export function IncomeExpenseChart({ data, currency = 'USD' }: IncomeExpenseChartProps) {
+  const [ChartComponents, setChartComponents] = useState<any>(null)
+
+  useEffect(() => {
+    // Dynamically import recharts to avoid SSR issues
+    import('recharts').then((recharts) => {
+      setChartComponents(recharts)
+    })
+  }, [])
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -60,10 +70,17 @@ export function IncomeExpenseChart({ data, currency = 'USD' }: IncomeExpenseChar
     return null
   }
 
+  if (!ChartComponents) {
+    return <DynamicChartWrapper>{null}</DynamicChartWrapper>
+  }
+
+  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = ChartComponents
+
   return (
-    <div className="w-[80%] mx-auto h-full"> {/* Updated width to 80% and centered using mx-auto */}
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
+    <DynamicChartWrapper>
+      <div className="w-[80%] mx-auto h-full"> {/* Updated width to 80% and centered using mx-auto */}
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
           data={data}
           margin={{
             top: 20,
@@ -116,8 +133,9 @@ export function IncomeExpenseChart({ data, currency = 'USD' }: IncomeExpenseChar
             dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
             activeDot={{ r: 6, stroke: '#EF4444', strokeWidth: 2, fill: '#EF4444' }}
           />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </DynamicChartWrapper>
   )
 }

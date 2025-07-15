@@ -71,9 +71,6 @@ export function Footer() {
                 <FooterLink href="/properties">Properties</FooterLink>
               </li>
               <li>
-                <FooterLink href="/bookings">Bookings</FooterLink>
-              </li>
-              <li>
                 <FooterLink href="/onboard">Villa Survey</FooterLink>
               </li>
               <li>

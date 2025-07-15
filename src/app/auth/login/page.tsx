@@ -48,7 +48,7 @@ export default function LoginPage() {
         toast.success('Welcome back!')
         
         // Get redirect URL from query params or default to dashboard
-        const urlParams = new URLSearchParams(window.location.search)
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
         const redirectTo = urlParams.get('redirect') || '/dashboard/client'
         
         router.push(redirectTo)

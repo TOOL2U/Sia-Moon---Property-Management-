@@ -6,13 +6,13 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  Home, 
-  Building2, 
-  Calendar, 
-  Users, 
-  BarChart3, 
-  Settings, 
+import {
+  Home,
+  Building2,
+  Calendar,
+  Users,
+  BarChart3,
+  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -21,7 +21,8 @@ import {
   UserCheck,
   Briefcase,
   Target,
-  Activity
+  Activity,
+  FileText
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -56,12 +57,6 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           badge: null
         },
         {
-          name: 'Bookings',
-          href: '/admin/bookings',
-          icon: Calendar,
-          badge: notifications > 0 ? notifications : null
-        },
-        {
           name: 'Staff Management',
           href: '/app/staff',
           icon: Users,
@@ -71,6 +66,12 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           name: 'Staff Tasks',
           href: '/staff',
           icon: ClipboardList,
+          badge: null
+        },
+        {
+          name: 'Back Office',
+          href: '/admin/backoffice',
+          icon: FileText,
           badge: null
         },
         {

@@ -117,6 +117,9 @@ export function ensureFirebaseInitialized() {
 // Initialize Firebase services (with null checks for build time)
 export const auth = app ? getAuth(app) : null
 
+// Export getAuth function for service usage
+export { getAuth } from 'firebase/auth'
+
 // Initialize Firestore with getFirestore (consistent with all other services)
 export const db = app ? getFirestore(app) : null
 

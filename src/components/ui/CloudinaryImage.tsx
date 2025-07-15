@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { cn } from '@/utils/cn'
-import { NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME } from '@/lib/env'
 
 interface CloudinaryImageProps {
   publicId: string
@@ -46,12 +45,7 @@ function CloudinaryImage({
 }: CloudinaryImageProps & Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'>) {
   
   // Use environment variable with fallback
-  const cloudName = NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'doez7m1hy'
-
-  // Debug logging (development only)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🖼️ CloudinaryImage:', { publicId, cloudName })
-  }
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'doez7m1hy'
 
   // Early return if no publicId
   if (!publicId) {

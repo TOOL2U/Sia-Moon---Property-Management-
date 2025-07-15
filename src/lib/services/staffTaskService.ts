@@ -365,7 +365,7 @@ export class StaffTaskService {
     } else if (propertyName.toLowerCase().includes('downtown') || propertyName.toLowerCase().includes('urban')) {
       return [...PROPERTY_STAFF_ASSIGNMENTS.default_city]
     }
-
+    
     // Default assignment
     return ['staff_cleaner_001', 'staff_maintenance_001']
   }

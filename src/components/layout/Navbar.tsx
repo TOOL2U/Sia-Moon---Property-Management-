@@ -304,12 +304,13 @@ export function Navbar() {
   const navigationLinks = user ? [
     { href: `/dashboard/client`, label: 'Dashboard' }, // Default to client dashboard
     { href: '/properties', label: 'Properties' },
-    // Only show bookings for admin and staff users, not for clients
-    ...(user.role === 'admin' || user.role === 'staff' ? [{ href: '/bookings', label: 'Bookings' }] : []),
     { href: '/reports', label: 'Reports' },
     { href: '/onboard', label: 'Onbourding Form' },
     // Admin-only navigation
-    ...(user.role === 'admin' ? [{ href: '/admin', label: 'Admin' }] : []),
+    ...(user.role === 'admin' ? [
+      { href: '/admin', label: 'Admin' },
+      { href: '/admin/backoffice', label: 'Back Office' }
+    ] : []),
     { href: 'https://wa.me/', label: 'Contact Us' }, // Added Contact Us tab linking to WhatsApp
   ] : []
 

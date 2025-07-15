@@ -10,10 +10,25 @@ import {
   where,
   Timestamp,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  limit,
+  startAfter,
+  onSnapshot,
+  writeBatch,
+  DocumentSnapshot
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { getAuth } from 'firebase/auth'
+import {
+  Property as PropertyType,
+  PropertyFilters,
+  PropertySearchResult,
+  PropertyDashboard,
+  PropertyStatus,
+  PropertyAlert,
+  PropertyActivity,
+  PropertyBulkOperation
+} from '@/types/property'
 
 // Utility function to create URL-friendly slugs
 function slugify(text: string): string {
@@ -611,5 +626,438 @@ export class PropertyService {
     if (data.internetProvider) amenities.push('Internet')
 
     return amenities
+  }
+
+  // ===== ENHANCED PROPERTY MANAGEMENT METHODS =====
+
+  /**
+   * Get all properties with advanced filtering and pagination
+   */
+  static async getAllPropertiesAdvanced(filters?: PropertyFilters): Promise<PropertySearchResult> {
+    try {
+      console.log('🏠 PropertyService: Fetching all properties with advanced filters:', filters)
+
+      let q = collection(db, this.collection)
+
+      // Apply filters
+      if (filters?.status && filters.status.length > 0) {
+        q = query(q, where('status', 'in', filters.status))
+      }
+
+      if (filters?.ownerId) {
+        q = query(q, where('userId', '==', filters.ownerId))
+      }
+
+      // Apply sorting
+      if (filters?.sortBy) {
+        const sortOrder = filters.sortOrder || 'desc'
+        q = query(q, orderBy(filters.sortBy === 'name' ? 'name' : 'updatedAt', sortOrder))
+      } else {
+        q = query(q, orderBy('updatedAt', 'desc'))
+      }
+
+      // Apply pagination
+      if (filters?.limit) {
+        q = query(q, limit(filters.limit))
+      }
+
+      const snapshot = await getDocs(q)
+      const properties: Property[] = []
+
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        properties.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+        } as Property)
+      })
+
+      // Apply client-side filters for complex queries
+      let filteredProperties = properties
+
+      if (filters?.search) {
+        const searchTerm = filters.search.toLowerCase()
+        filteredProperties = properties.filter(property =>
+          property.name?.toLowerCase().includes(searchTerm) ||
+          property.city?.toLowerCase().includes(searchTerm) ||
+          property.address?.toLowerCase().includes(searchTerm)
+        )
+      }
+
+      if (filters?.priceRange) {
+        filteredProperties = filteredProperties.filter(property => {
+          const price = property.pricePerNight || 0
+          return (!filters.priceRange!.min || price >= filters.priceRange!.min) &&
+                 (!filters.priceRange!.max || price <= filters.priceRange!.max)
+        })
+      }
+
+      const total = filteredProperties.length
+      const page = filters?.page || 1
+      const pageSize = filters?.limit || 20
+      const totalPages = Math.ceil(total / pageSize)
+
+      // Apply pagination to filtered results
+      const startIndex = (page - 1) * pageSize
+      const paginatedProperties = filteredProperties.slice(startIndex, startIndex + pageSize)
+
+      console.log(`✅ PropertyService: Found ${total} properties, returning page ${page}/${totalPages}`)
+
+      return {
+        properties: paginatedProperties,
+        total,
+        page,
+        totalPages,
+        filters: filters || {}
+      }
+
+    } catch (error) {
+      console.error('❌ PropertyService: Error fetching properties:', error)
+      throw new Error('Failed to fetch properties')
+    }
+  }
+
+  /**
+   * Update property status with validation
+   */
+  static async updatePropertyStatus(propertyId: string, status: PropertyStatus, reason?: string): Promise<void> {
+    try {
+      console.log('🏠 PropertyService: Updating property status:', propertyId, status)
+
+      const docRef = doc(db, this.collection, propertyId)
+      const updateData: any = {
+        status,
+        isActive: status === 'active',
+        updatedAt: Timestamp.now()
+      }
+
+      if (reason) {
+        updateData.statusReason = reason
+      }
+
+      await updateDoc(docRef, updateData)
+
+      console.log('✅ PropertyService: Property status updated successfully')
+
+    } catch (error) {
+      console.error('❌ PropertyService: Error updating property status:', error)
+      throw new Error('Failed to update property status')
+    }
+  }
+
+  /**
+   * Perform bulk operations on multiple properties
+   */
+  static async performBulkOperation(operation: PropertyBulkOperation): Promise<void> {
+    try {
+      console.log('🏠 PropertyService: Performing bulk operation:', operation.operation)
+
+      const batch = writeBatch(db)
+
+      for (const propertyId of operation.propertyIds) {
+        const docRef = doc(db, this.collection, propertyId)
+
+        switch (operation.operation) {
+          case 'update_status':
+            batch.update(docRef, {
+              status: operation.data.status,
+              isActive: operation.data.status === 'active',
+              updatedAt: Timestamp.now()
+            })
+            break
+
+          case 'update_pricing':
+            batch.update(docRef, {
+              pricePerNight: operation.data.pricePerNight,
+              updatedAt: Timestamp.now()
+            })
+            break
+
+          default:
+            console.warn('Unknown bulk operation:', operation.operation)
+        }
+      }
+
+      await batch.commit()
+      console.log(`✅ PropertyService: Bulk operation completed for ${operation.propertyIds.length} properties`)
+
+    } catch (error) {
+      console.error('❌ PropertyService: Error performing bulk operation:', error)
+      throw new Error('Failed to perform bulk operation')
+    }
+  }
+
+  /**
+   * Generate property dashboard with comprehensive metrics
+   */
+  static async getPropertyDashboard(): Promise<PropertyDashboard> {
+    try {
+      console.log('🏠 PropertyService: Generating property dashboard')
+
+      const allProperties = await this.getAllProperties()
+
+      // Calculate overview metrics
+      const totalProperties = allProperties.length
+      const activeProperties = allProperties.filter(p => p.status === 'active').length
+      const inactiveProperties = allProperties.filter(p => p.status === 'inactive').length
+      const maintenanceProperties = allProperties.filter(p => p.status === 'pending_approval').length
+
+      // Mock performance data for demonstration
+      const mockPerformanceData = this.generateMockPerformanceData(allProperties)
+
+      const dashboard: PropertyDashboard = {
+        overview: {
+          totalProperties,
+          activeProperties,
+          inactiveProperties,
+          maintenanceProperties,
+          averageOccupancy: mockPerformanceData.averageOccupancy,
+          totalRevenue: mockPerformanceData.totalRevenue,
+          averageRating: mockPerformanceData.averageRating,
+          totalBookings: mockPerformanceData.totalBookings
+        },
+        performance: {
+          topPerformers: mockPerformanceData.topPerformers,
+          underPerformers: mockPerformanceData.underPerformers,
+          averageADR: mockPerformanceData.averageADR,
+          averageRevPAR: mockPerformanceData.averageRevPAR,
+          occupancyTrend: 5.2,
+          revenueTrend: 12.8
+        },
+        maintenance: {
+          activeIssues: Math.floor(totalProperties * 0.1),
+          urgentIssues: Math.floor(totalProperties * 0.02),
+          scheduledMaintenance: Math.floor(totalProperties * 0.05),
+          maintenanceCosts: totalProperties * 2500,
+          averageResolutionTime: 3.5
+        },
+        revenue: {
+          totalRevenue: mockPerformanceData.totalRevenue,
+          monthlyRevenue: mockPerformanceData.totalRevenue / 12,
+          revenueGrowth: 15.3,
+          topRevenueProperties: mockPerformanceData.topPerformers.slice(0, 3),
+          revenueByType: {
+            villa: mockPerformanceData.totalRevenue * 0.6,
+            apartment: mockPerformanceData.totalRevenue * 0.25,
+            house: mockPerformanceData.totalRevenue * 0.15
+          }
+        },
+        occupancy: {
+          averageOccupancy: mockPerformanceData.averageOccupancy,
+          occupancyTrend: 8.7,
+          highestOccupancy: mockPerformanceData.topPerformers.slice(0, 3),
+          lowestOccupancy: mockPerformanceData.underPerformers.slice(0, 3),
+          seasonalOccupancy: {
+            'Spring': 75.2,
+            'Summer': 89.1,
+            'Fall': 68.4,
+            'Winter': 52.7
+          }
+        },
+        alerts: this.generateMockAlerts(allProperties),
+        recentActivity: this.generateMockActivity(allProperties)
+      }
+
+      console.log('✅ PropertyService: Dashboard generated successfully')
+      return dashboard
+
+    } catch (error) {
+      console.error('❌ PropertyService: Error generating dashboard:', error)
+      throw new Error('Failed to generate property dashboard')
+    }
+  }
+
+  /**
+   * Real-time property updates subscription
+   */
+  static subscribeToPropertyUpdates(callback: (properties: Property[]) => void): () => void {
+    console.log('🏠 PropertyService: Setting up real-time property updates')
+
+    const q = query(collection(db, this.collection), orderBy('updatedAt', 'desc'))
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const properties: Property[] = []
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        properties.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+        } as Property)
+      })
+
+      console.log(`🔄 PropertyService: Real-time update - ${properties.length} properties`)
+      callback(properties)
+    }, (error) => {
+      console.error('❌ PropertyService: Real-time update error:', error)
+    })
+
+    return unsubscribe
+  }
+
+  /**
+   * Generate mock performance data for demonstration
+   */
+  private static generateMockPerformanceData(properties: Property[]) {
+    const totalProperties = properties.length
+
+    // Generate realistic mock data
+    const averageOccupancy = 72.5 + Math.random() * 15 // 72.5-87.5%
+    const averagePrice = 250 + Math.random() * 200 // $250-450 per night
+    const totalRevenue = totalProperties * averagePrice * 365 * (averageOccupancy / 100)
+    const averageRating = 4.2 + Math.random() * 0.6 // 4.2-4.8 stars
+    const totalBookings = Math.floor(totalProperties * 50 * (averageOccupancy / 100))
+
+    // Create mock top and bottom performers
+    const propertiesWithMockData = properties.map(property => ({
+      ...property,
+      mockRevenue: (property.pricePerNight || averagePrice) * 365 * (0.6 + Math.random() * 0.4),
+      mockOccupancy: 50 + Math.random() * 40,
+      mockRating: 3.8 + Math.random() * 1.2
+    }))
+
+    const topPerformers = propertiesWithMockData
+      .sort((a, b) => b.mockRevenue - a.mockRevenue)
+      .slice(0, 5)
+
+    const underPerformers = propertiesWithMockData
+      .sort((a, b) => a.mockRevenue - b.mockRevenue)
+      .slice(0, 5)
+
+    return {
+      averageOccupancy: Math.round(averageOccupancy * 100) / 100,
+      totalRevenue: Math.round(totalRevenue),
+      averageRating: Math.round(averageRating * 10) / 10,
+      totalBookings,
+      averageADR: Math.round(averagePrice),
+      averageRevPAR: Math.round(averagePrice * (averageOccupancy / 100)),
+      topPerformers,
+      underPerformers
+    }
+  }
+
+  /**
+   * Generate mock alerts for demonstration
+   */
+  private static generateMockAlerts(properties: Property[]): PropertyAlert[] {
+    const alerts: PropertyAlert[] = []
+
+    // Generate some sample alerts
+    properties.slice(0, 5).forEach((property, index) => {
+      if (property.status === 'pending_approval') {
+        alerts.push({
+          id: `alert-${index}`,
+          propertyId: property.id,
+          propertyName: property.name,
+          type: 'compliance',
+          severity: 'warning',
+          message: `Property pending approval - requires admin review`,
+          createdAt: new Date().toISOString(),
+          acknowledged: false,
+          actionRequired: true
+        })
+      }
+
+      if (!property.isActive) {
+        alerts.push({
+          id: `alert-inactive-${index}`,
+          propertyId: property.id,
+          propertyName: property.name,
+          type: 'booking',
+          severity: 'info',
+          message: `Property is inactive and not receiving bookings`,
+          createdAt: new Date().toISOString(),
+          acknowledged: false,
+          actionRequired: false
+        })
+      }
+    })
+
+    return alerts
+  }
+
+  /**
+   * Generate mock activity for demonstration
+   */
+  private static generateMockActivity(properties: Property[]): PropertyActivity[] {
+    const activities: PropertyActivity[] = []
+
+    properties.slice(0, 10).forEach((property, index) => {
+      activities.push({
+        id: `activity-${index}`,
+        propertyId: property.id,
+        propertyName: property.name,
+        type: 'property_updated',
+        description: 'Property information updated',
+        user: 'admin',
+        timestamp: new Date(Date.now() - index * 3600000).toISOString()
+      })
+    })
+
+    return activities
+  }
+
+  /**
+   * Get properties by status
+   */
+  static async getPropertiesByStatus(status: PropertyStatus): Promise<Property[]> {
+    try {
+      console.log('🏠 PropertyService: Fetching properties by status:', status)
+
+      const q = query(
+        collection(db, this.collection),
+        where('status', '==', status),
+        orderBy('updatedAt', 'desc')
+      )
+
+      const snapshot = await getDocs(q)
+      const properties: Property[] = []
+
+      snapshot.forEach((doc) => {
+        const data = doc.data()
+        properties.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+        } as Property)
+      })
+
+      console.log(`✅ PropertyService: Found ${properties.length} properties with status ${status}`)
+      return properties
+
+    } catch (error) {
+      console.error('❌ PropertyService: Error fetching properties by status:', error)
+      throw new Error('Failed to fetch properties by status')
+    }
+  }
+
+  /**
+   * Search properties by text
+   */
+  static async searchProperties(searchTerm: string): Promise<Property[]> {
+    try {
+      console.log('🏠 PropertyService: Searching properties:', searchTerm)
+
+      const allProperties = await this.getAllProperties()
+      const searchTermLower = searchTerm.toLowerCase()
+
+      const filteredProperties = allProperties.filter(property =>
+        property.name?.toLowerCase().includes(searchTermLower) ||
+        property.city?.toLowerCase().includes(searchTermLower) ||
+        property.address?.toLowerCase().includes(searchTermLower) ||
+        property.country?.toLowerCase().includes(searchTermLower)
+      )
+
+      console.log(`✅ PropertyService: Found ${filteredProperties.length} properties matching search`)
+      return filteredProperties
+
+    } catch (error) {
+      console.error('❌ PropertyService: Error searching properties:', error)
+      throw new Error('Failed to search properties')
+    }
   }
 }
