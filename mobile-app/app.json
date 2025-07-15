@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "Sia Moon Staff",
+    "slug": "sia-moon-staff-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a1a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.siamoon.staff",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to camera to take photos for job completion verification.",
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to help you navigate to job locations.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to help you navigate to job locations."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a1a"
+      },
+      "package": "com.siamoon.staff",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": [
+            "./assets/notification.wav"
+          ]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Sia Moon Staff to use your location to help navigate to job sites."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Sia Moon Staff to access your camera to take photos for job completion verification."
+        }
+      ]
+    ],
+    "scheme": "sia-moon-staff",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
+  }
+}

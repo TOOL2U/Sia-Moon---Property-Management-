@@ -60,6 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Set authentication cookie for middleware
         if (typeof window !== 'undefined') {
           setCookie('firebase-auth-token', firebaseUser.uid, 7)
+
+          // Also get and set the Firebase ID token for API authentication
+          firebaseUser.getIdToken().then(idToken => {
+            setCookie('firebase-id-token', idToken, 1) // Shorter expiry for security
+          }).catch(error => {
+            console.error('Failed to get Firebase ID token:', error)
+          })
         }
 
         // Set basic user info immediately to avoid blocking UI
@@ -112,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Remove authentication cookie when user signs out
         if (typeof window !== 'undefined') {
           deleteCookie('firebase-auth-token')
+          deleteCookie('firebase-id-token')
           deleteCookie('auth-token')
         }
         setUser(null)
@@ -192,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear authentication cookies
       if (typeof window !== 'undefined') {
         deleteCookie('firebase-auth-token')
+        deleteCookie('firebase-id-token')
         deleteCookie('auth-token')
       }
 

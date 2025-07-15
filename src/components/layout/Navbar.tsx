@@ -305,7 +305,8 @@ export function Navbar() {
     { href: `/dashboard/client`, label: 'Dashboard' }, // Default to client dashboard
     { href: '/properties', label: 'Properties' },
     { href: '/reports', label: 'Reports' },
-    { href: '/onboard', label: 'Onbourding Form' },
+    { href: '/onboard', label: 'Onboarding Form' },
+    { href: '/onboard-wizard', label: 'Onboarding Wizard' },
     // Admin-only navigation
     ...(user.role === 'admin' ? [
       { href: '/admin', label: 'Admin' },

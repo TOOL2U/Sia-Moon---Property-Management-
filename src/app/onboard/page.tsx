@@ -848,6 +848,30 @@ function OnboardYourVillaContent() {
               {isEditing ? 'Edit Villa Information' : 'Property Owner Onboarding Form'}
             </h1>
             <p className="mt-4 text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animate-delay-300 will-change-transform">
+              {isEditing 
+                ? "Update your villa's information and settings."
+                : "Welcome! Let's get your villa set up for professional management. This comprehensive form helps us understand your property and preferences to provide the best service."
+              }
+            </p>
+            
+            {/* Wizard Option */}
+            {!isEditing && (
+              <div className="mt-6 animate-fade-in-up animate-delay-450">
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 max-w-2xl mx-auto">
+                  <h3 className="text-lg font-medium text-blue-400 mb-2">✨ New: Step-by-Step Wizard</h3>
+                  <p className="text-sm text-neutral-300 mb-3">
+                    Try our new guided wizard that breaks the onboarding into easy steps with progress tracking.
+                  </p>
+                  <Link href="/onboard-wizard">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      Try Wizard Version
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+            
+            <p className="mt-4 text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animate-delay-400 will-change-transform">
               {isEditing
                 ? 'Update your villa information below. Changes will be reviewed by our team.'
                 : 'Please provide comprehensive information about your villa and preferences. This detailed survey helps us deliver the best property management service tailored to your needs.'

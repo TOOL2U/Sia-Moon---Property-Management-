@@ -17,6 +17,7 @@ import { FinancialDashboard, RevenueAnalytics, FinancialKPIs, FinancialFilters }
 import AddStaffModal from '@/components/staff/AddStaffModal'
 import EditStaffModal from '@/components/staff/EditStaffModal'
 import EnhancedAddStaffModal from '@/components/staff/EnhancedAddStaffModal'
+import StaffAccountWizard from '@/components/staff/StaffAccountWizard'
 import StaffAccountModal from '@/components/staff/StaffAccountModal'
 import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
 
@@ -529,6 +530,7 @@ export default function BackOfficePage() {
 
   // Enhanced staff management modals
   const [showEnhancedAddStaffModal, setShowEnhancedAddStaffModal] = useState(false)
+  const [showStaffAccountWizard, setShowStaffAccountWizard] = useState(false)
   const [showStaffAccountModal, setShowStaffAccountModal] = useState(false)
   const [showCredentialManager, setShowCredentialManager] = useState(false)
   const [selectedStaffForCredentials, setSelectedStaffForCredentials] = useState<any>(null)
@@ -760,6 +762,10 @@ export default function BackOfficePage() {
   }
 
   const handleAddStaffWithAuth = () => {
+    setShowStaffAccountWizard(true)
+  }
+
+  const handleAddStaffLegacy = () => {
     setShowEnhancedAddStaffModal(true)
   }
 
@@ -1107,6 +1113,7 @@ export default function BackOfficePage() {
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
+    { id: 'job-assignments', label: 'Job Assignments', icon: ClipboardList },
     { id: 'staff', label: 'Staff', icon: Users },
     { id: 'financial', label: 'Financial', icon: DollarSign },
     { id: 'properties', label: 'Properties', icon: Building2 },
@@ -1462,6 +1469,7 @@ export default function BackOfficePage() {
                 <p className="text-sm text-neutral-400">
                   {activeSection === 'dashboard' && 'Overview of your business operations'}
                   {activeSection === 'bookings' && 'Manage and approve property bookings'}
+                  {activeSection === 'job-assignments' && 'Assign and track staff job assignments'}
                   {activeSection === 'staff' && 'Staff management and assignments'}
                   {activeSection === 'financial' && 'Financial overview and reporting'}
                   {activeSection === 'properties' && 'Property management and overview'}
@@ -1530,6 +1538,24 @@ export default function BackOfficePage() {
         onClose={() => setShowImportExportModal(false)}
         onSuccess={handleStaffSuccess}
         staffList={staffList}
+      />
+
+      {/* Staff Account Wizard */}
+      <StaffAccountWizard
+        isOpen={showStaffAccountWizard}
+        onClose={() => setShowStaffAccountWizard(false)}
+        onStaffCreated={(staff, credentials) => {
+          console.log('✅ Staff created with wizard:', staff.name)
+          console.log('📧 Login credentials:', credentials.email)
+          handleStaffSuccess()
+          toast.success(`Staff member ${staff.name} created successfully!`)
+        }}
+        availableProperties={[
+          { id: '1', name: 'Villa Sunset' },
+          { id: '2', name: 'Ocean View Resort' },
+          { id: '3', name: 'Mountain Lodge' },
+          { id: '4', name: 'City Apartment' }
+        ]}
       />
 
       {/* Enhanced Staff Management Modals */}
@@ -1652,6 +1678,23 @@ export default function BackOfficePage() {
             // Reload data to reflect changes
             loadAllBookingData()
             toast.success(`Booking ${action}d successfully and synced to mobile app`)
+
+            // Redirect to job assignment page for approved bookings
+            if (action === 'approve') {
+              const booking = bookingApprovalModal.booking
+              const params = new URLSearchParams({
+                bookingId: booking.id,
+                propertyName: booking.propertyName || booking.property || 'Unknown Property',
+                guestName: booking.guestName || booking.guest || 'Unknown Guest',
+                checkInDate: booking.checkInDate || booking.checkin || '',
+                checkOutDate: booking.checkOutDate || booking.checkout || '',
+                numberOfGuests: String(booking.numberOfGuests || booking.guests || 1),
+                ...(booking.specialRequests && { specialRequests: booking.specialRequests })
+              })
+
+              // Navigate to job assignment page with booking data
+              window.open(`/admin/job-assignments?${params.toString()}`, '_blank')
+            }
           }}
         />
       )}
@@ -2200,33 +2243,28 @@ export default function BackOfficePage() {
                   )}
                 </Button>
                 <Button
-                  onClick={() => setActiveSection('staff')}
+                  onClick={() => window.open('/admin/job-assignments', '_blank')}
                   className="bg-green-600 hover:bg-green-700 h-auto p-4 flex-col gap-2"
+                >
+                  <ClipboardList className="h-5 w-5" />
+                  <span className="text-sm">Job Assignments</span>
+                </Button>
+                <Button
+                  onClick={() => setActiveSection('staff')}
+                  className="bg-purple-600 hover:bg-purple-700 h-auto p-4 flex-col gap-2"
                 >
                   <Users className="h-5 w-5" />
                   <span className="text-sm">Staff Management</span>
                 </Button>
                 <Button
                   onClick={() => setActiveSection('financial')}
-                  className="bg-purple-600 hover:bg-purple-700 h-auto p-4 flex-col gap-2 relative"
+                  className="bg-orange-600 hover:bg-orange-700 h-auto p-4 flex-col gap-2 relative"
                 >
                   <DollarSign className="h-5 w-5" />
                   <span className="text-sm">Financial Reports</span>
                   {overduePayments.length > 0 && (
                     <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5">
                       {overduePayments.length}
-                    </Badge>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => setActiveSection('operations')}
-                  className="bg-orange-600 hover:bg-orange-700 h-auto p-4 flex-col gap-2 relative"
-                >
-                  <ClipboardList className="h-5 w-5" />
-                  <span className="text-sm">Operations</span>
-                  {highPriorityMaintenance.length > 0 && (
-                    <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5">
-                      {highPriorityMaintenance.length}
                     </Badge>
                   )}
                 </Button>
@@ -3019,12 +3057,12 @@ export default function BackOfficePage() {
                 </Button>
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleAddStaffAccount}
+                    onClick={handleAddStaffWithAuth}
                     className="bg-blue-600 hover:bg-blue-700"
                     disabled={loading}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Staff Account
+                    Add Staff (Wizard)
                   </Button>
                   <Button
                     onClick={handleAddStaff}
