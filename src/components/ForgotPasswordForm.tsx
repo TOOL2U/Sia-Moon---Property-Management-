@@ -237,8 +237,7 @@ export default function ForgotPasswordForm({ onEmailSent, className = '' }: Forg
               <Button
                 type="submit"
                 disabled={isLoading || !email}
-                fullWidth
-                className="flex items-center justify-center h-11 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center h-11 disabled:opacity-50 disabled:cursor-not-allowed w-full"
               >
                 {isLoading ? (
                   <>

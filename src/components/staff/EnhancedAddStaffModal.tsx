@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -214,7 +214,7 @@ export default function EnhancedAddStaffModal({
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        role: formData.role,
+        role: formData.role as any,
         status: 'active',
         assignedProperties: formData.assignedProperties,
         skills: formData.skills,
@@ -222,22 +222,24 @@ export default function EnhancedAddStaffModal({
         mustChangePassword: formData.mustChangePassword,
         userRole: 'staff',
         
-        emergencyContact: formData.emergencyContactName ? {
-          name: formData.emergencyContactName,
-          phone: formData.emergencyContactPhone,
-          relationship: formData.emergencyContactRelationship
-        } : undefined,
-        
         employment: {
-          employmentType: formData.employmentType,
+          employmentType: formData.employmentType as any,
           startDate: formData.startDate,
-          salary: formData.salary ? parseFloat(formData.salary) : undefined,
-          benefits: []
+          salary: formData.salary ? parseFloat(formData.salary) : undefined
         },
         
         personalDetails: {
           dateOfBirth: formData.dateOfBirth || undefined,
           nationalId: formData.nationalId || undefined
+        }
+      }
+
+      // Only add emergencyContact if we have at least a name
+      if (formData.emergencyContactName && formData.emergencyContactName.trim()) {
+        (staffData as any).emergencyContact = {
+          name: formData.emergencyContactName,
+          phone: formData.emergencyContactPhone || '',
+          relationship: formData.emergencyContactRelationship || ''
         }
       }
 

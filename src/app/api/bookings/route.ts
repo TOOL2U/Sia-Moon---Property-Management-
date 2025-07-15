@@ -332,8 +332,17 @@ export async function POST(request: NextRequest) {
     const bookingDocRef = await addDoc(collection(database, 'bookings'), processedBooking)
     const bookingId = bookingDocRef.id
 
-    // Save to legacy collections for backward compatibility
-    const pendingDocRef = await addDoc(collection(database, 'pending_bookings'), processedBooking)
+    // Save to pending_bookings collection for Back Office approval
+    const pendingBookingData = {
+      ...processedBooking,
+      status: 'pending_approval',
+      requiresApproval: true,
+      backOfficeApproval: true, // Flag for Back Office processing
+      priority: 'high', // High priority for new bookings
+      source: 'email_automation', // Track source
+      flowsToBackOffice: true // Explicit flag for Back Office workflow
+    }
+    const pendingDocRef = await addDoc(collection(database, 'pending_bookings'), pendingBookingData)
     const pendingBookingId = pendingDocRef.id
 
     const liveDocRef = await addDoc(collection(database, 'live_bookings'), processedBooking)

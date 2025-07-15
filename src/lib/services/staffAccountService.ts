@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/firebase'
+import { db } from '@/lib/firebase'
 import { collection, doc, setDoc, getDocs, query, orderBy, serverTimestamp, deleteDoc, updateDoc, getDoc, where } from 'firebase/firestore'
 import bcrypt from 'bcryptjs'
 
@@ -8,35 +8,6 @@ import bcrypt from 'bcryptjs'
  * This is separate from regular users and provides better organization
  * Implements secure authentication system compatible with mobile app
  */
-
-/**
- * Utility function to remove undefined values from objects recursively
- * Firestore doesn't allow undefined values, so we need to clean the data
- */
-function removeUndefinedValues(obj: any): any {
-  if (obj === null || obj === undefined) {
-    return null
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(removeUndefinedValues).filter(item => item !== undefined)
-  }
-
-  if (typeof obj === 'object') {
-    const cleaned: any = {}
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        const cleanedValue = removeUndefinedValues(value)
-        if (cleanedValue !== undefined) {
-          cleaned[key] = cleanedValue
-        }
-      }
-    }
-    return cleaned
-  }
-
-  return obj
-}
 
 // User roles and permissions
 export const USER_ROLES = {
@@ -151,11 +122,13 @@ export interface StaffAccountCreationResult {
   userCredentials?: {
     email: string
     temporaryPassword: string
-    firebaseUid?: string
+    firebaseUid: string
   }
 }
 
 export class StaffAccountService {
+  private static db = db
+
   /**
    * Create a new staff account with bcrypt password hashing
    */
@@ -175,9 +148,8 @@ export class StaffAccountService {
 
       // Check if user already exists
       console.log('🔍 Checking if user already exists with email:', staffData.email)
-      const firestore = getDb()
       const existingUserQuery = query(
-        collection(firestore, 'staff_accounts'),
+        collection(StaffAccountService.db, 'staff_accounts'),
         where('email', '==', staffData.email.toLowerCase().trim())
       )
       const existingUserSnapshot = await getDocs(existingUserQuery)
@@ -196,7 +168,17 @@ export class StaffAccountService {
       const passwordHash = await bcrypt.hash(staffData.password, 12)
       console.log('✅ Password hashed successfully')
 
-      // Create staff account document (filter out undefined values for Firestore)
+      // Use the password from staffData, or temporaryPassword as fallback
+      const actualPassword = staffData.password || staffData.temporaryPassword
+      if (!actualPassword) {
+        return {
+          success: false,
+          message: 'Password is required',
+          error: 'No password provided'
+        }
+      }
+
+      // Create staff account document (filter out undefined values for Firebase)
       const staffAccount: Omit<StaffAccount, 'id'> = {
         email: staffData.email.toLowerCase().trim(),
         passwordHash: passwordHash, // Store hashed password
@@ -217,28 +199,27 @@ export class StaffAccountService {
         lastModifiedBy: 'admin'
       }
 
-      // Only add optional fields if they are defined (Firestore doesn't allow undefined)
-      if (staffData.emergencyContact) {
-        staffAccount.emergencyContact = removeUndefinedValues(staffData.emergencyContact)
-      }
-      if (staffData.employment) {
-        staffAccount.employment = removeUndefinedValues(staffData.employment)
-      }
-      if (staffData.personalDetails) {
-        staffAccount.personalDetails = removeUndefinedValues(staffData.personalDetails)
+      // Only add optional fields if they have values (Firebase doesn't allow undefined)
+      if (staffData.emergencyContact && staffData.emergencyContact.name) {
+        staffAccount.emergencyContact = staffData.emergencyContact
       }
 
-      // Clean the entire staff account object to remove any undefined values
-      const cleanedStaffAccount = removeUndefinedValues(staffAccount)
+      if (staffData.employment) {
+        staffAccount.employment = staffData.employment
+      }
+
+      if (staffData.personalDetails && (staffData.personalDetails.dateOfBirth || staffData.personalDetails.nationalId)) {
+        staffAccount.personalDetails = staffData.personalDetails
+      }
 
       // Save to staff_accounts collection
-      const staffAccountRef = doc(collection(firestore, 'staff_accounts'))
-      await setDoc(staffAccountRef, cleanedStaffAccount)
+      const staffAccountRef = doc(collection(StaffAccountService.db, 'staff_accounts'))
+      await setDoc(staffAccountRef, staffAccount)
       console.log('✅ Staff account created in staff_accounts collection with ID:', staffAccountRef.id)
 
       const finalStaffAccount: StaffAccount = {
         id: staffAccountRef.id,
-        ...cleanedStaffAccount,
+        ...staffAccount,
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -249,7 +230,8 @@ export class StaffAccountService {
         staffAccount: finalStaffAccount,
         userCredentials: {
           email: staffData.email,
-          temporaryPassword: '[HIDDEN FOR SECURITY]' // Never return plain text passwords
+          temporaryPassword: '[HIDDEN FOR SECURITY]', // Never return plain text passwords
+          firebaseUid: staffAccountRef.id // Use firebaseUid instead of id
         }
       }
 
@@ -274,11 +256,9 @@ export class StaffAccountService {
     try {
       console.log('🔐 Verifying staff login for email:', email)
 
-      const firestore = getDb()
-
       // 1. Query staff_accounts collection
       const q = query(
-        collection(firestore, 'staff_accounts'),
+        collection(StaffAccountService.db, 'staff_accounts'),
         where('email', '==', email.toLowerCase().trim()),
         where('isActive', '==', true)
       )
@@ -306,7 +286,7 @@ export class StaffAccountService {
 
       // 3. Update last login timestamp
       const lastLogin = new Date()
-      await updateDoc(doc(firestore, 'staff_accounts', userDoc.id), {
+      await updateDoc(doc(StaffAccountService.db, 'staff_accounts', userDoc.id), {
         lastLogin: serverTimestamp(),
         updatedAt: serverTimestamp()
       })
@@ -340,9 +320,8 @@ export class StaffAccountService {
   }> {
     try {
       console.log('🔍 Getting all staff accounts...')
-
-      const firestore = getDb()
-      const staffAccountsRef = collection(firestore, 'staff_accounts')
+      
+      const staffAccountsRef = collection(StaffAccountService.db, 'staff_accounts')
       const q = query(staffAccountsRef, orderBy('createdAt', 'desc'))
       const querySnapshot = await getDocs(q)
 
@@ -389,9 +368,8 @@ export class StaffAccountService {
   }> {
     try {
       console.log(`🔍 Getting staff account ${staffId}...`)
-
-      const firestore = getDb()
-      const staffAccountRef = doc(firestore, 'staff_accounts', staffId)
+      
+      const staffAccountRef = doc(StaffAccountService.db, 'staff_accounts', staffId)
       const docSnapshot = await getDoc(staffAccountRef)
 
       if (!docSnapshot.exists()) {
@@ -434,40 +412,22 @@ export class StaffAccountService {
     success: boolean
     message: string
     error?: string
-    staffAccount?: StaffAccount
   }> {
     try {
       console.log(`🔍 Updating staff account ${staffId}...`)
-
-      const firestore = getDb()
-      const staffAccountRef = doc(firestore, 'staff_accounts', staffId)
-
-      // Prepare update data
-      const updateData: any = {
+      
+      const staffAccountRef = doc(StaffAccountService.db, 'staff_accounts', staffId)
+      
+      const updateData = {
         ...updates,
         updatedAt: serverTimestamp(),
         lastModifiedBy: 'admin' // TODO: Get from current user context
       }
 
-      // If password is being updated, hash it with bcrypt
-      if (updates.password) {
-        console.log('🔐 Hashing new password with bcrypt...')
-        const passwordHash = await bcrypt.hash(updates.password, 12)
-        updateData.passwordHash = passwordHash
-
-        // Remove the plain text password from update data
-        delete updateData.password
-
-        console.log('✅ Password hashed successfully')
-      }
-
-      // Clean undefined values before saving to Firestore
-      const cleanedUpdateData = removeUndefinedValues(updateData)
-
-      await updateDoc(staffAccountRef, cleanedUpdateData)
-
+      await updateDoc(staffAccountRef, updateData)
+      
       console.log(`✅ Updated staff account ${staffId}`)
-
+      
       return {
         success: true,
         message: 'Staff account updated successfully'
@@ -495,9 +455,8 @@ export class StaffAccountService {
       
       // TODO: Also delete the Firebase Auth user
       // This would require Firebase Admin SDK
-
-      const firestore = getDb()
-      const staffAccountRef = doc(firestore, 'staff_accounts', staffId)
+      
+      const staffAccountRef = doc(StaffAccountService.db, 'staff_accounts', staffId)
       await deleteDoc(staffAccountRef)
       
       console.log(`✅ Deleted staff account ${staffId}`)

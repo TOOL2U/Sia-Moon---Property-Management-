@@ -6,10 +6,10 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import {
   MapPin,
   Users,
@@ -29,6 +29,7 @@ import JobManagementInterface from '@/components/job-assignment/JobManagementInt
 import StaffMonitoringDashboard from '@/components/job-assignment/StaffMonitoringDashboard'
 import AnalyticsReporting from '@/components/job-assignment/AnalyticsReporting'
 import MobileIntegrationLayer from '@/components/job-assignment/MobileIntegrationLayer'
+import CreateJobModal from '@/components/job-assignment/CreateJobModal'
 
 import { JobAssignment, JobAnalytics } from '@/types/enhancedJobAssignment'
 
@@ -82,6 +83,11 @@ export default function JobAssignmentsPage() {
   const handleViewJob = (job: JobAssignment) => {
     setSelectedJob(job)
     // Open job details modal or navigate to details page
+  }
+
+  const handleViewJobById = (jobId: string) => {
+    console.log(`Viewing job details for ID: ${jobId}`)
+    // Implementation to find job by ID and view details
   }
 
   const handleStaffSelect = (staffId: string) => {
@@ -244,7 +250,7 @@ export default function JobAssignmentsPage() {
           <TabsContent value="staff-monitoring" className="space-y-6">
             <StaffMonitoringDashboard
               onMessageStaff={handleMessageStaff}
-              onViewJobDetails={handleViewJob}
+              onViewJobDetails={handleViewJobById}
             />
           </TabsContent>
 
@@ -262,6 +268,19 @@ export default function JobAssignmentsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Create Job Modal */}
+      {showCreateJobModal && (
+        <CreateJobModal
+          isOpen={showCreateJobModal}
+          onClose={() => setShowCreateJobModal(false)}
+          onJobCreated={(jobId: string) => {
+            console.log('Job created with ID:', jobId)
+            setShowCreateJobModal(false)
+            // Refresh the job list or update UI as needed
+          }}
+        />
+      )}
     </div>
   )
 }

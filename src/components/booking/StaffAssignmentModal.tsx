@@ -7,22 +7,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
+} from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/Label'
+import { Textarea } from '@/components/ui/Textarea'
+import { Checkbox } from '@/components/ui/Checkbox'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
+} from '@/components/ui/Select'
+import { Badge } from '@/components/ui/Badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Separator } from '@/components/ui/Separator'
 import { toast } from 'sonner'
 import {
   Users,
@@ -192,8 +192,17 @@ export default function StaffAssignmentModal({
   }
 
   const handleAssign = async () => {
+    // MANDATORY VALIDATION: Staff selection is required
     if (selectedStaff.length === 0) {
-      toast.error('Please select at least one staff member')
+      toast.error('MANDATORY: You must select at least one staff member before creating a job assignment. Staff selection is required for all job assignments.')
+      return
+    }
+
+    // Enhanced validation: Check if selected staff are still active
+    const selectedStaffObjects = availableStaff.filter(staff => selectedStaff.includes(staff.id))
+    const inactiveStaff = selectedStaffObjects.filter(staff => staff.status !== 'active')
+    if (inactiveStaff.length > 0) {
+      toast.error(`Cannot assign to inactive staff members: ${inactiveStaff.map(s => s.name).join(', ')}. Please select only active staff members.`)
       return
     }
 
@@ -283,10 +292,36 @@ export default function StaffAssignmentModal({
           {/* Staff Selection */}
           <Card className="bg-neutral-800 border-neutral-700">
             <CardHeader>
-              <CardTitle className="text-white text-lg flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Select Staff Members
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white text-lg flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Select Staff Members
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary" className="bg-blue-600 text-white">
+                    {selectedStaff.length} selected
+                  </Badge>
+                  {selectedStaff.length === 0 && (
+                    <Badge variant="destructive" className="bg-red-600 text-white">
+                      REQUIRED
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Mandatory Selection Notice */}
+              {selectedStaff.length === 0 && (
+                <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mt-4">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    <p className="text-red-400 font-medium">Staff Selection Required</p>
+                  </div>
+                  <p className="text-red-300 text-sm mt-2">
+                    You must select at least one staff member before creating a job assignment.
+                    This ensures proper task allocation and notification delivery.
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {loadingStaff ? (
@@ -309,7 +344,7 @@ export default function StaffAssignmentModal({
                       <div className="flex items-center space-x-3">
                         <Checkbox
                           checked={selectedStaff.includes(staff.id)}
-                          onCheckedChange={() => handleStaffToggle(staff.id)}
+                          onChange={() => handleStaffToggle(staff.id)}
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
@@ -362,7 +397,7 @@ export default function StaffAssignmentModal({
                       <div className="flex items-center space-x-3">
                         <Checkbox
                           checked={!!selectedTasks.find(t => t.taskType === task.taskType)}
-                          onCheckedChange={() => handleTaskToggle(task)}
+                          onChange={() => handleTaskToggle(task)}
                         />
                         <div className="flex-1">
                           <h4 className="text-white font-medium">{task.title}</h4>

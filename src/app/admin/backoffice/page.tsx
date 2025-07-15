@@ -16,8 +16,7 @@ import { StaffProfile, StaffFilters, StaffStats, STAFF_ROLES, STAFF_STATUSES } f
 import { FinancialDashboard, RevenueAnalytics, FinancialKPIs, FinancialFilters } from '@/types/financial'
 import AddStaffModal from '@/components/staff/AddStaffModal'
 import EditStaffModal from '@/components/staff/EditStaffModal'
-import EnhancedAddStaffModal from '@/components/staff/EnhancedAddStaffModal'
-import StaffAccountWizard from '@/components/staff/StaffAccountWizard'
+import WizardStaffModal from '@/components/staff/WizardStaffModal'
 import StaffAccountModal from '@/components/staff/StaffAccountModal'
 import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
 
@@ -34,6 +33,7 @@ import PropertyDashboard from '@/components/property/PropertyDashboard'
 import PropertyListing from '@/components/property/PropertyListing'
 import BookingApprovalModal from '@/components/booking/BookingApprovalModal'
 import StaffAssignmentModal from '@/components/booking/StaffAssignmentModal'
+import { SimpleIntegratedBookingsTab } from '@/components/admin/SimpleIntegratedBookingsTab'
 import { BookingSyncService } from '@/lib/services/bookingSyncService'
 import { RealTimeSyncService } from '@/lib/services/realTimeSyncService'
 import { OptimizedSyncService } from '@/lib/services/optimizedSyncService'
@@ -529,8 +529,7 @@ export default function BackOfficePage() {
   const [staffToDelete, setStaffToDelete] = useState<StaffProfile | null>(null)
 
   // Enhanced staff management modals
-  const [showEnhancedAddStaffModal, setShowEnhancedAddStaffModal] = useState(false)
-  const [showStaffAccountWizard, setShowStaffAccountWizard] = useState(false)
+  const [showWizardStaffModal, setShowWizardStaffModal] = useState(false)
   const [showStaffAccountModal, setShowStaffAccountModal] = useState(false)
   const [showCredentialManager, setShowCredentialManager] = useState(false)
   const [selectedStaffForCredentials, setSelectedStaffForCredentials] = useState<any>(null)
@@ -758,19 +757,15 @@ export default function BackOfficePage() {
   }
 
   const handleAddStaff = () => {
-    setShowAddStaffModal(true)
+    setShowWizardStaffModal(true)
   }
 
   const handleAddStaffWithAuth = () => {
-    setShowStaffAccountWizard(true)
-  }
-
-  const handleAddStaffLegacy = () => {
-    setShowEnhancedAddStaffModal(true)
+    setShowWizardStaffModal(true)
   }
 
   const handleAddStaffAccount = () => {
-    setShowStaffAccountModal(true)
+    setShowWizardStaffModal(true)
   }
 
   const handleManageCredentials = (staff: StaffProfile) => {
@@ -1540,28 +1535,10 @@ export default function BackOfficePage() {
         staffList={staffList}
       />
 
-      {/* Staff Account Wizard */}
-      <StaffAccountWizard
-        isOpen={showStaffAccountWizard}
-        onClose={() => setShowStaffAccountWizard(false)}
-        onStaffCreated={(staff, credentials) => {
-          console.log('✅ Staff created with wizard:', staff.name)
-          console.log('📧 Login credentials:', credentials.email)
-          handleStaffSuccess()
-          toast.success(`Staff member ${staff.name} created successfully!`)
-        }}
-        availableProperties={[
-          { id: '1', name: 'Villa Sunset' },
-          { id: '2', name: 'Ocean View Resort' },
-          { id: '3', name: 'Mountain Lodge' },
-          { id: '4', name: 'City Apartment' }
-        ]}
-      />
-
-      {/* Enhanced Staff Management Modals */}
-      <EnhancedAddStaffModal
-        isOpen={showEnhancedAddStaffModal}
-        onClose={() => setShowEnhancedAddStaffModal(false)}
+      {/* Wizard Staff Management Modal */}
+      <WizardStaffModal
+        isOpen={showWizardStaffModal}
+        onClose={() => setShowWizardStaffModal(false)}
         onStaffCreated={(staff, credentials) => {
           console.log('✅ Staff created with credentials:', staff.name)
           console.log('📧 Login credentials:', credentials.email)
@@ -1907,7 +1884,7 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-400 mb-3">
-                ${overduePayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
+                ${overduePayments.reduce((sum, p) => sum + (p.amount || 0), 0).toLocaleString()}
               </div>
               <div className="space-y-2">
                 {overduePayments.slice(0, 3).map((payment, index) => (
@@ -1917,7 +1894,7 @@ export default function BackOfficePage() {
                       <p className="text-red-300 text-xs">{payment.propertyName}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-red-400 font-semibold">${payment.amount.toLocaleString()}</p>
+                      <p className="text-red-400 font-semibold">${(payment.amount || 0).toLocaleString()}</p>
                       <p className="text-red-300 text-xs">
                         {payment.daysOverdue > 0 ? `${payment.daysOverdue} days overdue` : 'Due today'}
                       </p>
@@ -2309,8 +2286,24 @@ export default function BackOfficePage() {
     )
   }
 
-  // Enhanced Bookings Section
+  // Enhanced Bookings Section - Now using Integrated Bookings Tab
   function renderBookings() {
+    return (
+      <SimpleIntegratedBookingsTab
+        onBookingApproved={(bookingId: string) => {
+          console.log(`✅ Booking ${bookingId} approved in Back Office`)
+          loadAllBookingData()
+        }}
+        onStaffAssigned={(bookingId: string, staffIds: string[]) => {
+          console.log(`👥 Staff assigned to booking ${bookingId}:`, staffIds)
+          loadAllBookingData()
+        }}
+      />
+    )
+  }
+
+  // Legacy booking section (kept for reference)
+  function renderLegacyBookings() {
     const filteredBookings = getFilteredBookings()
     const pendingCount = filteredBookings.filter(b => b.status === 'pending').length
     const confirmedCount = filteredBookings.filter(b => b.status === 'confirmed').length
@@ -2361,7 +2354,7 @@ export default function BackOfficePage() {
                 <div>
                   <p className="text-purple-200 text-sm">Revenue</p>
                   <p className="text-2xl font-bold text-purple-400">
-                    ${filteredBookings.reduce((sum, b) => sum + b.amount, 0).toLocaleString()}
+                    ${filteredBookings.reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}
                   </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-purple-400" />
@@ -2645,10 +2638,10 @@ export default function BackOfficePage() {
 
                                 <div className="space-y-1">
                                   <p className="text-neutral-400">Financial Details</p>
-                                  <p className="text-white font-medium">${booking.amount.toLocaleString()}</p>
-                                  <p className="text-green-400">Paid: ${booking.paidAmount.toLocaleString()}</p>
-                                  {booking.paidAmount < booking.amount && (
-                                    <p className="text-red-400">Outstanding: ${(booking.amount - booking.paidAmount).toLocaleString()}</p>
+                                  <p className="text-white font-medium">${(booking.amount || 0).toLocaleString()}</p>
+                                  <p className="text-green-400">Paid: ${(booking.paidAmount || 0).toLocaleString()}</p>
+                                  {(booking.paidAmount || 0) < (booking.amount || 0) && (
+                                    <p className="text-red-400">Outstanding: ${((booking.amount || 0) - (booking.paidAmount || 0)).toLocaleString()}</p>
                                   )}
                                 </div>
 
@@ -2661,9 +2654,9 @@ export default function BackOfficePage() {
 
                                 <div className="space-y-1">
                                   <p className="text-neutral-400">Booking Info</p>
-                                  <p className="text-neutral-300">Created: {new Date(booking.createdAt).toLocaleDateString()}</p>
-                                  <p className="text-neutral-300">Modified: {new Date(booking.lastModified).toLocaleDateString()}</p>
-                                  <p className="text-neutral-400">By: {booking.modifiedBy}</p>
+                                  <p className="text-neutral-300">Created: {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'}</p>
+                                  <p className="text-neutral-300">Modified: {booking.lastModified ? new Date(booking.lastModified).toLocaleDateString() : 'N/A'}</p>
+                                  <p className="text-neutral-400">By: {booking.modifiedBy || 'Unknown'}</p>
                                 </div>
                               </div>
 
@@ -2754,7 +2747,7 @@ export default function BackOfficePage() {
                                             {history.action.charAt(0).toUpperCase() + history.action.slice(1)}
                                           </span>
                                           <span className="text-neutral-400">
-                                            {new Date(history.timestamp).toLocaleString()}
+                                            {history.timestamp ? new Date(history.timestamp).toLocaleString() : 'N/A'}
                                           </span>
                                         </div>
                                         <p className="text-neutral-300">By: {history.by}</p>
@@ -2777,7 +2770,7 @@ export default function BackOfficePage() {
                                         <div className="flex items-center justify-between">
                                           <span className="text-neutral-300">{note.by}</span>
                                           <span className="text-neutral-400">
-                                            {new Date(note.timestamp).toLocaleString()}
+                                            {note.timestamp ? new Date(note.timestamp).toLocaleString() : 'N/A'}
                                           </span>
                                         </div>
                                         <p className="text-white mt-1">{note.text}</p>
@@ -3057,12 +3050,12 @@ export default function BackOfficePage() {
                 </Button>
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleAddStaffWithAuth}
+                    onClick={handleAddStaffAccount}
                     className="bg-blue-600 hover:bg-blue-700"
                     disabled={loading}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Staff (Wizard)
+                    Create Staff Member
                   </Button>
                   <Button
                     onClick={handleAddStaff}
@@ -3223,7 +3216,7 @@ export default function BackOfficePage() {
                 <p className="text-neutral-400 mb-4">Get started by adding your first staff member.</p>
                 <Button onClick={handleAddStaff} className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Staff Member
+                  Create First Staff Member
                 </Button>
               </div>
             ) : (

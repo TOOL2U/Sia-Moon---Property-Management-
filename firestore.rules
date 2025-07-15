@@ -2,22 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read/write onboarding submissions
-    match /onboarding_submissions/{document} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Allow authenticated users to read/write their own user documents
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Allow authenticated users to read/write property documents
-    match /properties/{document} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // DEVELOPMENT RULES - For other collections, allow all (REMOVE BEFORE PRODUCTION)
+    // DEVELOPMENT RULES - REMOVE BEFORE PRODUCTION
     match /{document=**} {
       allow read, write: if true;
     }

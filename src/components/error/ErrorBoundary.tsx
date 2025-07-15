@@ -109,9 +109,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <div className="flex flex-col space-y-2">
                   <Button
                     onClick={this.handleRetry}
-                    variant="primary"
-                    fullWidth
-                    className="flex items-center justify-center"
+                    variant="default"
+                    className="flex items-center justify-center w-full"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Try Again
@@ -120,8 +119,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   <Button
                     onClick={this.handleGoHome}
                     variant="outline"
-                    fullWidth
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center w-full"
                   >
                     <Home className="h-4 w-4 mr-2" />
                     Go Home

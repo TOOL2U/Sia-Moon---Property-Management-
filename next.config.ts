@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: 'prd-lifullconnect-projects-admin-images.cloudinary.com',
         port: '',
         pathname: '/**',
       },
@@ -30,40 +30,30 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
+
+
   // Webpack configuration to handle chunk loading issues
   webpack: (config, { dev, isServer }) => {
-    // Exclude browser-only packages from server bundle
-    if (isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'lenis': false,
-        'recharts': false,
-        'framer-motion': false,
+    // Fix for chunk loading errors
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
       };
-
-      // Exclude problematic modules from server bundle
-      config.externals = config.externals || [];
-      config.externals.push({
-        'lenis': 'lenis',
-        'recharts': 'recharts',
-        'framer-motion': 'framer-motion',
-      });
     }
 
-    // Fix for chunk loading errors
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-      crypto: false,
-      stream: false,
-      http: false,
-      https: false,
-      zlib: false,
-      path: false,
-      os: false,
-    };
+    // Exclude problematic browser-only libraries from server bundle
+    if (isServer) {
+      config.externals = config.externals || [];
+      // Temporarily disable externals to test
+      // config.externals.push({
+      //   'lenis': 'lenis',
+      //   'framer-motion': 'framer-motion',
+      //   'recharts': 'recharts'
+      // });
+    }
 
     // Optimize chunk splitting
     if (!dev) {

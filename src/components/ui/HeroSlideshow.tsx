@@ -32,46 +32,22 @@ export default function HeroSlideshow({
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
 
-  // Auto-play functionality - simplified
+  // Auto-play functionality
   useEffect(() => {
-    console.log(`🎬 Auto-play useEffect triggered - slides: ${slides.length}, isPlaying: ${isPlaying}`)
-
-    if (!isPlaying || slides.length <= 1) {
-      console.log(`🎬 Auto-play disabled - isPlaying: ${isPlaying}, slides: ${slides.length}`)
-      return
-    }
-
-    console.log(`🎬 Starting auto-play timer with ${autoPlayInterval}ms interval`)
+    if (!isPlaying || slides.length <= 1) return
 
     const interval = setInterval(() => {
-      console.log(`🎬 Timer fired - advancing slide`)
-      setCurrentSlide((prev) => {
-        const nextSlide = (prev + 1) % slides.length
-        console.log(`🎬 Advancing from slide ${prev} to slide ${nextSlide}`)
-        return nextSlide
-      })
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
     }, autoPlayInterval)
 
-    return () => {
-      console.log(`🎬 Cleaning up auto-play timer`)
-      clearInterval(interval)
-    }
+    return () => clearInterval(interval)
   }, [slides.length, autoPlayInterval, isPlaying])
-
-  // Debug current slide changes
-  useEffect(() => {
-    console.log(`🎬 Current slide is now: ${currentSlide}`)
-  }, [currentSlide])
 
   // Pause on hover
   const handleMouseEnter = () => setIsPlaying(false)
   const handleMouseLeave = () => setIsPlaying(true)
 
   // Navigation functions
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index)
-  }
-
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length)
   }
@@ -191,26 +167,10 @@ export default function HeroSlideshow({
         </>
       )}
 
-      {/* Dot Indicators */}
-      {showDots && slides.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex space-x-3">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-1 h-1 rounded-full transition-all duration-300 backdrop-blur-sm ${
-                index === currentSlide
-                  ? 'bg-white shadow-lg scale-50'
-                  : 'bg-white/40 hover:bg-white/60'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
-      )}
+     
 
       {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-black/20 z-10">
+      <div className="absolute bottom-0 left-0 w-full h-0.1 bg-black/20 z-10">
         <motion.div
           className="h-full bg-white/60"
           initial={{ width: '0%' }}

@@ -306,7 +306,6 @@ export function Navbar() {
     { href: '/properties', label: 'Properties' },
     { href: '/reports', label: 'Reports' },
     { href: '/onboard', label: 'Onboarding Form' },
-    { href: '/onboard-wizard', label: 'Onboarding Wizard' },
     // Admin-only navigation
     ...(user.role === 'admin' ? [
       { href: '/admin', label: 'Admin' },
