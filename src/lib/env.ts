@@ -41,27 +41,16 @@ export const validateFirebaseConfig = () => {
 }
 
 // OpenAI configuration
-export const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 export const openaiConfig = {
-  apiKey: OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
   organization: process.env.OPENAI_ORGANIZATION,
 }
 
-// SMTP configuration
-export const SMTP_HOST = process.env.SMTP_HOST
-export const SMTP_PORT = process.env.SMTP_PORT
-export const SMTP_USER = process.env.SMTP_USER
-export const SMTP_PASS = process.env.SMTP_PASS
-
 // Cloudinary configuration
-export const NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY
-export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET
-
 export const cloudinaryConfig = {
-  cloudName: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  apiKey: CLOUDINARY_API_KEY,
-  apiSecret: CLOUDINARY_API_SECRET,
+  cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  apiKey: process.env.CLOUDINARY_API_KEY,
+  apiSecret: process.env.CLOUDINARY_API_SECRET,
 }
 
 // Application URLs

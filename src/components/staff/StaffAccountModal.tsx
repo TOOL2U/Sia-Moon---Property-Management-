@@ -55,25 +55,26 @@ interface StaffFormData {
   phone: string
   address: string
   role: string
-  
+  department: string
+
   // Authentication
   temporaryPassword: string
   mustChangePassword: boolean
-  
+
   // Assignment
   assignedProperties: string[]
   skills: string[]
-  
+
   // Emergency Contact
   emergencyContactName: string
   emergencyContactPhone: string
   emergencyContactRelationship: string
-  
+
   // Employment Details
   employmentType: string
   startDate: string
   salary: string
-  
+
   // Personal Details
   dateOfBirth: string
   nationalId: string
@@ -85,6 +86,7 @@ const initialFormData: StaffFormData = {
   phone: '',
   address: '',
   role: '',
+  department: '',
   temporaryPassword: '',
   mustChangePassword: true,
   assignedProperties: [],
@@ -100,13 +102,11 @@ const initialFormData: StaffFormData = {
 }
 
 const staffRoles = [
-  { value: 'housekeeper', label: 'Housekeeper' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'concierge', label: 'Concierge' },
+  { value: 'admin', label: 'Administrator' },
   { value: 'manager', label: 'Manager' },
-  { value: 'security', label: 'Security' },
-  { value: 'chef', label: 'Chef' },
-  { value: 'driver', label: 'Driver' }
+  { value: 'cleaner', label: 'Cleaner/Housekeeper' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'staff', label: 'General Staff' }
 ]
 
 const commonSkills = [
@@ -129,12 +129,27 @@ export default function StaffAccountModal({
     email: string
     password: string
   } | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [generalError, setGeneralError] = useState<string>('')
 
   const handleInputChange = (field: keyof StaffFormData, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
+
+    // Clear field-specific error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }))
+    }
+
+    // Clear general error when user starts making changes
+    if (generalError) {
+      setGeneralError('')
+    }
   }
 
   const generatePassword = () => {
@@ -149,8 +164,11 @@ export default function StaffAccountModal({
     toast.success(`${label} copied to clipboard`)
   }
 
-  const validateForm = (): string | null => {
+  const validateForm = (): boolean => {
     console.log('🔍 Validating form data:', formData)
+
+    const newErrors: Record<string, string> = {}
+    setGeneralError('')
 
     const requiredFields = [
       { field: 'name', label: 'Full Name', value: formData.name?.trim() },
@@ -161,30 +179,48 @@ export default function StaffAccountModal({
       { field: 'startDate', label: 'Start Date', value: formData.startDate }
     ]
 
+    // Check required fields
     for (const { field, label, value } of requiredFields) {
       if (!value) {
-        const errorMsg = `${label} is required`
-        console.log(`❌ Validation failed: ${errorMsg}`)
-        toast.error(errorMsg)
-        return errorMsg
+        newErrors[field] = `${label} is required`
+        console.log(`❌ Validation failed: ${label} is required`)
       }
     }
 
     // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      const errorMsg = 'Please enter a valid email address'
-      console.log(`❌ Validation failed: ${errorMsg}`)
-      toast.error(errorMsg)
-      return errorMsg
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address'
+        console.log(`❌ Validation failed: Invalid email format`)
+      }
     }
-    
+
     // Password validation
-    if (formData.temporaryPassword.length < 8) {
-      return 'Password must be at least 8 characters long'
+    if (formData.temporaryPassword && formData.temporaryPassword.length < 8) {
+      newErrors.temporaryPassword = 'Password must be at least 8 characters long'
+      console.log(`❌ Validation failed: Password too short`)
     }
-    
-    return null
+
+    // Phone validation
+    if (formData.phone && formData.phone.trim()) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+      if (!phoneRegex.test(formData.phone.replace(/[\s\-\(\)]/g, ''))) {
+        newErrors.phone = 'Please enter a valid phone number'
+        console.log(`❌ Validation failed: Invalid phone format`)
+      }
+    }
+
+    setErrors(newErrors)
+    const isValid = Object.keys(newErrors).length === 0
+
+    if (!isValid) {
+      console.log('❌ Form validation failed with errors:', newErrors)
+    } else {
+      console.log('✅ Form validation passed')
+    }
+
+    return isValid
   }
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -195,15 +231,15 @@ export default function StaffAccountModal({
     console.log('🔄 handleSubmit called')
     console.log('📋 Current form data:', formData)
 
-    const validationError = validateForm()
-    if (validationError) {
-      console.log('❌ Validation error:', validationError)
-      toast.error(validationError)
+    const isValid = validateForm()
+    if (!isValid) {
+      console.log('❌ Form validation failed')
       return
     }
 
     console.log('✅ Form validation passed')
     setLoading(true)
+    setGeneralError('')
     try {
       console.log('🏗️ Creating staff account...')
       console.log('📋 Form data:', formData)
@@ -211,28 +247,30 @@ export default function StaffAccountModal({
       const staffData: StaffAccountData = {
         name: formData.name,
         email: formData.email,
+        password: formData.temporaryPassword, // Use temporaryPassword as the main password
         phone: formData.phone,
         address: formData.address,
-        role: formData.role,
+        role: formData.role as 'admin' | 'manager' | 'cleaner' | 'maintenance' | 'staff',
+        department: formData.department || '',
         status: 'active',
         assignedProperties: formData.assignedProperties,
         skills: formData.skills,
-        temporaryPassword: formData.temporaryPassword,
+        temporaryPassword: formData.temporaryPassword, // Keep for backward compatibility
         mustChangePassword: formData.mustChangePassword,
-        
+
         emergencyContact: formData.emergencyContactName ? {
           name: formData.emergencyContactName,
           phone: formData.emergencyContactPhone,
           relationship: formData.emergencyContactRelationship
         } : undefined,
-        
+
         employment: {
           employmentType: formData.employmentType,
           startDate: formData.startDate,
           salary: formData.salary ? parseFloat(formData.salary) : undefined,
           benefits: []
         },
-        
+
         personalDetails: {
           dateOfBirth: formData.dateOfBirth || undefined,
           nationalId: formData.nationalId || undefined
@@ -262,7 +300,9 @@ export default function StaffAccountModal({
         console.log('✅ Staff account created:', result.staffAccount.name)
       } else {
         console.log('❌ Staff account creation failed:', result)
-        toast.error(result.error || result.message || 'Failed to create staff account')
+        const errorMessage = result.error || result.message || 'Failed to create staff account'
+        setGeneralError(errorMessage)
+        toast.error(errorMessage)
       }
 
     } catch (error: any) {
@@ -272,7 +312,9 @@ export default function StaffAccountModal({
         stack: error?.stack,
         code: error?.code
       })
-      toast.error(`Failed to create staff account: ${error?.message || 'Unknown error'}`)
+      const errorMessage = `Failed to create staff account: ${error?.message || 'Unknown error'}`
+      setGeneralError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -383,6 +425,16 @@ export default function StaffAccountModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* General Error Display */}
+          {generalError && (
+            <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0"></div>
+                <p className="text-red-400 text-sm">{generalError}</p>
+              </div>
+            </div>
+          )}
+
           {/* Basic Information */}
           <Card className="bg-neutral-800 border-neutral-700">
             <CardHeader>
@@ -399,9 +451,12 @@ export default function StaffAccountModal({
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter full name"
-                    className="bg-neutral-700 border-neutral-600 text-white"
+                    className={`bg-neutral-700 border-neutral-600 text-white ${errors.name ? 'border-red-500' : ''}`}
                     required
                   />
+                  {errors.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -410,7 +465,7 @@ export default function StaffAccountModal({
                     value={formData.role}
                     onValueChange={(value) => handleInputChange('role', value)}
                   >
-                    <SelectTrigger className="bg-neutral-700 border-neutral-600 text-white">
+                    <SelectTrigger className={`bg-neutral-700 border-neutral-600 text-white ${errors.role ? 'border-red-500' : ''}`}>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent className="bg-neutral-800 border-neutral-600">
@@ -421,6 +476,19 @@ export default function StaffAccountModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.role && (
+                    <p className="text-red-500 text-sm mt-1">{errors.role}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-white">Department</Label>
+                  <Input
+                    value={formData.department}
+                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    placeholder="Enter department (e.g., Management, Housekeeping)"
+                    className="bg-neutral-700 border-neutral-600 text-white"
+                  />
                 </div>
                 
                 <div>
@@ -429,8 +497,11 @@ export default function StaffAccountModal({
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="Enter phone number"
-                    className="bg-neutral-700 border-neutral-600 text-white"
+                    className={`bg-neutral-700 border-neutral-600 text-white ${errors.phone ? 'border-red-500' : ''}`}
                   />
+                  {errors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -439,8 +510,11 @@ export default function StaffAccountModal({
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    className="bg-neutral-700 border-neutral-600 text-white"
+                    className={`bg-neutral-700 border-neutral-600 text-white ${errors.startDate ? 'border-red-500' : ''}`}
                   />
+                  {errors.startDate && (
+                    <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
+                  )}
                 </div>
               </div>
               
@@ -473,11 +547,15 @@ export default function StaffAccountModal({
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="Enter email address for login"
-                  className="bg-neutral-700 border-neutral-600 text-white"
+                  className={`bg-neutral-700 border-neutral-600 text-white ${errors.email ? 'border-red-500' : ''}`}
                 />
-                <p className="text-neutral-400 text-sm mt-1">
-                  This email will be used to log into the mobile application
-                </p>
+                {errors.email ? (
+                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                ) : (
+                  <p className="text-neutral-400 text-sm mt-1">
+                    This email will be used to log into the mobile application
+                  </p>
+                )}
               </div>
               
               <div>
@@ -488,7 +566,7 @@ export default function StaffAccountModal({
                     value={formData.temporaryPassword}
                     onChange={(e) => handleInputChange('temporaryPassword', e.target.value)}
                     placeholder="Enter temporary password"
-                    className="bg-neutral-700 border-neutral-600 text-white"
+                    className={`bg-neutral-700 border-neutral-600 text-white ${errors.temporaryPassword ? 'border-red-500' : ''}`}
                   />
                   <Button
                     type="button"
@@ -509,14 +587,20 @@ export default function StaffAccountModal({
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
-                {passwordGenerated && (
-                  <p className="text-green-400 text-sm mt-1">
-                    ✓ Secure password generated
-                  </p>
+                {errors.temporaryPassword ? (
+                  <p className="text-red-500 text-sm mt-1">{errors.temporaryPassword}</p>
+                ) : (
+                  <>
+                    {passwordGenerated && (
+                      <p className="text-green-400 text-sm mt-1">
+                        ✓ Secure password generated
+                      </p>
+                    )}
+                    <p className="text-neutral-400 text-sm mt-1">
+                      Staff member will be required to change password on first login
+                    </p>
+                  </>
                 )}
-                <p className="text-neutral-400 text-sm mt-1">
-                  Staff member will be required to change password on first login
-                </p>
               </div>
             </CardContent>
           </Card>

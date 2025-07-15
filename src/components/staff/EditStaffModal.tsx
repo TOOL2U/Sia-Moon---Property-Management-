@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
-import StaffService from '@/lib/staffService'
 import { StaffProfile, UpdateStaffData, STAFF_ROLES, STAFF_STATUSES, COMMON_SKILLS, StaffFormErrors } from '@/types/staff'
 import toast from 'react-hot-toast'
 
@@ -121,23 +120,33 @@ export default function EditStaffModal({ isOpen, onClose, onSuccess, staff }: Ed
 
     setLoading(true)
     try {
-      const response = await StaffService.updateStaff(staff.id, {
-        ...formData,
-        name: formData.name?.trim(),
-        email: formData.email?.trim(),
-        phone: formData.phone?.trim() || undefined,
-        address: formData.address?.trim() || undefined
+      // Use the staff accounts API endpoint instead of StaffService
+      const response = await fetch(`/api/admin/staff-accounts/${staff.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          name: formData.name?.trim(),
+          email: formData.email?.trim(),
+          phone: formData.phone?.trim() || undefined,
+          address: formData.address?.trim() || undefined
+        })
       })
 
-      if (response.success) {
+      const data = await response.json()
+
+      if (data.success) {
         toast.success('Staff member updated successfully!')
         onSuccess()
         onClose()
       } else {
-        toast.error(response.error || 'Failed to update staff member')
-        setErrors({ general: response.error || 'Failed to update staff member' })
+        toast.error(data.error || 'Failed to update staff member')
+        setErrors({ general: data.error || 'Failed to update staff member' })
       }
     } catch (error) {
+      console.error('❌ Error updating staff member:', error)
       toast.error('An unexpected error occurred')
       setErrors({ general: 'An unexpected error occurred' })
     } finally {

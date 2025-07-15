@@ -1,37 +1,95 @@
-import { db } from '@/lib/firebase'
-import { collection, doc, setDoc, getDocs, query, orderBy, serverTimestamp, deleteDoc, updateDoc, getDoc } from 'firebase/firestore'
-import { FirebaseAuthService, CreateStaffUserData } from './firebaseAuthService'
+import { getDb } from '@/lib/firebase'
+import { collection, doc, setDoc, getDocs, query, orderBy, serverTimestamp, deleteDoc, updateDoc, getDoc, where } from 'firebase/firestore'
+import bcrypt from 'bcryptjs'
 
 /**
  * Staff Account Service
- * Manages staff accounts in the staff_accounts collection
+ * Manages staff accounts in the staff_accounts collection with bcrypt password hashing
  * This is separate from regular users and provides better organization
+ * Implements secure authentication system compatible with mobile app
  */
+
+/**
+ * Utility function to remove undefined values from objects recursively
+ * Firestore doesn't allow undefined values, so we need to clean the data
+ */
+function removeUndefinedValues(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefinedValues).filter(item => item !== undefined)
+  }
+
+  if (typeof obj === 'object') {
+    const cleaned: any = {}
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        const cleanedValue = removeUndefinedValues(value)
+        if (cleanedValue !== undefined) {
+          cleaned[key] = cleanedValue
+        }
+      }
+    }
+    return cleaned
+  }
+
+  return obj
+}
+
+// User roles and permissions
+export const USER_ROLES = {
+  ADMIN: 'admin',        // Full system access
+  MANAGER: 'manager',    // Property management access
+  CLEANER: 'cleaner',    // Housekeeping tasks
+  MAINTENANCE: 'maintenance', // Maintenance tasks
+  STAFF: 'staff'         // General staff access
+} as const
+
+// Role hierarchy for permission checking
+const ROLE_HIERARCHY = {
+  'admin': 5,
+  'manager': 4,
+  'maintenance': 3,
+  'cleaner': 2,
+  'staff': 1
+} as const
+
+/**
+ * Check if user has required permission level
+ */
+export const hasPermission = (userRole: string, requiredRole: string): boolean => {
+  return (ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] || 0) >=
+         (ROLE_HIERARCHY[requiredRole as keyof typeof ROLE_HIERARCHY] || 0)
+}
 
 export interface StaffAccountData {
   // Basic Information
   name: string
   email: string
+  password: string // Plain text password (will be hashed)
   phone: string
   address: string
-  role: string
-  status: 'active' | 'inactive' | 'suspended'
-  
-  // Authentication
+  role: 'admin' | 'manager' | 'cleaner' | 'maintenance' | 'staff'
+  department?: string
+
+  // Legacy Authentication fields
   temporaryPassword?: string
   mustChangePassword?: boolean
-  
+  status?: 'active' | 'inactive' | 'suspended'
+
   // Assignment
   assignedProperties?: string[]
   skills?: string[]
-  
+
   // Emergency Contact
   emergencyContact?: {
     name: string
     phone: string
     relationship: string
   }
-  
+
   // Employment Details
   employment?: {
     employmentType: string
@@ -39,7 +97,7 @@ export interface StaffAccountData {
     salary?: number
     benefits?: string[]
   }
-  
+
   // Personal Details
   personalDetails?: {
     dateOfBirth?: string
@@ -49,15 +107,22 @@ export interface StaffAccountData {
 
 export interface StaffAccount {
   id: string
-  firebaseUid: string
-  name: string
   email: string
+  passwordHash: string // bcrypt hash with 12 salt rounds
+  name: string
   phone: string
   address: string
-  role: string
-  status: 'active' | 'inactive' | 'suspended'
-  assignedProperties: string[]
-  skills: string[]
+  role: 'admin' | 'manager' | 'cleaner' | 'maintenance' | 'staff'
+  department?: string
+  isActive: boolean
+  createdAt: any
+  updatedAt: any
+  lastLogin?: any | null
+  // Legacy fields for backward compatibility
+  firebaseUid?: string
+  status?: 'active' | 'inactive' | 'suspended'
+  assignedProperties?: string[]
+  skills?: string[]
   emergencyContact?: {
     name: string
     phone: string
@@ -73,10 +138,7 @@ export interface StaffAccount {
     dateOfBirth?: string
     nationalId?: string
   }
-  hasCredentials: boolean
-  isActive: boolean
-  createdAt: any
-  updatedAt: any
+  hasCredentials?: boolean
   createdBy?: string
   lastModifiedBy?: string
 }
@@ -89,100 +151,105 @@ export interface StaffAccountCreationResult {
   userCredentials?: {
     email: string
     temporaryPassword: string
-    firebaseUid: string
+    firebaseUid?: string
   }
 }
 
 export class StaffAccountService {
-  private static db = db
-
   /**
-   * Create a new staff account with Firebase Auth
+   * Create a new staff account with bcrypt password hashing
    */
   static async createStaffAccount(staffData: StaffAccountData): Promise<StaffAccountCreationResult> {
     try {
       console.log('🏗️ Creating staff account:', staffData.name)
-      console.log('📋 Staff data:', staffData)
+      console.log('📋 Staff data (password hidden):', { ...staffData, password: '[HIDDEN]' })
 
-      // Generate temporary password if not provided
-      const temporaryPassword = staffData.temporaryPassword || 
-        FirebaseAuthService.generateTemporaryPassword(12)
-
-      // Prepare Firebase Auth user data
-      const authUserData: CreateStaffUserData = {
-        email: staffData.email,
-        password: temporaryPassword,
-        name: staffData.name,
-        role: 'staff',
-        staffProfile: {
-          name: staffData.name,
-          role: staffData.role,
-          phone: staffData.phone,
-          address: staffData.address,
-          assignedProperties: staffData.assignedProperties || [],
-          skills: staffData.skills || [],
-          status: staffData.status || 'active',
-          emergencyContact: staffData.emergencyContact,
-          employment: staffData.employment,
-          personalDetails: staffData.personalDetails
-        }
-      }
-
-      // Create Firebase Auth user
-      console.log('📞 Creating Firebase Auth user...')
-      const authResult = await FirebaseAuthService.createStaffUser(authUserData)
-      console.log('📋 Auth result:', authResult)
-
-      if (!authResult.success || !authResult.userId) {
+      // Validate required fields
+      if (!staffData.email || !staffData.password || !staffData.name) {
         return {
           success: false,
-          message: authResult.message || 'Failed to create Firebase Auth user',
-          error: authResult.error
+          message: 'Missing required fields: email, password, and name are required',
+          error: 'Missing required fields'
         }
       }
 
-      // Create staff account document
+      // Check if user already exists
+      console.log('🔍 Checking if user already exists with email:', staffData.email)
+      const firestore = getDb()
+      const existingUserQuery = query(
+        collection(firestore, 'staff_accounts'),
+        where('email', '==', staffData.email.toLowerCase().trim())
+      )
+      const existingUserSnapshot = await getDocs(existingUserQuery)
+
+      if (!existingUserSnapshot.empty) {
+        console.log('⚠️ User already exists in staff_accounts collection')
+        return {
+          success: false,
+          message: 'Staff account already exists',
+          error: 'A staff account with this email already exists'
+        }
+      }
+
+      // Hash the password with 12 salt rounds (as required)
+      console.log('🔐 Hashing password with bcrypt...')
+      const passwordHash = await bcrypt.hash(staffData.password, 12)
+      console.log('✅ Password hashed successfully')
+
+      // Create staff account document (filter out undefined values for Firestore)
       const staffAccount: Omit<StaffAccount, 'id'> = {
-        firebaseUid: authResult.userId,
+        email: staffData.email.toLowerCase().trim(),
+        passwordHash: passwordHash, // Store hashed password
         name: staffData.name,
-        email: staffData.email,
         phone: staffData.phone || '',
         address: staffData.address || '',
-        role: staffData.role,
-        status: staffData.status || 'active',
-        assignedProperties: staffData.assignedProperties || [],
-        skills: staffData.skills || [],
-        emergencyContact: staffData.emergencyContact,
-        employment: staffData.employment,
-        personalDetails: staffData.personalDetails,
-        hasCredentials: true,
+        role: staffData.role as 'admin' | 'manager' | 'cleaner' | 'maintenance' | 'staff',
+        department: staffData.department || '',
         isActive: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        lastLogin: null,
+
+        // Legacy fields for backward compatibility
+        assignedProperties: staffData.assignedProperties || [],
+        skills: staffData.skills || [],
         createdBy: 'admin', // TODO: Get from current user context
         lastModifiedBy: 'admin'
       }
 
+      // Only add optional fields if they are defined (Firestore doesn't allow undefined)
+      if (staffData.emergencyContact) {
+        staffAccount.emergencyContact = removeUndefinedValues(staffData.emergencyContact)
+      }
+      if (staffData.employment) {
+        staffAccount.employment = removeUndefinedValues(staffData.employment)
+      }
+      if (staffData.personalDetails) {
+        staffAccount.personalDetails = removeUndefinedValues(staffData.personalDetails)
+      }
+
+      // Clean the entire staff account object to remove any undefined values
+      const cleanedStaffAccount = removeUndefinedValues(staffAccount)
+
       // Save to staff_accounts collection
-      const staffAccountRef = doc(this.db, 'staff_accounts', authResult.userId)
-      await setDoc(staffAccountRef, staffAccount)
-      console.log('✅ Staff account created in staff_accounts collection')
+      const staffAccountRef = doc(collection(firestore, 'staff_accounts'))
+      await setDoc(staffAccountRef, cleanedStaffAccount)
+      console.log('✅ Staff account created in staff_accounts collection with ID:', staffAccountRef.id)
 
       const finalStaffAccount: StaffAccount = {
-        id: authResult.userId,
-        ...staffAccount,
+        id: staffAccountRef.id,
+        ...cleanedStaffAccount,
         createdAt: new Date(),
         updatedAt: new Date()
       }
 
       return {
         success: true,
-        message: 'Staff account created successfully',
+        message: 'Staff account created successfully with secure password hashing',
         staffAccount: finalStaffAccount,
         userCredentials: {
           email: staffData.email,
-          temporaryPassword: temporaryPassword,
-          firebaseUid: authResult.userId
+          temporaryPassword: '[HIDDEN FOR SECURITY]' // Never return plain text passwords
         }
       }
 
@@ -197,6 +264,72 @@ export class StaffAccountService {
   }
 
   /**
+   * Verify staff login credentials
+   */
+  static async verifyStaffLogin(email: string, password: string): Promise<{
+    success: boolean
+    error?: string
+    user?: Omit<StaffAccount, 'passwordHash'>
+  }> {
+    try {
+      console.log('🔐 Verifying staff login for email:', email)
+
+      const firestore = getDb()
+
+      // 1. Query staff_accounts collection
+      const q = query(
+        collection(firestore, 'staff_accounts'),
+        where('email', '==', email.toLowerCase().trim()),
+        where('isActive', '==', true)
+      )
+
+      const querySnapshot = await getDocs(q)
+
+      if (querySnapshot.empty) {
+        console.log('❌ No active staff account found with email:', email)
+        return { success: false, error: 'Invalid credentials' }
+      }
+
+      const userDoc = querySnapshot.docs[0]
+      const userData = userDoc.data() as StaffAccount
+
+      // 2. Verify password using bcrypt
+      console.log('🔐 Verifying password hash...')
+      const passwordMatch = await bcrypt.compare(password, userData.passwordHash)
+
+      if (!passwordMatch) {
+        console.log('❌ Password verification failed')
+        return { success: false, error: 'Invalid credentials' }
+      }
+
+      console.log('✅ Password verification successful')
+
+      // 3. Update last login timestamp
+      const lastLogin = new Date()
+      await updateDoc(doc(firestore, 'staff_accounts', userDoc.id), {
+        lastLogin: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      })
+
+      // 4. Return user data (excluding password hash)
+      const { passwordHash, ...userWithoutPassword } = {
+        ...userData,
+        id: userDoc.id,
+        lastLogin
+      }
+
+      return {
+        success: true,
+        user: userWithoutPassword as Omit<StaffAccount, 'passwordHash'>
+      }
+
+    } catch (error) {
+      console.error('❌ Authentication error:', error)
+      return { success: false, error: 'Authentication failed' }
+    }
+  }
+
+  /**
    * Get all staff accounts
    */
   static async getAllStaffAccounts(): Promise<{
@@ -207,20 +340,24 @@ export class StaffAccountService {
   }> {
     try {
       console.log('🔍 Getting all staff accounts...')
-      
-      const staffAccountsRef = collection(this.db, 'staff_accounts')
+
+      const firestore = getDb()
+      const staffAccountsRef = collection(firestore, 'staff_accounts')
       const q = query(staffAccountsRef, orderBy('createdAt', 'desc'))
       const querySnapshot = await getDocs(q)
 
       const staffAccounts: StaffAccount[] = []
       querySnapshot.forEach((doc) => {
         const data = doc.data()
-        staffAccounts.push({ 
-          id: doc.id, 
-          ...data,
+        const { passwordHash, ...staffData } = data // Exclude passwordHash from returned data
+
+        staffAccounts.push({
+          id: doc.id,
+          ...staffData,
           // Convert Firestore timestamps to proper format
           createdAt: data.createdAt?.toDate?.() || new Date(),
-          updatedAt: data.updatedAt?.toDate?.() || new Date()
+          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          lastLogin: data.lastLogin?.toDate?.() || null
         } as StaffAccount)
       })
 
@@ -252,8 +389,9 @@ export class StaffAccountService {
   }> {
     try {
       console.log(`🔍 Getting staff account ${staffId}...`)
-      
-      const staffAccountRef = doc(this.db, 'staff_accounts', staffId)
+
+      const firestore = getDb()
+      const staffAccountRef = doc(firestore, 'staff_accounts', staffId)
       const docSnapshot = await getDoc(staffAccountRef)
 
       if (!docSnapshot.exists()) {
@@ -296,22 +434,40 @@ export class StaffAccountService {
     success: boolean
     message: string
     error?: string
+    staffAccount?: StaffAccount
   }> {
     try {
       console.log(`🔍 Updating staff account ${staffId}...`)
-      
-      const staffAccountRef = doc(this.db, 'staff_accounts', staffId)
-      
-      const updateData = {
+
+      const firestore = getDb()
+      const staffAccountRef = doc(firestore, 'staff_accounts', staffId)
+
+      // Prepare update data
+      const updateData: any = {
         ...updates,
         updatedAt: serverTimestamp(),
         lastModifiedBy: 'admin' // TODO: Get from current user context
       }
 
-      await updateDoc(staffAccountRef, updateData)
-      
+      // If password is being updated, hash it with bcrypt
+      if (updates.password) {
+        console.log('🔐 Hashing new password with bcrypt...')
+        const passwordHash = await bcrypt.hash(updates.password, 12)
+        updateData.passwordHash = passwordHash
+
+        // Remove the plain text password from update data
+        delete updateData.password
+
+        console.log('✅ Password hashed successfully')
+      }
+
+      // Clean undefined values before saving to Firestore
+      const cleanedUpdateData = removeUndefinedValues(updateData)
+
+      await updateDoc(staffAccountRef, cleanedUpdateData)
+
       console.log(`✅ Updated staff account ${staffId}`)
-      
+
       return {
         success: true,
         message: 'Staff account updated successfully'
@@ -339,8 +495,9 @@ export class StaffAccountService {
       
       // TODO: Also delete the Firebase Auth user
       // This would require Firebase Admin SDK
-      
-      const staffAccountRef = doc(this.db, 'staff_accounts', staffId)
+
+      const firestore = getDb()
+      const staffAccountRef = doc(firestore, 'staff_accounts', staffId)
       await deleteDoc(staffAccountRef)
       
       console.log(`✅ Deleted staff account ${staffId}`)

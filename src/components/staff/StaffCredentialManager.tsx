@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog'
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -28,7 +28,6 @@ import {
   Send
 } from 'lucide-react'
 import { FirebaseAuthService } from '@/lib/services/firebaseAuthService'
-import { EnhancedStaffService } from '@/lib/services/enhancedStaffService'
 
 interface StaffCredentialManagerProps {
   isOpen: boolean
@@ -116,7 +115,7 @@ export default function StaffCredentialManager({
       console.log('🔐 Updating staff credentials...')
 
       const updates: any = {}
-      
+
       if (formData.newEmail !== staffMember.email) {
         updates.email = formData.newEmail
       }
@@ -130,7 +129,16 @@ export default function StaffCredentialManager({
         return
       }
 
-      const result = await FirebaseAuthService.updateStaffCredentials(staffMember.id, updates)
+      // Use the staff accounts API endpoint instead of FirebaseAuthService
+      const response = await fetch(`/api/admin/staff-accounts/${staffMember.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+      })
+
+      const result = await response.json()
 
       if (result.success) {
         toast.success('Credentials updated successfully')
@@ -170,7 +178,9 @@ export default function StaffCredentialManager({
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+
     switch (status.toLowerCase()) {
       case 'active': return 'bg-green-500/20 text-green-400 border-green-500/30'
       case 'inactive': return 'bg-red-500/20 text-red-400 border-red-500/30'
@@ -179,7 +189,9 @@ export default function StaffCredentialManager({
     }
   }
 
-  const getRoleColor = (role: string) => {
+  const getRoleColor = (role: string | undefined) => {
+    if (!role) return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+
     switch (role.toLowerCase()) {
       case 'manager': return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
       case 'housekeeper': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
@@ -210,10 +222,10 @@ export default function StaffCredentialManager({
                 </div>
                 <div className="flex gap-2">
                   <Badge className={getRoleColor(staffMember.role)}>
-                    {staffMember.role}
+                    {staffMember.role || 'No Role'}
                   </Badge>
                   <Badge className={getStatusColor(staffMember.status)}>
-                    {staffMember.status}
+                    {staffMember.status || 'No Status'}
                   </Badge>
                 </div>
               </div>

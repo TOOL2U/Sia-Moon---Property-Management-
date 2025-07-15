@@ -199,15 +199,104 @@ export class FirebaseAuthService {
    */
   static async checkEmailExists(email: string): Promise<boolean> {
     try {
-      // Query users collection to check if email exists
+      // Check users collection
       const usersRef = collection(this.db, 'users')
-      const q = query(usersRef, where('email', '==', email))
-      const querySnapshot = await getDocs(q)
-      
-      return !querySnapshot.empty
-    } catch (error) {
-      console.error('Error checking email existence:', error)
+      const usersQuery = query(usersRef, where('email', '==', email))
+      const usersSnapshot = await getDocs(usersQuery)
+
+      if (!usersSnapshot.empty) {
+        console.log('📧 Email already exists in users collection')
+        return true
+      }
+
+      // Check staff collection
+      const staffRef = collection(this.db, 'staff')
+      const staffQuery = query(staffRef, where('email', '==', email))
+      const staffSnapshot = await getDocs(staffQuery)
+
+      if (!staffSnapshot.empty) {
+        console.log('📧 Email already exists in staff collection')
+        return true
+      }
+
+      // Check staff_accounts collection
+      const staffAccountsRef = collection(this.db, 'staff_accounts')
+      const staffAccountsQuery = query(staffAccountsRef, where('email', '==', email))
+      const staffAccountsSnapshot = await getDocs(staffAccountsQuery)
+
+      if (!staffAccountsSnapshot.empty) {
+        console.log('📧 Email already exists in staff_accounts collection')
+        return true
+      }
+
       return false
+    } catch (error) {
+      console.error('❌ Error checking email existence:', error)
+      // If there's an error, assume the email exists to be safe
+      return true
+    }
+  }
+
+  /**
+   * Get existing user by email
+   * Returns the user ID if found, null otherwise
+   */
+  static async getUserByEmail(email: string): Promise<{
+    userId: string | null
+    userDoc: any | null
+    collection: string | null
+  }> {
+    try {
+      // Check users collection
+      const usersRef = collection(this.db, 'users')
+      const usersQuery = query(usersRef, where('email', '==', email))
+      const usersSnapshot = await getDocs(usersQuery)
+
+      if (!usersSnapshot.empty) {
+        const userDoc = usersSnapshot.docs[0]
+        console.log('📧 Found user in users collection:', userDoc.id)
+        return {
+          userId: userDoc.id,
+          userDoc: userDoc.data(),
+          collection: 'users'
+        }
+      }
+
+      // Check staff collection
+      const staffRef = collection(this.db, 'staff')
+      const staffQuery = query(staffRef, where('email', '==', email))
+      const staffSnapshot = await getDocs(staffQuery)
+
+      if (!staffSnapshot.empty) {
+        const staffDoc = staffSnapshot.docs[0]
+        console.log('📧 Found user in staff collection:', staffDoc.id)
+        return {
+          userId: staffDoc.id,
+          userDoc: staffDoc.data(),
+          collection: 'staff'
+        }
+      }
+
+      // Check staff_accounts collection
+      const staffAccountsRef = collection(this.db, 'staff_accounts')
+      const staffAccountsQuery = query(staffAccountsRef, where('email', '==', email))
+      const staffAccountsSnapshot = await getDocs(staffAccountsQuery)
+
+      if (!staffAccountsSnapshot.empty) {
+        const staffAccountDoc = staffAccountsSnapshot.docs[0]
+        console.log('📧 Found user in staff_accounts collection:', staffAccountDoc.id)
+        return {
+          userId: staffAccountDoc.id,
+          userDoc: staffAccountDoc.data(),
+          collection: 'staff_accounts'
+        }
+      }
+
+      console.log('📧 User not found with email:', email)
+      return { userId: null, userDoc: null, collection: null }
+    } catch (error) {
+      console.error('❌ Error getting user by email:', error)
+      return { userId: null, userDoc: null, collection: null }
     }
   }
 

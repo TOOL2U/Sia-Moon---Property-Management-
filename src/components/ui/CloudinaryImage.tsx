@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { cn } from '@/utils/cn'
 
@@ -43,20 +44,36 @@ function CloudinaryImage({
   blurDataURL,
   ...props
 }: CloudinaryImageProps & Omit<React.ComponentProps<typeof Image>, 'src' | 'alt'>) {
-  
-  // Use environment variable with fallback
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'doez7m1hy'
+  const [isClient, setIsClient] = useState(false)
 
-  // Early return if no publicId
-  if (!publicId) {
+  // Access environment variable directly
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+
+  useEffect(() => {
+    setIsClient(true)
+    console.log('CloudinaryImage: Environment check', {
+      cloudName,
+      isClient,
+      publicId,
+      allEnvKeys: Object.keys(process.env).filter(key => key.includes('CLOUDINARY')),
+      processEnvCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    })
+  }, [cloudName, isClient, publicId])
+
+  // Show loading placeholder during SSR and initial client render
+  if (!isClient) {
     return (
       <div className={cn('bg-neutral-800 flex items-center justify-center text-neutral-400 text-sm', className)}>
-        <span>No image ID provided</span>
+        <span>Loading image...</span>
       </div>
     )
   }
 
   if (!cloudName) {
+    console.warn('CloudinaryImage: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not configured', {
+      cloudName,
+      envKeys: Object.keys(process.env).filter(key => key.includes('CLOUDINARY'))
+    })
     return (
       <div className={cn('bg-neutral-800 flex items-center justify-center text-neutral-400 text-sm', className)}>
         <span>Image configuration missing</span>
@@ -73,7 +90,7 @@ function CloudinaryImage({
   if (quality) transformations.push(`q_${quality}`)
   if (format) transformations.push(`f_${format}`)
   if (opacity) transformations.push(`o_${opacity}`)
-
+  
   const transformationString = transformations.length > 0 ? `${transformations.join(',')}/` : ''
   const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/${transformationString}${publicId}`
 

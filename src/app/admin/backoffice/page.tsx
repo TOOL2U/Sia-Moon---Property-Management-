@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
-import StaffService from '@/lib/staffService'
+
 import { StaffProfile, StaffFilters, StaffStats, STAFF_ROLES, STAFF_STATUSES } from '@/types/staff'
 import { FinancialDashboard, RevenueAnalytics, FinancialKPIs, FinancialFilters } from '@/types/financial'
 import AddStaffModal from '@/components/staff/AddStaffModal'
@@ -690,33 +690,66 @@ export default function BackOfficePage() {
         console.log('✅ Staff accounts API data loaded:', data.data.length, 'staff accounts')
       } else {
         console.error('❌ Failed to load staff accounts:', data.error)
+        console.error('❌ API Response:', data)
         toast.error('Failed to load staff accounts')
 
-        // Fallback to localStorage-based service if API fails
-        console.log('🔄 Falling back to localStorage staff data...')
-        const fallbackResponse = await StaffService.getAllStaff(staffFilters)
-        if (fallbackResponse.success) {
-          setStaffList(fallbackResponse.data)
-          setStaffStats(fallbackResponse.stats)
-          console.log('✅ Fallback staff data loaded:', fallbackResponse.data.length, 'staff members')
-        }
+        // Set empty data instead of falling back to localStorage
+        setStaffList([])
+        setStaffStats({
+          total: 0,
+          active: 0,
+          inactive: 0,
+          onLeave: 0,
+          byRole: {},
+          totalTasks: 0,
+          completedTasks: 0,
+          pendingTasks: 0,
+          inProgressTasks: 0,
+          overdueeTasks: 0,
+          todayTasks: 0,
+          upcomingTasks: 0,
+          averageCompletionTime: 0,
+          completionRate: 0,
+          averageRating: 0,
+          performanceMetrics: {
+            topPerformers: [],
+            lowPerformers: [],
+            recentHires: [],
+            staffUtilization: 0,
+            averageTasksPerStaff: 0
+          }
+        })
       }
     } catch (error) {
       console.error('❌ Error loading staff accounts:', error)
       toast.error('Error loading staff accounts')
 
-      // Fallback to localStorage-based service on error
-      try {
-        console.log('🔄 Falling back to localStorage staff data...')
-        const fallbackResponse = await StaffService.getAllStaff(staffFilters)
-        if (fallbackResponse.success) {
-          setStaffList(fallbackResponse.data)
-          setStaffStats(fallbackResponse.stats)
-          console.log('✅ Fallback staff data loaded:', fallbackResponse.data.length, 'staff members')
+      // Set empty data on error
+      setStaffList([])
+      setStaffStats({
+        total: 0,
+        active: 0,
+        inactive: 0,
+        onLeave: 0,
+        byRole: {},
+        totalTasks: 0,
+        completedTasks: 0,
+        pendingTasks: 0,
+        inProgressTasks: 0,
+        overdueeTasks: 0,
+        todayTasks: 0,
+        upcomingTasks: 0,
+        averageCompletionTime: 0,
+        completionRate: 0,
+        averageRating: 0,
+        performanceMetrics: {
+          topPerformers: [],
+          lowPerformers: [],
+          recentHires: [],
+          staffUtilization: 0,
+          averageTasksPerStaff: 0
         }
-      } catch (fallbackError) {
-        console.error('❌ Fallback also failed:', fallbackError)
-      }
+      })
     } finally {
       setStaffLoading(false)
     }
@@ -760,15 +793,21 @@ export default function BackOfficePage() {
 
     try {
       setLoading(true)
-      const response = await StaffService.deleteStaff(staffToDelete.id)
 
-      if (response.success) {
+      // Delete staff account via API
+      const response = await fetch(`/api/admin/staff-accounts/${staffToDelete.id}`, {
+        method: 'DELETE'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
         toast.success('Staff member deleted successfully')
         loadStaffData() // Reload staff list
         setShowDeleteConfirm(false)
         setStaffToDelete(null)
       } else {
-        toast.error(response.error || 'Failed to delete staff member')
+        toast.error(data.error || 'Failed to delete staff member')
       }
     } catch (error) {
       console.error('❌ Error deleting staff:', error)

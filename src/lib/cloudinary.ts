@@ -79,7 +79,7 @@ export const getCloudinaryUrl = (
 
   const transformationString = transformations.join(',')
   
-  return `https://res.cloudinary.com/${NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${transformationString}/${publicId}`
+  return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${transformationString}/${publicId}`
 }
 
 // Predefined image sizes for responsive images

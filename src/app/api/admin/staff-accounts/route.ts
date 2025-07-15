@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     
     if (response.success && response.staffAccounts) {
       console.log(`✅ ADMIN API: Found ${response.staffAccounts.length} staff accounts`)
-      
+
       // Convert staff accounts to the format expected by the Back Office
       const staffProfiles = response.staffAccounts.map(account => ({
         id: account.id,
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString()
       })
     }
-    
+
   } catch (error) {
     console.error('❌ ADMIN API: Error getting staff accounts:', error)
     return NextResponse.json({
@@ -158,5 +158,50 @@ export async function GET(request: NextRequest) {
       },
       timestamp: new Date().toISOString()
     }, { status: 500 })
+  }
+}
+
+/**
+ * POST /api/admin/staff-accounts
+ * Create a new staff account with bcrypt password hashing
+ */
+export async function POST(request: NextRequest) {
+  try {
+    console.log('📝 ADMIN API: Creating new staff account...')
+
+    const body = await request.json()
+
+    // Create staff account using the service
+    const result = await StaffAccountService.createStaffAccount(body)
+
+    if (result.success) {
+      console.log('✅ ADMIN API: Staff account created successfully')
+
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        data: result.staffAccount,
+        credentials: result.userCredentials,
+        timestamp: new Date().toISOString()
+      })
+    } else {
+      console.log('❌ ADMIN API: Failed to create staff account:', result.error)
+
+      return NextResponse.json({
+        success: false,
+        message: result.message || 'Failed to create staff account',
+        error: result.error,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+  } catch (error) {
+    console.error('❌ ADMIN API: Error creating staff account:', error)
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to create staff account',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    })
   }
 }
