@@ -149,8 +149,7 @@ export default function StaffLocationTracker({ onStaffSelect }: StaffLocationTra
     try {
       setIsLoading(true)
       
-      // TODO: Replace with real Firebase query to get staff location data
-      // For now, load from staff_accounts collection and generate location data
+      // Load real staff accounts and their location data
       const response = await fetch('/api/admin/staff-accounts')
       if (!response.ok) {
         throw new Error('Failed to fetch staff accounts')
@@ -159,44 +158,33 @@ export default function StaffLocationTracker({ onStaffSelect }: StaffLocationTra
       const { staffAccounts } = await response.json()
 
       // Transform staff accounts to location format
+      // Note: Location tracking is not yet implemented - showing staff without location data
       const locationData: StaffLocation[] = staffAccounts
         .filter((staff: any) => staff.status === 'active')
         .map((staff: any) => ({
           staffId: staff.id,
           staffName: staff.name,
           currentLocation: {
-            latitude: -8.6705 + (Math.random() - 0.5) * 0.1, // TODO: Track actual location
-            longitude: 115.2126 + (Math.random() - 0.5) * 0.1, // TODO: Track actual location
-            accuracy: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low',
-            timestamp: new Date(Date.now() - Math.random() * 60 * 60000), // TODO: Track actual timestamp
-            address: 'Location tracking not implemented', // TODO: Reverse geocode actual address
-            isInsideGeofence: Math.random() > 0.3 // TODO: Calculate actual geofence status
+            latitude: 0, // Location tracking not implemented yet
+            longitude: 0, // Location tracking not implemented yet
+            accuracy: 'low' as 'low',
+            timestamp: new Date(),
+            address: 'Location tracking not available',
+            isInsideGeofence: false
           },
-          lastUpdated: new Date(Date.now() - Math.random() * 60 * 60000),
-          status: ['available', 'on_job', 'traveling', 'break'][Math.floor(Math.random() * 4)] as any, // TODO: Track actual status
-          currentJobId: Math.random() > 0.5 ? `job-${Math.floor(Math.random() * 100)}` : undefined, // TODO: Track actual job
-          batteryLevel: Math.floor(Math.random() * 100), // TODO: Track actual battery level
-          isOnline: Math.random() > 0.2 // TODO: Track actual online status
+          lastUpdated: new Date(),
+          status: 'available' as any, // Default status until real tracking is implemented
+          currentJobId: undefined, // TODO: Link to actual current job
+          batteryLevel: 0, // Battery tracking not implemented yet
+          isOnline: true // Assume online if in staff_accounts
         }))
 
       setStaffLocations(locationData)
       setLastUpdate(new Date())
       
-      // TODO: Load real geofence alerts from Firebase
-      // For now, generate sample alerts based on location data
-      const alertData: GeofenceAlert[] = locationData
-        .filter(() => Math.random() > 0.8) // Only some staff have alerts
-        .map((staff, index) => ({
-          id: `alert-${index}`,
-          staffId: staff.staffId,
-          staffName: staff.staffName,
-          geofenceId: `geo-${index}`,
-          propertyName: 'Property Name TBD', // TODO: Get actual property name
-          type: Math.random() > 0.5 ? 'exit' : 'entry' as 'exit' | 'entry',
-          timestamp: new Date(Date.now() - Math.random() * 60 * 60000),
-          location: staff.currentLocation,
-          acknowledged: false
-        }))
+      // TODO: Load real geofence alerts from Firebase when location tracking is implemented
+      // For now, no alerts since location tracking is not active
+      const alertData: GeofenceAlert[] = []
 
       setGeofenceAlerts(alertData)
       

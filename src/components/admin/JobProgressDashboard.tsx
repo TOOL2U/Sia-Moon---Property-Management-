@@ -44,7 +44,7 @@ import {
 } from 'lucide-react'
 import JobAssignmentService, { JobData, JobStatus } from '@/services/JobAssignmentService'
 import { JobStatusTracker } from './JobStatusTracker'
-import TestJobService from '@/services/TestJobService'
+// TestJobService removed - was using mock data
 import { toDate, formatDuration, getDifferenceInMinutes, isToday } from '@/utils/dateUtils'
 
 interface JobProgressDashboardProps {
@@ -303,15 +303,9 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
       setSendingTestJob(true)
       console.log('🧪 Sending test job to mobile app...')
 
-      const result = await TestJobService.createTestJob()
-
-      if (result.success) {
-        toast.success(`✅ Test job assigned to staff\nJob ID: ${result.jobId} sent to mobile app`)
-        console.log('✅ Test job sent successfully:', result.jobId)
-      } else {
-        toast.error(`❌ Failed to send test job\n${result.error || 'Unknown error occurred'}`)
-        console.error('❌ Test job failed:', result.error)
-      }
+      // TestJobService removed - was using mock data
+      toast.success('Test job functionality removed - was using mock data')
+      console.log('🧪 Test job functionality removed - was using mock data')
 
     } catch (error) {
       console.error('❌ Error sending test job:', error)

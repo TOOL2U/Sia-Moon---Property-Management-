@@ -156,28 +156,10 @@ export default function StaffMonitoringDashboard({
   }
 
   const loadMessages = async (staffId: string) => {
-    // TODO: Load real messages from Firebase
-    // For now, generate sample messages
-    const sampleMessages: StaffMessage[] = [
-      {
-        id: 'msg-1',
-        fromStaffId: 'admin',
-        toStaffId: staffId,
-        message: 'Please prioritize the bathroom cleaning',
-        timestamp: new Date(Date.now() - 2 * 60 * 60000),
-        type: 'job_related',
-        isRead: true
-      },
-      {
-        id: 'msg-2', 
-        fromStaffId: staffId,
-        message: 'Task completed successfully',
-        timestamp: new Date(Date.now() - 30 * 60000),
-        type: 'status_update',
-        isRead: false
-      }
-    ]
-    setMessages(sampleMessages)
+    // TODO: Load real messages from Firebase when messaging system is implemented
+    // For now, no messages since messaging system is not yet implemented
+    const realMessages: StaffMessage[] = []
+    setMessages(realMessages)
   }
 
   const handleSendMessage = async () => {

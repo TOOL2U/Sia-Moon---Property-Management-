@@ -37,7 +37,7 @@ import {
   Home
 } from 'lucide-react'
 import JobAssignmentService, { JobData, JobStatus, JobType, JobPriority } from '@/services/JobAssignmentService'
-import TestJobService from '@/services/TestJobService'
+// TestJobService removed - was using mock data
 
 interface JobManagementDashboardProps {
   className?: string
@@ -300,19 +300,9 @@ export function JobManagementDashboard({ className }: JobManagementDashboardProp
       setSendingTestJob(true)
       console.log('🧪 Sending test job to mobile app...')
 
-      const result = await TestJobService.createTestJob()
-
-      if (result.success) {
-        toast.success('✅ Test job assigned to staff', {
-          description: `Job ID: ${result.jobId} sent to mobile app`
-        })
-        console.log('✅ Test job sent successfully:', result.jobId)
-      } else {
-        toast.error('❌ Failed to send test job', {
-          description: result.error || 'Unknown error occurred'
-        })
-        console.error('❌ Test job failed:', result.error)
-      }
+      // TestJobService removed - was using mock data
+      toast.success('Test job functionality removed - was using mock data')
+      console.log('🧪 Test job functionality removed - was using mock data')
 
     } catch (error) {
       console.error('❌ Error sending test job:', error)
@@ -330,19 +320,9 @@ export function JobManagementDashboard({ className }: JobManagementDashboardProp
       setSendingTestJob(true)
       console.log('🧪 Sending test job suite to mobile app...')
 
-      const result = await TestJobService.createTestJobSuite()
-
-      if (result.success) {
-        toast.success(`✅ Test job suite created`, {
-          description: `${result.jobs.length} test jobs sent to mobile app`
-        })
-        console.log('✅ Test job suite sent successfully:', result.jobs)
-      } else {
-        toast.error('❌ Failed to send test job suite', {
-          description: `${result.errors.length} errors occurred`
-        })
-        console.error('❌ Test job suite failed:', result.errors)
-      }
+      // TestJobService removed - was using mock data
+      toast.success('Test job suite functionality removed - was using mock data')
+      console.log('🧪 Test job suite functionality removed - was using mock data')
 
     } catch (error) {
       console.error('❌ Error sending test job suite:', error)

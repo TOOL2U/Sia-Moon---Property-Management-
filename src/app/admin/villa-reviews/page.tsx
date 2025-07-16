@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DatabaseService } from '@/lib/dbService'
-import { VillaOnboarding } from '@/lib/db'
+import { OnboardingService, OnboardingSubmission } from '@/lib/services/onboardingService'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -22,9 +21,9 @@ import {
 import toast from 'react-hot-toast'
 
 export default function VillaReviewsAdmin() {
-  const [submissions, setSubmissions] = useState<VillaOnboarding[]>([])
+  const [submissions, setSubmissions] = useState<OnboardingSubmission[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedSubmission, setSelectedSubmission] = useState<VillaOnboarding | null>(null)
+  const [selectedSubmission, setSelectedSubmission] = useState<OnboardingSubmission | null>(null)
   const [filter, setFilter] = useState<'all' | 'pending' | 'under_review' | 'approved' | 'rejected'>('all')
 
   useEffect(() => {
@@ -33,17 +32,11 @@ export default function VillaReviewsAdmin() {
 
   const fetchSubmissions = async () => {
     try {
-      const { data, error } = await DatabaseService.getAllVillaOnboardings()
+      const allSubmissions = await OnboardingService.getAllSubmissions()
 
-      if (error) {
-        console.error('Error fetching submissions:', error)
-        toast.error('Failed to load villa submissions')
-        return
-      }
-
-      let filteredData = data || []
+      let filteredData = allSubmissions
       if (filter !== 'all') {
-        filteredData = filteredData.filter(submission => submission.status === filter)
+        filteredData = allSubmissions.filter(submission => submission.status === filter)
       }
 
       setSubmissions(filteredData)
@@ -57,16 +50,10 @@ export default function VillaReviewsAdmin() {
 
   const updateSubmissionStatus = async (id: string, status: string) => {
     try {
-      const { error } = await DatabaseService.updateVillaOnboarding(id, { 
-        status: status as 'pending' | 'under_review' | 'approved' | 'rejected',
-        updated_at: new Date().toISOString()
-      })
-
-      if (error) {
-        console.error('Error updating status:', error)
-        toast.error('Failed to update submission status')
-        return
-      }
+      await OnboardingService.updateSubmissionStatus(
+        id,
+        status as 'pending' | 'reviewed' | 'approved' | 'rejected'
+      )
 
       toast.success(`Villa submission ${status} successfully`)
       fetchSubmissions()
@@ -148,10 +135,10 @@ export default function VillaReviewsAdmin() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg">{submission.property_name}</CardTitle>
+                    <CardTitle className="text-lg">{submission.propertyName}</CardTitle>
                     <CardDescription className="flex items-center mt-1">
                       <User className="h-4 w-4 mr-1" />
-                      {submission.owner_full_name}
+                      {submission.ownerFullName}
                     </CardDescription>
                   </div>
                   {getStatusBadge(submission.status)}
@@ -162,23 +149,23 @@ export default function VillaReviewsAdmin() {
                 <div className="space-y-3">
                   <div className="flex items-center text-sm text-gray-600">
                     <MapPin className="h-4 w-4 mr-2" />
-                    <span className="truncate">{submission.property_address}</span>
+                    <span className="truncate">{submission.propertyAddress}</span>
                   </div>
-                  
+
                   <div className="flex items-center text-sm text-gray-600">
                     <Building className="h-4 w-4 mr-2" />
                     <span>{submission.bedrooms} bed • {submission.bathrooms} bath</span>
                   </div>
-                  
+
                   <div className="flex items-center text-sm text-gray-600">
                     <Clock className="h-4 w-4 mr-2" />
-                    <span>{formatDate(submission.created_at)}</span>
+                    <span>{formatDate(submission.createdAt.toDate())}</span>
                   </div>
 
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {submission.has_pool && <Badge variant="secondary">Pool</Badge>}
-                    {submission.has_garden && <Badge variant="secondary">Garden</Badge>}
-                    {submission.has_air_conditioning && <Badge variant="secondary">A/C</Badge>}
+                    {submission.hasPool && <Badge variant="secondary">Pool</Badge>}
+                    {submission.hasGarden && <Badge variant="secondary">Garden</Badge>}
+                    {submission.hasAirConditioning && <Badge variant="secondary">A/C</Badge>}
                   </div>
 
                   <div className="flex gap-2 mt-4">

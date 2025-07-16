@@ -148,71 +148,62 @@ export function JobCalendarView({ className }: JobCalendarViewProps) {
   const calendarRef = useRef<HTMLDivElement>(null)
   const dragPreviewRef = useRef<HTMLDivElement>(null)
 
+  // Helper function to calculate end time
+  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+    const [hours, minutes] = startTime.split(':').map(Number)
+    const startDate = new Date()
+    startDate.setHours(hours, minutes, 0, 0)
+    startDate.setMinutes(startDate.getMinutes() + durationMinutes)
+    return `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`
+  }
+
   // Load calendar data
   const loadCalendarData = useCallback(async () => {
     try {
       setLoading(true)
       console.log('📅 Loading calendar data...')
 
-      // TODO: Implement actual data loading
-      // This would fetch jobs and staff data for the current date range
-      
-      // Mock data for now
-      const mockStaffColumns: StaffColumn[] = [
-        {
-          staffId: 'staff_1',
-          staffName: 'Maria Santos',
-          staffAvatar: '/avatars/maria.jpg',
-          isAvailable: true,
-          workingHours: { start: '08:00', end: '17:00' },
-          currentJobs: [],
-          capacity: { current: 3, maximum: 5, utilization: 0.6 }
-        },
-        {
-          staffId: 'staff_2',
-          staffName: 'John Chen',
-          staffAvatar: '/avatars/john.jpg',
-          isAvailable: true,
-          workingHours: { start: '09:00', end: '18:00' },
-          currentJobs: [],
-          capacity: { current: 2, maximum: 4, utilization: 0.5 }
-        },
-        {
-          staffId: 'staff_3',
-          staffName: 'Sarah Wilson',
-          staffAvatar: '/avatars/sarah.jpg',
-          isAvailable: false,
-          workingHours: { start: '07:00', end: '16:00' },
-          currentJobs: [],
-          capacity: { current: 0, maximum: 6, utilization: 0 }
+      // Load real staff data from API
+      const staffResponse = await fetch('/api/admin/staff-accounts')
+      const staffData = await staffResponse.json()
+
+      const realStaffColumns: StaffColumn[] = staffData.success ? staffData.data.map((staff: any) => ({
+        staffId: staff.id,
+        staffName: staff.name || 'Unknown Staff',
+        staffAvatar: staff.avatar || '/avatars/default.jpg',
+        isAvailable: staff.status === 'active',
+        workingHours: { start: '08:00', end: '17:00' }, // TODO: Get from staff profile
+        currentJobs: [],
+        capacity: { current: 0, maximum: 5, utilization: 0 } // TODO: Calculate from real jobs
+      })) : []
+
+      // Load real jobs data from API
+      const jobsResponse = await fetch('/api/admin/job-assignments')
+      const jobsData = await jobsResponse.json()
+
+      const realJobs: CalendarJobItem[] = jobsData.success ? jobsData.data.map((job: any) => ({
+        id: job.id,
+        title: job.title || 'Untitled Job',
+        jobType: job.jobType || 'general',
+        priority: job.priority || 'medium',
+        status: job.status || 'pending',
+        assignedStaffId: job.assignedStaff?.[0] || '',
+        scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0],
+        scheduledStartTime: job.scheduledTime || '09:00',
+        estimatedDuration: job.estimatedDuration || 120,
+        calendarPosition: {
+          startTime: job.scheduledTime || '09:00',
+          endTime: calculateEndTime(job.scheduledTime || '09:00', job.estimatedDuration || 120),
+          duration: job.estimatedDuration || 120,
+          column: 0, // TODO: Calculate based on staff assignment
+          conflicts: []
         }
-      ]
+      } as CalendarJobItem)) : []
 
-      const mockJobs: CalendarJobItem[] = [
-        {
-          id: 'job_1',
-          title: 'Villa Cleaning - Sunset Paradise',
-          jobType: 'cleaning' as JobType,
-          priority: 'high' as JobPriority,
-          status: 'assigned' as JobStatus,
-          assignedStaffId: 'staff_1',
-          scheduledDate: new Date().toISOString().split('T')[0],
-          scheduledStartTime: '10:00',
-          estimatedDuration: 120,
-          calendarPosition: {
-            startTime: '10:00',
-            endTime: '12:00',
-            duration: 120,
-            column: 0,
-            conflicts: []
-          }
-        } as CalendarJobItem
-      ]
+      setStaffColumns(realStaffColumns)
+      setJobs(realJobs)
 
-      setStaffColumns(mockStaffColumns)
-      setJobs(mockJobs)
-
-      console.log(`✅ Loaded ${mockJobs.length} jobs for ${mockStaffColumns.length} staff members`)
+      console.log(`✅ Loaded ${realJobs.length} jobs for ${realStaffColumns.length} staff members`)
 
     } catch (error) {
       console.error('❌ Error loading calendar data:', error)

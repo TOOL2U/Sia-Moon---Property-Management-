@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { DatabaseService } from '@/lib/dbService'
-import { VillaOnboarding } from '@/lib/db'
+import { OnboardingService, OnboardingSubmission } from '@/lib/services/onboardingService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -38,7 +37,7 @@ export default function ClientOnboardingDetailPage() {
   const params = useParams()
   const id = params.id as string
   
-  const [onboarding, setOnboarding] = useState<VillaOnboarding | null>(null)
+  const [onboarding, setOnboarding] = useState<OnboardingSubmission | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -56,26 +55,25 @@ export default function ClientOnboardingDetailPage() {
 
   const fetchOnboarding = async () => {
     if (!user) return
-    
+
     try {
       setLoading(true)
-      const { data, error } = await DatabaseService.getVillaOnboarding(id)
-      
-      if (error) {
-        console.error('Error fetching onboarding:', error)
-        toast.error('Failed to load villa details')
+      const submission = await OnboardingService.getSubmissionById(id)
+
+      if (!submission) {
+        toast.error('Villa submission not found')
         router.push('/dashboard/client/onboarding')
         return
       }
 
       // Check if this onboarding belongs to the current user
-      if (data && data.user_id !== user.id) {
+      if (submission.userId !== user.id) {
         toast.error('Access denied. You can only view your own submissions.')
         router.push('/dashboard/client/onboarding')
         return
       }
 
-      setOnboarding(data)
+      setOnboarding(submission)
     } catch (error) {
       console.error('Error fetching onboarding:', error)
       toast.error('Failed to load villa details')

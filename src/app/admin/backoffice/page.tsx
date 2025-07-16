@@ -3470,26 +3470,29 @@ export default function BackOfficePage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Total Channels</span>
-                    <span className="text-white">{revenue.revenueBySource.length}</span>
+                    <span className="text-white">{revenue.revenueBySource?.length || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Best Performing</span>
                     <span className="text-green-400">
-                      {revenue.revenueBySource.reduce((best, current) =>
-                        current.revenue > best.revenue ? current : best
-                      ).source.replace('_', ' ')}
+                      {revenue.revenueBySource?.length > 0 
+                        ? revenue.revenueBySource.reduce((best, current) =>
+                            current.revenue > best.revenue ? current : best
+                          ).source.replace('_', ' ')
+                        : 'No data'
+                      }
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Total Commission</span>
                     <span className="text-red-400">
-                      -${revenue.revenueBySource.reduce((sum, s) => sum + s.commission, 0).toLocaleString()}
+                      -${(revenue.revenueBySource?.reduce((sum, s) => sum + s.commission, 0) || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-neutral-700 pt-2">
                     <span className="text-neutral-400">Net Revenue</span>
                     <span className="text-green-400 font-medium">
-                      ${revenue.revenueBySource.reduce((sum, s) => sum + s.netRevenue, 0).toLocaleString()}
+                      ${(revenue.revenueBySource?.reduce((sum, s) => sum + s.netRevenue, 0) || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -3515,10 +3518,10 @@ export default function BackOfficePage() {
                   <h4 className="text-white font-medium">Cash Inflows</h4>
                 </div>
                 <p className="text-2xl font-bold text-green-400 mb-2">
-                  ${cashFlow.cashInflows.reduce((sum, inflow) => sum + inflow.amount, 0).toLocaleString()}
+                  ${(cashFlow.cashInflows?.reduce((sum, inflow) => sum + inflow.amount, 0) || 0).toLocaleString()}
                 </p>
                 <p className="text-sm text-neutral-400">
-                  {cashFlow.cashInflows.length} transactions
+                  {cashFlow.cashInflows?.length || 0} transactions
                 </p>
               </div>
 
@@ -3528,10 +3531,10 @@ export default function BackOfficePage() {
                   <h4 className="text-white font-medium">Cash Outflows</h4>
                 </div>
                 <p className="text-2xl font-bold text-red-400 mb-2">
-                  ${cashFlow.cashOutflows.reduce((sum, outflow) => sum + outflow.amount, 0).toLocaleString()}
+                  ${(cashFlow.cashOutflows?.reduce((sum, outflow) => sum + outflow.amount, 0) || 0).toLocaleString()}
                 </p>
                 <p className="text-sm text-neutral-400">
-                  {cashFlow.cashOutflows.length} transactions
+                  {cashFlow.cashOutflows?.length || 0} transactions
                 </p>
               </div>
 

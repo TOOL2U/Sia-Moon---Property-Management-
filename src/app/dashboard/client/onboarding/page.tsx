@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import DatabaseService from '@/lib/dbService'
-import { VillaOnboarding } from '@/lib/db'
+import { OnboardingService, OnboardingSubmission } from '@/lib/services/onboardingService'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -30,7 +29,7 @@ import toast from 'react-hot-toast'
 export default function ClientOnboardingPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const [onboardings, setOnboardings] = useState<VillaOnboarding[]>([])
+  const [onboardings, setOnboardings] = useState<OnboardingSubmission[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -48,18 +47,11 @@ export default function ClientOnboardingPage() {
 
   const fetchUserOnboardings = async () => {
     if (!user) return
-    
+
     try {
       setLoading(true)
-      const { data, error } = await DatabaseService.getVillaOnboardingsByUserId(user.id)
-      
-      if (error) {
-        console.error('Error fetching user onboardings:', error)
-        toast.error('Failed to load your villa submissions')
-        return
-      }
-
-      setOnboardings(data || [])
+      const submissions = await OnboardingService.getSubmissionsByUserId(user.id)
+      setOnboardings(submissions)
     } catch (error) {
       console.error('Error fetching user onboardings:', error)
       toast.error('Failed to load your villa submissions')
@@ -172,10 +164,10 @@ export default function ClientOnboardingPage() {
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <Building className="h-5 w-5" />
-                        {onboarding.property_name}
+                        {onboarding.propertyName}
                       </CardTitle>
                       <CardDescription className="mt-1">
-                        {onboarding.property_address}
+                        {onboarding.propertyAddress}
                       </CardDescription>
                     </div>
                     {getStatusBadge(onboarding.status)}
@@ -206,7 +198,7 @@ export default function ClientOnboardingPage() {
                     <div className="flex items-center gap-2 text-sm text-neutral-400">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        Submitted {new Date(onboarding.created_at).toLocaleDateString('en-US', {
+                        Submitted {new Date(onboarding.createdAt.toDate()).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'

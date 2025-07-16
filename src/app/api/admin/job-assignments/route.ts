@@ -8,6 +8,8 @@ import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
 import { AdminJobAssignmentService } from '@/lib/services/adminJobAssignmentService'
 import { AuthenticatedJobAssignmentService, getIdTokenFromRequest } from '@/lib/services/authenticatedFirebaseService'
 import { JobAssignmentFilters, JobType, JobPriority } from '@/types/jobAssignment'
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { getDb } from '@/lib/firebase'
 
 /**
  * GET /api/admin/job-assignments
@@ -75,75 +77,43 @@ export async function GET(request: NextRequest) {
     // For now, return mock data until Firebase authentication is properly configured
     console.log('🔍 Using mock job assignments data for development')
 
-    // Mock job assignments data
-    const mockJobAssignments = [
-      {
-        id: 'job-001',
-        title: 'Pre-arrival Deep Cleaning',
-        description: 'Complete deep cleaning of villa before guest check-in',
-        jobType: 'cleaning' as JobType,
-        priority: 'high' as JobPriority,
-        status: 'pending' as const,
-        assignedStaff: ['staff-001'],
-        staffNames: ['Maria Santos'],
-        property: 'Alesia House',
-        propertyId: 'prop-001',
-        scheduledDate: new Date().toISOString().split('T')[0],
-        scheduledTime: '09:00',
-        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        updatedAt: new Date(),
-        createdBy: 'admin',
-        estimatedDuration: 180,
-        notes: 'Focus on kitchen, bathrooms, and bedrooms. Check all amenities.',
-        bookingId: 'booking-001'
-      },
-      {
-        id: 'job-002',
-        title: 'Pool Maintenance & Garden Care',
-        description: 'Weekly pool cleaning and garden maintenance',
-        jobType: 'maintenance' as JobType,
-        priority: 'medium' as JobPriority,
-        status: 'in_progress' as const,
-        assignedStaff: ['staff-002'],
-        staffNames: ['Carlos Rodriguez'],
-        property: 'Villa Serenity',
-        propertyId: 'prop-002',
-        scheduledDate: new Date().toISOString().split('T')[0],
-        scheduledTime: '10:30',
-        deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        createdBy: 'admin',
-        estimatedDuration: 120,
-        notes: 'Check pool chemical levels and trim hedges',
-        bookingId: null
-      },
-      {
-        id: 'job-003',
-        title: 'Post-checkout Inspection',
-        description: 'Inspect villa after guest checkout and prepare cleaning list',
-        jobType: 'maintenance' as JobType, // inspection is not in JobType enum, using maintenance
-        priority: 'high' as JobPriority,
-        status: 'completed' as const,
-        assignedStaff: ['staff-003'],
-        staffNames: ['Ana Silva'],
-        property: 'Ocean View Villa',
-        propertyId: 'prop-003',
-        scheduledDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        scheduledTime: '14:00',
-        deadline: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-        createdBy: 'admin',
-        estimatedDuration: 60,
-        notes: 'Completed inspection. Minor cleaning required.',
-        bookingId: 'booking-002'
-      }
-    ]
+    // Load real job assignments from Firebase
+    const db = getDb()
+    const jobsQuery = query(
+      collection(db, 'jobs'),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    )
 
-    // Apply filters to mock data
-    let filteredJobs = mockJobAssignments
+    const jobsSnapshot = await getDocs(jobsQuery)
+    const realJobAssignments = jobsSnapshot.docs.map(doc => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        title: data.title || 'Untitled Job',
+        description: data.description || '',
+        jobType: data.jobType || 'general',
+        priority: data.priority || 'medium',
+        status: data.status || 'pending',
+        assignedStaff: data.assignedStaffId ? [data.assignedStaffId] : [],
+        staffNames: data.assignedStaffName ? [data.assignedStaffName] : [],
+        property: data.propertyName || 'Unknown Property',
+        propertyId: data.propertyId || '',
+        scheduledDate: data.startTime ? new Date(data.startTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        scheduledTime: data.startTime ? new Date(data.startTime).toTimeString().slice(0, 5) : '09:00',
+        deadline: data.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+        createdBy: data.createdBy || 'admin',
+        estimatedDuration: data.estimatedDuration || 120,
+        notes: data.notes || '',
+        bookingId: data.bookingId || ''
+      }
+    })
+
+    // Apply filters to real data
+    let filteredJobs = realJobAssignments
+
 
     if (filters.status && filters.status.length > 0) {
       filteredJobs = filteredJobs.filter(job => filters.status!.includes(job.status))
