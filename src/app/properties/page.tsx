@@ -11,6 +11,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
+import { formatLocalDate } from '@/utils/dateUtils'
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
@@ -188,17 +189,7 @@ export default function PropertiesPage() {
                     )}
 
                     <div className="text-sm text-neutral-500">
-                      Added {
-                        (() => {
-                          if (property.createdAt && typeof property.createdAt.toDate === 'function') {
-                            return property.createdAt.toDate().toLocaleDateString()
-                          } else if (property.createdAt) {
-                            return new Date(property.createdAt as any).toLocaleDateString()
-                          } else {
-                            return new Date().toLocaleDateString()
-                          }
-                        })()
-                      }
+                      Added {formatLocalDate(property.createdAt)}
                     </div>
 
                     <div className="space-y-3 pt-2">

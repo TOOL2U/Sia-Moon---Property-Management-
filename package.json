@@ -34,6 +34,12 @@
     "test:unit": "jest --testPathPattern=unit"
   },
   "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.18",
+    "@fullcalendar/interaction": "^6.1.18",
+    "@fullcalendar/react": "^6.1.18",
+    "@fullcalendar/resource-daygrid": "^6.1.18",
+    "@fullcalendar/resource-timegrid": "^6.1.18",
+    "@fullcalendar/timegrid": "^6.1.18",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",

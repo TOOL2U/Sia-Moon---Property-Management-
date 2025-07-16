@@ -7,13 +7,14 @@ import { StaffAccountService } from '@/lib/services/staffAccountService'
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('🗑️ ADMIN API: Deleting staff account:', params.id)
-    
+    const { id } = await params
+    console.log('🗑️ ADMIN API: Deleting staff account:', id)
+
     // Delete staff account using the service
-    const result = await StaffAccountService.deleteStaffAccount(params.id)
+    const result = await StaffAccountService.deleteStaffAccount(id)
     
     if (result.success) {
       console.log('✅ ADMIN API: Staff account deleted successfully')
@@ -51,13 +52,14 @@ export async function DELETE(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('📋 ADMIN API: Getting staff account:', params.id)
-    
+    const { id } = await params
+    console.log('📋 ADMIN API: Getting staff account:', id)
+
     // Get staff account using the service
-    const result = await StaffAccountService.getStaffAccountById(params.id)
+    const result = await StaffAccountService.getStaffAccountById(id)
     
     if (result.success && result.staffAccount) {
       console.log('✅ ADMIN API: Staff account found')
@@ -95,15 +97,16 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('📝 ADMIN API: Updating staff account:', params.id)
-    
+    const { id } = await params
+    console.log('📝 ADMIN API: Updating staff account:', id)
+
     const body = await request.json()
-    
+
     // Update staff account using the service
-    const result = await StaffAccountService.updateStaffAccount(params.id, body)
+    const result = await StaffAccountService.updateStaffAccount(id, body)
     
     if (result.success) {
       console.log('✅ ADMIN API: Staff account updated successfully')

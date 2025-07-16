@@ -227,8 +227,7 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
             type="text"
             placeholder="Full Name"
             autoComplete="name"
-            className="pl-10"
-            error={!!errors.fullName}
+            className={`pl-10 ${errors.fullName ? 'border-red-500' : ''}`}
             disabled={isLoading}
           />
         </div>

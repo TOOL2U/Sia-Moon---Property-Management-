@@ -6,10 +6,10 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { 
   MapPin, 
   Navigation, 
@@ -149,94 +149,56 @@ export default function StaffLocationTracker({ onStaffSelect }: StaffLocationTra
     try {
       setIsLoading(true)
       
-      // For now, use mock data until Firebase is properly configured
-      const mockLocations: StaffLocation[] = [
-        {
-          staffId: 'staff-001',
-          staffName: 'Maria Santos',
+      // TODO: Replace with real Firebase query to get staff location data
+      // For now, load from staff_accounts collection and generate location data
+      const response = await fetch('/api/admin/staff-accounts')
+      if (!response.ok) {
+        throw new Error('Failed to fetch staff accounts')
+      }
+
+      const { staffAccounts } = await response.json()
+
+      // Transform staff accounts to location format
+      const locationData: StaffLocation[] = staffAccounts
+        .filter((staff: any) => staff.status === 'active')
+        .map((staff: any) => ({
+          staffId: staff.id,
+          staffName: staff.name,
           currentLocation: {
-            latitude: -8.6705,
-            longitude: 115.2126,
-            accuracy: 'high',
-            timestamp: new Date(Date.now() - 5 * 60000), // 5 minutes ago
-            address: 'Alesia House, Canggu',
-            isInsideGeofence: true
+            latitude: -8.6705 + (Math.random() - 0.5) * 0.1, // TODO: Track actual location
+            longitude: 115.2126 + (Math.random() - 0.5) * 0.1, // TODO: Track actual location
+            accuracy: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low',
+            timestamp: new Date(Date.now() - Math.random() * 60 * 60000), // TODO: Track actual timestamp
+            address: 'Location tracking not implemented', // TODO: Reverse geocode actual address
+            isInsideGeofence: Math.random() > 0.3 // TODO: Calculate actual geofence status
           },
-          lastUpdated: new Date(Date.now() - 5 * 60000),
-          status: 'on_job',
-          currentJobId: 'job-001',
-          batteryLevel: 85,
-          isOnline: true
-        },
-        {
-          staffId: 'staff-002',
-          staffName: 'Carlos Rodriguez',
-          currentLocation: {
-            latitude: -8.6500,
-            longitude: 115.2200,
-            accuracy: 'medium',
-            timestamp: new Date(Date.now() - 15 * 60000), // 15 minutes ago
-            address: 'Villa Serenity, Seminyak',
-            isInsideGeofence: true
-          },
-          lastUpdated: new Date(Date.now() - 15 * 60000),
-          status: 'available',
-          batteryLevel: 92,
-          isOnline: true
-        },
-        {
-          staffId: 'staff-003',
-          staffName: 'Ana Silva',
-          currentLocation: {
-            latitude: -8.6800,
-            longitude: 115.2000,
-            accuracy: 'high',
-            timestamp: new Date(Date.now() - 2 * 60000), // 2 minutes ago
-            address: 'Ocean View Villa, Uluwatu',
-            isInsideGeofence: false
-          },
-          lastUpdated: new Date(Date.now() - 2 * 60000),
-          status: 'traveling',
-          batteryLevel: 67,
-          isOnline: true
-        },
-        {
-          staffId: 'staff-004',
-          staffName: 'David Kim',
-          currentLocation: {
-            latitude: -8.6600,
-            longitude: 115.2300,
-            accuracy: 'low',
-            timestamp: new Date(Date.now() - 45 * 60000), // 45 minutes ago
-            address: 'Sunset Villa, Kuta',
-            isInsideGeofence: true
-          },
-          lastUpdated: new Date(Date.now() - 45 * 60000),
-          status: 'break',
-          batteryLevel: 23,
-          isOnline: false
-        }
-      ]
-      
-      setStaffLocations(mockLocations)
+          lastUpdated: new Date(Date.now() - Math.random() * 60 * 60000),
+          status: ['available', 'on_job', 'traveling', 'break'][Math.floor(Math.random() * 4)] as any, // TODO: Track actual status
+          currentJobId: Math.random() > 0.5 ? `job-${Math.floor(Math.random() * 100)}` : undefined, // TODO: Track actual job
+          batteryLevel: Math.floor(Math.random() * 100), // TODO: Track actual battery level
+          isOnline: Math.random() > 0.2 // TODO: Track actual online status
+        }))
+
+      setStaffLocations(locationData)
       setLastUpdate(new Date())
       
-      // Mock geofence alerts
-      const mockAlerts: GeofenceAlert[] = [
-        {
-          id: 'alert-001',
-          staffId: 'staff-003',
-          staffName: 'Ana Silva',
-          geofenceId: 'geo-001',
-          propertyName: 'Ocean View Villa',
-          type: 'exit',
-          timestamp: new Date(Date.now() - 10 * 60000),
-          location: mockLocations[2].currentLocation,
+      // TODO: Load real geofence alerts from Firebase
+      // For now, generate sample alerts based on location data
+      const alertData: GeofenceAlert[] = locationData
+        .filter(() => Math.random() > 0.8) // Only some staff have alerts
+        .map((staff, index) => ({
+          id: `alert-${index}`,
+          staffId: staff.staffId,
+          staffName: staff.staffName,
+          geofenceId: `geo-${index}`,
+          propertyName: 'Property Name TBD', // TODO: Get actual property name
+          type: Math.random() > 0.5 ? 'exit' : 'entry' as 'exit' | 'entry',
+          timestamp: new Date(Date.now() - Math.random() * 60 * 60000),
+          location: staff.currentLocation,
           acknowledged: false
-        }
-      ]
-      
-      setGeofenceAlerts(mockAlerts)
+        }))
+
+      setGeofenceAlerts(alertData)
       
     } catch (error) {
       console.error('Error loading staff locations:', error)

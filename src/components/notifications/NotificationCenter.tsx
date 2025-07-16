@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Notification } from '@/lib/db'
+import { toDate } from '@/utils/dateUtils'
 
 interface NotificationCenterProps {
   isOpen: boolean
@@ -201,7 +202,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                         
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs text-neutral-500">
-                            {format(new Date(notification.created_at), 'MMM d, h:mm a')}
+                            {format(toDate(notification.created_at), 'MMM d, h:mm a')}
                           </span>
                           
                           {isUnread && (

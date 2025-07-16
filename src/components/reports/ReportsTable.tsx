@@ -116,11 +116,11 @@ export function ReportsTable({
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'success'
+        return 'default'
       case 'pending':
-        return 'warning'
+        return 'secondary'
       case 'cancelled':
-        return 'error'
+        return 'destructive'
       default:
         return 'default'
     }

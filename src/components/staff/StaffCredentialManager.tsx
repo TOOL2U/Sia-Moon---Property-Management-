@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -116,7 +117,7 @@ export default function StaffCredentialManager({
       console.log('🔐 Updating staff credentials...')
 
       const updates: any = {}
-      
+
       if (formData.newEmail !== staffMember.email) {
         updates.email = formData.newEmail
       }
@@ -127,10 +128,20 @@ export default function StaffCredentialManager({
 
       if (Object.keys(updates).length === 0) {
         toast.error('No changes to update')
+        setLoading(false)
         return
       }
 
-      const result = await FirebaseAuthService.updateStaffCredentials(staffMember.id, updates)
+      // Use the staff accounts API endpoint instead of FirebaseAuthService
+      const response = await fetch(`/api/admin/staff-accounts/${staffMember.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+      })
+
+      const result = await response.json()
 
       if (result.success) {
         toast.success('Credentials updated successfully')
@@ -197,6 +208,9 @@ export default function StaffCredentialManager({
             <Key className="h-5 w-5" />
             Manage Staff Credentials
           </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Update login credentials and account settings for {staffMember.name}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

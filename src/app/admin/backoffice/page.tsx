@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { BookingService } from '@/lib/services/bookingService'
-import { EnhancedBookingService } from '@/lib/services/enhancedBookingService'
+// BookingService and EnhancedBookingService removed - now using direct API calls
 import FinancialService from '@/lib/services/financialService'
 import toast from 'react-hot-toast'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -13,11 +12,12 @@ import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 
 import { StaffProfile, StaffFilters, StaffStats, STAFF_ROLES, STAFF_STATUSES } from '@/types/staff'
-import { FinancialDashboard, RevenueAnalytics, FinancialKPIs, FinancialFilters } from '@/types/financial'
+import { FinancialDashboard, FinancialFilters } from '@/types/financial'
 import AddStaffModal from '@/components/staff/AddStaffModal'
 import EditStaffModal from '@/components/staff/EditStaffModal'
 import WizardStaffModal from '@/components/staff/WizardStaffModal'
 import StaffAccountModal from '@/components/staff/StaffAccountModal'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
 
 import PropertyAssignmentModal from '@/components/staff/PropertyAssignmentModal'
@@ -33,8 +33,15 @@ import PropertyDashboard from '@/components/property/PropertyDashboard'
 import PropertyListing from '@/components/property/PropertyListing'
 import BookingApprovalModal from '@/components/booking/BookingApprovalModal'
 import StaffAssignmentModal from '@/components/booking/StaffAssignmentModal'
-import { SimpleIntegratedBookingsTab } from '@/components/admin/SimpleIntegratedBookingsTab'
-import { BookingSyncService } from '@/lib/services/bookingSyncService'
+// SimpleIntegratedBookingsTab removed - unused
+import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
+import { JobManagementDashboard } from '@/components/admin/JobManagementDashboard'
+import { JobProgressDashboard } from '@/components/admin/JobProgressDashboard'
+import { CalendarView } from '@/components/admin/CalendarView'
+// TestJobService removed - was mock data
+import CalendarEventService from '@/services/CalendarEventService'
+import KPIDashboard from '@/components/admin/KPIDashboard'
+// BookingSyncService removed - unused
 import { RealTimeSyncService } from '@/lib/services/realTimeSyncService'
 import { OptimizedSyncService } from '@/lib/services/optimizedSyncService'
 import { FallbackSyncService } from '@/lib/services/fallbackSyncService'
@@ -61,10 +68,8 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
   Activity,
   Calendar as CalendarIcon,
-  Briefcase,
   Home,
   ClipboardList,
   Target,
@@ -80,9 +85,7 @@ import {
   UserCheck,
   LogIn,
   LogOut,
-  Bed,
-  Sparkles,
-  Timer,
+  // Removed unused icons
   ArrowUp,
   ArrowDown,
   Loader2,
@@ -90,413 +93,21 @@ import {
   Calendar as CalendarDays,
   TrendingUp as TrendingUpIcon,
   PieChart,
-  MoreHorizontal,
+  // MoreHorizontal removed - unused
   X,
   AlertCircle,
   ArrowUpDown,
-  Key
+  Key,
+  Zap
 } from 'lucide-react'
 
-// Enhanced Mock data for comprehensive property management dashboard
-const mockBookings = [
-  {
-    id: '1',
-    propertyName: 'Villa Sunset',
-    guestName: 'John Smith',
-    guestEmail: 'john.smith@email.com',
-    guestPhone: '+1 555-0123',
-    checkIn: '2024-01-15',
-    checkOut: '2024-01-20',
-    status: 'pending',
-    amount: 2500,
-    assignedStaff: null,
-    createdAt: '2024-01-10T09:30:00Z',
-    lastModified: '2024-01-10T09:30:00Z',
-    modifiedBy: 'system',
-    guestCount: 4,
-    paymentStatus: 'partial',
-    paidAmount: 1250,
-    checkInTime: '15:00',
-    checkOutTime: '11:00',
-    specialRequests: 'Late check-in requested, need baby crib',
-    guestRating: null,
-    isCheckingInToday: true,
-    isCheckingOutToday: false,
-    source: 'website',
-    bookingReference: 'BK001',
-    approvalHistory: [],
-    notes: [],
-    conflicts: [],
-    nightlyRate: 500,
-    totalNights: 5,
-    taxes: 250,
-    fees: 100,
-    discount: 0
-  },
-  {
-    id: '2',
-    propertyName: 'Villa Paradise',
-    guestName: 'Sarah Johnson',
-    guestEmail: 'sarah.johnson@email.com',
-    guestPhone: '+1 555-0456',
-    checkIn: '2024-01-18',
-    checkOut: '2024-01-25',
-    status: 'confirmed',
-    amount: 3200,
-    assignedStaff: 'Maria Santos',
-    createdAt: '2024-01-08T14:20:00Z',
-    lastModified: '2024-01-12T16:45:00Z',
-    modifiedBy: 'admin@siamoon.com',
-    guestCount: 2,
-    paymentStatus: 'paid',
-    paidAmount: 3200,
-    checkInTime: '14:00',
-    checkOutTime: '10:00',
-    specialRequests: 'Airport transfer needed, vegetarian meals',
-    guestRating: 4.8,
-    isCheckingInToday: false,
-    isCheckingOutToday: true,
-    source: 'api',
-    bookingReference: 'BK002',
-    approvalHistory: [
-      { action: 'approved', by: 'admin@siamoon.com', timestamp: '2024-01-12T16:45:00Z', notes: 'Regular guest, auto-approved' }
-    ],
-    notes: [
-      { text: 'VIP guest - provide welcome amenities', by: 'admin@siamoon.com', timestamp: '2024-01-12T16:50:00Z' }
-    ],
-    conflicts: [],
-    nightlyRate: 400,
-    totalNights: 7,
-    taxes: 320,
-    fees: 80,
-    discount: 200
-  },
-  {
-    id: '3',
-    propertyName: 'Villa Moonlight',
-    guestName: 'Michael Chen',
-    guestEmail: 'michael.chen@email.com',
-    guestPhone: '+1 555-0789',
-    checkIn: '2024-01-20',
-    checkOut: '2024-01-27',
-    status: 'confirmed',
-    amount: 4500,
-    assignedStaff: 'Carlos Rodriguez',
-    createdAt: '2024-01-05T11:15:00Z',
-    lastModified: '2024-01-14T10:30:00Z',
-    modifiedBy: 'admin@siamoon.com',
-    guestCount: 6,
-    paymentStatus: 'paid',
-    paidAmount: 4500,
-    checkInTime: '16:00',
-    checkOutTime: '11:00',
-    specialRequests: 'Vegetarian meals, early check-in if possible',
-    guestRating: 4.9,
-    isCheckingInToday: false,
-    isCheckingOutToday: false,
-    source: 'phone',
-    bookingReference: 'BK003',
-    approvalHistory: [
-      { action: 'approved', by: 'admin@siamoon.com', timestamp: '2024-01-14T10:30:00Z', notes: 'Corporate booking confirmed' }
-    ],
-    notes: [
-      { text: 'Corporate group booking - invoice to company', by: 'admin@siamoon.com', timestamp: '2024-01-14T10:35:00Z' }
-    ],
-    conflicts: [],
-    nightlyRate: 600,
-    totalNights: 7,
-    taxes: 450,
-    fees: 150,
-    discount: 300
-  },
-  {
-    id: '4',
-    propertyName: 'Villa Sunset',
-    guestName: 'Emma Wilson',
-    guestEmail: 'emma.wilson@email.com',
-    guestPhone: '+1 555-0321',
-    checkIn: '2024-01-22',
-    checkOut: '2024-01-28',
-    status: 'pending',
-    amount: 2800,
-    assignedStaff: null,
-    createdAt: '2024-01-12T08:45:00Z',
-    lastModified: '2024-01-12T08:45:00Z',
-    modifiedBy: 'system',
-    guestCount: 3,
-    paymentStatus: 'pending',
-    paidAmount: 0,
-    checkInTime: '15:00',
-    checkOutTime: '11:00',
-    specialRequests: 'Pet-friendly accommodation, ground floor preferred',
-    guestRating: null,
-    isCheckingInToday: false,
-    isCheckingOutToday: false,
-    source: 'website',
-    bookingReference: 'BK004',
-    approvalHistory: [],
-    notes: [],
-    conflicts: ['maintenance_overlap'],
-    nightlyRate: 450,
-    totalNights: 6,
-    taxes: 280,
-    fees: 120,
-    discount: 50
-  },
-  {
-    id: '5',
-    propertyName: 'Villa Paradise',
-    guestName: 'David Brown',
-    guestEmail: 'david.brown@email.com',
-    guestPhone: '+1 555-0654',
-    checkIn: '2024-01-25',
-    checkOut: '2024-01-30',
-    status: 'rejected',
-    amount: 2000,
-    assignedStaff: null,
-    createdAt: '2024-01-13T15:20:00Z',
-    lastModified: '2024-01-14T09:15:00Z',
-    modifiedBy: 'admin@siamoon.com',
-    guestCount: 8,
-    paymentStatus: 'pending',
-    paidAmount: 0,
-    checkInTime: '15:00',
-    checkOutTime: '11:00',
-    specialRequests: 'Large group, multiple rooms needed',
-    guestRating: null,
-    isCheckingInToday: false,
-    isCheckingOutToday: false,
-    source: 'api',
-    bookingReference: 'BK005',
-    approvalHistory: [
-      { action: 'rejected', by: 'admin@siamoon.com', timestamp: '2024-01-14T09:15:00Z', notes: 'Property capacity exceeded' }
-    ],
-    notes: [
-      { text: 'Guest count exceeds villa capacity', by: 'admin@siamoon.com', timestamp: '2024-01-14T09:10:00Z' }
-    ],
-    conflicts: ['capacity_exceeded'],
-    nightlyRate: 400,
-    totalNights: 5,
-    taxes: 200,
-    fees: 100,
-    discount: 0
-  }
-]
+// Note: Mock data removed - now using real Firebase data from API endpoints
 
-const mockStaff = [
-  {
-    id: '1',
-    name: 'Maria Santos',
-    role: 'Housekeeper',
-    phone: '+66 81 234 5678',
-    email: 'maria@siamoon.com',
-    address: '123 Main St, Bangkok',
-    idNumber: 'ID123456789',
-    emergencyContact: '+66 81 987 6543',
-    assignedProperties: ['Villa Sunset', 'Villa Paradise'],
-    status: 'active',
-    joinDate: '2023-06-15',
-    currentTask: 'Cleaning Villa Paradise',
-    tasksCompleted: 28,
-    rating: 4.9,
-    availability: 'available',
-    shift: 'morning',
-    performance: {
-      tasksCompleted: 28,
-      tasksAssigned: 30,
-      averageRating: 4.9,
-      onTimeCompletion: 95
-    }
-  },
-  {
-    id: '2',
-    name: 'Carlos Rodriguez',
-    role: 'Maintenance',
-    phone: '+66 82 345 6789',
-    email: 'carlos@siamoon.com',
-    address: '456 Oak Ave, Bangkok',
-    idNumber: 'ID987654321',
-    emergencyContact: '+66 82 876 5432',
-    assignedProperties: ['Villa Sunset'],
-    status: 'active',
-    joinDate: '2023-08-20',
-    currentTask: 'Pool maintenance at Villa Sunset',
-    tasksCompleted: 15,
-    rating: 4.7,
-    availability: 'busy',
-    shift: 'afternoon',
-    performance: {
-      tasksCompleted: 15,
-      tasksAssigned: 18,
-      averageRating: 4.7,
-      onTimeCompletion: 88
-    }
-  },
-  {
-    id: '3',
-    name: 'Ana Gutierrez',
-    role: 'Guest Services',
-    phone: '+66 83 456 7890',
-    email: 'ana@siamoon.com',
-    address: '789 Beach Rd, Bangkok',
-    idNumber: 'ID456789123',
-    emergencyContact: '+66 83 765 4321',
-    assignedProperties: ['Villa Paradise', 'Villa Moonlight'],
-    status: 'active',
-    joinDate: '2023-09-10',
-    currentTask: 'Guest check-in assistance',
-    tasksCompleted: 42,
-    rating: 4.8,
-    availability: 'available',
-    shift: 'evening',
-    performance: {
-      tasksCompleted: 42,
-      tasksAssigned: 45,
-      averageRating: 4.8,
-      onTimeCompletion: 92
-    }
-  }
-]
+// Note: Mock staff data removed - now using real Firebase staff_accounts data
 
-const mockFinancialData = {
-  revenue: {
-    daily: 1850,
-    weekly: 12500,
-    monthly: 45000,
-    ytd: 180000,
-    allTime: 850000,
-    trend: {
-      daily: 8.5,
-      weekly: 12.3,
-      monthly: 15.2
-    }
-  },
-  expenses: {
-    monthly: 12000,
-    ytd: 48000,
-    categories: [
-      { name: 'Staff Salaries', amount: 8000 },
-      { name: 'Maintenance', amount: 2500 },
-      { name: 'Utilities', amount: 1500 }
-    ]
-  },
-  netIncome: {
-    monthly: 33000,
-    ytd: 132000
-  },
-  byProperty: [
-    {
-      name: 'Villa Sunset',
-      revenue: 25000,
-      bookings: 8,
-      occupancyRate: 85,
-      avgNightlyRate: 450,
-      totalNights: 56,
-      status: 'active',
-      maintenanceStatus: 'good',
-      cleaningStatus: 'ready',
-      nextCheckIn: '2024-01-15 15:00',
-      nextCheckOut: '2024-01-15 11:00'
-    },
-    {
-      name: 'Villa Paradise',
-      revenue: 20000,
-      bookings: 6,
-      occupancyRate: 72,
-      avgNightlyRate: 520,
-      totalNights: 38,
-      status: 'active',
-      maintenanceStatus: 'needs-attention',
-      cleaningStatus: 'in-progress',
-      nextCheckIn: '2024-01-16 14:00',
-      nextCheckOut: '2024-01-15 10:00'
-    },
-    {
-      name: 'Villa Moonlight',
-      revenue: 18500,
-      bookings: 5,
-      occupancyRate: 68,
-      avgNightlyRate: 480,
-      totalNights: 42,
-      status: 'active',
-      maintenanceStatus: 'excellent',
-      cleaningStatus: 'ready',
-      nextCheckIn: '2024-01-20 16:00',
-      nextCheckOut: null
-    }
-  ],
-  outstandingPayments: [
-    { guestName: 'John Smith', amount: 1250, daysOverdue: 0, propertyName: 'Villa Sunset' },
-    { guestName: 'Emma Wilson', amount: 2800, daysOverdue: 3, propertyName: 'Villa Sunset' }
-  ]
-}
+// Note: Mock financial data removed - now using real Firebase financial data
 
-// Additional data structures for comprehensive dashboard
-const mockMaintenanceRequests = [
-  {
-    id: 'MR001',
-    propertyName: 'Villa Paradise',
-    issue: 'Pool pump not working',
-    priority: 'high',
-    status: 'in-progress',
-    assignedTo: 'Carlos Rodriguez',
-    reportedBy: 'Maria Santos',
-    reportedAt: '2024-01-14 09:30',
-    estimatedCompletion: '2024-01-15 16:00',
-    cost: 850
-  },
-  {
-    id: 'MR002',
-    propertyName: 'Villa Sunset',
-    issue: 'Air conditioning unit making noise',
-    priority: 'medium',
-    status: 'pending',
-    assignedTo: null,
-    reportedBy: 'Guest',
-    reportedAt: '2024-01-14 14:20',
-    estimatedCompletion: null,
-    cost: 0
-  },
-  {
-    id: 'MR003',
-    propertyName: 'Villa Moonlight',
-    issue: 'Garden irrigation system check',
-    priority: 'low',
-    status: 'scheduled',
-    assignedTo: 'Carlos Rodriguez',
-    reportedBy: 'System',
-    reportedAt: '2024-01-13 08:00',
-    estimatedCompletion: '2024-01-16 10:00',
-    cost: 200
-  }
-]
-
-const mockSystemAlerts = [
-  {
-    id: 'AL001',
-    type: 'payment',
-    severity: 'high',
-    message: 'Payment overdue: Emma Wilson - $2,800',
-    timestamp: '2024-01-15 08:30',
-    action: 'Contact guest for payment'
-  },
-  {
-    id: 'AL002',
-    type: 'maintenance',
-    severity: 'medium',
-    message: 'Pool maintenance required at Villa Paradise',
-    timestamp: '2024-01-15 07:15',
-    action: 'Schedule maintenance'
-  },
-  {
-    id: 'AL003',
-    type: 'booking',
-    severity: 'low',
-    message: 'New booking pending approval',
-    timestamp: '2024-01-15 06:45',
-    action: 'Review booking details'
-  }
-]
+// Note: Mock maintenance and system alerts data removed - now using real Firebase data
 
 export default function BackOfficePage() {
   const { user, loading: authLoading } = useAuth()
@@ -510,12 +121,9 @@ export default function BackOfficePage() {
   const [lastRefresh, setLastRefresh] = useState(new Date())
 
   // Real booking data state
-  const [realBookings, setRealBookings] = useState<any[]>([])
   const [pendingBookings, setPendingBookings] = useState<any[]>([])
   const [confirmedBookings, setConfirmedBookings] = useState<any[]>([])
-  const [bookingAnalytics, setBookingAnalytics] = useState<any>(null)
-  const [realStaff, setRealStaff] = useState<any[]>([])
-  const [realMaintenanceRequests, setRealMaintenanceRequests] = useState<any[]>([])
+  // realMaintenanceRequests removed - unused
 
   // Staff management state
   const [staffList, setStaffList] = useState<StaffProfile[]>([])
@@ -543,16 +151,16 @@ export default function BackOfficePage() {
 
   // Property Management State
   const [propertyView, setPropertyView] = useState<'dashboard' | 'listing'>('dashboard')
-  const [selectedProperty, setSelectedProperty] = useState<any>(null)
+  // selectedProperty removed - unused
 
   // Property Management Handlers
   const handleViewProperty = (property: any) => {
-    setSelectedProperty(property)
+    // TODO: Implement property viewing
     toast.success(`Viewing details for ${property.name}`)
   }
 
   const handleEditProperty = (property: any) => {
-    setSelectedProperty(property)
+    // TODO: Implement property editing
     toast.success(`Editing ${property.name}`)
   }
 
@@ -591,10 +199,7 @@ export default function BackOfficePage() {
   const [paymentFilter, setPaymentFilter] = useState('all')
   const [dateRangeFilter, setDateRangeFilter] = useState({ start: '', end: '' })
   const [sourceFilter, setSourceFilter] = useState('all')
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false)
-  const [approvalAction, setApprovalAction] = useState<{ bookingId: string; action: 'approve' | 'reject'; notes?: string } | null>(null)
-  const [showBulkActions, setShowBulkActions] = useState(false)
-  const [staffAssignmentDialog, setStaffAssignmentDialog] = useState<{ bookingId: string; currentStaff?: string } | null>(null)
+  // Removed unused booking dialog states
 
   // Enhanced booking sync modals
   const [bookingApprovalModal, setBookingApprovalModal] = useState<{ booking: any } | null>(null)
@@ -605,6 +210,9 @@ export default function BackOfficePage() {
   const [bookingEditDialog, setBookingEditDialog] = useState<{ booking: any } | null>(null)
   const [showConflictAlert, setShowConflictAlert] = useState(false)
   const [conflictDetails, setConflictDetails] = useState<any>(null)
+
+  // Test job state
+  const [sendingTestJob, setSendingTestJob] = useState(false)
 
   // Route protection - admin only
   useEffect(() => {
@@ -851,21 +459,53 @@ export default function BackOfficePage() {
         console.log(`✅ Loaded ${confirmedData.bookings?.length || 0} confirmed bookings`)
       }
 
-      // Load all bookings for comprehensive view
-      const allBookings = await BookingService.getAllBookings()
-      setRealBookings(allBookings)
-      console.log(`✅ Loaded ${allBookings.length} total bookings`)
+      // Load all bookings from real API
+      const bookingsResponse = await fetch('/api/bookings')
+      if (bookingsResponse.ok) {
+        const bookingsData = await bookingsResponse.json()
+        const allBookings = bookingsData.bookings || []
+        console.log(`✅ Loaded ${allBookings.length} total bookings from Firebase`)
 
-      // Load analytics
-      const analytics = await EnhancedBookingService.getBookingAnalytics()
-      setBookingAnalytics(analytics)
-      console.log('✅ Loaded booking analytics')
+        // Separate bookings by status
+        const pending = allBookings.filter((b: any) => b.status === 'pending')
+        const confirmed = allBookings.filter((b: any) => b.status === 'confirmed' || b.status === 'approved')
 
-      // Load staff data (using mock for now, can be replaced with real API)
-      setRealStaff(mockStaff)
+        setPendingBookings(pending)
+        setConfirmedBookings(confirmed)
 
-      // Load maintenance requests (using mock for now, can be replaced with real API)
-      setRealMaintenanceRequests(mockMaintenanceRequests)
+        // Calculate financial data from bookings
+        const totalRevenue = allBookings.reduce((sum: number, booking: any) => sum + (booking.amount || 0), 0)
+        const monthlyRevenue = allBookings
+          .filter((b: any) => new Date(b.checkIn).getMonth() === new Date().getMonth())
+          .reduce((sum: number, booking: any) => sum + (booking.amount || 0), 0)
+
+        // Create simplified financial data for now
+        const calculatedFinancialData = {
+          revenue: {
+            monthlyRevenue,
+            revenueGrowth: {
+              monthly: 0 // TODO: Calculate actual growth
+            }
+          },
+          totalRevenue,
+          bookingCount: allBookings.length,
+          averageBookingValue: allBookings.length > 0 ? totalRevenue / allBookings.length : 0
+        } as any // TODO: Implement proper FinancialDashboard structure
+
+        setFinancialDashboard(calculatedFinancialData)
+        console.log('✅ Calculated financial dashboard data from bookings')
+      } else {
+        console.error('❌ Failed to load bookings from API')
+        setPendingBookings([])
+        setConfirmedBookings([])
+        setFinancialDashboard(null)
+      }
+
+      // Load staff data from real API
+      // Note: Staff data is already loaded via the existing staff management system
+
+      // Load maintenance requests from real API
+      // Note: Maintenance requests will be loaded from Firebase when implemented
 
       setLastRefresh(new Date())
       toast.success('Dashboard data loaded successfully')
@@ -1108,6 +748,8 @@ export default function BackOfficePage() {
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
+    { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
+    { id: 'kpi-dashboard', label: 'KPI Dashboard', icon: BarChart3 },
     { id: 'job-assignments', label: 'Job Assignments', icon: ClipboardList },
     { id: 'staff', label: 'Staff', icon: Users },
     { id: 'financial', label: 'Financial', icon: DollarSign },
@@ -1135,6 +777,49 @@ export default function BackOfficePage() {
   const exportData = (type: 'pdf' | 'csv', section: string) => {
     console.log(`Export ${section} as ${type}`)
     toast.success(`Exporting ${section} as ${type.toUpperCase()}...`)
+  }
+
+  // Send test job to mobile app
+  const sendTestJobToMobile = async () => {
+    try {
+      setSendingTestJob(true)
+      console.log('🧪 Sending test job to mobile app...')
+
+      // TestJobService removed - was using mock data
+      toast('Test job functionality removed - was using mock data')
+      console.log('🧪 Test job functionality removed - was using mock data')
+
+    } catch (error) {
+      console.error('❌ Error sending test job:', error)
+      toast.error(`❌ Failed to send test job: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setSendingTestJob(false)
+    }
+  }
+
+  // Test calendar event creation
+  const testCalendarEventCreation = async () => {
+    try {
+      setSendingTestJob(true)
+      console.log('📅 Testing calendar event creation...')
+
+      // Create a test calendar event with sample booking data
+      const result = await CalendarEventService.createEventFromBooking('test_booking_001')
+
+      if (result.success) {
+        toast.success(`✅ Test calendar event created - Event ID: ${result.eventId}`)
+        console.log('✅ Test calendar event created successfully:', result.eventId)
+      } else {
+        toast.error(`❌ Failed to create test calendar event: ${result.error}`)
+        console.error('❌ Test calendar event failed:', result.error)
+      }
+
+    } catch (error) {
+      console.error('❌ Error creating test calendar event:', error)
+      toast.error(`❌ Failed to create test calendar event: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setSendingTestJob(false)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -1184,12 +869,9 @@ export default function BackOfficePage() {
   const getTodaysCheckIns = () => getAllBookings().filter(b => b.isCheckingInToday)
   const getTodaysCheckOuts = () => getAllBookings().filter(b => b.isCheckingOutToday)
   const getPendingBookings = () => getAllBookings().filter(b => b.status === 'pending')
-  const getOverduePayments = () => mockFinancialData.outstandingPayments.filter(p => p.daysOverdue > 0)
-  const getHighPriorityMaintenance = () => realMaintenanceRequests.filter(m => m.priority === 'high')
-  const getAverageOccupancyRate = () => {
-    const rates = mockFinancialData.byProperty.map(p => p.occupancyRate)
-    return rates.length > 0 ? Math.round(rates.reduce((a, b) => a + b, 0) / rates.length) : 0
-  }
+  const getOverduePayments = () => [] // TODO: Implement with real financial data
+  const getHighPriorityMaintenance = () => [] // TODO: Implement with real maintenance data
+  const getAverageOccupancyRate = () => 0 // TODO: Calculate from real property data
 
   // Dashboard action handlers
   const handleRefreshDashboard = async () => {
@@ -1210,7 +892,23 @@ export default function BackOfficePage() {
     setLoading(true)
     try {
       console.log('Quick approve booking:', bookingId)
-      toast.success('Booking approved successfully')
+
+      // Create calendar event for approved booking
+      try {
+        const calendarResult = await CalendarEventService.createEventFromBooking(bookingId)
+
+        if (calendarResult.success) {
+          console.log(`✅ Calendar event created: ${calendarResult.eventId}`)
+          toast.success('✅ Booking approved • Calendar event created')
+        } else {
+          console.warn('⚠️ Calendar event creation failed:', calendarResult.error)
+          toast.success('✅ Booking approved • Calendar event creation failed')
+        }
+      } catch (calendarError) {
+        console.error('❌ Calendar event creation error:', calendarError)
+        toast.success('✅ Booking approved • Calendar event creation failed')
+      }
+
     } catch (error) {
       toast.error('Failed to approve booking')
     } finally {
@@ -1289,7 +987,7 @@ export default function BackOfficePage() {
       console.log(`Bulk ${action}:`, selectedBookings, 'Notes:', notes)
       toast.success(`${selectedBookings.length} bookings ${action}d successfully`)
       setSelectedBookings([])
-      setShowBulkActions(false)
+      // setShowBulkActions removed
     } catch (error) {
       toast.error(`Failed to ${action} bookings`)
     } finally {
@@ -1330,12 +1028,8 @@ export default function BackOfficePage() {
     }
 
     // Check for maintenance overlaps
-    const maintenanceConflicts = realMaintenanceRequests.filter(m =>
-      m.propertyName === booking.propertyName &&
-      m.status === 'scheduled' &&
-      new Date(booking.checkIn) <= new Date(m.estimatedCompletion || '') &&
-      new Date(booking.checkOut) >= new Date(m.reportedAt)
-    )
+    // TODO: Implement with real maintenance data
+    const maintenanceConflicts: any[] = []
 
     if (maintenanceConflicts.length > 0) {
       conflicts.push({ type: 'maintenance_overlap', details: maintenanceConflicts })
@@ -1345,9 +1039,9 @@ export default function BackOfficePage() {
   }
 
   const getAvailableStaff = (propertyName: string, checkInDate: string) => {
-    return realStaff.filter(staff =>
-      staff.assignedProperties.includes(propertyName) &&
-      staff.availability === 'available'
+    return staffList.filter((staff: any) =>
+      staff.assignedProperties?.includes(propertyName) &&
+      staff.status === 'active'
     )
   }
 
@@ -1388,7 +1082,8 @@ export default function BackOfficePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-black text-white flex">
       {/* Fixed Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-neutral-950 border-r border-neutral-800 z-50 transition-all duration-300 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
@@ -1464,6 +1159,8 @@ export default function BackOfficePage() {
                 <p className="text-sm text-neutral-400">
                   {activeSection === 'dashboard' && 'Overview of your business operations'}
                   {activeSection === 'bookings' && 'Manage and approve property bookings'}
+                  {activeSection === 'calendar' && 'Calendar view of events, bookings, and staff schedules'}
+                  {activeSection === 'kpi-dashboard' && 'Performance metrics and operational analytics'}
                   {activeSection === 'job-assignments' && 'Assign and track staff job assignments'}
                   {activeSection === 'staff' && 'Staff management and assignments'}
                   {activeSection === 'financial' && 'Financial overview and reporting'}
@@ -1649,12 +1346,31 @@ export default function BackOfficePage() {
             id: user?.id || '',
             name: user?.full_name || user?.email || 'Admin'
           }}
-          onApprovalComplete={(bookingId, action) => {
+          onApprovalComplete={async (bookingId, action) => {
             console.log(`Booking ${bookingId} ${action}d successfully`)
             setBookingApprovalModal(null)
             // Reload data to reflect changes
             loadAllBookingData()
-            toast.success(`Booking ${action}d successfully and synced to mobile app`)
+
+            // Create calendar event for approved bookings
+            if (action === 'approve') {
+              try {
+                const calendarResult = await CalendarEventService.createEventFromBooking(bookingId)
+
+                if (calendarResult.success) {
+                  console.log(`✅ Calendar event created: ${calendarResult.eventId}`)
+                  toast.success(`✅ Booking approved • Calendar event created • Synced to mobile app`)
+                } else {
+                  console.warn('⚠️ Calendar event creation failed:', calendarResult.error)
+                  toast.success(`✅ Booking approved • Synced to mobile app • Calendar event creation failed`)
+                }
+              } catch (calendarError) {
+                console.error('❌ Calendar event creation error:', calendarError)
+                toast.success(`✅ Booking approved • Synced to mobile app • Calendar event creation failed`)
+              }
+            } else {
+              toast.success(`Booking ${action}d successfully and synced to mobile app`)
+            }
 
             // Redirect to job assignment page for approved bookings
             if (action === 'approve') {
@@ -1696,15 +1412,22 @@ export default function BackOfficePage() {
         />
       )}
     </div>
+    </ErrorBoundary>
   )
 
   // Function to render content based on active section
   function renderSectionContent() {
     switch (activeSection) {
       case 'dashboard':
-        return renderDashboard()
+        return <JobProgressDashboard />
       case 'bookings':
         return renderBookings()
+      case 'calendar':
+        return <CalendarView />
+      case 'kpi-dashboard':
+        return <KPIDashboard />
+      case 'job-assignments':
+        return renderJobAssignments()
       case 'staff':
         return renderStaff()
       case 'financial':
@@ -1741,20 +1464,50 @@ export default function BackOfficePage() {
               Last updated: {lastRefresh.toLocaleTimeString()}
             </p>
           </div>
-          <Button
-            onClick={handleRefreshDashboard}
-            disabled={dashboardLoading}
-            variant="outline"
-            size="sm"
-            className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-          >
-            {dashboardLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={sendTestJobToMobile}
+              disabled={sendingTestJob}
+              size="sm"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+            >
+              {sendingTestJob ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4 mr-2" />
+              )}
+              Test Job
+            </Button>
+
+            <Button
+              onClick={testCalendarEventCreation}
+              disabled={sendingTestJob}
+              size="sm"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            >
+              {sendingTestJob ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CalendarIcon className="h-4 w-4 mr-2" />
+              )}
+              Test Calendar
+            </Button>
+
+            <Button
+              onClick={handleRefreshDashboard}
+              disabled={dashboardLoading}
+              variant="outline"
+              size="sm"
+              className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+            >
+              {dashboardLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Key Performance Indicators */}
@@ -1831,12 +1584,12 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-400">
-                ${mockFinancialData.revenue.monthly.toLocaleString()}
+                ${financialDashboard?.revenue?.monthlyRevenue?.toLocaleString() || '0'}
               </div>
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center text-sm text-green-200">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  +{mockFinancialData.revenue.trend.monthly}%
+                  +{financialDashboard?.revenue?.revenueGrowth?.monthly || 0}%
                 </div>
                 <div className="text-xs text-green-300">
                   vs last month
@@ -1884,23 +1637,15 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-400 mb-3">
-                ${overduePayments.reduce((sum, p) => sum + (p.amount || 0), 0).toLocaleString()}
+                $0
               </div>
               <div className="space-y-2">
-                {overduePayments.slice(0, 3).map((payment, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-red-500/10 rounded">
-                    <div>
-                      <p className="text-white text-sm font-medium">{payment.guestName}</p>
-                      <p className="text-red-300 text-xs">{payment.propertyName}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-red-400 font-semibold">${(payment.amount || 0).toLocaleString()}</p>
-                      <p className="text-red-300 text-xs">
-                        {payment.daysOverdue > 0 ? `${payment.daysOverdue} days overdue` : 'Due today'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                <div className="text-center py-4">
+                  <p className="text-neutral-400 text-sm">No overdue payments</p>
+                  <p className="text-neutral-500 text-xs mt-1">
+                    Payment tracking will be implemented with real financial data
+                  </p>
+                </div>
                 {overduePayments.length > 3 && (
                   <Button
                     variant="outline"
@@ -1981,20 +1726,29 @@ export default function BackOfficePage() {
                 {highPriorityMaintenance.length}
               </div>
               <div className="space-y-2">
-                {highPriorityMaintenance.slice(0, 3).map((request) => (
-                  <div key={request.id} className="p-2 bg-orange-500/10 rounded">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-white text-sm font-medium">{request.propertyName}</p>
-                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
-                        {request.priority}
-                      </Badge>
-                    </div>
-                    <p className="text-orange-300 text-xs">{request.issue}</p>
-                    <p className="text-orange-400 text-xs mt-1">
-                      Assigned: {request.assignedTo || 'Unassigned'}
+                {highPriorityMaintenance.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-neutral-400 text-sm">No high priority maintenance</p>
+                    <p className="text-neutral-500 text-xs mt-1">
+                      Maintenance tracking will be implemented with real data
                     </p>
                   </div>
-                ))}
+                ) : (
+                  highPriorityMaintenance.slice(0, 3).map((request: any) => (
+                    <div key={request.id} className="p-2 bg-orange-500/10 rounded">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-white text-sm font-medium">{request.propertyName}</p>
+                        <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                          {request.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-orange-300 text-xs">{request.issue}</p>
+                      <p className="text-orange-400 text-xs mt-1">
+                        Assigned: {request.assignedTo || 'Unassigned'}
+                      </p>
+                    </div>
+                  ))
+                )}
                 {highPriorityMaintenance.length > 3 && (
                   <Button
                     variant="outline"
@@ -2032,60 +1786,12 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockFinancialData.byProperty.map((property: any) => (
-                  <div key={property.name} className="p-3 bg-neutral-800 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-white font-medium">{property.name}</h4>
-                      <div className="flex items-center gap-2">
-                        <Badge className={
-                          property.occupancyRate >= 80 ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                          property.occupancyRate >= 60 ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                          'bg-red-500/20 text-red-400 border-red-500/30'
-                        }>
-                          {property.occupancyRate}%
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-neutral-400">Revenue</p>
-                        <p className="text-green-400 font-semibold">${property.revenue.toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-neutral-400">Bookings</p>
-                        <p className="text-white">{property.bookings}</p>
-                      </div>
-                      <div>
-                        <p className="text-neutral-400">Avg Rate</p>
-                        <p className="text-blue-400">${property.avgNightlyRate}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${
-                          property.cleaningStatus === 'ready' ? 'bg-green-500' :
-                          property.cleaningStatus === 'in-progress' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`} />
-                        <span className="text-neutral-400">
-                          {property.cleaningStatus === 'ready' ? 'Clean' :
-                           property.cleaningStatus === 'in-progress' ? 'Cleaning' : 'Needs Cleaning'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${
-                          property.maintenanceStatus === 'excellent' ? 'bg-green-500' :
-                          property.maintenanceStatus === 'good' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`} />
-                        <span className="text-neutral-400">
-                          {property.maintenanceStatus === 'excellent' ? 'Excellent' :
-                           property.maintenanceStatus === 'good' ? 'Good' : 'Needs Attention'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <div className="text-center py-8">
+                  <p className="text-neutral-400">No property revenue data available</p>
+                  <p className="text-neutral-500 text-xs mt-1">
+                    Property revenue tracking will be implemented with real financial data
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -2110,7 +1816,7 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {realStaff.map((staff: any) => (
+                {staffList.map((staff: any) => (
                   <div key={staff.id} className="p-3 bg-neutral-800 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -2174,27 +1880,12 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockSystemAlerts.map((alert: any) => (
-                  <div key={alert.id} className="flex items-start gap-3 p-3 bg-neutral-800 rounded-lg">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      alert.severity === 'high' ? 'bg-red-500' :
-                      alert.severity === 'medium' ? 'bg-yellow-500' :
-                      'bg-blue-500'
-                    }`} />
-                    <div className="flex-1">
-                      <p className="text-white text-sm">{alert.message}</p>
-                      <p className="text-neutral-400 text-xs">{alert.timestamp}</p>
-                      <p className="text-blue-400 text-xs mt-1">{alert.action}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="p-1 h-auto"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                <div className="text-center py-8">
+                  <p className="text-neutral-400">No system alerts</p>
+                  <p className="text-neutral-500 text-xs mt-1">
+                    System alerts will be implemented with real monitoring data
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -2286,12 +1977,12 @@ export default function BackOfficePage() {
     )
   }
 
-  // Enhanced Bookings Section - Now using Integrated Bookings Tab
+  // Enhanced Bookings Section - Now using Enhanced Booking Management
   function renderBookings() {
     return (
-      <SimpleIntegratedBookingsTab
+      <EnhancedBookingManagement
         onBookingApproved={(bookingId: string) => {
-          console.log(`✅ Booking ${bookingId} approved in Back Office`)
+          console.log(`✅ Booking ${bookingId} approved in Enhanced Back Office`)
           loadAllBookingData()
         }}
         onStaffAssigned={(bookingId: string, staffIds: string[]) => {
@@ -2302,7 +1993,14 @@ export default function BackOfficePage() {
     )
   }
 
-  // Legacy booking section (kept for reference)
+  // Job Assignments Section - Real-time Job Management Dashboard
+  function renderJobAssignments() {
+    return (
+      <JobManagementDashboard />
+    )
+  }
+
+  // Legacy booking section (kept for reference) - UNUSED
   function renderLegacyBookings() {
     const filteredBookings = getFilteredBookings()
     const pendingCount = filteredBookings.filter(b => b.status === 'pending').length
@@ -2382,7 +2080,7 @@ export default function BackOfficePage() {
               <div className="flex items-center gap-3">
                 {selectedBookings.length > 0 && (
                   <Button
-                    onClick={() => setShowBulkActions(true)}
+                    onClick={() => console.log('Bulk actions not implemented')}
                     variant="outline"
                     size="sm"
                     className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
@@ -2557,7 +2255,7 @@ export default function BackOfficePage() {
                   </span>
                 </div>
                 <div className="text-neutral-400 text-sm">
-                  Showing {filteredBookings.length} of {mockBookings.length} bookings
+                  Showing {filteredBookings.length} bookings
                 </div>
               </div>
             )}

@@ -22,6 +22,22 @@ import { toast } from 'sonner'
 import { StaffAccountService, StaffAccountData } from '@/lib/services/staffAccountService'
 import { FirebaseAuthService } from '@/lib/services/firebaseAuthService'
 
+// Utility function to safely convert Firebase Timestamp to Date
+const toDate = (timestamp: any): Date => {
+  if (!timestamp) return new Date()
+
+  // If it's already a Date object
+  if (timestamp instanceof Date) return timestamp
+
+  // If it's a Firebase Timestamp with seconds and nanoseconds
+  if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+    return new Date(timestamp.seconds * 1000)
+  }
+
+  // If it's a string or number
+  return new Date(timestamp)
+}
+
 interface WizardStaffModalProps {
   isOpen: boolean
   onClose: () => void

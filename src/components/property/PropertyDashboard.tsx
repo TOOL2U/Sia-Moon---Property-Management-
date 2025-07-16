@@ -29,6 +29,22 @@ import { PropertyDashboard as PropertyDashboardType, Property } from '@/types/pr
 import { PropertyService } from '@/lib/services/propertyService'
 import toast from 'react-hot-toast'
 
+// Utility function to safely convert Firebase Timestamp to Date
+const toDate = (timestamp: any): Date => {
+  if (!timestamp) return new Date()
+
+  // If it's already a Date object
+  if (timestamp instanceof Date) return timestamp
+
+  // If it's a Firebase Timestamp with seconds and nanoseconds
+  if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+    return new Date(timestamp.seconds * 1000)
+  }
+
+  // If it's a string or number
+  return new Date(timestamp)
+}
+
 interface PropertyDashboardProps {
   onViewProperty?: (property: Property) => void
   onCreateProperty?: () => void
@@ -362,7 +378,7 @@ export default function PropertyDashboard({ onViewProperty, onCreateProperty }: 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-white">{activity.description}</p>
                     <p className="text-xs text-neutral-400">{activity.propertyName}</p>
-                    <p className="text-xs text-neutral-500">{new Date(activity.timestamp).toLocaleDateString()}</p>
+                    <p className="text-xs text-neutral-500">{toDate(activity.timestamp).toLocaleDateString()}</p>
                   </div>
                 </div>
               ))}

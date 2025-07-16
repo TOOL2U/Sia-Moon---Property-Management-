@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
+import { Textarea } from '@/components/ui/Textarea'
 import { toast } from 'sonner'
 import {
   Calendar,
@@ -15,9 +17,12 @@ import {
   DollarSign,
   Home,
   UserCheck,
-  Eye
+  Eye,
+  AlertTriangle,
+  User
 } from 'lucide-react'
 import StaffAssignmentModal from '@/components/booking/StaffAssignmentModal'
+import CreateJobModal from '@/components/job-assignment/CreateJobModal'
 
 interface SimpleIntegratedBookingsTabProps {
   onBookingApproved?: (bookingId: string) => void
@@ -35,6 +40,20 @@ export function SimpleIntegratedBookingsTab({
   // Staff Assignment Modal State
   const [staffAssignmentModal, setStaffAssignmentModal] = useState<{ booking: any } | null>(null)
   const [showApprovalSuccess, setShowApprovalSuccess] = useState<string | null>(null)
+
+  // Job Assignment Modal State (Alternative to StaffAssignmentModal)
+  const [createJobModal, setCreateJobModal] = useState<{ booking: any } | null>(null)
+
+  // Rejection confirmation dialog state
+  const [rejectionDialog, setRejectionDialog] = useState<{
+    isOpen: boolean
+    booking: any | null
+    rejectionReason: string
+  }>({
+    isOpen: false,
+    booking: null,
+    rejectionReason: ''
+  })
 
   // Helper function to prepare booking data for staff assignment modal
   const prepareBookingForStaffAssignment = (booking: any) => {
@@ -56,24 +75,51 @@ export function SimpleIntegratedBookingsTab({
     }
   }
 
-  // Enhanced workflow function for seamless booking approval to staff assignment
-  const triggerStaffAssignmentWorkflow = (booking: any, delay: number = 1500) => {
-    console.log('🎯 Triggering enhanced staff assignment workflow for booking:', booking.id)
+  // Handle rejection confirmation
+  const handleRejectBooking = (booking: any) => {
+    setRejectionDialog({
+      isOpen: true,
+      booking,
+      rejectionReason: ''
+    })
+  }
+
+  // Confirm booking rejection
+  const confirmBookingRejection = async () => {
+    if (!rejectionDialog.booking) return
+
+    const { booking } = rejectionDialog
+    const rejectionReason = rejectionDialog.rejectionReason.trim() || 'Booking rejected by admin'
+
+    // Close dialog first
+    setRejectionDialog({
+      isOpen: false,
+      booking: null,
+      rejectionReason: ''
+    })
+
+    // Proceed with rejection
+    await handleBookingAction(booking.id, 'reject', rejectionReason)
+  }
+
+  // Enhanced workflow function for seamless booking approval to job assignment
+  const triggerJobAssignmentWorkflow = (booking: any, delay: number = 1500) => {
+    console.log('🎯 Triggering enhanced job assignment workflow for booking:', booking.id)
 
     // Show approval success indicator
     setShowApprovalSuccess(booking.id)
 
-    // Auto-open staff assignment modal with smooth transition
+    // Auto-open job assignment modal with smooth transition
     setTimeout(() => {
       const modalBooking = prepareBookingForStaffAssignment(booking)
-      setStaffAssignmentModal({ booking: modalBooking })
+      setCreateJobModal({ booking: modalBooking })
       setShowApprovalSuccess(null)
 
-      toast.info('🎯 Opening job assignment wizard with enhanced notifications...', {
+      toast.info('🎯 Opening job assignment wizard with staff selection...', {
         duration: 3000
       })
 
-      console.log('✅ Staff assignment modal opened with booking data:', modalBooking)
+      console.log('✅ Job assignment modal opened with booking data:', modalBooking)
     }, delay)
   }
 
@@ -128,26 +174,35 @@ export function SimpleIntegratedBookingsTab({
       const result = await response.json()
 
       if (result.success) {
-        toast.success(`Booking ${action}d successfully!`)
-
-        // Update local state
-        setAllBookings(prev => prev.map(booking =>
-          booking.id === bookingId
-            ? { ...booking, status: action === 'approve' ? 'approved' : 'rejected' }
-            : booking
-        ))
-
-        // Trigger callback
-        if (action === 'approve' && onBookingApproved) {
-          onBookingApproved(bookingId)
-        }
-
-        // **AUTOMATIC WORKFLOW**: For approved bookings, trigger enhanced staff assignment workflow
         if (action === 'approve') {
+          toast.success('Booking approved successfully!', {
+            description: 'Job assignment wizard will open automatically'
+          })
+
+          // Update local state for approved booking
+          setAllBookings(prev => prev.map(booking =>
+            booking.id === bookingId
+              ? { ...booking, status: 'approved' }
+              : booking
+          ))
+
+          // Trigger callback
+          if (onBookingApproved) {
+            onBookingApproved(bookingId)
+          }
+
+          // **AUTOMATIC WORKFLOW**: For approved bookings, trigger enhanced job assignment workflow
           const approvedBooking = allBookings.find(b => b.id === bookingId)
           if (approvedBooking) {
-            triggerStaffAssignmentWorkflow(approvedBooking)
+            triggerJobAssignmentWorkflow(approvedBooking)
           }
+        } else {
+          toast.success('Booking rejected successfully!', {
+            description: 'Booking has been removed from the active list'
+          })
+
+          // Remove rejected booking from display
+          setAllBookings(prev => prev.filter(booking => booking.id !== bookingId))
         }
 
       } else {
@@ -248,7 +303,7 @@ export function SimpleIntegratedBookingsTab({
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
           <CardTitle className="text-white flex items-center justify-between">
-            <span>Bookings ({allBookings.length})</span>
+            <span>Active Bookings ({allBookings.filter(b => b.status !== 'rejected').length})</span>
             <Badge className="bg-blue-600 text-white">
               Live Data
             </Badge>
@@ -260,7 +315,7 @@ export function SimpleIntegratedBookingsTab({
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
               <span className="ml-2 text-gray-400">Loading bookings...</span>
             </div>
-          ) : allBookings.length === 0 ? (
+          ) : allBookings.filter(b => b.status !== 'rejected').length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-12 w-12 text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-400 mb-2">No bookings found</h3>
@@ -268,7 +323,7 @@ export function SimpleIntegratedBookingsTab({
             </div>
           ) : (
             <div className="space-y-4">
-              {allBookings.map((booking) => (
+              {allBookings.filter(b => b.status !== 'rejected').map((booking) => (
                 <div
                   key={booking.id}
                   className="border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors"
@@ -334,7 +389,7 @@ export function SimpleIntegratedBookingsTab({
                             Approve
                           </Button>
                           <Button
-                            onClick={() => handleBookingApproval(booking.id, 'reject')}
+                            onClick={() => handleRejectBooking(booking)}
                             disabled={processingBookingId === booking.id}
                             variant="outline"
                             className="border-red-500/50 text-red-400 hover:bg-red-500/10"
@@ -355,8 +410,8 @@ export function SimpleIntegratedBookingsTab({
                           {/* Manual Staff Assignment Button */}
                           <Button
                             onClick={() => {
-                              console.log('🎯 Manual staff assignment triggered for booking:', booking.id)
-                              triggerStaffAssignmentWorkflow(booking, 0) // Immediate trigger for manual action
+                              console.log('🎯 Manual job assignment triggered for booking:', booking.id)
+                              triggerJobAssignmentWorkflow(booking, 0) // Immediate trigger for manual action
                             }}
                             className="bg-purple-600 hover:bg-purple-700 text-white"
                             size="sm"
@@ -450,6 +505,120 @@ export function SimpleIntegratedBookingsTab({
           }}
         />
       )}
+
+      {/* Job Assignment Modal - Enhanced Workflow */}
+      {createJobModal && (
+        <CreateJobModal
+          isOpen={!!createJobModal}
+          onClose={() => {
+            setCreateJobModal(null)
+            console.log('🔄 Job assignment modal closed')
+          }}
+          onJobCreated={(jobId) => {
+            console.log('✅ Job created successfully:', jobId)
+
+            // Close modal
+            setCreateJobModal(null)
+
+            // Refresh booking data to show updated assignments
+            loadAllBookings()
+
+            // Show success message
+            toast.success('🎉 Job created and assigned successfully! Staff member has been notified.', {
+              duration: 4000
+            })
+
+            // Trigger callback for parent component
+            if (onStaffAssigned && createJobModal.booking) {
+              onStaffAssigned(createJobModal.booking.id, [jobId])
+            }
+
+            // Log the successful workflow completion
+            console.log('🎯 Complete workflow: Booking approved → Job created → Staff assigned → Notifications sent')
+          }}
+          prePopulatedBooking={createJobModal.booking}
+        />
+      )}
+
+      {/* Booking Rejection Confirmation Dialog */}
+      <Dialog open={rejectionDialog.isOpen} onOpenChange={(open) => {
+        if (!open) {
+          setRejectionDialog({
+            isOpen: false,
+            booking: null,
+            rejectionReason: ''
+          })
+        }
+      }}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-400 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Confirm Booking Rejection
+            </DialogTitle>
+            <DialogDescription className="text-gray-300">
+              Are you sure you want to reject this booking? This action cannot be undone and the booking will be permanently removed from the active list.
+            </DialogDescription>
+          </DialogHeader>
+
+          {rejectionDialog.booking && (
+            <div className="bg-gradient-to-r from-red-900/20 to-rose-900/20 border border-red-500/30 rounded-lg p-4 my-4">
+              <div className="flex items-center gap-3 mb-2">
+                <User className="w-5 h-5 text-red-400" />
+                <div>
+                  <h4 className="font-medium text-white">
+                    {rejectionDialog.booking.guestName || rejectionDialog.booking.guest_name}
+                  </h4>
+                  <p className="text-sm text-gray-400">
+                    {rejectionDialog.booking.propertyName || rejectionDialog.booking.property}
+                  </p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-300">
+                <div>Check-in: {rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in}</div>
+                <div>Total: ${rejectionDialog.booking.price || rejectionDialog.booking.amount || rejectionDialog.booking.total || 0}</div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">
+              Rejection Reason (Optional)
+            </label>
+            <Textarea
+              value={rejectionDialog.rejectionReason}
+              onChange={(e) => setRejectionDialog(prev => ({
+                ...prev,
+                rejectionReason: e.target.value
+              }))}
+              placeholder="Enter reason for rejection (e.g., dates unavailable, property maintenance, etc.)"
+              className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 resize-none"
+              rows={3}
+            />
+          </div>
+
+          <DialogFooter className="flex gap-3">
+            <Button
+              onClick={() => setRejectionDialog({
+                isOpen: false,
+                booking: null,
+                rejectionReason: ''
+              })}
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmBookingRejection}
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

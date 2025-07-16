@@ -214,12 +214,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { bookingData, jobDetails, assignedBy } = body
+    const {
+      bookingData,
+      jobDetails,
+      assignedBy,
+      assignedStaffId,
+      assignedStaffName,
+      notificationOptions
+    } = body
 
     // Validate required fields
     if (!bookingData || !jobDetails || !assignedBy) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields: bookingData, jobDetails, assignedBy' },
+        { status: 400 }
+      )
+    }
+
+    // MANDATORY VALIDATION: Staff assignment is required
+    if (!assignedStaffId) {
+      return NextResponse.json(
+        { success: false, error: 'MANDATORY: Staff assignment is required. You must assign this job to a staff member.' },
         { status: 400 }
       )
     }
@@ -254,6 +269,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('📋 Creating job with staff assignment...')
+    console.log('👤 Assigned staff ID:', assignedStaffId)
+    console.log('👤 Assigned staff name:', assignedStaffName)
+
+    // Step 1: Create the job
     const result = await JobAssignmentService.createJobFromBooking(
       bookingData,
       jobDetails,
@@ -267,10 +287,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('✅ Job created successfully:', result.jobId)
+
+    // Step 2: Assign staff to the job
+    const jobId = result.jobId
+    if (!jobId) {
+      return NextResponse.json(
+        { success: false, error: 'Job created but job ID is missing' },
+        { status: 500 }
+      )
+    }
+
+    const assignmentResult = await JobAssignmentService.assignStaffToJob(
+      jobId,
+      assignedStaffId,
+      assignedBy,
+      {
+        sendNotification: notificationOptions?.sendNotification !== false,
+        customMessage: notificationOptions?.customMessage || `New ${jobDetails.jobType} job assigned: ${jobDetails.title}`,
+        scheduledStartTime: jobDetails.scheduledStartTime,
+        scheduledEndTime: undefined // Will be calculated based on duration
+      }
+    )
+
+    if (!assignmentResult.success) {
+      console.error('❌ Failed to assign staff to job:', assignmentResult.error)
+      // Job was created but staff assignment failed
+      return NextResponse.json({
+        success: false,
+        error: `Job created but staff assignment failed: ${assignmentResult.error}`,
+        jobId: result.jobId
+      }, { status: 500 })
+    }
+
+    console.log('✅ Staff assigned successfully to job:', result.jobId)
+    console.log('📱 Notifications sent to staff member:', assignedStaffName)
+
     return NextResponse.json({
       success: true,
       jobId: result.jobId,
-      message: 'Job assignment created successfully'
+      assignedStaffId,
+      assignedStaffName,
+      message: `Job assignment created and assigned to ${assignedStaffName} successfully. Notifications sent to staff dashboard and mobile device.`
     })
   } catch (error) {
     console.error('❌ Error in POST /api/admin/job-assignments:', error)

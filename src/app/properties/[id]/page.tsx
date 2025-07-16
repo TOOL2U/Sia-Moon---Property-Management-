@@ -11,6 +11,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
+import { formatLocalDate } from '@/utils/dateUtils'
 
 export default function PropertyDetailsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -300,29 +301,13 @@ export default function PropertyDetailsPage() {
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Created</label>
                     <p className="text-white">
-                      {(() => {
-                        if (property.createdAt && typeof property.createdAt.toDate === 'function') {
-                          return property.createdAt.toDate().toLocaleDateString()
-                        } else if (property.createdAt) {
-                          return new Date(property.createdAt as any).toLocaleDateString()
-                        } else {
-                          return new Date().toLocaleDateString()
-                        }
-                      })()}
+                      {formatLocalDate(property.createdAt)}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-400">Last Updated</label>
                     <p className="text-white">
-                      {(() => {
-                        if (property.updatedAt && typeof property.updatedAt.toDate === 'function') {
-                          return property.updatedAt.toDate().toLocaleDateString()
-                        } else if (property.updatedAt) {
-                          return new Date(property.updatedAt as any).toLocaleDateString()
-                        } else {
-                          return new Date().toLocaleDateString()
-                        }
-                      })()}
+                      {formatLocalDate(property.updatedAt)}
                     </p>
                   </div>
                 </div>
@@ -396,15 +381,7 @@ export default function PropertyDetailsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400">Created Date</span>
                   <span className="font-medium text-white">
-                    {(() => {
-                      if (property.createdAt && typeof property.createdAt.toDate === 'function') {
-                        return property.createdAt.toDate().toLocaleDateString()
-                      } else if (property.createdAt) {
-                        return new Date(property.createdAt as any).toLocaleDateString()
-                      } else {
-                        return new Date().toLocaleDateString()
-                      }
-                    })()}
+                    {formatLocalDate(property.createdAt)}
                   </span>
                 </div>
               </CardContent>

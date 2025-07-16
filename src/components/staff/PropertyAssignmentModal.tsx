@@ -16,18 +16,13 @@ interface PropertyAssignmentModalProps {
   staff: StaffProfile | null
 }
 
-// Mock property data - in a real app, this would come from a properties service
-const AVAILABLE_PROPERTIES = [
-  { id: 'villa-001', name: 'Ocean View Villa', location: 'Miami Beach', type: 'Luxury Villa', capacity: 8 },
-  { id: 'villa-002', name: 'Sunset Paradise', location: 'Key Biscayne', type: 'Beach House', capacity: 6 },
-  { id: 'villa-003', name: 'Garden Estate', location: 'Coral Gables', type: 'Estate', capacity: 12 },
-  { id: 'villa-004', name: 'Modern Penthouse', location: 'Downtown Miami', type: 'Penthouse', capacity: 4 },
-  { id: 'villa-005', name: 'Tropical Retreat', location: 'Coconut Grove', type: 'Villa', capacity: 10 }
-]
+// TODO: Replace with real property data from Firebase properties collection
 
 export default function PropertyAssignmentModal({ isOpen, onClose, onSuccess, staff }: PropertyAssignmentModalProps) {
   const [loading, setLoading] = useState(false)
   const [selectedProperties, setSelectedProperties] = useState<string[]>([])
+  const [availableProperties, setAvailableProperties] = useState<any[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true)
 
   // Initialize selected properties when staff changes
   useEffect(() => {
@@ -35,6 +30,27 @@ export default function PropertyAssignmentModal({ isOpen, onClose, onSuccess, st
       setSelectedProperties(staff.assignedProperties || [])
     }
   }, [staff])
+
+  // Load properties when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadProperties()
+    }
+  }, [isOpen])
+
+  const loadProperties = async () => {
+    try {
+      setIsLoadingProperties(true)
+      // TODO: Implement real property loading from Firebase
+      // For now, use empty array until properties collection is implemented
+      setAvailableProperties([])
+    } catch (error) {
+      console.error('Error loading properties:', error)
+      setAvailableProperties([])
+    } finally {
+      setIsLoadingProperties(false)
+    }
+  }
 
   const handlePropertyToggle = (propertyId: string) => {
     setSelectedProperties(prev => 
@@ -78,7 +94,7 @@ export default function PropertyAssignmentModal({ isOpen, onClose, onSuccess, st
   if (!isOpen || !staff) return null
 
   const assignedCount = selectedProperties.length
-  const availableCount = AVAILABLE_PROPERTIES.length - assignedCount
+  const availableCount = availableProperties.length - assignedCount
 
   return (
     <AnimatePresence>
@@ -139,7 +155,19 @@ export default function PropertyAssignmentModal({ isOpen, onClose, onSuccess, st
           <div className="p-6">
             <h3 className="text-lg font-medium text-white mb-4">Available Properties</h3>
             <div className="space-y-3">
-              {AVAILABLE_PROPERTIES.map((property) => {
+              {isLoadingProperties ? (
+                <div className="text-center py-8">
+                  <div className="text-neutral-400">Loading properties...</div>
+                </div>
+              ) : availableProperties.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-neutral-400">No properties available</div>
+                  <div className="text-sm text-neutral-500 mt-1">
+                    Properties will be loaded from Firebase when implemented
+                  </div>
+                </div>
+              ) : (
+                availableProperties.map((property) => {
                 const isAssigned = selectedProperties.includes(property.id)
                 
                 return (
@@ -190,7 +218,8 @@ export default function PropertyAssignmentModal({ isOpen, onClose, onSuccess, st
                     </div>
                   </div>
                 )
-              })}
+              })
+              )}
             </div>
           </div>
 

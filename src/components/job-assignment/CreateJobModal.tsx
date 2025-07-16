@@ -11,7 +11,7 @@ import {
   X, Calendar, Clock, Users, MapPin, AlertCircle, Plus, Minus,
   ChevronLeft, ChevronRight, Check, Edit3, Wrench, Shield,
   Eye, Settings, UserCheck, Sparkles, ArrowRight, ArrowLeft,
-  Home, Clipboard, Star, Zap, Timer, CheckCircle
+  Home, Clipboard, Star, Zap, Timer, CheckCircle, User, Loader2
 } from 'lucide-react'
 
 // Components
@@ -50,6 +50,7 @@ const WIZARD_STEPS = [
   { id: 'priority', title: 'Priority & Urgency', description: 'How urgent is this job?' },
   { id: 'scheduling', title: 'Scheduling', description: 'When should this be completed?' },
   { id: 'requirements', title: 'Staff Requirements', description: 'Skills and duration needed' },
+  { id: 'staff-assignment', title: 'Assign Staff', description: 'Select staff member to assign this job' },
   { id: 'instructions', title: 'Special Instructions', description: 'Additional details and requirements' },
   { id: 'review', title: 'Review & Create', description: 'Confirm all details before creating' }
 ]
@@ -266,13 +267,49 @@ export default function CreateJobModal({
   const [selectedSkillCategory, setSelectedSkillCategory] = useState<string>('Cleaning')
   const [customInstruction, setCustomInstruction] = useState('')
 
+  // Staff assignment state
+  const [selectedStaffId, setSelectedStaffId] = useState('')
+  const [availableStaff, setAvailableStaff] = useState<any[]>([])
+  const [loadingStaff, setLoadingStaff] = useState(false)
+  const [staffAssignmentRequired, setStaffAssignmentRequired] = useState(true)
+
+  // Load available staff from staff_accounts collection
+  const loadAvailableStaff = useCallback(async () => {
+    try {
+      setLoadingStaff(true)
+      console.log('📋 Loading available staff from staff_accounts collection...')
+
+      const response = await fetch('/api/admin/staff-accounts?limit=50&status=active')
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        const activeStaff = result.data.filter((staff: any) => staff.isActive)
+        setAvailableStaff(activeStaff)
+        console.log(`✅ Loaded ${activeStaff.length} active staff members`)
+      } else {
+        console.error('❌ Failed to load staff:', result.error)
+        toast.error('Failed to load available staff')
+      }
+    } catch (error) {
+      console.error('❌ Error loading staff:', error)
+      toast.error('Error loading staff members')
+    } finally {
+      setLoadingStaff(false)
+    }
+  }, [])
+
   // Wizard navigation functions
   const nextStep = useCallback(() => {
     if (currentStep < WIZARD_STEPS.length - 1) {
       setSlideDirection('right')
       setCurrentStep(prev => prev + 1)
+
+      // Load staff when reaching staff assignment step
+      if (WIZARD_STEPS[currentStep + 1].id === 'staff-assignment') {
+        loadAvailableStaff()
+      }
     }
-  }, [currentStep])
+  }, [currentStep, loadAvailableStaff])
 
   const prevStep = useCallback(() => {
     if (currentStep > 0) {
@@ -301,14 +338,16 @@ export default function CreateJobModal({
         return !!formData.scheduledDate && !!formData.deadline
       case 4: // Requirements
         return formData.estimatedDuration > 0
-      case 5: // Instructions
+      case 5: // Staff Assignment - MANDATORY
+        return !!selectedStaffId && availableStaff.some(staff => staff.id === selectedStaffId && staff.isActive)
+      case 6: // Instructions
         return true // Optional step
-      case 6: // Review
-        return true
+      case 7: // Review
+        return !!formData.title && !!formData.description && !!formData.scheduledDate && !!formData.deadline && !!selectedStaffId
       default:
         return false
     }
-  }, [formData, prePopulatedBooking])
+  }, [formData, prePopulatedBooking, selectedStaffId, availableStaff])
 
   // Keyboard navigation
   useEffect(() => {
@@ -423,6 +462,24 @@ export default function CreateJobModal({
       return
     }
 
+    // MANDATORY VALIDATION: Staff assignment is required
+    if (!selectedStaffId) {
+      toast.error('MANDATORY: You must assign this job to a staff member. Staff assignment is required for all jobs.')
+      return
+    }
+
+    // Validate selected staff exists and is active
+    const selectedStaff = availableStaff.find(staff => staff.id === selectedStaffId)
+    if (!selectedStaff) {
+      toast.error('Selected staff member not found. Please select a valid staff member.')
+      return
+    }
+
+    if (!selectedStaff.isActive) {
+      toast.error('Cannot assign job to inactive staff member. Please select an active staff member.')
+      return
+    }
+
     setLoading(true)
     try {
       // Prepare booking data - use provided booking or create manual entry
@@ -450,6 +507,9 @@ export default function CreateJobModal({
         numberOfGuests: 1
       }
 
+      console.log('📋 Creating job with staff assignment...')
+      console.log('👤 Assigned staff:', selectedStaff.name, '(', selectedStaff.id, ')')
+
       const response = await fetch('/api/admin/job-assignments', {
         method: 'POST',
         headers: {
@@ -470,9 +530,18 @@ export default function CreateJobModal({
             scheduledStartTime: formData.scheduledStartTime || undefined,
             deadline: formData.deadline
           },
+          // STAFF ASSIGNMENT: Include selected staff member
+          assignedStaffId: selectedStaffId,
+          assignedStaffName: selectedStaff.name,
           assignedBy: {
             id: 'admin', // TODO: Get from current user context
             name: 'Admin User'
+          },
+          // Enhanced notification options
+          notificationOptions: {
+            sendNotification: true,
+            customMessage: `New ${formData.jobType} job assigned: ${formData.title}`,
+            priority: formData.priority
           }
         })
       })
@@ -516,8 +585,10 @@ export default function CreateJobModal({
       case 4:
         return renderRequirementsStep()
       case 5:
-        return renderInstructionsStep()
+        return renderStaffAssignmentStep()
       case 6:
+        return renderInstructionsStep()
+      case 7:
         return renderReviewStep()
       default:
         return null
@@ -1151,7 +1222,114 @@ export default function CreateJobModal({
     )
   }
 
-  // Step 6: Special Instructions
+  // Step 6: Staff Assignment
+  function renderStaffAssignmentStep() {
+    return (
+      <div className="space-y-6">
+        <div className="text-center mb-8">
+          <h3 className="text-lg font-medium text-white mb-2">Assign to Staff Member</h3>
+          <p className="text-gray-400">Select a staff member to assign this job to</p>
+        </div>
+
+        {/* Staff Assignment Required Notice */}
+        <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-blue-500" />
+            <p className="text-blue-400 font-medium">Staff Assignment Required</p>
+          </div>
+          <p className="text-blue-300 text-sm mt-2">
+            You must assign this job to a staff member. This ensures proper task allocation and notification delivery.
+          </p>
+        </div>
+
+        {/* Staff Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-4">
+            <UserCheck className="w-4 h-4 inline mr-2" />
+            Select Staff Member
+          </label>
+
+          {loadingStaff ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+              <span className="ml-2 text-gray-400">Loading available staff...</span>
+            </div>
+          ) : availableStaff.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-400 mb-2">No Staff Available</h3>
+              <p className="text-gray-500">No active staff members found for assignment</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {availableStaff.map((staff) => (
+                <div
+                  key={staff.id}
+                  onClick={() => setSelectedStaffId(staff.id)}
+                  className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    selectedStaffId === staff.id
+                      ? 'border-blue-500 bg-blue-500/10'
+                      : 'border-gray-600 bg-gray-700/50 hover:border-gray-500 hover:bg-gray-600/50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      selectedStaffId === staff.id ? 'bg-blue-500' : 'bg-gray-600'
+                    }`}>
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-white">{staff.name}</h4>
+                      <p className="text-sm text-gray-400">{staff.role}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                          Available
+                        </Badge>
+                        {staff.skills && staff.skills.length > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {staff.skills.slice(0, 2).join(', ')}
+                            {staff.skills.length > 2 && ` +${staff.skills.length - 2}`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {selectedStaffId === staff.id && (
+                      <CheckCircle className="w-5 h-5 text-blue-500" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Staff Summary */}
+        {selectedStaffId && (
+          <div className="bg-green-900/20 border border-green-500 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <p className="text-green-400 font-medium">Staff Member Selected</p>
+            </div>
+            {(() => {
+              const selectedStaff = availableStaff.find(s => s.id === selectedStaffId)
+              return selectedStaff ? (
+                <div className="mt-2">
+                  <p className="text-green-300 text-sm">
+                    <strong>{selectedStaff.name}</strong> ({selectedStaff.role}) will be assigned this job.
+                  </p>
+                  <p className="text-green-300 text-xs mt-1">
+                    Notifications will be sent to their dashboard and mobile device.
+                  </p>
+                </div>
+              ) : null
+            })()}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Step 7: Special Instructions
   function renderInstructionsStep() {
     return (
       <div className="space-y-6">

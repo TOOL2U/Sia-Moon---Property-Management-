@@ -6,14 +6,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { 
   Smartphone,
   Wifi,
   WifiOff,
-  Sync,
+  RefreshCw,
   Bell,
   CheckCircle,
   AlertCircle,
@@ -81,56 +81,40 @@ export default function MobileIntegrationLayer({
     try {
       setIsLoading(true)
       
-      // Mock mobile device data
-      const mockDevices: MobileDevice[] = [
-        {
-          id: 'device-001',
-          staffId: 'staff-001',
-          staffName: 'Maria Santos',
-          deviceType: 'android',
-          appVersion: '2.1.3',
-          isOnline: true,
-          lastSync: new Date(Date.now() - 2 * 60000), // 2 minutes ago
-          batteryLevel: 85,
-          pendingUpdates: 0,
-          unreadNotifications: 2
-        },
-        {
-          id: 'device-002',
-          staffId: 'staff-002',
-          staffName: 'Carlos Rodriguez',
-          deviceType: 'ios',
-          appVersion: '2.1.3',
-          isOnline: true,
-          lastSync: new Date(Date.now() - 5 * 60000), // 5 minutes ago
-          batteryLevel: 92,
-          pendingUpdates: 1,
-          unreadNotifications: 0
-        },
-        {
-          id: 'device-003',
-          staffId: 'staff-003',
-          staffName: 'Ana Silva',
-          deviceType: 'android',
-          appVersion: '2.1.2',
-          appVersion: '2.1.2',
-          isOnline: false,
-          lastSync: new Date(Date.now() - 45 * 60000), // 45 minutes ago
-          batteryLevel: 23,
-          pendingUpdates: 3,
-          unreadNotifications: 5
-        }
-      ]
-      
-      setDevices(mockDevices)
+      // TODO: Replace with real Firebase query to get mobile device data
+      // For now, load from staff_accounts collection and derive device info
+      const response = await fetch('/api/admin/staff-accounts')
+      if (!response.ok) {
+        throw new Error('Failed to fetch staff accounts')
+      }
+
+      const { staffAccounts } = await response.json()
+
+      // Transform staff accounts to mobile device format
+      const deviceData: MobileDevice[] = staffAccounts
+        .filter((staff: any) => staff.status === 'active')
+        .map((staff: any) => ({
+          id: `device-${staff.id}`,
+          staffId: staff.id,
+          staffName: staff.name,
+          deviceType: 'unknown' as const, // TODO: Track actual device type
+          appVersion: '2.1.3', // TODO: Track actual app version
+          isOnline: Math.random() > 0.3, // TODO: Track actual online status
+          lastSync: new Date(Date.now() - Math.random() * 60 * 60000), // TODO: Track actual sync time
+          batteryLevel: Math.floor(Math.random() * 100), // TODO: Track actual battery level
+          pendingUpdates: Math.floor(Math.random() * 3), // TODO: Track actual pending updates
+          unreadNotifications: Math.floor(Math.random() * 5) // TODO: Track actual notifications
+        }))
+
+      setDevices(deviceData)
       
       // Update sync status
       setSyncStatus({
         isConnected: true,
         lastSync: new Date(),
-        pendingJobs: mockDevices.reduce((sum, device) => sum + device.pendingUpdates, 0),
-        pendingUpdates: mockDevices.filter(d => !d.isOnline).length,
-        syncErrors: mockDevices.filter(d => d.lastSync < new Date(Date.now() - 60 * 60000)).length
+        pendingJobs: deviceData.reduce((sum: number, device: MobileDevice) => sum + device.pendingUpdates, 0),
+        pendingUpdates: deviceData.filter((d: MobileDevice) => !d.isOnline).length,
+        syncErrors: deviceData.filter((d: MobileDevice) => d.lastSync < new Date(Date.now() - 60 * 60000)).length
       })
       
     } catch (error) {
@@ -234,7 +218,7 @@ export default function MobileIntegrationLayer({
             variant="outline"
             className="border-gray-600"
           >
-            <Sync className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -372,7 +356,7 @@ export default function MobileIntegrationLayer({
                     className="border-green-500 text-green-400"
                     disabled={!device.isOnline}
                   >
-                    <Sync className="w-3 h-3 mr-1" />
+                    <RefreshCw className="w-3 h-3 mr-1" />
                     Force Sync
                   </Button>
                   <Button

@@ -18,6 +18,8 @@ import {
   SyncEvent
 } from '@/types/booking-sync'
 import { generateAutomaticAssignments } from '@/lib/services/automaticAssignmentService'
+import CalendarEventService from '@/services/CalendarEventService'
+import IntelligentStaffAssignmentService from '@/services/IntelligentStaffAssignmentService'
 
 /**
  * Create a sync event for cross-platform tracking
@@ -214,6 +216,66 @@ export async function POST(request: NextRequest) {
         console.log(`✅ BOOKING APPROVAL: Generated ${assignmentResults.assignmentsCreated} assignments`)
       } else {
         console.log(`⚠️ BOOKING APPROVAL: Assignment generation had errors:`, assignmentResults.errors)
+      }
+
+      // Create calendar event for approved booking
+      console.log('📅 BOOKING APPROVAL: Creating calendar event...')
+      try {
+        const calendarResult = await CalendarEventService.createEventFromBooking(bookingId)
+
+        if (calendarResult.success) {
+          console.log(`✅ BOOKING APPROVAL: Calendar event created: ${calendarResult.eventId}`)
+
+          // Attempt intelligent auto-assignment
+          console.log('🤖 BOOKING APPROVAL: Attempting intelligent staff auto-assignment...')
+          try {
+            const jobData = {
+              id: calendarResult.eventId!,
+              title: `${bookingData.property || 'Property'} Service`,
+              type: 'Cleaning', // Default type, can be enhanced based on booking data
+              propertyId: bookingData.propertyId || bookingId,
+              propertyName: bookingData.propertyName || bookingData.property || 'Property',
+              startDate: bookingData.checkInDate || new Date().toISOString(),
+              endDate: bookingData.checkOutDate || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+              priority: 'medium' as const,
+              requiredSkills: ['cleaning', 'housekeeping'],
+              estimatedDuration: 120 // 2 hours default
+            }
+
+            const aiResult = await IntelligentStaffAssignmentService.getAssignmentSuggestions(jobData)
+
+            if (aiResult.suggestions.length > 0) {
+              const topSuggestion = aiResult.suggestions[0]
+
+              // Auto-assign if confidence is high enough (>70%)
+              if (topSuggestion.confidence > 0.7) {
+                const assignResult = await CalendarEventService.updateEventStaff(
+                  calendarResult.eventId!,
+                  topSuggestion.staffId,
+                  topSuggestion.staffName
+                )
+
+                if (assignResult.success) {
+                  console.log(`✅ BOOKING APPROVAL: Auto-assigned ${topSuggestion.staffName} with ${Math.round(topSuggestion.confidence * 100)}% confidence`)
+                } else {
+                  console.warn('⚠️ BOOKING APPROVAL: Auto-assignment failed:', assignResult.error)
+                }
+              } else {
+                console.log(`⚠️ BOOKING APPROVAL: Auto-assignment skipped - low confidence (${Math.round(topSuggestion.confidence * 100)}%)`)
+              }
+            } else {
+              console.log('⚠️ BOOKING APPROVAL: No suitable staff found for auto-assignment')
+            }
+
+          } catch (aiError) {
+            console.error('❌ BOOKING APPROVAL: AI auto-assignment error:', aiError)
+          }
+
+        } else {
+          console.warn('⚠️ BOOKING APPROVAL: Calendar event creation failed:', calendarResult.error)
+        }
+      } catch (calendarError) {
+        console.error('❌ BOOKING APPROVAL: Calendar event creation error:', calendarError)
       }
     }
 
