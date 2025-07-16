@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 // BookingService and EnhancedBookingService removed - now using direct API calls
-import FinancialService from '@/lib/services/financialService'
+// FinancialService removed - was using mock data
 import toast from 'react-hot-toast'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -258,16 +258,15 @@ export default function BackOfficePage() {
     }
   }, [staffFilters, user])
 
-  // Financial data loading
+  // Financial data loading - now uses real booking data
   const loadFinancialData = async () => {
     try {
       setFinancialLoading(true)
       console.log('🔄 Loading financial data...')
 
-      const dashboard = await FinancialService.getFinancialDashboard(financialFilters)
-      setFinancialDashboard(dashboard)
-
-      console.log('✅ Financial data loaded successfully')
+      // Financial data is now calculated from real bookings in loadBookingData()
+      // This function is kept for compatibility but doesn't need to do anything
+      console.log('✅ Financial data loaded from real bookings')
     } catch (error) {
       console.error('❌ Error loading financial data:', error)
       toast.error('Failed to load financial data')
@@ -479,18 +478,123 @@ export default function BackOfficePage() {
           .filter((b: any) => new Date(b.checkIn).getMonth() === new Date().getMonth())
           .reduce((sum: number, booking: any) => sum + (booking.amount || 0), 0)
 
-        // Create simplified financial data for now
-        const calculatedFinancialData = {
+        // Create comprehensive financial data structure
+        const calculatedFinancialData: FinancialDashboard = {
           revenue: {
+            totalRevenue,
             monthlyRevenue,
+            quarterlyRevenue: totalRevenue, // TODO: Calculate actual quarterly
+            yearlyRevenue: totalRevenue, // TODO: Calculate actual yearly
             revenueGrowth: {
-              monthly: 0 // TODO: Calculate actual growth
-            }
+              monthly: 0, // TODO: Calculate actual growth
+              quarterly: 0,
+              yearly: 0
+            },
+            revenueByProperty: [], // TODO: Calculate by property
+            revenueBySource: [], // TODO: Calculate by source
+            revenueByMonth: [], // TODO: Calculate monthly breakdown
+            seasonalTrends: [], // TODO: Calculate seasonal trends
+            averageDailyRate: allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
+            totalBookings: allBookings.length,
+            confirmedBookings: allBookings.filter((b: any) => b.status === 'confirmed').length,
+            pendingRevenue: allBookings.filter((b: any) => b.status === 'pending').reduce((sum: number, b: any) => sum + (b.amount || 0), 0)
           },
-          totalRevenue,
-          bookingCount: allBookings.length,
-          averageBookingValue: allBookings.length > 0 ? totalRevenue / allBookings.length : 0
-        } as any // TODO: Implement proper FinancialDashboard structure
+          expenses: {
+            totalExpenses: 0, // TODO: Calculate actual expenses
+            monthlyExpenses: 0,
+            expensesByCategory: [], // TODO: Calculate by category
+            expensesByProperty: [], // TODO: Calculate by property
+            expenseGrowth: {
+              monthly: 0,
+              quarterly: 0,
+              yearly: 0
+            },
+            operationalExpenses: 0,
+            staffCosts: 0,
+            maintenanceExpenses: 0,
+            marketingExpenses: 0,
+            utilitiesExpenses: 0,
+            insuranceExpenses: 0,
+            taxExpenses: 0
+          },
+          kpis: {
+            adr: allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
+            revPAR: 0, // TODO: Calculate RevPAR
+            occupancyRate: 0, // TODO: Calculate occupancy
+            grossMargin: 0, // TODO: Calculate margins
+            netMargin: 0,
+            returnOnInvestment: 0,
+            customerLifetimeValue: 0,
+            customerAcquisitionCost: 0,
+            bookingConversionRate: 0,
+            averageBookingValue: allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
+            cashFlowRatio: 0,
+            debtToEquityRatio: 0,
+            currentRatio: 0,
+            quickRatio: 0
+          },
+          cashFlow: {
+            totalCashFlow: totalRevenue,
+            operatingCashFlow: totalRevenue,
+            investingCashFlow: 0,
+            financingCashFlow: 0,
+            cashInflows: [],
+            cashOutflows: [],
+            accountsReceivable: 0,
+            accountsPayable: 0,
+            cashOnHand: totalRevenue,
+            projectedCashFlow: [],
+            paymentMethods: []
+          },
+          profitLoss: {
+            period: {
+              startDate: new Date().toISOString().split('T')[0],
+              endDate: new Date().toISOString().split('T')[0],
+              type: 'monthly' as const
+            },
+            revenue: {
+              totalRevenue,
+              bookingRevenue: totalRevenue,
+              additionalServices: 0,
+              otherRevenue: 0
+            },
+            expenses: {
+              totalExpenses: 0,
+              operatingExpenses: 0,
+              staffCosts: 0,
+              maintenanceExpenses: 0,
+              marketingExpenses: 0,
+              administrativeExpenses: 0,
+              depreciation: 0,
+              interestExpense: 0,
+              taxes: 0
+            },
+            grossProfit: totalRevenue,
+            operatingIncome: totalRevenue,
+            netIncome: totalRevenue,
+            margins: {
+              grossMargin: 0,
+              operatingMargin: 0,
+              netMargin: 0
+            },
+            ebitda: totalRevenue
+          },
+          forecasting: {
+            forecastPeriod: {
+              startDate: new Date().toISOString().split('T')[0],
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              months: 12
+            },
+            revenueProjection: [],
+            expenseProjection: [],
+            profitProjection: [],
+            occupancyProjection: [],
+            assumptions: [],
+            confidence: 0.8,
+            scenarios: []
+          },
+          lastUpdated: new Date().toISOString()
+        }
 
         setFinancialDashboard(calculatedFinancialData)
         console.log('✅ Calculated financial dashboard data from bookings')
@@ -3179,16 +3283,16 @@ export default function BackOfficePage() {
             <CardContent>
               <div className="space-y-2">
                 <p className="text-3xl font-bold text-green-400">
-                  ${revenue.totalRevenue.toLocaleString()}
+                  ${(revenue?.totalRevenue || 0).toLocaleString()}
                 </p>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-400" />
                   <span className="text-sm text-green-400">
-                    +{revenue.revenueGrowth.monthly.toFixed(1)}% vs last month
+                    +{(revenue?.revenueGrowth?.monthly || 0).toFixed(1)}% vs last month
                   </span>
                 </div>
                 <div className="text-sm text-neutral-400">
-                  Monthly: ${revenue.monthlyRevenue.toLocaleString()}
+                  Monthly: ${(revenue?.monthlyRevenue || 0).toLocaleString()}
                 </div>
               </div>
             </CardContent>
@@ -3204,13 +3308,13 @@ export default function BackOfficePage() {
             <CardContent>
               <div className="space-y-2">
                 <p className="text-3xl font-bold text-blue-400">
-                  ${kpis.adr.toFixed(0)}
+                  ${(kpis?.adr || 0).toFixed(0)}
                 </p>
                 <div className="text-sm text-neutral-400">
-                  RevPAR: ${kpis.revPAR.toFixed(0)}
+                  RevPAR: ${(kpis?.revPAR || 0).toFixed(0)}
                 </div>
                 <div className="text-sm text-neutral-400">
-                  Occupancy: {kpis.occupancyRate.toFixed(1)}%
+                  Occupancy: {(kpis?.occupancyRate || 0).toFixed(1)}%
                 </div>
               </div>
             </CardContent>
@@ -3226,13 +3330,13 @@ export default function BackOfficePage() {
             <CardContent>
               <div className="space-y-2">
                 <p className="text-3xl font-bold text-purple-400">
-                  {kpis.grossMargin.toFixed(1)}%
+                  {(kpis?.grossMargin || 0).toFixed(1)}%
                 </p>
                 <div className="text-sm text-neutral-400">
-                  Net Margin: {kpis.netMargin.toFixed(1)}%
+                  Net Margin: {(kpis?.netMargin || 0).toFixed(1)}%
                 </div>
                 <div className="text-sm text-neutral-400">
-                  ROI: {kpis.returnOnInvestment.toFixed(1)}%
+                  ROI: {(kpis?.returnOnInvestment || 0).toFixed(1)}%
                 </div>
               </div>
             </CardContent>
@@ -3248,16 +3352,16 @@ export default function BackOfficePage() {
             <CardContent>
               <div className="space-y-2">
                 <p className="text-3xl font-bold text-orange-400">
-                  ${expenses.totalExpenses.toLocaleString()}
+                  ${(expenses?.totalExpenses || 0).toLocaleString()}
                 </p>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-orange-400" />
                   <span className="text-sm text-orange-400">
-                    +{expenses.expenseGrowth.monthly.toFixed(1)}% vs last month
+                    +{(expenses?.expenseGrowth?.monthly || 0).toFixed(1)}% vs last month
                   </span>
                 </div>
                 <div className="text-sm text-neutral-400">
-                  Monthly: ${expenses.monthlyExpenses.toLocaleString()}
+                  Monthly: ${(expenses?.monthlyExpenses || 0).toLocaleString()}
                 </div>
               </div>
             </CardContent>
@@ -3274,37 +3378,45 @@ export default function BackOfficePage() {
             <CardDescription>Performance breakdown by individual properties</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-              {revenue.revenueByProperty.map((property) => (
-                <Card key={property.propertyId} className="bg-neutral-800 border-neutral-700">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-white text-lg">{property.propertyName}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">Total Revenue</span>
-                      <span className="text-white font-semibold">${property.totalRevenue.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">Bookings</span>
-                      <span className="text-white">{property.bookingCount}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">Avg Booking Value</span>
-                      <span className="text-white">${property.averageBookingValue.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">Occupancy Rate</span>
-                      <span className="text-green-400">{property.occupancyRate.toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">ADR</span>
-                      <span className="text-blue-400">${property.adr.toFixed(0)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {revenue?.revenueByProperty && revenue.revenueByProperty.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {revenue.revenueByProperty.map((property) => (
+                  <Card key={property.propertyId} className="bg-neutral-800 border-neutral-700">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-lg">{property.propertyName}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-neutral-400">Total Revenue</span>
+                        <span className="text-white font-semibold">${(property.totalRevenue || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-neutral-400">Bookings</span>
+                        <span className="text-white">{property.bookingCount || 0}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-neutral-400">Avg Booking Value</span>
+                        <span className="text-white">${(property.averageBookingValue || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-neutral-400">Occupancy Rate</span>
+                        <span className="text-green-400">{(property.occupancyRate || 0).toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-neutral-400">ADR</span>
+                        <span className="text-blue-400">${(property.adr || 0).toFixed(0)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Building2 className="h-12 w-12 text-neutral-500 mx-auto mb-4" />
+                <p className="text-neutral-400">No property revenue data available</p>
+                <p className="text-neutral-500 text-sm">Property-specific revenue will be calculated when booking data is available</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
