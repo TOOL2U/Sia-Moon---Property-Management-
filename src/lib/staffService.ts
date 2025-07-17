@@ -551,7 +551,6 @@ class StaffService {
 
   // Mock data initialization removed for production
 }
-}
 
 const staffServiceInstance = new StaffService()
 export default staffServiceInstance

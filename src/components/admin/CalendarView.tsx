@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import '@/styles/calendar.css'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { clientToast as toast } from '@/utils/clientToast'
 import {
   Calendar as CalendarIcon,
@@ -20,21 +23,22 @@ import {
   Loader2,
   Plus,
   X,
-  AlertTriangle
+  AlertTriangle,
+  MapPin,
+  User,
+  FileText,
+  Calendar as CalendarIconSmall,
+  Phone,
+  Mail,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Save,
+  RotateCcw
 } from 'lucide-react'
 
-// FullCalendar imports - dynamically imported to avoid SSR issues
-import dynamic from 'next/dynamic'
-
-// Dynamically import FullCalendar and plugins to avoid SSR issues
-const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
-
-// Dynamic plugin imports
-const dayGridPlugin = dynamic(() => import('@fullcalendar/daygrid'), { ssr: false })
-const timeGridPlugin = dynamic(() => import('@fullcalendar/timegrid'), { ssr: false })
-const resourceDayGridPlugin = dynamic(() => import('@fullcalendar/resource-daygrid'), { ssr: false })
-import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
+// FullCalendar wrapper - handles SSR issues
+import FullCalendarWrapper from './FullCalendarWrapper'
 
 // Firebase imports
 import { db } from '@/lib/firebase'
@@ -72,6 +76,9 @@ export function CalendarView({ className }: CalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [conflictCheck, setConflictCheck] = useState<any>(null)
   const [showConflictDialog, setShowConflictDialog] = useState(false)
+  const [showEventDetails, setShowEventDetails] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editFormData, setEditFormData] = useState<any>({})
 
   // Auto-assignment removed - use manual assignment
 
@@ -263,9 +270,22 @@ export function CalendarView({ className }: CalendarViewProps) {
       type: props.bookingType || 'Villa Service'
     }
 
-    // Show event details
-    toast(`Event: ${event.title}\nStaff: ${props.assignedStaff || 'Unassigned'} • Status: ${props.status}`, {
-      icon: 'ℹ️'
+    // Set selected event and show details modal
+    setSelectedEvent(calendarEvent)
+    setShowEventDetails(true)
+    setIsEditMode(false)
+
+    // Initialize edit form data
+    setEditFormData({
+      title: calendarEvent.title,
+      startDate: calendarEvent.startDate.split('T')[0],
+      startTime: calendarEvent.startDate.split('T')[1]?.substring(0, 5) || '09:00',
+      endDate: calendarEvent.endDate.split('T')[0],
+      endTime: calendarEvent.endDate.split('T')[1]?.substring(0, 5) || '17:00',
+      status: calendarEvent.status,
+      assignedStaff: calendarEvent.assignedStaff || '',
+      description: calendarEvent.description || '',
+      type: calendarEvent.type || calendarEvent.bookingType || ''
     })
   }
 
@@ -333,6 +353,86 @@ export function CalendarView({ className }: CalendarViewProps) {
   // Staff assignment now handled manually through calendar interface
 
   // Auto-assignment functions removed - use manual assignment
+
+  // Handle edit mode toggle
+  const handleEditToggle = () => {
+    setIsEditMode(!isEditMode)
+  }
+
+  // Handle form field changes
+  const handleFormChange = (field: string, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // Handle save event changes
+  const handleSaveEvent = async () => {
+    try {
+      if (!selectedEvent) return
+
+      // Construct new start and end dates
+      const newStartDate = new Date(`${editFormData.startDate}T${editFormData.startTime}:00`)
+      const newEndDate = new Date(`${editFormData.endDate}T${editFormData.endTime}:00`)
+
+      // Update event in Firebase
+      const result = await CalendarEventService.updateEvent(selectedEvent.id, {
+        title: editFormData.title,
+        startDate: newStartDate.toISOString(),
+        endDate: newEndDate.toISOString(),
+        status: editFormData.status,
+        assignedStaff: editFormData.assignedStaff,
+        description: editFormData.description,
+        type: editFormData.type
+      })
+
+      if (result.success) {
+        toast.success('✅ Event updated successfully')
+
+        // Update the selected event with new data
+        const updatedEvent = {
+          ...selectedEvent,
+          title: editFormData.title,
+          startDate: newStartDate.toISOString(),
+          endDate: newEndDate.toISOString(),
+          status: editFormData.status,
+          assignedStaff: editFormData.assignedStaff,
+          description: editFormData.description,
+          type: editFormData.type
+        }
+        setSelectedEvent(updatedEvent)
+        setIsEditMode(false)
+
+        // Refresh calendar events
+        loadCalendarEvents()
+      } else {
+        toast.error(`❌ Failed to update event: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Error saving event:', error)
+      toast.error('❌ Failed to save event changes')
+    }
+  }
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setIsEditMode(false)
+    // Reset form data to original values
+    if (selectedEvent) {
+      setEditFormData({
+        title: selectedEvent.title,
+        startDate: selectedEvent.startDate.split('T')[0],
+        startTime: selectedEvent.startDate.split('T')[1]?.substring(0, 5) || '09:00',
+        endDate: selectedEvent.endDate.split('T')[0],
+        endTime: selectedEvent.endDate.split('T')[1]?.substring(0, 5) || '17:00',
+        status: selectedEvent.status,
+        assignedStaff: selectedEvent.assignedStaff || '',
+        description: selectedEvent.description || '',
+        type: selectedEvent.type || selectedEvent.bookingType || ''
+      })
+    }
+  }
 
   // Setup Firebase listener on mount
   useEffect(() => {
@@ -494,52 +594,13 @@ export function CalendarView({ className }: CalendarViewProps) {
             </div>
           ) : (
             <div className="calendar-container">
-              <FullCalendar
-                plugins={[
-                  dayGridPlugin,
-                  timeGridPlugin,
-                  resourceDayGridPlugin,
-                  resourceTimeGridPlugin,
-                  interactionPlugin
-                ]}
-                initialView={currentView}
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: ''
-                }}
+              <FullCalendarWrapper
                 events={getFullCalendarEvents()}
-                eventClick={handleEventClick}
-                eventDrop={handleEventDrop}
-                eventResize={handleEventResize}
-                height="auto"
-                aspectRatio={1.8}
-                eventDisplay="block"
-                dayMaxEvents={3}
-                moreLinkClick="popover"
-                eventTimeFormat={{
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  meridiem: 'short'
-                }}
-                slotMinTime="06:00:00"
-                slotMaxTime="22:00:00"
-                allDaySlot={false}
-                nowIndicator={true}
-                selectable={true}
-                selectMirror={true}
-                dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
-                eventClassNames="cursor-pointer hover:opacity-80 transition-opacity"
-                themeSystem="standard"
-                // Drag and drop configuration
-                editable={true}
-                droppable={true}
-                eventStartEditable={true}
-                eventDurationEditable={true}
-                eventResizableFromStart={true}
-                dragScroll={true}
-                // Update view when currentView changes
-                key={currentView}
+                onEventClick={handleEventClick}
+                onEventDrop={handleEventDrop}
+                onEventResize={handleEventResize}
+                view={currentView}
+                resources={[]}
               />
             </div>
           )}
@@ -628,6 +689,365 @@ export function CalendarView({ className }: CalendarViewProps) {
           </div>
         </div>
       )}
+
+      {/* Event Details Modal */}
+      <AnimatePresence>
+        {showEventDetails && selectedEvent && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-gray-900 rounded-xl border border-gray-700/50 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: selectedEvent.color }}
+                />
+                <h2 className="text-xl font-semibold text-white">
+                  {selectedEvent.title}
+                </h2>
+              </div>
+              <Button
+                onClick={() => {
+                  setShowEventDetails(false)
+                  setSelectedEvent(null)
+                }}
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {!isEditMode ? (
+                <>
+                  {/* View Mode - Event Status */}
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      className={`
+                        ${selectedEvent.status === 'completed' ? 'bg-green-600 text-green-100' : ''}
+                        ${selectedEvent.status === 'in-progress' ? 'bg-blue-600 text-blue-100' : ''}
+                        ${selectedEvent.status === 'pending' ? 'bg-yellow-600 text-yellow-100' : ''}
+                        ${selectedEvent.status === 'cancelled' ? 'bg-red-600 text-red-100' : ''}
+                      `}
+                    >
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      {selectedEvent.status?.charAt(0).toUpperCase() + selectedEvent.status?.slice(1)}
+                    </Badge>
+                    <Badge variant="outline" className="border-gray-600 text-gray-300">
+                      {selectedEvent.type}
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Edit Mode - Form Header */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <Edit className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-lg font-medium text-white">Edit Event</h3>
+                  </div>
+                </>
+              )}
+
+              {!isEditMode ? (
+                <>
+                  {/* View Mode - Event Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Date & Time */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">
+                    Schedule
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-300">
+                      <CalendarIconSmall className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm">
+                        {new Date(selectedEvent.startDate).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-300">
+                      <Clock className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm">
+                        {new Date(selectedEvent.startDate).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })} - {new Date(selectedEvent.endDate).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Property Info */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">
+                    Property
+                  </h3>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <Building2 className="w-4 h-4 text-green-400" />
+                    <span className="text-sm">{selectedEvent.propertyName || 'Not specified'}</span>
+                  </div>
+                </div>
+
+                {/* Staff Assignment */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">
+                    Assigned Staff
+                  </h3>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <User className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm">{selectedEvent.assignedStaff || 'Unassigned'}</span>
+                  </div>
+                </div>
+
+                {/* Event Type */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">
+                    Service Type
+                  </h3>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <Settings className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm">{selectedEvent.bookingType || selectedEvent.type}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {selectedEvent.description && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">
+                    Description
+                  </h3>
+                  <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+                    <div className="flex items-start gap-2">
+                      <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        {selectedEvent.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+                  {/* Event ID & Metadata */}
+                  <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/30">
+                    <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
+                      Event Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Event ID:</span>
+                        <span className="text-gray-300 font-mono">{selectedEvent.id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Duration:</span>
+                        <span className="text-gray-300">
+                          {Math.round((new Date(selectedEvent.endDate).getTime() - new Date(selectedEvent.startDate).getTime()) / (1000 * 60 * 60))} hours
+                        </span>
+                      </div>
+                      {selectedEvent.propertyId && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Property ID:</span>
+                          <span className="text-gray-300 font-mono">{selectedEvent.propertyId}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Created:</span>
+                        <span className="text-gray-300">
+                          {new Date(selectedEvent.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Edit Mode - Form Fields */}
+                  <div className="space-y-6">
+                    {/* Event Title */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-400">Event Title</label>
+                      <Input
+                        value={editFormData.title || ''}
+                        onChange={(e) => handleFormChange('title', e.target.value)}
+                        className="bg-gray-800 border-gray-600 text-white"
+                        placeholder="Enter event title"
+                      />
+                    </div>
+
+                    {/* Date and Time */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-400">Start Date</label>
+                        <Input
+                          type="date"
+                          value={editFormData.startDate || ''}
+                          onChange={(e) => handleFormChange('startDate', e.target.value)}
+                          className="bg-gray-800 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-400">Start Time</label>
+                        <Input
+                          type="time"
+                          value={editFormData.startTime || ''}
+                          onChange={(e) => handleFormChange('startTime', e.target.value)}
+                          className="bg-gray-800 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-400">End Date</label>
+                        <Input
+                          type="date"
+                          value={editFormData.endDate || ''}
+                          onChange={(e) => handleFormChange('endDate', e.target.value)}
+                          className="bg-gray-800 border-gray-600 text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-400">End Time</label>
+                        <Input
+                          type="time"
+                          value={editFormData.endTime || ''}
+                          onChange={(e) => handleFormChange('endTime', e.target.value)}
+                          className="bg-gray-800 border-gray-600 text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status and Staff */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-400">Status</label>
+                        <Select value={editFormData.status || ''} onValueChange={(value) => handleFormChange('status', value)}>
+                          <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-600">
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in-progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-400">Assigned Staff</label>
+                        <Input
+                          value={editFormData.assignedStaff || ''}
+                          onChange={(e) => handleFormChange('assignedStaff', e.target.value)}
+                          className="bg-gray-800 border-gray-600 text-white"
+                          placeholder="Enter staff name"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Event Type */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-400">Event Type</label>
+                      <Select value={editFormData.type || ''} onValueChange={(value) => handleFormChange('type', value)}>
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                          <SelectValue placeholder="Select event type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-600">
+                          <SelectItem value="cleaning">Cleaning</SelectItem>
+                          <SelectItem value="maintenance">Maintenance</SelectItem>
+                          <SelectItem value="inspection">Inspection</SelectItem>
+                          <SelectItem value="setup">Setup</SelectItem>
+                          <SelectItem value="checkout">Checkout</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-400">Description</label>
+                      <Textarea
+                        value={editFormData.description || ''}
+                        onChange={(e) => handleFormChange('description', e.target.value)}
+                        className="bg-gray-800 border-gray-600 text-white min-h-[100px]"
+                        placeholder="Enter event description"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 pt-4 border-t border-gray-700/50">
+                {!isEditMode ? (
+                  <>
+                    {/* View Mode Buttons */}
+                    <Button
+                      onClick={handleEditToggle}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Event
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        // TODO: Implement delete functionality
+                        toast.success('Delete functionality coming soon!')
+                      }}
+                      variant="outline"
+                      className="border-red-500/50 text-red-300 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowEventDetails(false)
+                        setSelectedEvent(null)
+                        setIsEditMode(false)
+                      }}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      Close
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* Edit Mode Buttons */}
+                    <Button
+                      onClick={handleSaveEvent}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        )}
+      </AnimatePresence>
 
       {/* Auto-Assignment Modal removed - use manual assignment */}
     </div>

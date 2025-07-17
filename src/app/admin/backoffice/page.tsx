@@ -38,11 +38,13 @@ import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingMan
 import { JobManagementDashboard } from '@/components/admin/JobManagementDashboard'
 import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
 import { JobProgressDashboard } from '@/components/admin/JobProgressDashboard'
-// import { CalendarView } from '@/components/admin/CalendarView' // Temporarily disabled due to SSR issues
+import { CalendarView } from '@/components/admin/CalendarView'
 import { MobileIntegrationStatus } from '@/components/admin/MobileIntegrationStatus'
 // TestJobService removed - was mock data
 import CalendarEventService from '@/services/CalendarEventService'
+import CalendarIntegrationService from '@/services/CalendarIntegrationService'
 import KPIDashboard from '@/components/admin/KPIDashboard'
+import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
 // BookingSyncService removed - unused
 // Real-time sync services removed - handled by individual components
 import {
@@ -733,11 +735,11 @@ export default function BackOfficePage() {
       console.log('📅 Testing calendar event creation...')
 
       // Create a test calendar event with sample booking data
-      const result = await CalendarEventService.createEventFromBooking('test_booking_001')
+      const result = await CalendarEventService.createEventsFromBooking('test_booking_001')
 
       if (result.success) {
-        toast.success(`✅ Test calendar event created - Event ID: ${result.eventId}`)
-        console.log('✅ Test calendar event created successfully:', result.eventId)
+        toast.success(`✅ Test calendar events created - Event IDs: ${result.eventIds?.join(', ')}`)
+        console.log('✅ Test calendar events created successfully:', result.eventIds)
       } else {
         toast.error(`❌ Failed to create test calendar event: ${result.error}`)
         console.error('❌ Test calendar event failed:', result.error)
@@ -824,10 +826,10 @@ export default function BackOfficePage() {
 
       // Create calendar event for approved booking
       try {
-        const calendarResult = await CalendarEventService.createEventFromBooking(bookingId)
+        const calendarResult = await CalendarEventService.createEventsFromBooking(bookingId)
 
         if (calendarResult.success) {
-          console.log(`✅ Calendar event created: ${calendarResult.eventId}`)
+          console.log(`✅ Calendar events created: ${calendarResult.eventIds?.join(', ')}`)
           toast.success('✅ Booking approved • Calendar event created')
         } else {
           console.warn('⚠️ Calendar event creation failed:', calendarResult.error)
@@ -1284,10 +1286,10 @@ export default function BackOfficePage() {
             // Create calendar event for approved bookings
             if (action === 'approve') {
               try {
-                const calendarResult = await CalendarEventService.createEventFromBooking(bookingId)
+                const calendarResult = await CalendarEventService.createEventsFromBooking(bookingId)
 
                 if (calendarResult.success) {
-                  console.log(`✅ Calendar event created: ${calendarResult.eventId}`)
+                  console.log(`✅ Calendar events created: ${calendarResult.eventIds?.join(', ')}`)
                   toast.success(`✅ Booking approved • Calendar event created • Synced to mobile app`)
                 } else {
                   console.warn('⚠️ Calendar event creation failed:', calendarResult.error)
@@ -1352,7 +1354,7 @@ export default function BackOfficePage() {
       case 'bookings':
         return renderBookings()
       case 'calendar':
-        return <div className="p-8 text-center text-gray-400">Calendar view temporarily disabled due to SSR issues</div>
+        return <CalendarView />
       case 'kpi-dashboard':
         return <KPIDashboard />
       case 'job-assignments':
@@ -1928,7 +1930,19 @@ export default function BackOfficePage() {
   // Job Assignments Section - Enhanced Job Management Dashboard
   function renderJobAssignments() {
     return (
-      <EnhancedJobManagementDashboard />
+      <div className="space-y-6">
+        {/* Clear Jobs Utility for Testing */}
+        <ClearJobsUtility
+          onJobsCleared={() => {
+            toast.success('Jobs cleared - ready for fresh testing!')
+            // Refresh the job dashboard
+            window.location.reload()
+          }}
+        />
+
+        {/* Main Job Management Dashboard */}
+        <EnhancedJobManagementDashboard />
+      </div>
     )
   }
 
