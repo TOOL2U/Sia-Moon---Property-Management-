@@ -1,25 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server'
-import {
-  doc,
-  updateDoc,
-  getDoc,
-  collection,
-  addDoc,
-  serverTimestamp,
-  query,
-  where,
-  getDocs
-} from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
+import { generateAutomaticAssignments } from '@/lib/services/automaticAssignmentService'
+import CalendarEventService from '@/services/CalendarEventService'
+import IntelligentStaffAssignmentService from '@/services/IntelligentStaffAssignmentService'
 import {
   BookingApprovalAction,
   BookingApprovalResponse,
   BookingStatus,
-  SyncEvent
+  SyncEvent,
 } from '@/types/booking-sync'
-import { generateAutomaticAssignments } from '@/lib/services/automaticAssignmentService'
-import CalendarEventService from '@/services/CalendarEventService'
-import IntelligentStaffAssignmentService from '@/services/IntelligentStaffAssignmentService'
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Create a sync event for cross-platform tracking
@@ -34,7 +34,7 @@ async function createSyncEvent(
 ): Promise<void> {
   try {
     const database = getDb()
-    
+
     const syncEvent: Omit<SyncEvent, 'id'> = {
       type,
       entityId,
@@ -44,7 +44,7 @@ async function createSyncEvent(
       timestamp: serverTimestamp() as any,
       changes,
       platform: 'web',
-      synced: false
+      synced: false,
     }
 
     await addDoc(collection(database, 'sync_events'), syncEvent)
@@ -62,7 +62,7 @@ async function updateBookingInAllCollections(
   updates: Record<string, any>
 ): Promise<void> {
   const database = getDb()
-  
+
   // Update in primary bookings collection
   try {
     const bookingRef = doc(database, 'bookings', bookingId)
@@ -74,7 +74,7 @@ async function updateBookingInAllCollections(
 
   // Update in legacy collections by finding matching documents
   const collections = ['pending_bookings', 'live_bookings']
-  
+
   for (const collectionName of collections) {
     try {
       // Find documents with matching booking reference or duplicate hash
@@ -82,9 +82,9 @@ async function updateBookingInAllCollections(
         collection(database, collectionName),
         where('duplicateCheckHash', '==', updates.duplicateCheckHash || '')
       )
-      
+
       const snapshot = await getDocs(q)
-      
+
       for (const docSnapshot of snapshot.docs) {
         await updateDoc(doc(database, collectionName, docSnapshot.id), updates)
         console.log(`✅ Updated booking in ${collectionName} collection`)
@@ -102,25 +102,31 @@ async function updateBookingInAllCollections(
 export async function POST(request: NextRequest) {
   try {
     console.log('📋 BOOKING APPROVAL: Processing approval request')
-    
+
     const body = await request.json()
     const { bookingId, action, adminId, adminName, notes, reason } = body
-    
+
     // Validate required fields
     if (!bookingId || !action || !adminId) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: bookingId, action, adminId' },
+        {
+          success: false,
+          error: 'Missing required fields: bookingId, action, adminId',
+        },
         { status: 400 }
       )
     }
-    
+
     if (!['approve', 'reject'].includes(action)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid action. Must be "approve" or "reject"' },
+        {
+          success: false,
+          error: 'Invalid action. Must be "approve" or "reject"',
+        },
         { status: 400 }
       )
     }
-    
+
     const database = getDb()
 
     // Find the booking in all possible collections
@@ -136,7 +142,9 @@ export async function POST(request: NextRequest) {
         if (docSnapshot.exists()) {
           bookingDoc = docSnapshot
           bookingCollection = collectionName
-          console.log(`✅ Found booking ${bookingId} in ${collectionName} collection`)
+          console.log(
+            `✅ Found booking ${bookingId} in ${collectionName} collection`
+          )
           break
         }
       } catch (error) {
@@ -151,20 +159,21 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       )
     }
-    
+
     const bookingData = bookingDoc.data()
-    const newStatus: BookingStatus = action === 'approve' ? 'approved' : 'rejected'
+    const newStatus: BookingStatus =
+      action === 'approve' ? 'approved' : 'rejected'
     const timestamp = serverTimestamp()
-    
+
     // Prepare update data
     const updates: Record<string, any> = {
       status: newStatus,
       updatedAt: timestamp,
       syncVersion: (bookingData.syncVersion || 1) + 1,
       lastSyncedAt: timestamp,
-      duplicateCheckHash: bookingData.duplicateCheckHash // For finding in legacy collections
+      duplicateCheckHash: bookingData.duplicateCheckHash, // For finding in legacy collections
     }
-    
+
     if (action === 'approve') {
       updates.approvedAt = timestamp
       updates.approvedBy = adminId
@@ -173,17 +182,19 @@ export async function POST(request: NextRequest) {
       updates.rejectedBy = adminId
       if (reason) updates.rejectionReason = reason
     }
-    
+
     if (notes) updates.notes = notes
-    
+
     // Update the specific booking in the collection where it was found
     const targetBookingRef = doc(database, bookingCollection, bookingId)
     await updateDoc(targetBookingRef, updates)
-    console.log(`✅ Updated booking ${bookingId} in ${bookingCollection} collection`)
+    console.log(
+      `✅ Updated booking ${bookingId} in ${bookingCollection} collection`
+    )
 
     // Also try to update in other collections for consistency (optional)
     await updateBookingInAllCollections(bookingId, updates)
-    
+
     // Create approval action record
     const approvalAction: Omit<BookingApprovalAction, 'id'> = {
       bookingId,
@@ -195,11 +206,11 @@ export async function POST(request: NextRequest) {
       reason,
       approvalLevel: 'admin',
       notifyGuest: true,
-      notifyStaff: true
+      notifyStaff: true,
     }
-    
+
     await addDoc(collection(database, 'booking_approvals'), approvalAction)
-    
+
     // Create sync event for mobile app
     await createSyncEvent(
       action === 'approve' ? 'booking_approved' : 'booking_rejected',
@@ -213,14 +224,16 @@ export async function POST(request: NextRequest) {
         property: bookingData.property || bookingData.propertyName,
         guest: bookingData.guestName,
         notes,
-        reason
+        reason,
       }
     )
 
     // Generate automatic staff assignments if booking is approved
     let assignmentResults = null
     if (action === 'approve') {
-      console.log('🏗️ BOOKING APPROVAL: Generating automatic staff assignments...')
+      console.log(
+        '🏗️ BOOKING APPROVAL: Generating automatic staff assignments...'
+      )
 
       const bookingForAssignments = {
         id: bookingId,
@@ -230,80 +243,123 @@ export async function POST(request: NextRequest) {
         guestName: bookingData.guestName || '',
         checkInDate: bookingData.checkInDate || '',
         checkOutDate: bookingData.checkOutDate || '',
-        status: newStatus
+        status: newStatus,
       }
 
-      assignmentResults = await generateAutomaticAssignments(bookingId, bookingForAssignments)
+      assignmentResults = await generateAutomaticAssignments(
+        bookingId,
+        bookingForAssignments
+      )
 
       if (assignmentResults.success) {
-        console.log(`✅ BOOKING APPROVAL: Generated ${assignmentResults.assignmentsCreated} assignments`)
+        console.log(
+          `✅ BOOKING APPROVAL: Generated ${assignmentResults.assignmentsCreated} assignments`
+        )
       } else {
-        console.log(`⚠️ BOOKING APPROVAL: Assignment generation had errors:`, assignmentResults.errors)
+        console.log(
+          `⚠️ BOOKING APPROVAL: Assignment generation had errors:`,
+          assignmentResults.errors
+        )
       }
 
       // Create calendar event for approved booking
       console.log('📅 BOOKING APPROVAL: Creating calendar event...')
       try {
-        const calendarResult = await CalendarEventService.createEventFromBooking(bookingId)
+        const calendarResult =
+          await CalendarEventService.createEventsFromBooking(bookingId)
 
         if (calendarResult.success) {
-          console.log(`✅ BOOKING APPROVAL: Calendar event created: ${calendarResult.eventId}`)
+          console.log(
+            `✅ BOOKING APPROVAL: Calendar events created: ${calendarResult.eventIds?.join(', ')}`
+          )
 
           // Attempt intelligent auto-assignment
-          console.log('🤖 BOOKING APPROVAL: Attempting intelligent staff auto-assignment...')
+          console.log(
+            '🤖 BOOKING APPROVAL: Attempting intelligent staff auto-assignment...'
+          )
           try {
+            const primaryEventId = calendarResult.eventIds?.[0]
+            if (!primaryEventId) {
+              throw new Error('No calendar event ID returned')
+            }
+
             const jobData = {
-              id: calendarResult.eventId!,
+              id: primaryEventId,
               title: `${bookingData.property || 'Property'} Service`,
               type: 'Cleaning', // Default type, can be enhanced based on booking data
               propertyId: bookingData.propertyId || bookingId,
-              propertyName: bookingData.propertyName || bookingData.property || 'Property',
+              propertyName:
+                bookingData.propertyName || bookingData.property || 'Property',
               startDate: bookingData.checkInDate || new Date().toISOString(),
-              endDate: bookingData.checkOutDate || new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+              endDate:
+                bookingData.checkOutDate ||
+                new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
               priority: 'medium' as const,
               requiredSkills: ['cleaning', 'housekeeping'],
-              estimatedDuration: 120 // 2 hours default
+              estimatedDuration: 120, // 2 hours default
             }
 
-            const aiResult = await IntelligentStaffAssignmentService.getAssignmentSuggestions(jobData)
+            const aiResult =
+              await IntelligentStaffAssignmentService.getAssignmentSuggestions(
+                jobData
+              )
 
             if (aiResult.suggestions.length > 0) {
               const topSuggestion = aiResult.suggestions[0]
 
               // Auto-assign if confidence is high enough (>70%)
               if (topSuggestion.confidence > 0.7) {
-                const assignResult = await CalendarEventService.updateEventStaff(
-                  calendarResult.eventId!,
-                  topSuggestion.staffId,
-                  topSuggestion.staffName
-                )
+                const assignResult =
+                  await CalendarEventService.updateEventStaff(
+                    primaryEventId,
+                    topSuggestion.staffId,
+                    topSuggestion.staffName
+                  )
 
                 if (assignResult.success) {
-                  console.log(`✅ BOOKING APPROVAL: Auto-assigned ${topSuggestion.staffName} with ${Math.round(topSuggestion.confidence * 100)}% confidence`)
+                  console.log(
+                    `✅ BOOKING APPROVAL: Auto-assigned ${topSuggestion.staffName} with ${Math.round(topSuggestion.confidence * 100)}% confidence`
+                  )
                 } else {
-                  console.warn('⚠️ BOOKING APPROVAL: Auto-assignment failed:', assignResult.error)
+                  console.warn(
+                    '⚠️ BOOKING APPROVAL: Auto-assignment failed:',
+                    assignResult.error
+                  )
                 }
               } else {
-                console.log(`⚠️ BOOKING APPROVAL: Auto-assignment skipped - low confidence (${Math.round(topSuggestion.confidence * 100)}%)`)
+                console.log(
+                  `⚠️ BOOKING APPROVAL: Auto-assignment skipped - low confidence (${Math.round(topSuggestion.confidence * 100)}%)`
+                )
               }
             } else {
-              console.log('⚠️ BOOKING APPROVAL: No suitable staff found for auto-assignment')
+              console.log(
+                '⚠️ BOOKING APPROVAL: No suitable staff found for auto-assignment'
+              )
             }
-
           } catch (aiError) {
-            console.error('❌ BOOKING APPROVAL: AI auto-assignment error:', aiError)
+            console.error(
+              '❌ BOOKING APPROVAL: AI auto-assignment error:',
+              aiError
+            )
           }
-
         } else {
-          console.warn('⚠️ BOOKING APPROVAL: Calendar event creation failed:', calendarResult.error)
+          console.warn(
+            '⚠️ BOOKING APPROVAL: Calendar event creation failed:',
+            calendarResult.error
+          )
         }
       } catch (calendarError) {
-        console.error('❌ BOOKING APPROVAL: Calendar event creation error:', calendarError)
+        console.error(
+          '❌ BOOKING APPROVAL: Calendar event creation error:',
+          calendarError
+        )
       }
     }
 
-    console.log(`✅ BOOKING APPROVAL: Booking ${bookingId} ${action}d successfully`)
-    
+    console.log(
+      `✅ BOOKING APPROVAL: Booking ${bookingId} ${action}d successfully`
+    )
+
     const response: BookingApprovalResponse = {
       success: true,
       bookingId,
@@ -317,21 +373,20 @@ export async function POST(request: NextRequest) {
         assignments: {
           generated: assignmentResults.assignmentsCreated,
           assignmentIds: assignmentResults.assignments,
-          errors: assignmentResults.errors
-        }
-      })
+          errors: assignmentResults.errors,
+        },
+      }),
     }
-    
+
     return NextResponse.json(response)
-    
   } catch (error) {
     console.error('❌ BOOKING APPROVAL: Error processing approval:', error)
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )
@@ -346,26 +401,26 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const bookingId = searchParams.get('bookingId')
-    
+
     const database = getDb()
-    
+
     if (bookingId) {
       // Get approval history for specific booking
       const q = query(
         collection(database, 'booking_approvals'),
         where('bookingId', '==', bookingId)
       )
-      
+
       const snapshot = await getDocs(q)
-      const approvals = snapshot.docs.map(doc => ({
+      const approvals = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }))
-      
+
       return NextResponse.json({
         success: true,
         bookingId,
-        approvals
+        approvals,
       })
     } else {
       // Get all pending approvals
@@ -373,28 +428,27 @@ export async function GET(request: NextRequest) {
         collection(database, 'bookings'),
         where('status', '==', 'pending_approval')
       )
-      
+
       const snapshot = await getDocs(q)
-      const pendingBookings = snapshot.docs.map(doc => ({
+      const pendingBookings = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }))
-      
+
       return NextResponse.json({
         success: true,
         pendingBookings,
-        count: pendingBookings.length
+        count: pendingBookings.length,
       })
     }
-    
   } catch (error) {
     console.error('❌ Error fetching approval data:', error)
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )

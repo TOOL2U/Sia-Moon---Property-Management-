@@ -60,12 +60,14 @@ villa-property-management/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd villa-property-management
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -75,11 +77,13 @@ villa-property-management/
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env.local
    ```
 
    Update `.env.local` with your Supabase credentials:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -138,6 +142,7 @@ villa-property-management/
    ```
 
 5. **Run the development server**
+
    ```bash
    npm run dev
    # or
@@ -152,11 +157,13 @@ villa-property-management/
 ## Usage
 
 ### For Property Owners
+
 1. Visit `/login/owner` to access the owner login portal
 2. Sign in with your credentials
 3. Access the owner dashboard to manage properties, view bookings, and track revenue
 
 ### For Staff Members
+
 1. Visit `/login/staff` to access the staff login portal
 2. Sign in with your credentials
 3. Access the staff dashboard to manage tasks, maintenance, and guest services
@@ -180,6 +187,7 @@ villa-property-management/
 ## 📱 Mobile-First Design
 
 ### Mobile Optimization Features
+
 - **Mobile-first responsive design** with Tailwind CSS
 - **Touch-friendly interfaces** with 44px+ tap targets
 - **Optimized typography** for small screens
@@ -190,11 +198,13 @@ villa-property-management/
 - **Accessible focus states** for keyboard navigation
 
 ### Responsive Breakpoints
+
 - **Mobile**: < 640px (default, mobile-first)
 - **Tablet**: 640px - 768px (sm)
 - **Desktop**: 768px+ (md, lg, xl, 2xl)
 
 ### Mobile UX Enhancements
+
 - **Sticky header** for easy navigation
 - **Full-width forms** on mobile
 - **Stacked layouts** that adapt to screen size
@@ -219,6 +229,55 @@ Make sure to set these environment variables in your production environment:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_APP_URL`
+
+## Mobile App Integration
+
+The Villa Property Management system includes a mobile app for staff members to manage their assigned jobs. To ensure proper integration between the web application and mobile app, follow these steps:
+
+### Prerequisites
+
+- Firebase service account key (see [Firebase Service Account Setup Guide](./docs/FIREBASE_SERVICE_ACCOUNT_SETUP.md))
+
+### Mobile Integration Fix
+
+If staff members cannot see jobs in the mobile app, follow the troubleshooting guide in [Mobile Integration Fix](./docs/MOBILE_INTEGRATION_FIX.md). The most common issue is that staff accounts are missing the `userId` field that links them to Firebase Authentication.
+
+### Fix Steps
+
+1. Place the Firebase service account key in the project root directory as `serviceAccountKey.json`
+2. Run the staff fix script:
+
+   ```bash
+   # List all staff accounts
+   node scripts/staff-fix.js list
+
+   # Fix a specific staff account
+   node scripts/staff-fix.js fix cleaner@siamoon.com
+
+   # Fix all staff accounts missing userIds
+   node scripts/staff-fix.js fix-all
+   ```
+
+3. Test job assignment with the TestJobService:
+
+   ```typescript
+   import TestJobService from '@/services/TestJobService'
+
+   // Verify staff accounts have userIds
+   await TestJobService.verifyStaffUserIds()
+
+   // Create a test job
+   const result = await TestJobService.createTestJob()
+   console.log(result)
+   ```
+
+### Mobile App Documentation
+
+For detailed information about the mobile app integration, check these documentation files:
+
+- [Mobile Integration Fix](./docs/MOBILE_INTEGRATION_FIX.md) - Technical documentation for fixing integration issues
+- [Firebase Service Account Setup](./docs/FIREBASE_SERVICE_ACCOUNT_SETUP.md) - How to set up Firebase service account
+- [Executive Summary](./docs/EXECUTIVE_SUMMARY.md) - High-level overview for management
 
 ## Contributing
 

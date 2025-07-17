@@ -3,10 +3,9 @@
  * Handles individual job operations (GET, PATCH, DELETE)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import JobAssignmentService from '@/services/JobAssignmentService'
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
+import { deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/admin/jobs/[id]
@@ -39,7 +38,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      job: jobData
+      job: jobData,
     })
   } catch (error) {
     console.error('❌ Error in GET /api/admin/jobs/[id]:', error)
@@ -66,7 +65,10 @@ export async function PATCH(
 
     if (!updates || !updatedBy) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: updates, updatedBy' },
+        {
+          success: false,
+          error: 'Missing required fields: updates, updatedBy',
+        },
         { status: 400 }
       )
     }
@@ -87,11 +89,38 @@ export async function PATCH(
 
     const currentJob = jobDoc.data()
 
+    // Handle staff assignment updates
+    let staffRef = null
+    if (
+      updates.assignedStaffId &&
+      updates.assignedStaffId !== currentJob.assignedStaffId
+    ) {
+      // Get new staff details from staff_accounts collection
+      const staffDoc = await getDoc(
+        doc(db, 'staff_accounts', updates.assignedStaffId)
+      )
+      if (staffDoc.exists()) {
+        const staffData = staffDoc.data()
+        staffRef = {
+          id: updates.assignedStaffId,
+          name: staffData.name,
+          phone: staffData.phone,
+          role: staffData.role,
+          skills: staffData.skills || [],
+        }
+      }
+    }
+
     // Prepare update data
     const updateData = {
       ...updates,
       updatedAt: new Date().toISOString(),
-      lastModifiedBy: updatedBy
+      lastModifiedBy: updatedBy,
+    }
+
+    // Add staff reference if staff assignment changed
+    if (staffRef) {
+      updateData.assignedStaffRef = staffRef
     }
 
     // Add to status history if status is being updated
@@ -100,12 +129,30 @@ export async function PATCH(
         status: updates.status,
         timestamp: new Date().toISOString(),
         updatedBy: updatedBy.name || updatedBy.id,
-        notes: `Status updated to ${updates.status}`
+        notes: `Status updated to ${updates.status}`,
       }
 
       updateData.statusHistory = [
         ...(currentJob.statusHistory || []),
-        statusHistoryEntry
+        statusHistoryEntry,
+      ]
+    }
+
+    // Add to status history if staff assignment is being updated
+    if (
+      updates.assignedStaffId &&
+      updates.assignedStaffId !== currentJob.assignedStaffId
+    ) {
+      const staffChangeEntry = {
+        status: currentJob.status, // Keep current status
+        timestamp: new Date().toISOString(),
+        updatedBy: updatedBy.name || updatedBy.id,
+        notes: `Staff assignment changed to ${updates.assignedStaffName || 'new staff member'}`,
+      }
+
+      updateData.statusHistory = [
+        ...(updateData.statusHistory || currentJob.statusHistory || []),
+        staffChangeEntry,
       ]
     }
 
@@ -117,7 +164,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       jobId,
-      message: 'Job updated successfully'
+      message: 'Job updated successfully',
     })
   } catch (error) {
     console.error('❌ Error in PATCH /api/admin/jobs/[id]:', error)
@@ -184,7 +231,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       jobId,
-      message: 'Job deleted successfully'
+      message: 'Job deleted successfully',
     })
   } catch (error) {
     console.error('❌ Error in DELETE /api/admin/jobs/[id]:', error)

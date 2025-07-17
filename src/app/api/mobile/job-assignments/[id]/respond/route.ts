@@ -3,9 +3,13 @@
  * Handles staff acceptance/decline of job assignments
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { withMobileAuth, createMobileSuccessResponse, createMobileErrorResponse } from '@/lib/middleware/mobileAuth'
+import {
+  createMobileErrorResponse,
+  createMobileSuccessResponse,
+  withMobileAuth,
+} from '@/lib/middleware/mobileAuth'
 import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
+import { NextRequest } from 'next/server'
 
 /**
  * POST /api/mobile/job-assignments/[id]/respond
@@ -23,14 +27,16 @@ export async function POST(
 
       // Validate required fields
       if (typeof accepted !== 'boolean') {
-        return createMobileErrorResponse('Missing or invalid field: accepted (must be boolean)')
+        return createMobileErrorResponse(
+          'Missing or invalid field: accepted (must be boolean)'
+        )
       }
 
       const response = {
         accepted,
         notes,
         estimatedArrival,
-        alternativeTime
+        alternativeTime,
       }
 
       const result = await JobAssignmentService.respondToJobAssignment(
@@ -40,7 +46,26 @@ export async function POST(
       )
 
       if (!result.success) {
-        return createMobileErrorResponse(result.error || 'Failed to respond to job assignment')
+        return createMobileErrorResponse(
+          result.error || 'Failed to respond to job assignment'
+        )
+      }
+
+      // Update calendar event with response
+      try {
+        const CalendarEventService = (
+          await import('@/services/CalendarEventService')
+        ).default
+        const newStatus = accepted ? 'accepted' : 'declined'
+        await CalendarEventService.updateEventStatus(jobId, newStatus, {
+          notes:
+            notes ||
+            (accepted ? 'Job accepted by staff' : 'Job declined by staff'),
+          updatedBy: auth.staffId,
+        })
+      } catch (calendarError) {
+        console.warn('⚠️ Failed to update calendar event:', calendarError)
+        // Don't fail the request if calendar update fails
       }
 
       return createMobileSuccessResponse({
@@ -51,8 +76,8 @@ export async function POST(
           responseAt: new Date().toISOString(),
           notes,
           estimatedArrival,
-          alternativeTime
-        }
+          alternativeTime,
+        },
       })
     } catch (error) {
       console.error(`❌ Error in mobile job response:`, error)

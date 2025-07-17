@@ -1,105 +1,132 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 // BookingService and EnhancedBookingService removed - now using direct API calls
 // FinancialService removed - was using mock data
-import { clientToast as toast } from '@/utils/clientToast'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { clientToast as toast } from '@/utils/clientToast'
 
-import { StaffProfile, StaffFilters, StaffStats, STAFF_ROLES, STAFF_STATUSES } from '@/types/staff'
-import { FinancialDashboard, FinancialFilters } from '@/types/financial'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import AddStaffModal from '@/components/staff/AddStaffModal'
 import EditStaffModal from '@/components/staff/EditStaffModal'
-import WizardStaffModal from '@/components/staff/WizardStaffModal'
 import StaffAccountModal from '@/components/staff/StaffAccountModal'
-import ErrorBoundary from '@/components/ErrorBoundary'
 import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
+import WizardStaffModal from '@/components/staff/WizardStaffModal'
+import { FinancialDashboard, FinancialFilters } from '@/types/financial'
+import {
+  STAFF_ROLES,
+  STAFF_STATUSES,
+  StaffFilters,
+  StaffProfile,
+  StaffStats,
+} from '@/types/staff'
 
-import PropertyAssignmentModal from '@/components/staff/PropertyAssignmentModal'
-import StaffImportExportModal from '@/components/staff/StaffImportExportModal'
-import FinancialKPIsDashboard from '@/components/financial/FinancialKPIsDashboard'
-import CashFlowManagement from '@/components/financial/CashFlowManagement'
-import ExpenseTrackingSystem from '@/components/financial/ExpenseTrackingSystem'
-import ProfitLossStatement from '@/components/financial/ProfitLossStatement'
-import FinancialForecasting from '@/components/financial/FinancialForecasting'
-import FinancialCharts from '@/components/financial/FinancialCharts'
-import FinancialExportManager from '@/components/financial/FinancialExportManager'
-import PropertyDashboard from '@/components/property/PropertyDashboard'
-import PropertyListing from '@/components/property/PropertyListing'
 import BookingApprovalModal from '@/components/booking/BookingApprovalModal'
 import StaffAssignmentModal from '@/components/booking/StaffAssignmentModal'
+import CashFlowManagement from '@/components/financial/CashFlowManagement'
+import ExpenseTrackingSystem from '@/components/financial/ExpenseTrackingSystem'
+import FinancialCharts from '@/components/financial/FinancialCharts'
+import FinancialExportManager from '@/components/financial/FinancialExportManager'
+import FinancialForecasting from '@/components/financial/FinancialForecasting'
+import FinancialKPIsDashboard from '@/components/financial/FinancialKPIsDashboard'
+import ProfitLossStatement from '@/components/financial/ProfitLossStatement'
+import PropertyDashboard from '@/components/property/PropertyDashboard'
+import PropertyListing from '@/components/property/PropertyListing'
+import PropertyAssignmentModal from '@/components/staff/PropertyAssignmentModal'
+import StaffImportExportModal from '@/components/staff/StaffImportExportModal'
 // SimpleIntegratedBookingsTab removed - unused
-import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
-import { JobManagementDashboard } from '@/components/admin/JobManagementDashboard'
-import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
-import { JobProgressDashboard } from '@/components/admin/JobProgressDashboard'
+import AdvancedCalendarView from '@/components/admin/AdvancedCalendarView'
+import AIAuditLogViewer from '@/components/admin/AIAuditLogViewer'
+import AIAutomationToggle from '@/components/admin/AIAutomationToggle'
+import AIBookingTestPanel from '@/components/admin/AIBookingTestPanel'
+import AIDisabledWarning from '@/components/admin/AIDisabledWarning'
+import AIPerformanceDashboard from '@/components/admin/AIPerformanceDashboard'
+import CalendarSyncDashboard from '@/components/admin/CalendarSyncDashboard'
 import { CalendarView } from '@/components/admin/CalendarView'
+import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
+import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
+import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
+import JobAcceptancePanel from '@/components/admin/JobAcceptancePanel'
+import JobCompletionAnalytics from '@/components/admin/JobCompletionAnalytics'
+import KPIDashboard from '@/components/admin/KPIDashboard'
 import { MobileIntegrationStatus } from '@/components/admin/MobileIntegrationStatus'
-// TestJobService removed - was mock data
+import NotificationDashboard from '@/components/admin/NotificationDashboard'
+import SmartJobAnalyticsDashboard from '@/components/admin/SmartJobAnalyticsDashboard'
+import SmartJobTestPanel from '@/components/admin/SmartJobTestPanel'
 import CalendarEventService from '@/services/CalendarEventService'
 import CalendarIntegrationService from '@/services/CalendarIntegrationService'
-import KPIDashboard from '@/components/admin/KPIDashboard'
-import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
+import TestJobService from '@/services/TestJobService'
+import { testCalendarIntegration } from '@/utils/calendarTestUtils'
+import { Send } from 'lucide-react'
+// Firebase imports for calendar cleanup
+import { db } from '@/lib/firebase'
+import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
 // BookingSyncService removed - unused
 // Real-time sync services removed - handled by individual components
 import {
-  Calendar,
-  Users,
-  DollarSign,
-  FileText,
-  Settings,
-  Filter,
-  Search,
-  Download,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  CheckCircle,
-  XCircle,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Building2,
-  User,
-  Phone,
-  Mail,
   Activity,
-  Calendar as CalendarIcon,
-  Home,
-  ClipboardList,
-  Target,
-  Bell,
-  ChevronRight,
-  RefreshCw,
-  Clock,
+  AlertCircle,
   AlertTriangle,
-  Star,
-  Percent,
-  CreditCard,
-  Wrench,
-  UserCheck,
-  LogIn,
-  LogOut,
+  ArrowDown,
   // Removed unused icons
   ArrowUp,
-  ArrowDown,
-  Loader2,
-  ExternalLink,
+  ArrowUpDown,
+  BarChart3,
+  Bell,
+  Brain,
+  Building2,
+  Calendar,
   Calendar as CalendarDays,
-
+  Calendar as CalendarIcon,
+  CheckCircle,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Edit,
+  ExternalLink,
+  Eye,
+  FileText,
+  Filter,
+  Home,
+  Key,
+  Loader2,
+  LogIn,
+  LogOut,
+  Mail,
+  Percent,
+  Phone,
   PieChart,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings,
+  Star,
+  Target,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  User,
+  UserCheck,
+  Users,
+  Wrench,
   // MoreHorizontal removed - unused
   X,
-  AlertCircle,
-  ArrowUpDown,
-  Key,
-  Zap
+  XCircle,
+  Zap,
 } from 'lucide-react'
 
 // Note: Mock data removed - now using real Firebase data from API endpoints
@@ -141,17 +168,23 @@ export default function BackOfficePage() {
   const [showWizardStaffModal, setShowWizardStaffModal] = useState(false)
   const [showStaffAccountModal, setShowStaffAccountModal] = useState(false)
   const [showCredentialManager, setShowCredentialManager] = useState(false)
-  const [selectedStaffForCredentials, setSelectedStaffForCredentials] = useState<any>(null)
-  const [showPropertyAssignmentModal, setShowPropertyAssignmentModal] = useState(false)
-  const [staffForPropertyAssignment, setStaffForPropertyAssignment] = useState<StaffProfile | null>(null)
+  const [selectedStaffForCredentials, setSelectedStaffForCredentials] =
+    useState<any>(null)
+  const [showPropertyAssignmentModal, setShowPropertyAssignmentModal] =
+    useState(false)
+  const [staffForPropertyAssignment, setStaffForPropertyAssignment] =
+    useState<StaffProfile | null>(null)
   const [showImportExportModal, setShowImportExportModal] = useState(false)
 
   // Financial management state
-  const [financialDashboard, setFinancialDashboard] = useState<FinancialDashboard | null>(null)
+  const [financialDashboard, setFinancialDashboard] =
+    useState<FinancialDashboard | null>(null)
   const [financialLoading, setFinancialLoading] = useState(false)
 
   // Property Management State
-  const [propertyView, setPropertyView] = useState<'dashboard' | 'listing'>('dashboard')
+  const [propertyView, setPropertyView] = useState<'dashboard' | 'listing'>(
+    'dashboard'
+  )
   // selectedProperty removed - unused
 
   // Property Management Handlers
@@ -188,9 +221,11 @@ export default function BackOfficePage() {
   }
   const [financialFilters, setFinancialFilters] = useState<FinancialFilters>({
     dateRange: {
-      startDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0]
-    }
+      startDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+    },
   })
 
   // Enhanced booking management state
@@ -203,8 +238,12 @@ export default function BackOfficePage() {
   // Removed unused booking dialog states
 
   // Enhanced booking sync modals
-  const [bookingApprovalModal, setBookingApprovalModal] = useState<{ booking: any } | null>(null)
-  const [staffAssignmentModal, setStaffAssignmentModal] = useState<{ booking: any } | null>(null)
+  const [bookingApprovalModal, setBookingApprovalModal] = useState<{
+    booking: any
+  } | null>(null)
+  const [staffAssignmentModal, setStaffAssignmentModal] = useState<{
+    booking: any
+  } | null>(null)
   // Unused state variables removed
 
   // Test job state
@@ -232,9 +271,15 @@ export default function BackOfficePage() {
     if (user && user.role === 'admin') {
       loadAllBookingData()
       loadStaffData()
+
+      // Initialize calendar integration workflows
+      CalendarIntegrationService.initialize()
     }
 
-    // Real-time sync cleanup removed - handled by individual components
+    // Cleanup calendar integration on unmount
+    return () => {
+      CalendarIntegrationService.destroy()
+    }
   }, [user])
 
   // Reload staff data when filters change (with debouncing)
@@ -285,7 +330,11 @@ export default function BackOfficePage() {
       if (data.success && data.data) {
         setStaffList(data.data)
         setStaffStats(data.stats)
-        console.log('✅ Staff accounts API data loaded:', data.data.length, 'staff accounts')
+        console.log(
+          '✅ Staff accounts API data loaded:',
+          data.data.length,
+          'staff accounts'
+        )
       } else {
         console.error('❌ Failed to load staff accounts:', data.error)
         console.error('❌ API Response:', data)
@@ -314,8 +363,8 @@ export default function BackOfficePage() {
             lowPerformers: [],
             recentHires: [],
             staffUtilization: 0,
-            averageTasksPerStaff: 0
-          }
+            averageTasksPerStaff: 0,
+          },
         })
       }
     } catch (error) {
@@ -345,8 +394,8 @@ export default function BackOfficePage() {
           lowPerformers: [],
           recentHires: [],
           staffUtilization: 0,
-          averageTasksPerStaff: 0
-        }
+          averageTasksPerStaff: 0,
+        },
       })
     } finally {
       setStaffLoading(false)
@@ -371,7 +420,7 @@ export default function BackOfficePage() {
       name: staff.name,
       email: staff.email || '',
       role: staff.role,
-      status: staff.status
+      status: staff.status,
     })
     setShowCredentialManager(true)
   }
@@ -393,9 +442,12 @@ export default function BackOfficePage() {
       setLoading(true)
 
       // Delete staff account via API
-      const response = await fetch(`/api/admin/staff-accounts/${staffToDelete.id}`, {
-        method: 'DELETE'
-      })
+      const response = await fetch(
+        `/api/admin/staff-accounts/${staffToDelete.id}`,
+        {
+          method: 'DELETE',
+        }
+      )
 
       const data = await response.json()
 
@@ -419,8 +471,6 @@ export default function BackOfficePage() {
     loadStaffData() // Reload staff list after add/edit
   }
 
-
-
   const handlePropertyAssignment = (staff: StaffProfile) => {
     setStaffForPropertyAssignment(staff)
     setShowPropertyAssignmentModal(true)
@@ -437,7 +487,9 @@ export default function BackOfficePage() {
       if (pendingResponse.ok) {
         const pendingData = await pendingResponse.json()
         setPendingBookings(pendingData.bookings || [])
-        console.log(`✅ Loaded ${pendingData.bookings?.length || 0} pending bookings`)
+        console.log(
+          `✅ Loaded ${pendingData.bookings?.length || 0} pending bookings`
+        )
       }
 
       // Load confirmed bookings
@@ -445,7 +497,9 @@ export default function BackOfficePage() {
       if (confirmedResponse.ok) {
         const confirmedData = await confirmedResponse.json()
         setConfirmedBookings(confirmedData.bookings || [])
-        console.log(`✅ Loaded ${confirmedData.bookings?.length || 0} confirmed bookings`)
+        console.log(
+          `✅ Loaded ${confirmedData.bookings?.length || 0} confirmed bookings`
+        )
       }
 
       // Load all bookings from real API
@@ -453,19 +507,28 @@ export default function BackOfficePage() {
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json()
         const allBookings = bookingsData.bookings || []
-        console.log(`✅ Loaded ${allBookings.length} total bookings from Firebase`)
+        console.log(
+          `✅ Loaded ${allBookings.length} total bookings from Firebase`
+        )
 
         // Separate bookings by status
         const pending = allBookings.filter((b: any) => b.status === 'pending')
-        const confirmed = allBookings.filter((b: any) => b.status === 'confirmed' || b.status === 'approved')
+        const confirmed = allBookings.filter(
+          (b: any) => b.status === 'confirmed' || b.status === 'approved'
+        )
 
         setPendingBookings(pending)
         setConfirmedBookings(confirmed)
 
         // Calculate financial data from bookings
-        const totalRevenue = allBookings.reduce((sum: number, booking: any) => sum + (booking.amount || 0), 0)
+        const totalRevenue = allBookings.reduce(
+          (sum: number, booking: any) => sum + (booking.amount || 0),
+          0
+        )
         const monthlyRevenue = allBookings
-          .filter((b: any) => new Date(b.checkIn).getMonth() === new Date().getMonth())
+          .filter(
+            (b: any) => new Date(b.checkIn).getMonth() === new Date().getMonth()
+          )
           .reduce((sum: number, booking: any) => sum + (booking.amount || 0), 0)
 
         // Create comprehensive financial data structure
@@ -478,16 +541,21 @@ export default function BackOfficePage() {
             revenueGrowth: {
               monthly: 0, // TODO: Calculate actual growth
               quarterly: 0,
-              yearly: 0
+              yearly: 0,
             },
             revenueByProperty: [], // TODO: Calculate by property
             revenueBySource: [], // TODO: Calculate by source
             revenueByMonth: [], // TODO: Calculate monthly breakdown
             seasonalTrends: [], // TODO: Calculate seasonal trends
-            averageDailyRate: allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
+            averageDailyRate:
+              allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
             totalBookings: allBookings.length,
-            confirmedBookings: allBookings.filter((b: any) => b.status === 'confirmed').length,
-            pendingRevenue: allBookings.filter((b: any) => b.status === 'pending').reduce((sum: number, b: any) => sum + (b.amount || 0), 0)
+            confirmedBookings: allBookings.filter(
+              (b: any) => b.status === 'confirmed'
+            ).length,
+            pendingRevenue: allBookings
+              .filter((b: any) => b.status === 'pending')
+              .reduce((sum: number, b: any) => sum + (b.amount || 0), 0),
           },
           expenses: {
             totalExpenses: 0, // TODO: Calculate actual expenses
@@ -497,7 +565,7 @@ export default function BackOfficePage() {
             expenseGrowth: {
               monthly: 0,
               quarterly: 0,
-              yearly: 0
+              yearly: 0,
             },
             operationalExpenses: 0,
             staffCosts: 0,
@@ -505,7 +573,7 @@ export default function BackOfficePage() {
             marketingExpenses: 0,
             utilitiesExpenses: 0,
             insuranceExpenses: 0,
-            taxExpenses: 0
+            taxExpenses: 0,
           },
           kpis: {
             adr: allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
@@ -517,11 +585,12 @@ export default function BackOfficePage() {
             customerLifetimeValue: 0,
             customerAcquisitionCost: 0,
             bookingConversionRate: 0,
-            averageBookingValue: allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
+            averageBookingValue:
+              allBookings.length > 0 ? totalRevenue / allBookings.length : 0,
             cashFlowRatio: 0,
             debtToEquityRatio: 0,
             currentRatio: 0,
-            quickRatio: 0
+            quickRatio: 0,
           },
           cashFlow: {
             totalCashFlow: totalRevenue,
@@ -534,19 +603,19 @@ export default function BackOfficePage() {
             accountsPayable: 0,
             cashOnHand: totalRevenue,
             projectedCashFlow: [],
-            paymentMethods: []
+            paymentMethods: [],
           },
           profitLoss: {
             period: {
               startDate: new Date().toISOString().split('T')[0],
               endDate: new Date().toISOString().split('T')[0],
-              type: 'monthly' as const
+              type: 'monthly' as const,
             },
             revenue: {
               totalRevenue,
               bookingRevenue: totalRevenue,
               additionalServices: 0,
-              otherRevenue: 0
+              otherRevenue: 0,
             },
             expenses: {
               totalExpenses: 0,
@@ -557,7 +626,7 @@ export default function BackOfficePage() {
               administrativeExpenses: 0,
               depreciation: 0,
               interestExpense: 0,
-              taxes: 0
+              taxes: 0,
             },
             grossProfit: totalRevenue,
             operatingIncome: totalRevenue,
@@ -565,15 +634,17 @@ export default function BackOfficePage() {
             margins: {
               grossMargin: 0,
               operatingMargin: 0,
-              netMargin: 0
+              netMargin: 0,
             },
-            ebitda: totalRevenue
+            ebitda: totalRevenue,
           },
           forecasting: {
             forecastPeriod: {
               startDate: new Date().toISOString().split('T')[0],
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              months: 12
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split('T')[0],
+              months: 12,
             },
             revenueProjection: [],
             expenseProjection: [],
@@ -581,9 +652,9 @@ export default function BackOfficePage() {
             occupancyProjection: [],
             assumptions: [],
             confidence: 0.8,
-            scenarios: []
+            scenarios: [],
           },
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         }
 
         setFinancialDashboard(calculatedFinancialData)
@@ -603,7 +674,6 @@ export default function BackOfficePage() {
 
       setLastRefresh(new Date())
       toast.success('Dashboard data loaded successfully')
-
     } catch (error) {
       console.error('❌ Error loading booking data:', error)
       toast.error('Failed to load booking data')
@@ -616,9 +686,12 @@ export default function BackOfficePage() {
   // EnhancedBookingManagement handles its own real-time updates
 
   // Enhanced booking approval handler
-  const handleBookingApproval = async (bookingId: string, action: 'approve' | 'reject') => {
+  const handleBookingApproval = async (
+    bookingId: string,
+    action: 'approve' | 'reject'
+  ) => {
     try {
-      const booking = getAllBookings().find(b => b.id === bookingId)
+      const booking = getAllBookings().find((b) => b.id === bookingId)
       if (!booking) {
         toast.error('Booking not found')
         return
@@ -639,7 +712,7 @@ export default function BackOfficePage() {
         specialRequests: booking.specialRequests,
         source: booking.source || 'unknown',
         createdAt: booking.createdAt || new Date().toISOString(),
-        nights: booking.nights || 1
+        nights: booking.nights || 1,
       }
 
       setBookingApprovalModal({ booking: modalBooking })
@@ -652,7 +725,7 @@ export default function BackOfficePage() {
   // Enhanced staff assignment handler
   const handleStaffAssignment = async (bookingId: string) => {
     try {
-      const booking = getAllBookings().find(b => b.id === bookingId)
+      const booking = getAllBookings().find((b) => b.id === bookingId)
       if (!booking) {
         toast.error('Booking not found')
         return
@@ -665,7 +738,7 @@ export default function BackOfficePage() {
         guestName: booking.guestName,
         checkInDate: booking.checkIn,
         checkOutDate: booking.checkOut,
-        guestCount: booking.guestCount || 1
+        guestCount: booking.guestCount || 1,
       }
 
       setStaffAssignmentModal({ booking: modalBooking })
@@ -687,10 +760,14 @@ export default function BackOfficePage() {
     { id: 'properties', label: 'Properties', icon: Building2 },
     { id: 'operations', label: 'Operations', icon: ClipboardList },
     { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'ai-dashboard', label: 'AI Dashboard', icon: Brain },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
-  const handleBookingAction = async (bookingId: string, action: 'approve' | 'reject') => {
+  const handleBookingAction = async (
+    bookingId: string,
+    action: 'approve' | 'reject'
+  ) => {
     setLoading(true)
     try {
       console.log(`${action} booking:`, bookingId)
@@ -703,8 +780,6 @@ export default function BackOfficePage() {
     }
   }
 
-
-
   const exportData = (type: 'pdf' | 'csv', section: string) => {
     console.log(`Export ${section} as ${type}`)
     toast.success(`Exporting ${section} as ${type.toUpperCase()}...`)
@@ -714,40 +789,196 @@ export default function BackOfficePage() {
   const sendTestJobToMobile = async () => {
     try {
       setSendingTestJob(true)
-      console.log('🧪 Sending test job to mobile app...')
+      console.log('🧪 Creating test job for mobile app...')
 
-      // TestJobService removed - was using mock data
-      toast.success('Test job functionality removed - was using mock data')
-      console.log('🧪 Test job functionality removed - was using mock data')
+      // Create a test job using our TestJobService
+      const result = await TestJobService.createTestJob()
 
+      if (result.success) {
+        toast.success(
+          <div className="space-y-2">
+            <p>✅ Test job created successfully!</p>
+            <p className="text-sm">Job ID: {result.jobId}</p>
+            <p className="text-sm">Staff: {result.staffName}</p>
+            <p className="text-sm">User ID: {result.userId}</p>
+            <p className="text-sm">Email: {result.staffEmail}</p>
+          </div>,
+          { duration: 8000 }
+        )
+        console.log('✅ Test job created:', result)
+      } else {
+        toast.error(`Failed to create test job: ${result.error}`)
+        console.error('❌ Test job creation failed:', result.error)
+      }
     } catch (error) {
       console.error('❌ Error sending test job:', error)
-      toast.error(`❌ Failed to send test job: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(
+        `❌ Failed to send test job: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     } finally {
       setSendingTestJob(false)
     }
   }
 
-  // Test calendar event creation
-  const testCalendarEventCreation = async () => {
+  // Test calendar integration
+  const testCalendarDateParsing = async () => {
     try {
       setSendingTestJob(true)
-      console.log('📅 Testing calendar event creation...')
+      console.log('🧪 Testing calendar date parsing...')
 
-      // Create a test calendar event with sample booking data
-      const result = await CalendarEventService.createEventsFromBooking('test_booking_001')
+      await testCalendarIntegration()
+      toast.success(
+        '✅ Calendar date parsing tests completed - check console for details'
+      )
+    } catch (error) {
+      console.error('❌ Error testing calendar:', error)
+      toast.error(
+        `❌ Calendar test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    } finally {
+      setSendingTestJob(false)
+    }
+  }
 
-      if (result.success) {
-        toast.success(`✅ Test calendar events created - Event IDs: ${result.eventIds?.join(', ')}`)
-        console.log('✅ Test calendar events created successfully:', result.eventIds)
-      } else {
-        toast.error(`❌ Failed to create test calendar event: ${result.error}`)
-        console.error('❌ Test calendar event failed:', result.error)
+  // Clean up ALL test/mock calendar events
+  const cleanupTestJobEvents = async () => {
+    try {
+      setSendingTestJob(true)
+      console.log('🧹 Cleaning up ALL test/mock calendar events...')
+
+      // Direct Firebase cleanup using static imports
+      const calendarEventsRef = collection(db, 'calendarEvents')
+      const allEventsSnapshot = await getDocs(calendarEventsRef)
+
+      if (allEventsSnapshot.empty) {
+        console.log('✅ No calendar events found')
+        toast.success('✅ No calendar events found to clean up')
+        return
       }
 
+      // Check if we should do aggressive cleanup (remove ALL events)
+      const shouldDoAggressiveCleanup =
+        confirmedBookings.length === 0 && pendingBookings.length === 0
+
+      if (shouldDoAggressiveCleanup) {
+        console.log(
+          '🧹 No bookings found - performing aggressive cleanup of ALL calendar events'
+        )
+
+        const allEventIds = allEventsSnapshot.docs.map((doc) => doc.id)
+
+        if (allEventIds.length === 0) {
+          console.log('✅ No calendar events found to clean up')
+          toast.success('✅ No calendar events found to clean up')
+          return
+        }
+
+        console.log(
+          `🧹 Removing ALL ${allEventIds.length} calendar events (no bookings exist)`
+        )
+
+        // Delete all calendar events in batches
+        const batchSize = 10
+        for (let i = 0; i < allEventIds.length; i += batchSize) {
+          const batch = allEventIds.slice(i, i + batchSize)
+          const deletePromises = batch.map((eventId) =>
+            deleteDoc(doc(db, 'calendarEvents', eventId))
+          )
+          await Promise.all(deletePromises)
+          console.log(`🗑️ Deleted batch ${Math.floor(i / batchSize) + 1}`)
+        }
+
+        console.log(
+          `✅ Aggressive cleanup complete: removed ${allEventIds.length} calendar events`
+        )
+        toast.success(
+          `✅ Aggressive cleanup complete: removed ${allEventIds.length} calendar events`
+        )
+        return
+      }
+
+      const testEventIds: string[] = []
+
+      allEventsSnapshot.forEach((eventDoc) => {
+        const data = eventDoc.data()
+        const isTestEvent =
+          // Test job IDs
+          data.sourceId?.includes('test_job') ||
+          data.sourceId?.includes('temp_') ||
+          data.sourceId?.includes('test_property') ||
+          data.id?.includes('test_') ||
+          // Mock property names
+          data.propertyName?.includes('Sunset Paradise') ||
+          data.propertyName?.includes('Ocean View Villa') ||
+          data.propertyName?.includes('Test Property') ||
+          data.propertyName?.includes('Paradise Villa') ||
+          data.propertyName?.includes('Villa Sia Moon Test') ||
+          data.propertyName?.includes('Beachfront Villa') ||
+          data.propertyName?.includes('Mountain View') ||
+          data.propertyName?.includes('City Center') ||
+          // Mock staff names
+          data.assignedStaff?.includes('Maria Santos') ||
+          data.assignedStaff?.includes('John Chen') ||
+          data.assignedStaff?.includes('Test Staff') ||
+          data.assignedStaff?.includes('Carlos Rodriguez') ||
+          // Test titles
+          data.title?.includes('Test ') ||
+          data.title?.includes('Sample ') ||
+          data.title?.includes('Mock ') ||
+          data.title?.includes('Demo ') ||
+          data.title?.includes('Maintenance - ') ||
+          data.title?.includes('Event - ') ||
+          data.title?.includes('Cleaning - ') ||
+          data.title?.includes('Check-in - ') ||
+          data.title?.includes('Check-out - ') ||
+          // Test descriptions containing test keywords
+          data.description?.toLowerCase().includes('test') ||
+          data.description?.toLowerCase().includes('sample') ||
+          data.description?.toLowerCase().includes('mock') ||
+          data.description?.toLowerCase().includes('demo') ||
+          // Any event with test property IDs
+          data.propertyId?.includes('test_property') ||
+          data.propertyId?.includes('sample_') ||
+          data.propertyId?.includes('demo_')
+
+        if (isTestEvent) {
+          testEventIds.push(eventDoc.id)
+          console.log(`🗑️ Marking for deletion: ${data.title} (${eventDoc.id})`)
+        }
+      })
+
+      if (testEventIds.length === 0) {
+        console.log('✅ No test/mock calendar events found to clean up')
+        toast.success('✅ No test/mock calendar events found to clean up')
+        return
+      }
+
+      console.log(
+        `🧹 Found ${testEventIds.length} test/mock calendar events to delete`
+      )
+
+      // Delete test calendar events in batches
+      const batchSize = 10
+      for (let i = 0; i < testEventIds.length; i += batchSize) {
+        const batch = testEventIds.slice(i, i + batchSize)
+        const deletePromises = batch.map((eventId) =>
+          deleteDoc(doc(db, 'calendarEvents', eventId))
+        )
+        await Promise.all(deletePromises)
+        console.log(`🗑️ Deleted batch ${Math.floor(i / batchSize) + 1}`)
+      }
+
+      console.log(
+        `✅ Cleaned up ${testEventIds.length} test/mock calendar events`
+      )
+      toast.success(
+        `✅ Cleaned up ${testEventIds.length} test/mock calendar events`
+      )
     } catch (error) {
-      console.error('❌ Error creating test calendar event:', error)
-      toast.error(`❌ Failed to create test calendar event: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('❌ Error cleaning up test events:', error)
+      toast.error(
+        `❌ Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     } finally {
       setSendingTestJob(false)
     }
@@ -755,12 +986,18 @@ export default function BackOfficePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-      case 'confirmed': return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'approved': return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'rejected': return 'bg-red-500/20 text-red-400 border-red-500/30'
-      case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+      case 'confirmed':
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'approved':
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'rejected':
+        return 'bg-red-500/20 text-red-400 border-red-500/30'
+      case 'cancelled':
+        return 'bg-red-500/20 text-red-400 border-red-500/30'
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
   }
 
@@ -768,25 +1005,32 @@ export default function BackOfficePage() {
   const getAllBookings = () => {
     // Combine pending and confirmed bookings for comprehensive view
     const allBookings = [...pendingBookings, ...confirmedBookings]
-    return allBookings.map(booking => ({
+    return allBookings.map((booking) => ({
       ...booking,
       // Normalize data structure for consistency
       guestName: booking.guestName || booking.guest_name || 'Unknown Guest',
-      propertyName: booking.property || booking.villaName || booking.propertyName || 'Unknown Property',
+      propertyName:
+        booking.property ||
+        booking.villaName ||
+        booking.propertyName ||
+        'Unknown Property',
       checkIn: booking.checkInDate || booking.check_in || booking.checkIn,
       checkOut: booking.checkOutDate || booking.check_out || booking.checkOut,
       amount: booking.price || booking.amount || 0,
-      status: booking.status === 'pending_approval' ? 'pending' : booking.status,
+      status:
+        booking.status === 'pending_approval' ? 'pending' : booking.status,
       paymentStatus: booking.paymentStatus || 'pending',
       source: booking.source || 'unknown',
       guestEmail: booking.guestEmail || booking.guest_email || '',
       guestPhone: booking.guestPhone || booking.guest_phone || '',
       guestCount: booking.guests || booking.guestCount || 1,
-      specialRequests: booking.specialRequests || booking.special_requests || '',
+      specialRequests:
+        booking.specialRequests || booking.special_requests || '',
       bookingReference: booking.id || booking.bookingId || `BK${Date.now()}`,
-      createdAt: booking.createdAt || booking.created_at || new Date().toISOString(),
+      createdAt:
+        booking.createdAt || booking.created_at || new Date().toISOString(),
       isCheckingInToday: isToday(booking.checkInDate || booking.check_in),
-      isCheckingOutToday: isToday(booking.checkOutDate || booking.check_out)
+      isCheckingOutToday: isToday(booking.checkOutDate || booking.check_out),
     }))
   }
 
@@ -797,9 +1041,12 @@ export default function BackOfficePage() {
     return date.toDateString() === today.toDateString()
   }
 
-  const getTodaysCheckIns = () => getAllBookings().filter(b => b.isCheckingInToday)
-  const getTodaysCheckOuts = () => getAllBookings().filter(b => b.isCheckingOutToday)
-  const getPendingBookings = () => getAllBookings().filter(b => b.status === 'pending')
+  const getTodaysCheckIns = () =>
+    getAllBookings().filter((b) => b.isCheckingInToday)
+  const getTodaysCheckOuts = () =>
+    getAllBookings().filter((b) => b.isCheckingOutToday)
+  const getPendingBookings = () =>
+    getAllBookings().filter((b) => b.status === 'pending')
   const getOverduePayments = () => [] // TODO: Implement with real financial data
   const getHighPriorityMaintenance = () => [] // TODO: Implement with real maintenance data
   const getAverageOccupancyRate = () => 0 // TODO: Calculate from real property data
@@ -826,20 +1073,25 @@ export default function BackOfficePage() {
 
       // Create calendar event for approved booking
       try {
-        const calendarResult = await CalendarEventService.createEventsFromBooking(bookingId)
+        const calendarResult =
+          await CalendarEventService.createEventsFromBooking(bookingId)
 
         if (calendarResult.success) {
-          console.log(`✅ Calendar events created: ${calendarResult.eventIds?.join(', ')}`)
+          console.log(
+            `✅ Calendar events created: ${calendarResult.eventIds?.join(', ')}`
+          )
           toast.success('✅ Booking approved • Calendar event created')
         } else {
-          console.warn('⚠️ Calendar event creation failed:', calendarResult.error)
+          console.warn(
+            '⚠️ Calendar event creation failed:',
+            calendarResult.error
+          )
           toast.success('✅ Booking approved • Calendar event creation failed')
         }
       } catch (calendarError) {
         console.error('❌ Calendar event creation error:', calendarError)
         toast.success('✅ Booking approved • Calendar event creation failed')
       }
-
     } catch (error) {
       toast.error('Failed to approve booking')
     } finally {
@@ -874,15 +1126,22 @@ export default function BackOfficePage() {
   // Enhanced booking management functions using real data
   const getFilteredBookings = () => {
     const allBookings = getAllBookings()
-    return allBookings.filter(booking => {
-      const matchesSearch = booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           booking.propertyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           booking.bookingReference.toLowerCase().includes(searchTerm.toLowerCase())
+    return allBookings.filter((booking) => {
+      const matchesSearch =
+        booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.propertyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.bookingReference
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
 
-      const matchesStatus = statusFilter === 'all' || booking.status === statusFilter
-      const matchesProperty = propertyFilter === 'all' || booking.propertyName === propertyFilter
-      const matchesPayment = paymentFilter === 'all' || booking.paymentStatus === paymentFilter
-      const matchesSource = sourceFilter === 'all' || booking.source === sourceFilter
+      const matchesStatus =
+        statusFilter === 'all' || booking.status === statusFilter
+      const matchesProperty =
+        propertyFilter === 'all' || booking.propertyName === propertyFilter
+      const matchesPayment =
+        paymentFilter === 'all' || booking.paymentStatus === paymentFilter
+      const matchesSource =
+        sourceFilter === 'all' || booking.source === sourceFilter
 
       let matchesDateRange = true
       if (dateRangeFilter.start && dateRangeFilter.end) {
@@ -892,31 +1151,43 @@ export default function BackOfficePage() {
         matchesDateRange = checkInDate >= startDate && checkInDate <= endDate
       }
 
-      return matchesSearch && matchesStatus && matchesProperty && matchesPayment && matchesSource && matchesDateRange
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesProperty &&
+        matchesPayment &&
+        matchesSource &&
+        matchesDateRange
+      )
     })
   }
 
   const handleBookingSelection = (bookingId: string, selected: boolean) => {
     if (selected) {
-      setSelectedBookings(prev => [...prev, bookingId])
+      setSelectedBookings((prev) => [...prev, bookingId])
     } else {
-      setSelectedBookings(prev => prev.filter(id => id !== bookingId))
+      setSelectedBookings((prev) => prev.filter((id) => id !== bookingId))
     }
   }
 
   const handleSelectAllBookings = (selected: boolean) => {
     if (selected) {
-      setSelectedBookings(getFilteredBookings().map(b => b.id))
+      setSelectedBookings(getFilteredBookings().map((b) => b.id))
     } else {
       setSelectedBookings([])
     }
   }
 
-  const handleBulkApproval = async (action: 'approve' | 'reject', notes?: string) => {
+  const handleBulkApproval = async (
+    action: 'approve' | 'reject',
+    notes?: string
+  ) => {
     setLoading(true)
     try {
       console.log(`Bulk ${action}:`, selectedBookings, 'Notes:', notes)
-      toast.success(`${selectedBookings.length} bookings ${action}d successfully`)
+      toast.success(
+        `${selectedBookings.length} bookings ${action}d successfully`
+      )
       setSelectedBookings([])
       // setShowBulkActions removed
     } catch (error) {
@@ -925,8 +1196,6 @@ export default function BackOfficePage() {
       setLoading(false)
     }
   }
-
-
 
   const handleBookingEdit = async (bookingId: string, updates: any) => {
     setLoading(true)
@@ -946,12 +1215,15 @@ export default function BackOfficePage() {
     const allBookings = getAllBookings()
 
     // Check for double bookings
-    const overlappingBookings = allBookings.filter(b =>
-      b.id !== booking.id &&
-      b.propertyName === booking.propertyName &&
-      (b.status === 'confirmed' || b.status === 'approved') &&
-      ((new Date(booking.checkIn) >= new Date(b.checkIn) && new Date(booking.checkIn) < new Date(b.checkOut)) ||
-       (new Date(booking.checkOut) > new Date(b.checkIn) && new Date(booking.checkOut) <= new Date(b.checkOut)))
+    const overlappingBookings = allBookings.filter(
+      (b) =>
+        b.id !== booking.id &&
+        b.propertyName === booking.propertyName &&
+        (b.status === 'confirmed' || b.status === 'approved') &&
+        ((new Date(booking.checkIn) >= new Date(b.checkIn) &&
+          new Date(booking.checkIn) < new Date(b.checkOut)) ||
+          (new Date(booking.checkOut) > new Date(b.checkIn) &&
+            new Date(booking.checkOut) <= new Date(b.checkOut)))
     )
 
     if (overlappingBookings.length > 0) {
@@ -963,23 +1235,38 @@ export default function BackOfficePage() {
     const maintenanceConflicts: any[] = []
 
     if (maintenanceConflicts.length > 0) {
-      conflicts.push({ type: 'maintenance_overlap', details: maintenanceConflicts })
+      conflicts.push({
+        type: 'maintenance_overlap',
+        details: maintenanceConflicts,
+      })
     }
 
     return conflicts
   }
 
   const getAvailableStaff = (propertyName: string, checkInDate: string) => {
-    return staffList.filter((staff: any) =>
-      staff.assignedProperties?.includes(propertyName) &&
-      staff.status === 'active'
+    return staffList.filter(
+      (staff: any) =>
+        staff.assignedProperties?.includes(propertyName) &&
+        staff.status === 'active'
     )
   }
 
-  const sendGuestNotification = async (bookingId: string, type: 'approval' | 'rejection' | 'assignment', message?: string) => {
+  const sendGuestNotification = async (
+    bookingId: string,
+    type: 'approval' | 'rejection' | 'assignment',
+    message?: string
+  ) => {
     setLoading(true)
     try {
-      console.log('Send notification:', type, 'to booking:', bookingId, 'Message:', message)
+      console.log(
+        'Send notification:',
+        type,
+        'to booking:',
+        bookingId,
+        'Message:',
+        message
+      )
       toast.success('Notification sent successfully')
     } catch (error) {
       toast.error('Failed to send notification')
@@ -1015,334 +1302,398 @@ export default function BackOfficePage() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-black text-white flex">
-      {/* Fixed Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-neutral-950 border-r border-neutral-800 z-50 transition-all duration-300 ${
-        sidebarCollapsed ? 'w-16' : 'w-64'
-      }`}>
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-neutral-800">
-          <div className="flex items-center justify-between">
+        {/* Fixed Sidebar */}
+        <div
+          className={`fixed left-0 top-0 h-full bg-neutral-950 border-r border-neutral-800 z-50 transition-all duration-300 ${
+            sidebarCollapsed ? 'w-16' : 'w-64'
+          }`}
+        >
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-neutral-800">
+            <div className="flex items-center justify-between">
+              {!sidebarCollapsed && (
+                <div>
+                  <h2 className="text-lg font-bold text-white">Back Office</h2>
+                  <p className="text-xs text-neutral-400">Management Hub</p>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="text-neutral-400 hover:text-white"
+              >
+                <ChevronRight
+                  className={`h-4 w-4 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`}
+                />
+              </Button>
+            </div>
+          </div>
+
+          {/* Sidebar Navigation */}
+          <nav className="p-2 space-y-1">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon
+              const isActive = activeSection === item.id
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!sidebarCollapsed && <span>{item.label}</span>}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Sidebar Footer */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral-800">
             {!sidebarCollapsed && (
-              <div>
-                <h2 className="text-lg font-bold text-white">Back Office</h2>
-                <p className="text-xs text-neutral-400">Management Hub</p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {user?.full_name || 'Admin'}
+                  </p>
+                  <p className="text-xs text-neutral-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="text-neutral-400 hover:text-white"
-            >
-              <ChevronRight className={`h-4 w-4 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`} />
-            </Button>
           </div>
         </div>
 
-        {/* Sidebar Navigation */}
-        <nav className="p-2 space-y-1">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon
-            const isActive = activeSection === item.id
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
-                }`}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </button>
-            )
-          })}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral-800">
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.full_name || 'Admin'}</p>
-                <p className="text-xs text-neutral-400 truncate">{user?.email}</p>
+        {/* Main Content */}
+        <div
+          className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}
+        >
+          {/* Top Header */}
+          <header className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-neutral-800">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-white">
+                    {sidebarItems.find((item) => item.id === activeSection)
+                      ?.label || 'Dashboard'}
+                  </h1>
+                  <p className="text-sm text-neutral-400">
+                    {activeSection === 'dashboard' &&
+                      'Overview of your business operations'}
+                    {activeSection === 'bookings' &&
+                      'Manage and approve property bookings'}
+                    {activeSection === 'calendar' &&
+                      'Calendar view of events, bookings, and staff schedules'}
+                    {activeSection === 'kpi-dashboard' &&
+                      'Performance metrics and operational analytics'}
+                    {activeSection === 'job-assignments' &&
+                      'Assign and track staff job assignments'}
+                    {activeSection === 'staff' &&
+                      'Staff management and assignments'}
+                    {activeSection === 'financial' &&
+                      'Financial overview and reporting'}
+                    {activeSection === 'properties' &&
+                      'Property management and overview'}
+                    {activeSection === 'operations' &&
+                      'Daily operations and tasks'}
+                    {activeSection === 'reports' && 'Generate and view reports'}
+                    {activeSection === 'ai-dashboard' &&
+                      'AI performance monitoring and admin feedback'}
+                    {activeSection === 'settings' &&
+                      'System settings and configuration'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={() => exportData('pdf', activeSection)}
+                    variant="outline"
+                    size="sm"
+                    className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    <Activity className="h-3 w-3 mr-1" />
+                    Online
+                  </Badge>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </header>
 
-      {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {/* Top Header */}
-        <header className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-neutral-800">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  {sidebarItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
-                </h1>
-                <p className="text-sm text-neutral-400">
-                  {activeSection === 'dashboard' && 'Overview of your business operations'}
-                  {activeSection === 'bookings' && 'Manage and approve property bookings'}
-                  {activeSection === 'calendar' && 'Calendar view of events, bookings, and staff schedules'}
-                  {activeSection === 'kpi-dashboard' && 'Performance metrics and operational analytics'}
-                  {activeSection === 'job-assignments' && 'Assign and track staff job assignments'}
-                  {activeSection === 'staff' && 'Staff management and assignments'}
-                  {activeSection === 'financial' && 'Financial overview and reporting'}
-                  {activeSection === 'properties' && 'Property management and overview'}
-                  {activeSection === 'operations' && 'Daily operations and tasks'}
-                  {activeSection === 'reports' && 'Generate and view reports'}
-                  {activeSection === 'settings' && 'System settings and configuration'}
-                </p>
+          {/* Main Content Area */}
+          <main className="p-6 space-y-6">
+            {/* Render content based on active section */}
+            {renderSectionContent()}
+          </main>
+        </div>
+
+        {/* Staff Management Modals */}
+        <AddStaffModal
+          isOpen={showAddStaffModal}
+          onClose={() => setShowAddStaffModal(false)}
+          onSuccess={handleStaffSuccess}
+        />
+
+        <EditStaffModal
+          isOpen={showEditStaffModal}
+          onClose={() => setShowEditStaffModal(false)}
+          onSuccess={handleStaffSuccess}
+          staff={selectedStaff}
+        />
+
+        <PropertyAssignmentModal
+          isOpen={showPropertyAssignmentModal}
+          onClose={() => setShowPropertyAssignmentModal(false)}
+          onSuccess={handleStaffSuccess}
+          staff={staffForPropertyAssignment}
+        />
+
+        <StaffImportExportModal
+          isOpen={showImportExportModal}
+          onClose={() => setShowImportExportModal(false)}
+          onSuccess={handleStaffSuccess}
+          staffList={staffList}
+        />
+
+        {/* Wizard Staff Management Modal */}
+        <WizardStaffModal
+          isOpen={showWizardStaffModal}
+          onClose={() => setShowWizardStaffModal(false)}
+          onStaffCreated={(staff, credentials) => {
+            console.log('✅ Staff created with credentials:', staff.name)
+            console.log('📧 Login credentials:', credentials.email)
+            handleStaffSuccess()
+            toast.success(
+              `Staff member ${staff.name} created with login credentials!`
+            )
+          }}
+          availableProperties={[
+            { id: '1', name: 'Villa Sunset' },
+            { id: '2', name: 'Ocean View Resort' },
+            { id: '3', name: 'Mountain Lodge' },
+            { id: '4', name: 'City Apartment' },
+          ]}
+        />
+
+        {/* Staff Account Modal */}
+        <StaffAccountModal
+          isOpen={showStaffAccountModal}
+          onClose={() => setShowStaffAccountModal(false)}
+          onStaffCreated={(staff, credentials) => {
+            console.log('✅ Staff account created:', staff.name)
+            console.log('📧 Login credentials:', credentials.email)
+            handleStaffSuccess()
+            toast.success(
+              `Staff account ${staff.name} created with login credentials!`
+            )
+          }}
+          availableProperties={[
+            { id: '1', name: 'Villa Sunset' },
+            { id: '2', name: 'Ocean View Resort' },
+            { id: '3', name: 'Mountain Lodge' },
+            { id: '4', name: 'City Apartment' },
+          ]}
+        />
+
+        {selectedStaffForCredentials && (
+          <StaffCredentialManager
+            isOpen={showCredentialManager}
+            onClose={() => {
+              setShowCredentialManager(false)
+              setSelectedStaffForCredentials(null)
+            }}
+            staffMember={selectedStaffForCredentials}
+            onCredentialsUpdated={() => {
+              console.log('✅ Credentials updated successfully')
+              handleStaffSuccess()
+            }}
+          />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && staffToDelete && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    Delete Staff Member
+                  </h3>
+                  <p className="text-sm text-neutral-400">
+                    This action cannot be undone
+                  </p>
+                </div>
               </div>
+
+              <p className="text-neutral-300 mb-6">
+                Are you sure you want to delete{' '}
+                <strong>{staffToDelete?.name}</strong>? This will remove their
+                profile and all associated data.
+              </p>
+
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={() => exportData('pdf', activeSection)}
-                  variant="outline"
-                  size="sm"
-                  className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                  onClick={confirmDeleteStaff}
+                  disabled={loading}
+                  className="bg-red-600 hover:bg-red-700 flex-1"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Staff
+                    </>
+                  )}
                 </Button>
                 <Button
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setStaffToDelete(null)
+                  }}
                   variant="outline"
-                  size="sm"
-                  className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                  disabled={loading}
+                  className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 flex-1"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
+                  Cancel
                 </Button>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Online
-                </Badge>
               </div>
             </div>
           </div>
-        </header>
+        )}
 
-        {/* Main Content Area */}
-        <main className="p-6 space-y-6">
-          {/* Render content based on active section */}
-          {renderSectionContent()}
-        </main>
-      </div>
+        {/* Enhanced Booking Approval Modal */}
+        {bookingApprovalModal && (
+          <BookingApprovalModal
+            isOpen={!!bookingApprovalModal}
+            onClose={() => setBookingApprovalModal(null)}
+            booking={bookingApprovalModal.booking}
+            currentUser={{
+              id: user?.id || '',
+              name: user?.full_name || user?.email || 'Admin',
+            }}
+            onApprovalComplete={async (bookingId, action) => {
+              console.log(`Booking ${bookingId} ${action}d successfully`)
+              setBookingApprovalModal(null)
+              // Reload data to reflect changes
+              loadAllBookingData()
 
-      {/* Staff Management Modals */}
-      <AddStaffModal
-        isOpen={showAddStaffModal}
-        onClose={() => setShowAddStaffModal(false)}
-        onSuccess={handleStaffSuccess}
-      />
+              // Create calendar event for approved bookings
+              if (action === 'approve') {
+                try {
+                  const calendarResult =
+                    await CalendarEventService.createEventsFromBooking(
+                      bookingId
+                    )
 
-      <EditStaffModal
-        isOpen={showEditStaffModal}
-        onClose={() => setShowEditStaffModal(false)}
-        onSuccess={handleStaffSuccess}
-        staff={selectedStaff}
-      />
-
-      <PropertyAssignmentModal
-        isOpen={showPropertyAssignmentModal}
-        onClose={() => setShowPropertyAssignmentModal(false)}
-        onSuccess={handleStaffSuccess}
-        staff={staffForPropertyAssignment}
-      />
-
-      <StaffImportExportModal
-        isOpen={showImportExportModal}
-        onClose={() => setShowImportExportModal(false)}
-        onSuccess={handleStaffSuccess}
-        staffList={staffList}
-      />
-
-      {/* Wizard Staff Management Modal */}
-      <WizardStaffModal
-        isOpen={showWizardStaffModal}
-        onClose={() => setShowWizardStaffModal(false)}
-        onStaffCreated={(staff, credentials) => {
-          console.log('✅ Staff created with credentials:', staff.name)
-          console.log('📧 Login credentials:', credentials.email)
-          handleStaffSuccess()
-          toast.success(`Staff member ${staff.name} created with login credentials!`)
-        }}
-        availableProperties={[
-          { id: '1', name: 'Villa Sunset' },
-          { id: '2', name: 'Ocean View Resort' },
-          { id: '3', name: 'Mountain Lodge' },
-          { id: '4', name: 'City Apartment' }
-        ]}
-      />
-
-      {/* Staff Account Modal */}
-      <StaffAccountModal
-        isOpen={showStaffAccountModal}
-        onClose={() => setShowStaffAccountModal(false)}
-        onStaffCreated={(staff, credentials) => {
-          console.log('✅ Staff account created:', staff.name)
-          console.log('📧 Login credentials:', credentials.email)
-          handleStaffSuccess()
-          toast.success(`Staff account ${staff.name} created with login credentials!`)
-        }}
-        availableProperties={[
-          { id: '1', name: 'Villa Sunset' },
-          { id: '2', name: 'Ocean View Resort' },
-          { id: '3', name: 'Mountain Lodge' },
-          { id: '4', name: 'City Apartment' }
-        ]}
-      />
-
-      {selectedStaffForCredentials && (
-        <StaffCredentialManager
-          isOpen={showCredentialManager}
-          onClose={() => {
-            setShowCredentialManager(false)
-            setSelectedStaffForCredentials(null)
-          }}
-          staffMember={selectedStaffForCredentials}
-          onCredentialsUpdated={() => {
-            console.log('✅ Credentials updated successfully')
-            handleStaffSuccess()
-          }}
-        />
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && staffToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">Delete Staff Member</h3>
-                <p className="text-sm text-neutral-400">This action cannot be undone</p>
-              </div>
-            </div>
-
-            <p className="text-neutral-300 mb-6">
-              Are you sure you want to delete <strong>{staffToDelete?.name}</strong>?
-              This will remove their profile and all associated data.
-            </p>
-
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={confirmDeleteStaff}
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-700 flex-1"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Staff
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowDeleteConfirm(false)
-                  setStaffToDelete(null)
-                }}
-                variant="outline"
-                disabled={loading}
-                className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced Booking Approval Modal */}
-      {bookingApprovalModal && (
-        <BookingApprovalModal
-          isOpen={!!bookingApprovalModal}
-          onClose={() => setBookingApprovalModal(null)}
-          booking={bookingApprovalModal.booking}
-          currentUser={{
-            id: user?.id || '',
-            name: user?.full_name || user?.email || 'Admin'
-          }}
-          onApprovalComplete={async (bookingId, action) => {
-            console.log(`Booking ${bookingId} ${action}d successfully`)
-            setBookingApprovalModal(null)
-            // Reload data to reflect changes
-            loadAllBookingData()
-
-            // Create calendar event for approved bookings
-            if (action === 'approve') {
-              try {
-                const calendarResult = await CalendarEventService.createEventsFromBooking(bookingId)
-
-                if (calendarResult.success) {
-                  console.log(`✅ Calendar events created: ${calendarResult.eventIds?.join(', ')}`)
-                  toast.success(`✅ Booking approved • Calendar event created • Synced to mobile app`)
-                } else {
-                  console.warn('⚠️ Calendar event creation failed:', calendarResult.error)
-                  toast.success(`✅ Booking approved • Synced to mobile app • Calendar event creation failed`)
+                  if (calendarResult.success) {
+                    console.log(
+                      `✅ Calendar events created: ${calendarResult.eventIds?.join(', ')}`
+                    )
+                    toast.success(
+                      `✅ Booking approved • Calendar event created • Synced to mobile app`
+                    )
+                  } else {
+                    console.warn(
+                      '⚠️ Calendar event creation failed:',
+                      calendarResult.error
+                    )
+                    toast.success(
+                      `✅ Booking approved • Synced to mobile app • Calendar event creation failed`
+                    )
+                  }
+                } catch (calendarError) {
+                  console.error(
+                    '❌ Calendar event creation error:',
+                    calendarError
+                  )
+                  toast.success(
+                    `✅ Booking approved • Synced to mobile app • Calendar event creation failed`
+                  )
                 }
-              } catch (calendarError) {
-                console.error('❌ Calendar event creation error:', calendarError)
-                toast.success(`✅ Booking approved • Synced to mobile app • Calendar event creation failed`)
+              } else {
+                toast.success(
+                  `Booking ${action}d successfully and synced to mobile app`
+                )
               }
-            } else {
-              toast.success(`Booking ${action}d successfully and synced to mobile app`)
-            }
 
-            // Redirect to job assignment page for approved bookings
-            if (action === 'approve') {
-              const booking = bookingApprovalModal.booking
-              const params = new URLSearchParams({
-                bookingId: booking.id,
-                propertyName: booking.propertyName || booking.property || 'Unknown Property',
-                guestName: booking.guestName || booking.guest || 'Unknown Guest',
-                checkInDate: booking.checkInDate || booking.checkin || '',
-                checkOutDate: booking.checkOutDate || booking.checkout || '',
-                numberOfGuests: String(booking.numberOfGuests || booking.guests || 1),
-                ...(booking.specialRequests && { specialRequests: booking.specialRequests })
-              })
+              // Redirect to job assignment page for approved bookings
+              if (action === 'approve') {
+                const booking = bookingApprovalModal.booking
+                const params = new URLSearchParams({
+                  bookingId: booking.id,
+                  propertyName:
+                    booking.propertyName ||
+                    booking.property ||
+                    'Unknown Property',
+                  guestName:
+                    booking.guestName || booking.guest || 'Unknown Guest',
+                  checkInDate: booking.checkInDate || booking.checkin || '',
+                  checkOutDate: booking.checkOutDate || booking.checkout || '',
+                  numberOfGuests: String(
+                    booking.numberOfGuests || booking.guests || 1
+                  ),
+                  ...(booking.specialRequests && {
+                    specialRequests: booking.specialRequests,
+                  }),
+                })
 
-              // Navigate to job assignment page with booking data
-              window.open(`/admin/job-assignments?${params.toString()}`, '_blank')
-            }
-          }}
-        />
-      )}
+                // Navigate to job assignment page with booking data
+                window.open(
+                  `/admin/job-assignments?${params.toString()}`,
+                  '_blank'
+                )
+              }
+            }}
+          />
+        )}
 
-      {/* Enhanced Staff Assignment Modal */}
-      {staffAssignmentModal && (
-        <StaffAssignmentModal
-          isOpen={!!staffAssignmentModal}
-          onClose={() => setStaffAssignmentModal(null)}
-          booking={staffAssignmentModal.booking}
-          currentUser={{
-            id: user?.id || '',
-            name: user?.full_name || user?.email || 'Admin'
-          }}
-          onAssignmentComplete={(assignments) => {
-            console.log(`${assignments.length} tasks created successfully`)
-            setStaffAssignmentModal(null)
-            // Reload data to reflect changes
-            loadAllBookingData()
-            toast.success(`Staff assigned successfully with ${assignments.length} tasks created`)
-          }}
-        />
-      )}
-    </div>
+        {/* Enhanced Staff Assignment Modal */}
+        {staffAssignmentModal && (
+          <StaffAssignmentModal
+            isOpen={!!staffAssignmentModal}
+            onClose={() => setStaffAssignmentModal(null)}
+            booking={staffAssignmentModal.booking}
+            currentUser={{
+              id: user?.id || '',
+              name: user?.full_name || user?.email || 'Admin',
+            }}
+            onAssignmentComplete={(assignments) => {
+              console.log(`${assignments.length} tasks created successfully`)
+              setStaffAssignmentModal(null)
+              // Reload data to reflect changes
+              loadAllBookingData()
+              toast.success(
+                `Staff assigned successfully with ${assignments.length} tasks created`
+              )
+            }}
+          />
+        )}
+      </div>
     </ErrorBoundary>
   )
 
@@ -1350,7 +1701,7 @@ export default function BackOfficePage() {
   function renderSectionContent() {
     switch (activeSection) {
       case 'dashboard':
-        return <JobProgressDashboard />
+        return renderDashboard()
       case 'bookings':
         return renderBookings()
       case 'calendar':
@@ -1369,6 +1720,8 @@ export default function BackOfficePage() {
         return renderOperations()
       case 'reports':
         return renderReports()
+      case 'ai-dashboard':
+        return <AIPerformanceDashboard />
       case 'settings':
         return renderSettings()
       default:
@@ -1390,7 +1743,9 @@ export default function BackOfficePage() {
         {/* Dashboard Header with Refresh */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">Property Management Dashboard</h2>
+            <h2 className="text-xl font-semibold text-white">
+              Property Management Dashboard
+            </h2>
             <p className="text-sm text-neutral-400">
               Last updated: {lastRefresh.toLocaleTimeString()}
             </p>
@@ -1411,10 +1766,10 @@ export default function BackOfficePage() {
             </Button>
 
             <Button
-              onClick={testCalendarEventCreation}
+              onClick={testCalendarDateParsing}
               disabled={sendingTestJob}
               size="sm"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
             >
               {sendingTestJob ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1422,6 +1777,20 @@ export default function BackOfficePage() {
                 <CalendarIcon className="h-4 w-4 mr-2" />
               )}
               Test Calendar
+            </Button>
+
+            <Button
+              onClick={cleanupTestJobEvents}
+              disabled={sendingTestJob}
+              size="sm"
+              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white"
+            >
+              {sendingTestJob ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Remove Mock Data
             </Button>
 
             <Button
@@ -1444,8 +1813,10 @@ export default function BackOfficePage() {
         {/* Key Performance Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Today's Check-ins */}
-          <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30 hover:border-blue-400/50 transition-colors cursor-pointer"
-                onClick={() => setActiveSection('bookings')}>
+          <Card
+            className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30 hover:border-blue-400/50 transition-colors cursor-pointer"
+            onClick={() => setActiveSection('bookings')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="text-white flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1466,15 +1837,19 @@ export default function BackOfficePage() {
                   </p>
                 ))}
                 {todaysCheckIns.length > 2 && (
-                  <p className="text-xs text-blue-300">+{todaysCheckIns.length - 2} more</p>
+                  <p className="text-xs text-blue-300">
+                    +{todaysCheckIns.length - 2} more
+                  </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Today's Check-outs */}
-          <Card className="bg-gradient-to-br from-orange-600/20 to-red-600/20 border-orange-500/30 hover:border-orange-400/50 transition-colors cursor-pointer"
-                onClick={() => setActiveSection('bookings')}>
+          <Card
+            className="bg-gradient-to-br from-orange-600/20 to-red-600/20 border-orange-500/30 hover:border-orange-400/50 transition-colors cursor-pointer"
+            onClick={() => setActiveSection('bookings')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="text-white flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1495,15 +1870,19 @@ export default function BackOfficePage() {
                   </p>
                 ))}
                 {todaysCheckOuts.length > 2 && (
-                  <p className="text-xs text-orange-300">+{todaysCheckOuts.length - 2} more</p>
+                  <p className="text-xs text-orange-300">
+                    +{todaysCheckOuts.length - 2} more
+                  </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Revenue with Trend */}
-          <Card className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30 hover:border-green-400/50 transition-colors cursor-pointer"
-                onClick={() => setActiveSection('financial')}>
+          <Card
+            className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30 hover:border-green-400/50 transition-colors cursor-pointer"
+            onClick={() => setActiveSection('financial')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="text-white flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1515,23 +1894,25 @@ export default function BackOfficePage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-400">
-                ${financialDashboard?.revenue?.monthlyRevenue?.toLocaleString() || '0'}
+                $
+                {financialDashboard?.revenue?.monthlyRevenue?.toLocaleString() ||
+                  '0'}
               </div>
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center text-sm text-green-200">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  +{financialDashboard?.revenue?.revenueGrowth?.monthly || 0}%
+                  <TrendingUp className="h-3 w-3 mr-1" />+
+                  {financialDashboard?.revenue?.revenueGrowth?.monthly || 0}%
                 </div>
-                <div className="text-xs text-green-300">
-                  vs last month
-                </div>
+                <div className="text-xs text-green-300">vs last month</div>
               </div>
             </CardContent>
           </Card>
 
           {/* Occupancy Rate */}
-          <Card className="bg-gradient-to-br from-purple-600/20 to-violet-600/20 border-purple-500/30 hover:border-purple-400/50 transition-colors cursor-pointer"
-                onClick={() => setActiveSection('properties')}>
+          <Card
+            className="bg-gradient-to-br from-purple-600/20 to-violet-600/20 border-purple-500/30 hover:border-purple-400/50 transition-colors cursor-pointer"
+            onClick={() => setActiveSection('properties')}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="text-white flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1551,7 +1932,9 @@ export default function BackOfficePage() {
                   style={{ width: `${avgOccupancy}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-purple-200 mt-1">Across all properties</p>
+              <p className="text-xs text-purple-200 mt-1">
+                Across all properties
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -1567,14 +1950,15 @@ export default function BackOfficePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-400 mb-3">
-                $0
-              </div>
+              <div className="text-2xl font-bold text-red-400 mb-3">$0</div>
               <div className="space-y-2">
                 <div className="text-center py-4">
-                  <p className="text-neutral-400 text-sm">No overdue payments</p>
+                  <p className="text-neutral-400 text-sm">
+                    No overdue payments
+                  </p>
                   <p className="text-neutral-500 text-xs mt-1">
-                    Payment tracking will be implemented with real financial data
+                    Payment tracking will be implemented with real financial
+                    data
                   </p>
                 </div>
                 {overduePayments.length > 3 && (
@@ -1604,32 +1988,41 @@ export default function BackOfficePage() {
                 {pendingBookings.length}
               </div>
               <div className="space-y-2">
-                {getPendingBookings().slice(0, 3).map((booking: any) => (
-                  <div key={booking.id} className="flex items-center justify-between p-2 bg-yellow-500/10 rounded">
-                    <div>
-                      <p className="text-white text-sm font-medium">{booking.guestName}</p>
-                      <p className="text-yellow-300 text-xs">{booking.propertyName}</p>
+                {getPendingBookings()
+                  .slice(0, 3)
+                  .map((booking: any) => (
+                    <div
+                      key={booking.id}
+                      className="flex items-center justify-between p-2 bg-yellow-500/10 rounded"
+                    >
+                      <div>
+                        <p className="text-white text-sm font-medium">
+                          {booking.guestName}
+                        </p>
+                        <p className="text-yellow-300 text-xs">
+                          {booking.propertyName}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => handleQuickApproval(booking.id)}
+                          className="bg-green-600 hover:bg-green-700 h-6 px-2 text-xs"
+                          disabled={loading}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-600 text-red-400 hover:bg-red-600/10 h-6 px-2 text-xs"
+                          disabled={loading}
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        onClick={() => handleQuickApproval(booking.id)}
-                        className="bg-green-600 hover:bg-green-700 h-6 px-2 text-xs"
-                        disabled={loading}
-                      >
-                        <CheckCircle className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-600 text-red-400 hover:bg-red-600/10 h-6 px-2 text-xs"
-                        disabled={loading}
-                      >
-                        <XCircle className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
                 {pendingBookings.length > 3 && (
                   <Button
                     variant="outline"
@@ -1659,16 +2052,23 @@ export default function BackOfficePage() {
               <div className="space-y-2">
                 {highPriorityMaintenance.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-neutral-400 text-sm">No high priority maintenance</p>
+                    <p className="text-neutral-400 text-sm">
+                      No high priority maintenance
+                    </p>
                     <p className="text-neutral-500 text-xs mt-1">
                       Maintenance tracking will be implemented with real data
                     </p>
                   </div>
                 ) : (
                   highPriorityMaintenance.slice(0, 3).map((request: any) => (
-                    <div key={request.id} className="p-2 bg-orange-500/10 rounded">
+                    <div
+                      key={request.id}
+                      className="p-2 bg-orange-500/10 rounded"
+                    >
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-white text-sm font-medium">{request.propertyName}</p>
+                        <p className="text-white text-sm font-medium">
+                          {request.propertyName}
+                        </p>
                         <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
                           {request.priority}
                         </Badge>
@@ -1702,8 +2102,12 @@ export default function BackOfficePage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-white">Property Performance</CardTitle>
-                  <CardDescription>Real-time property status and metrics</CardDescription>
+                  <CardTitle className="text-white">
+                    Property Performance
+                  </CardTitle>
+                  <CardDescription>
+                    Real-time property status and metrics
+                  </CardDescription>
                 </div>
                 <Button
                   variant="ghost"
@@ -1718,9 +2122,12 @@ export default function BackOfficePage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="text-center py-8">
-                  <p className="text-neutral-400">No property revenue data available</p>
+                  <p className="text-neutral-400">
+                    No property revenue data available
+                  </p>
                   <p className="text-neutral-500 text-xs mt-1">
-                    Property revenue tracking will be implemented with real financial data
+                    Property revenue tracking will be implemented with real
+                    financial data
                   </p>
                 </div>
               </div>
@@ -1733,7 +2140,9 @@ export default function BackOfficePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-white">Staff Overview</CardTitle>
-                  <CardDescription>Current staff status and performance</CardDescription>
+                  <CardDescription>
+                    Current staff status and performance
+                  </CardDescription>
                 </div>
                 <Button
                   variant="ghost"
@@ -1755,28 +2164,40 @@ export default function BackOfficePage() {
                           <User className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <h4 className="text-white font-medium">{staff.name}</h4>
-                          <p className="text-neutral-400 text-xs">{staff.role}</p>
+                          <h4 className="text-white font-medium">
+                            {staff.name || 'Unknown Staff'}
+                          </h4>
+                          <p className="text-neutral-400 text-xs">
+                            {staff.role || 'No role assigned'}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={
-                          staff.availability === 'available' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                          staff.availability === 'busy' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                          'bg-red-500/20 text-red-400 border-red-500/30'
-                        }>
-                          {staff.availability}
+                        <Badge
+                          className={
+                            (staff.availability || 'unknown') === 'available'
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              : (staff.availability || 'unknown') === 'busy'
+                                ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                                : 'bg-red-500/20 text-red-400 border-red-500/30'
+                          }
+                        >
+                          {staff.availability || 'Unknown'}
                         </Badge>
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 text-yellow-400" />
-                          <span className="text-yellow-400 text-xs">{staff.rating}</span>
+                          <span className="text-yellow-400 text-xs">
+                            {staff.rating || 'N/A'}
+                          </span>
                         </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-neutral-400">Current Task</p>
-                        <p className="text-white text-xs">{staff.currentTask}</p>
+                        <p className="text-white text-xs">
+                          {staff.currentTask || 'No active task'}
+                        </p>
                       </div>
                       <div>
                         <p className="text-neutral-400">Completion Rate</p>
@@ -1784,10 +2205,14 @@ export default function BackOfficePage() {
                           <div className="flex-1 bg-neutral-700 rounded-full h-1.5">
                             <div
                               className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
-                              style={{ width: `${staff.performance.onTimeCompletion}%` }}
+                              style={{
+                                width: `${staff.performance?.onTimeCompletion || 0}%`,
+                              }}
                             ></div>
                           </div>
-                          <span className="text-green-400 text-xs">{staff.performance.onTimeCompletion}%</span>
+                          <span className="text-green-400 text-xs">
+                            {staff.performance?.onTimeCompletion || 0}%
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1807,7 +2232,9 @@ export default function BackOfficePage() {
                 <Bell className="h-5 w-5" />
                 System Alerts
               </CardTitle>
-              <CardDescription>Recent notifications and system updates</CardDescription>
+              <CardDescription>
+                Recent notifications and system updates
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -1825,7 +2252,9 @@ export default function BackOfficePage() {
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
               <CardTitle className="text-white">Quick Actions</CardTitle>
-              <CardDescription>Frequently used management actions</CardDescription>
+              <CardDescription>
+                Frequently used management actions
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
@@ -1842,7 +2271,9 @@ export default function BackOfficePage() {
                   )}
                 </Button>
                 <Button
-                  onClick={() => window.open('/admin/job-assignments', '_blank')}
+                  onClick={() =>
+                    window.open('/admin/job-assignments', '_blank')
+                  }
                   className="bg-green-600 hover:bg-green-700 h-auto p-4 flex-col gap-2"
                 >
                   <ClipboardList className="h-5 w-5" />
@@ -1907,6 +2338,9 @@ export default function BackOfficePage() {
 
         {/* Mobile Integration Status */}
         <MobileIntegrationStatus />
+
+        {/* Enhanced Job Management Dashboard */}
+        <EnhancedJobManagementDashboard />
       </div>
     )
   }
@@ -1914,16 +2348,21 @@ export default function BackOfficePage() {
   // Enhanced Bookings Section - Now using Enhanced Booking Management
   function renderBookings() {
     return (
-      <EnhancedBookingManagement
-        onBookingApproved={(bookingId: string) => {
-          console.log(`✅ Booking ${bookingId} approved in Enhanced Back Office`)
-          loadAllBookingData()
-        }}
-        onStaffAssigned={(bookingId: string, staffIds: string[]) => {
-          console.log(`👥 Staff assigned to booking ${bookingId}:`, staffIds)
-          loadAllBookingData()
-        }}
-      />
+      <>
+        <AIDisabledWarning context="bookings" className="mb-6" />
+        <EnhancedBookingManagement
+          onBookingApproved={(bookingId: string) => {
+            console.log(
+              `✅ Booking ${bookingId} approved in Enhanced Back Office`
+            )
+            loadAllBookingData()
+          }}
+          onStaffAssigned={(bookingId: string, staffIds: string[]) => {
+            console.log(`👥 Staff assigned to booking ${bookingId}:`, staffIds)
+            loadAllBookingData()
+          }}
+        />
+      </>
     )
   }
 
@@ -1931,6 +2370,47 @@ export default function BackOfficePage() {
   function renderJobAssignments() {
     return (
       <div className="space-y-6">
+        {/* AI Disabled Warning */}
+        <AIDisabledWarning context="jobs" />
+
+        {/* Test Job Mobile Integration */}
+        <Card className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Zap className="h-5 w-5 text-purple-400" />
+              Mobile Job Test Integration
+            </CardTitle>
+            <CardDescription className="text-purple-300">
+              Send a test job to the mobile app for staff to accept and process
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={sendTestJobToMobile}
+                disabled={sendingTestJob}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+              >
+                {sendingTestJob ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending Test Job...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Test Job to Mobile
+                  </>
+                )}
+              </Button>
+              <p className="text-sm text-purple-300">
+                This will create a test job in Firebase and allow you to assign
+                it to a staff member for mobile app testing.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Clear Jobs Utility for Testing */}
         <ClearJobsUtility
           onJobsCleared={() => {
@@ -1949,8 +2429,12 @@ export default function BackOfficePage() {
   // Legacy booking section (kept for reference) - UNUSED
   function renderLegacyBookings() {
     const filteredBookings = getFilteredBookings()
-    const pendingCount = filteredBookings.filter(b => b.status === 'pending').length
-    const confirmedCount = filteredBookings.filter(b => b.status === 'confirmed').length
+    const pendingCount = filteredBookings.filter(
+      (b) => b.status === 'pending'
+    ).length
+    const confirmedCount = filteredBookings.filter(
+      (b) => b.status === 'confirmed'
+    ).length
 
     return (
       <div className="space-y-6">
@@ -1961,7 +2445,9 @@ export default function BackOfficePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-200 text-sm">Total Bookings</p>
-                  <p className="text-2xl font-bold text-blue-400">{filteredBookings.length}</p>
+                  <p className="text-2xl font-bold text-blue-400">
+                    {filteredBookings.length}
+                  </p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-400" />
               </div>
@@ -1973,7 +2459,9 @@ export default function BackOfficePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-yellow-200 text-sm">Pending Approval</p>
-                  <p className="text-2xl font-bold text-yellow-400">{pendingCount}</p>
+                  <p className="text-2xl font-bold text-yellow-400">
+                    {pendingCount}
+                  </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-400" />
               </div>
@@ -1985,7 +2473,9 @@ export default function BackOfficePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-200 text-sm">Confirmed</p>
-                  <p className="text-2xl font-bold text-green-400">{confirmedCount}</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {confirmedCount}
+                  </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-400" />
               </div>
@@ -1998,7 +2488,10 @@ export default function BackOfficePage() {
                 <div>
                   <p className="text-purple-200 text-sm">Revenue</p>
                   <p className="text-2xl font-bold text-purple-400">
-                    ${filteredBookings.reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}
+                    $
+                    {filteredBookings
+                      .reduce((sum, b) => sum + (b.amount || 0), 0)
+                      .toLocaleString()}
                   </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-purple-400" />
@@ -2021,7 +2514,9 @@ export default function BackOfficePage() {
                     </Badge>
                   )}
                 </CardTitle>
-                <CardDescription>View, approve, and manage all property bookings</CardDescription>
+                <CardDescription>
+                  View, approve, and manage all property bookings
+                </CardDescription>
               </div>
               <div className="flex items-center gap-3">
                 {selectedBookings.length > 0 && (
@@ -2153,7 +2648,12 @@ export default function BackOfficePage() {
                     type="date"
                     placeholder="Start Date"
                     value={dateRangeFilter.start}
-                    onChange={(e) => setDateRangeFilter(prev => ({ ...prev, start: e.target.value }))}
+                    onChange={(e) =>
+                      setDateRangeFilter((prev) => ({
+                        ...prev,
+                        start: e.target.value,
+                      }))
+                    }
                     className="bg-neutral-800 border-neutral-700 text-white text-sm w-40"
                   />
                   <span className="text-neutral-400">to</span>
@@ -2161,12 +2661,23 @@ export default function BackOfficePage() {
                     type="date"
                     placeholder="End Date"
                     value={dateRangeFilter.end}
-                    onChange={(e) => setDateRangeFilter(prev => ({ ...prev, end: e.target.value }))}
+                    onChange={(e) =>
+                      setDateRangeFilter((prev) => ({
+                        ...prev,
+                        end: e.target.value,
+                      }))
+                    }
                     className="bg-neutral-800 border-neutral-700 text-white text-sm w-40"
                   />
                 </div>
 
-                {(searchTerm || statusFilter !== 'all' || propertyFilter !== 'all' || paymentFilter !== 'all' || sourceFilter !== 'all' || dateRangeFilter.start || dateRangeFilter.end) && (
+                {(searchTerm ||
+                  statusFilter !== 'all' ||
+                  propertyFilter !== 'all' ||
+                  paymentFilter !== 'all' ||
+                  sourceFilter !== 'all' ||
+                  dateRangeFilter.start ||
+                  dateRangeFilter.end) && (
                   <Button
                     onClick={() => {
                       setSearchTerm('')
@@ -2192,12 +2703,16 @@ export default function BackOfficePage() {
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
-                    checked={selectedBookings.length === filteredBookings.length}
+                    checked={
+                      selectedBookings.length === filteredBookings.length
+                    }
                     onChange={(e) => handleSelectAllBookings(e.target.checked)}
                     className="w-4 h-4 text-blue-600 bg-neutral-700 border-neutral-600 rounded focus:ring-blue-500"
                   />
                   <span className="text-white text-sm">
-                    {selectedBookings.length === filteredBookings.length ? 'Deselect All' : 'Select All'}
+                    {selectedBookings.length === filteredBookings.length
+                      ? 'Deselect All'
+                      : 'Select All'}
                   </span>
                 </div>
                 <div className="text-neutral-400 text-sm">
@@ -2211,8 +2726,12 @@ export default function BackOfficePage() {
               {filteredBookings.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-neutral-400 mb-2">No bookings found</h3>
-                  <p className="text-neutral-500">Try adjusting your filters or search terms</p>
+                  <h3 className="text-lg font-medium text-neutral-400 mb-2">
+                    No bookings found
+                  </h3>
+                  <p className="text-neutral-500">
+                    Try adjusting your filters or search terms
+                  </p>
                 </div>
               ) : (
                 filteredBookings.map((booking) => {
@@ -2224,7 +2743,9 @@ export default function BackOfficePage() {
                     <div
                       key={booking.id}
                       className={`border rounded-lg transition-all duration-200 ${
-                        isSelected ? 'border-blue-500 bg-blue-500/5' : 'border-neutral-800 hover:border-neutral-700'
+                        isSelected
+                          ? 'border-blue-500 bg-blue-500/5'
+                          : 'border-neutral-800 hover:border-neutral-700'
                       } ${conflicts.length > 0 ? 'border-l-4 border-l-red-500' : ''}`}
                     >
                       <div className="p-4">
@@ -2233,21 +2754,34 @@ export default function BackOfficePage() {
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              onChange={(e) => handleBookingSelection(booking.id, e.target.checked)}
+                              onChange={(e) =>
+                                handleBookingSelection(
+                                  booking.id,
+                                  e.target.checked
+                                )
+                              }
                               className="w-4 h-4 text-blue-600 bg-neutral-700 border-neutral-600 rounded focus:ring-blue-500 mt-1"
                             />
 
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-3">
-                                <h3 className="font-semibold text-white text-lg">{booking.guestName}</h3>
-                                <Badge className={getStatusColor(booking.status)}>
+                                <h3 className="font-semibold text-white text-lg">
+                                  {booking.guestName}
+                                </h3>
+                                <Badge
+                                  className={getStatusColor(booking.status)}
+                                >
                                   {booking.status}
                                 </Badge>
-                                <Badge className={`text-xs ${
-                                  booking.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                  booking.paymentStatus === 'partial' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                                  'bg-red-500/20 text-red-400 border-red-500/30'
-                                }`}>
+                                <Badge
+                                  className={`text-xs ${
+                                    booking.paymentStatus === 'paid'
+                                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                      : booking.paymentStatus === 'partial'
+                                        ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                                        : 'bg-red-500/20 text-red-400 border-red-500/30'
+                                  }`}
+                                >
                                   {booking.paymentStatus}
                                 </Badge>
                                 {booking.assignedStaff && (
@@ -2262,52 +2796,110 @@ export default function BackOfficePage() {
                                     Conflict
                                   </Badge>
                                 )}
-                                <Badge className={`text-xs ${
-                                  booking.source === 'website' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                                  booking.source === 'api' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                                  booking.source === 'phone' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                  'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                                }`}>
+                                <Badge
+                                  className={`text-xs ${
+                                    booking.source === 'website'
+                                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                      : booking.source === 'api'
+                                        ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                                        : booking.source === 'phone'
+                                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                          : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                                  }`}
+                                >
                                   {booking.source}
                                 </Badge>
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                                 <div className="space-y-1">
-                                  <p className="text-neutral-400">Property & Dates</p>
-                                  <p className="text-white font-medium">{booking.propertyName}</p>
-                                  <p className="text-neutral-300">{booking.checkIn} → {booking.checkOut}</p>
-                                  <p className="text-neutral-400">{booking.totalNights} nights • {booking.guestCount} guests</p>
+                                  <p className="text-neutral-400">
+                                    Property & Dates
+                                  </p>
+                                  <p className="text-white font-medium">
+                                    {booking.propertyName}
+                                  </p>
+                                  <p className="text-neutral-300">
+                                    {booking.checkIn} → {booking.checkOut}
+                                  </p>
+                                  <p className="text-neutral-400">
+                                    {booking.totalNights} nights •{' '}
+                                    {booking.guestCount} guests
+                                  </p>
                                 </div>
 
                                 <div className="space-y-1">
-                                  <p className="text-neutral-400">Financial Details</p>
-                                  <p className="text-white font-medium">${(booking.amount || 0).toLocaleString()}</p>
-                                  <p className="text-green-400">Paid: ${(booking.paidAmount || 0).toLocaleString()}</p>
-                                  {(booking.paidAmount || 0) < (booking.amount || 0) && (
-                                    <p className="text-red-400">Outstanding: ${((booking.amount || 0) - (booking.paidAmount || 0)).toLocaleString()}</p>
+                                  <p className="text-neutral-400">
+                                    Financial Details
+                                  </p>
+                                  <p className="text-white font-medium">
+                                    ${(booking.amount || 0).toLocaleString()}
+                                  </p>
+                                  <p className="text-green-400">
+                                    Paid: $
+                                    {(booking.paidAmount || 0).toLocaleString()}
+                                  </p>
+                                  {(booking.paidAmount || 0) <
+                                    (booking.amount || 0) && (
+                                    <p className="text-red-400">
+                                      Outstanding: $
+                                      {(
+                                        (booking.amount || 0) -
+                                        (booking.paidAmount || 0)
+                                      ).toLocaleString()}
+                                    </p>
                                   )}
                                 </div>
 
                                 <div className="space-y-1">
-                                  <p className="text-neutral-400">Contact & Reference</p>
-                                  <p className="text-white">{booking.bookingReference}</p>
-                                  <p className="text-neutral-300">{booking.guestEmail}</p>
-                                  <p className="text-neutral-300">{booking.guestPhone}</p>
+                                  <p className="text-neutral-400">
+                                    Contact & Reference
+                                  </p>
+                                  <p className="text-white">
+                                    {booking.bookingReference}
+                                  </p>
+                                  <p className="text-neutral-300">
+                                    {booking.guestEmail}
+                                  </p>
+                                  <p className="text-neutral-300">
+                                    {booking.guestPhone}
+                                  </p>
                                 </div>
 
                                 <div className="space-y-1">
-                                  <p className="text-neutral-400">Booking Info</p>
-                                  <p className="text-neutral-300">Created: {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'}</p>
-                                  <p className="text-neutral-300">Modified: {booking.lastModified ? new Date(booking.lastModified).toLocaleDateString() : 'N/A'}</p>
-                                  <p className="text-neutral-400">By: {booking.modifiedBy || 'Unknown'}</p>
+                                  <p className="text-neutral-400">
+                                    Booking Info
+                                  </p>
+                                  <p className="text-neutral-300">
+                                    Created:{' '}
+                                    {booking.createdAt
+                                      ? new Date(
+                                          booking.createdAt
+                                        ).toLocaleDateString()
+                                      : 'N/A'}
+                                  </p>
+                                  <p className="text-neutral-300">
+                                    Modified:{' '}
+                                    {booking.lastModified
+                                      ? new Date(
+                                          booking.lastModified
+                                        ).toLocaleDateString()
+                                      : 'N/A'}
+                                  </p>
+                                  <p className="text-neutral-400">
+                                    By: {booking.modifiedBy || 'Unknown'}
+                                  </p>
                                 </div>
                               </div>
 
                               {booking.specialRequests && (
                                 <div className="mt-3 p-2 bg-neutral-800 rounded">
-                                  <p className="text-neutral-400 text-xs mb-1">Special Requests:</p>
-                                  <p className="text-neutral-300 text-sm">{booking.specialRequests}</p>
+                                  <p className="text-neutral-400 text-xs mb-1">
+                                    Special Requests:
+                                  </p>
+                                  <p className="text-neutral-300 text-sm">
+                                    {booking.specialRequests}
+                                  </p>
                                 </div>
                               )}
                             </div>
@@ -2318,7 +2910,9 @@ export default function BackOfficePage() {
                               <>
                                 <Button
                                   size="sm"
-                                  onClick={() => handleBookingApproval(booking.id, 'approve')}
+                                  onClick={() =>
+                                    handleBookingApproval(booking.id, 'approve')
+                                  }
                                   className="bg-green-600 hover:bg-green-700"
                                   disabled={loading}
                                 >
@@ -2328,7 +2922,9 @@ export default function BackOfficePage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleBookingApproval(booking.id, 'reject')}
+                                  onClick={() =>
+                                    handleBookingApproval(booking.id, 'reject')
+                                  }
                                   className="border-red-600 text-red-400 hover:bg-red-600/10"
                                   disabled={loading}
                                 >
@@ -2338,25 +2934,32 @@ export default function BackOfficePage() {
                               </>
                             )}
 
-                            {!booking.assignedStaff && booking.status === 'confirmed' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleStaffAssignment(booking.id)}
-                                className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
-                                disabled={loading}
-                              >
-                                <Users className="h-4 w-4 mr-1" />
-                                Assign Staff
-                              </Button>
-                            )}
+                            {!booking.assignedStaff &&
+                              booking.status === 'confirmed' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleStaffAssignment(booking.id)
+                                  }
+                                  className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
+                                  disabled={loading}
+                                >
+                                  <Users className="h-4 w-4 mr-1" />
+                                  Assign Staff
+                                </Button>
+                              )}
 
                             {/* Edit button removed - handled by EnhancedBookingManagement */}
 
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setExpandedBooking(isExpanded ? null : booking.id)}
+                              onClick={() =>
+                                setExpandedBooking(
+                                  isExpanded ? null : booking.id
+                                )
+                              }
                               className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
                             >
                               <Eye className="h-4 w-4 mr-1" />
@@ -2371,57 +2974,105 @@ export default function BackOfficePage() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                               {/* Approval History */}
                               <div>
-                                <h4 className="text-white font-medium mb-3">Approval History</h4>
+                                <h4 className="text-white font-medium mb-3">
+                                  Approval History
+                                </h4>
                                 {booking.approvalHistory.length > 0 ? (
                                   <div className="space-y-2">
-                                    {(booking.approvalHistory || []).map((history: any, index: number) => (
-                                      <div key={index} className="p-2 bg-neutral-800 rounded text-sm">
-                                        <div className="flex items-center justify-between">
-                                          <span className={`font-medium ${
-                                            history.action === 'approved' ? 'text-green-400' : 'text-red-400'
-                                          }`}>
-                                            {history.action.charAt(0).toUpperCase() + history.action.slice(1)}
-                                          </span>
-                                          <span className="text-neutral-400">
-                                            {history.timestamp ? new Date(history.timestamp).toLocaleString() : 'N/A'}
-                                          </span>
+                                    {(booking.approvalHistory || []).map(
+                                      (history: any, index: number) => (
+                                        <div
+                                          key={index}
+                                          className="p-2 bg-neutral-800 rounded text-sm"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span
+                                              className={`font-medium ${
+                                                history.action === 'approved'
+                                                  ? 'text-green-400'
+                                                  : 'text-red-400'
+                                              }`}
+                                            >
+                                              {history.action
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                history.action.slice(1)}
+                                            </span>
+                                            <span className="text-neutral-400">
+                                              {history.timestamp
+                                                ? new Date(
+                                                    history.timestamp
+                                                  ).toLocaleString()
+                                                : 'N/A'}
+                                            </span>
+                                          </div>
+                                          <p className="text-neutral-300">
+                                            By: {history.by}
+                                          </p>
+                                          {history.notes && (
+                                            <p className="text-neutral-400 mt-1">
+                                              {history.notes}
+                                            </p>
+                                          )}
                                         </div>
-                                        <p className="text-neutral-300">By: {history.by}</p>
-                                        {history.notes && <p className="text-neutral-400 mt-1">{history.notes}</p>}
-                                      </div>
-                                    ))}
+                                      )
+                                    )}
                                   </div>
                                 ) : (
-                                  <p className="text-neutral-500 text-sm">No approval history yet</p>
+                                  <p className="text-neutral-500 text-sm">
+                                    No approval history yet
+                                  </p>
                                 )}
                               </div>
 
                               {/* Notes & Communication */}
                               <div>
-                                <h4 className="text-white font-medium mb-3">Internal Notes</h4>
+                                <h4 className="text-white font-medium mb-3">
+                                  Internal Notes
+                                </h4>
                                 {booking.notes.length > 0 ? (
                                   <div className="space-y-2">
-                                    {(booking.notes || []).map((note: any, index: number) => (
-                                      <div key={index} className="p-2 bg-neutral-800 rounded text-sm">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-neutral-300">{note.by}</span>
-                                          <span className="text-neutral-400">
-                                            {note.timestamp ? new Date(note.timestamp).toLocaleString() : 'N/A'}
-                                          </span>
+                                    {(booking.notes || []).map(
+                                      (note: any, index: number) => (
+                                        <div
+                                          key={index}
+                                          className="p-2 bg-neutral-800 rounded text-sm"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-neutral-300">
+                                              {note.by}
+                                            </span>
+                                            <span className="text-neutral-400">
+                                              {note.timestamp
+                                                ? new Date(
+                                                    note.timestamp
+                                                  ).toLocaleString()
+                                                : 'N/A'}
+                                            </span>
+                                          </div>
+                                          <p className="text-white mt-1">
+                                            {note.text}
+                                          </p>
                                         </div>
-                                        <p className="text-white mt-1">{note.text}</p>
-                                      </div>
-                                    ))}
+                                      )
+                                    )}
                                   </div>
                                 ) : (
-                                  <p className="text-neutral-500 text-sm">No notes added yet</p>
+                                  <p className="text-neutral-500 text-sm">
+                                    No notes added yet
+                                  </p>
                                 )}
 
                                 <div className="mt-3 flex gap-2">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => sendGuestNotification(booking.id, 'approval')}
+                                    onClick={() =>
+                                      sendGuestNotification(
+                                        booking.id,
+                                        'approval'
+                                      )
+                                    }
                                     className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
                                     disabled={loading}
                                   >
@@ -2445,13 +3096,21 @@ export default function BackOfficePage() {
                               <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded">
                                 <div className="flex items-center gap-2 mb-2">
                                   <AlertTriangle className="h-4 w-4 text-red-400" />
-                                  <span className="text-red-400 font-medium">Booking Conflicts Detected</span>
+                                  <span className="text-red-400 font-medium">
+                                    Booking Conflicts Detected
+                                  </span>
                                 </div>
                                 {conflicts.map((conflict, index) => (
-                                  <p key={index} className="text-red-300 text-sm">
-                                    {conflict.type === 'double_booking' && 'Double booking detected with existing reservation'}
-                                    {conflict.type === 'maintenance_overlap' && 'Maintenance scheduled during stay period'}
-                                    {conflict.type === 'capacity_exceeded' && 'Guest count exceeds property capacity'}
+                                  <p
+                                    key={index}
+                                    className="text-red-300 text-sm"
+                                  >
+                                    {conflict.type === 'double_booking' &&
+                                      'Double booking detected with existing reservation'}
+                                    {conflict.type === 'maintenance_overlap' &&
+                                      'Maintenance scheduled during stay period'}
+                                    {conflict.type === 'capacity_exceeded' &&
+                                      'Guest count exceeds property capacity'}
                                   </p>
                                 ))}
                               </div>
@@ -2472,7 +3131,10 @@ export default function BackOfficePage() {
 
   // Staff Section
   function renderStaff() {
-    const displayStaff = staffList // Only use real staff data from Firebase
+    // Remove duplicates based on staff ID to prevent React key conflicts
+    const displayStaff = staffList.filter(
+      (staff, index, self) => index === self.findIndex((s) => s.id === staff.id)
+    )
 
     return (
       <div className="space-y-6">
@@ -2483,8 +3145,12 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Total Staff</p>
-                    <p className="text-2xl font-bold text-white">{staffStats.total}</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Total Staff
+                    </p>
+                    <p className="text-2xl font-bold text-white">
+                      {staffStats.total}
+                    </p>
                   </div>
                   <Users className="h-8 w-8 text-blue-500" />
                 </div>
@@ -2495,8 +3161,12 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Active Staff</p>
-                    <p className="text-2xl font-bold text-green-400">{staffStats.active}</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Active Staff
+                    </p>
+                    <p className="text-2xl font-bold text-green-400">
+                      {staffStats.active}
+                    </p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-green-500" />
                 </div>
@@ -2507,8 +3177,12 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Pending Tasks</p>
-                    <p className="text-2xl font-bold text-yellow-400">{staffStats.pendingTasks}</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Pending Tasks
+                    </p>
+                    <p className="text-2xl font-bold text-yellow-400">
+                      {staffStats.pendingTasks}
+                    </p>
                   </div>
                   <Clock className="h-8 w-8 text-yellow-500" />
                 </div>
@@ -2519,8 +3193,12 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Completion Rate</p>
-                    <p className="text-2xl font-bold text-purple-400">{staffStats.completionRate.toFixed(1)}%</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Completion Rate
+                    </p>
+                    <p className="text-2xl font-bold text-purple-400">
+                      {staffStats.completionRate.toFixed(1)}%
+                    </p>
                   </div>
                   <Target className="h-8 w-8 text-purple-500" />
                 </div>
@@ -2536,8 +3214,12 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Average Rating</p>
-                    <p className="text-2xl font-bold text-yellow-400">{staffStats.averageRating.toFixed(1)}</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Average Rating
+                    </p>
+                    <p className="text-2xl font-bold text-yellow-400">
+                      {staffStats.averageRating.toFixed(1)}
+                    </p>
                     <div className="flex items-center mt-1">
                       {[...Array(5)].map((_, i) => (
                         <Star
@@ -2556,9 +3238,18 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Staff Utilization</p>
-                    <p className="text-2xl font-bold text-blue-400">{staffStats.performanceMetrics.staffUtilization.toFixed(1)}%</p>
-                    <p className="text-xs text-neutral-500 mt-1">Active staff with tasks</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Staff Utilization
+                    </p>
+                    <p className="text-2xl font-bold text-blue-400">
+                      {staffStats.performanceMetrics.staffUtilization.toFixed(
+                        1
+                      )}
+                      %
+                    </p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Active staff with tasks
+                    </p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-500" />
                 </div>
@@ -2569,9 +3260,17 @@ export default function BackOfficePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-400">Avg Tasks/Staff</p>
-                    <p className="text-2xl font-bold text-green-400">{staffStats.performanceMetrics.averageTasksPerStaff.toFixed(1)}</p>
-                    <p className="text-xs text-neutral-500 mt-1">Per active staff member</p>
+                    <p className="text-sm font-medium text-neutral-400">
+                      Avg Tasks/Staff
+                    </p>
+                    <p className="text-2xl font-bold text-green-400">
+                      {staffStats.performanceMetrics.averageTasksPerStaff.toFixed(
+                        1
+                      )}
+                    </p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Per active staff member
+                    </p>
                   </div>
                   <BarChart3 className="h-8 w-8 text-green-500" />
                 </div>
@@ -2594,30 +3293,47 @@ export default function BackOfficePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {staffStats.performanceMetrics.topPerformers.map((staff, index) => (
-                      <div key={staff.id} className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? 'bg-yellow-500 text-black' :
-                            index === 1 ? 'bg-gray-400 text-black' :
-                            'bg-orange-600 text-white'
-                          }`}>
-                            {index + 1}
+                    {staffStats.performanceMetrics.topPerformers.map(
+                      (staff, index) => (
+                        <div
+                          key={staff.id}
+                          className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                index === 0
+                                  ? 'bg-yellow-500 text-black'
+                                  : index === 1
+                                    ? 'bg-gray-400 text-black'
+                                    : 'bg-orange-600 text-white'
+                              }`}
+                            >
+                              {index + 1}
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">
+                                {staff.name}
+                              </p>
+                              <p className="text-sm text-neutral-400 capitalize">
+                                {staff.role}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-white font-medium">{staff.name}</p>
-                            <p className="text-sm text-neutral-400 capitalize">{staff.role}</p>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span className="text-white font-medium">
+                                {staff.averageRating?.toFixed(1)}
+                              </span>
+                            </div>
+                            <p className="text-xs text-neutral-400">
+                              {staff.completionRate?.toFixed(1)}% completion
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="text-white font-medium">{staff.averageRating?.toFixed(1)}</span>
-                          </div>
-                          <p className="text-xs text-neutral-400">{staff.completionRate?.toFixed(1)}% completion</p>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -2634,30 +3350,46 @@ export default function BackOfficePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {staffStats.performanceMetrics.recentHires.map((staff) => (
-                      <div key={staff.id} className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-400" />
+                    {(staffStats?.performanceMetrics?.recentHires || []).map(
+                      (staff) => (
+                        <div
+                          key={staff.id}
+                          className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                              <User className="h-5 w-5 text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">
+                                {staff.name || 'Unknown Staff'}
+                              </p>
+                              <p className="text-sm text-neutral-400 capitalize">
+                                {staff.role || 'No role'}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-white font-medium">{staff.name}</p>
-                            <p className="text-sm text-neutral-400 capitalize">{staff.role}</p>
+                          <div className="text-right">
+                            <p className="text-sm text-white">
+                              {staff.created_at
+                                ? new Date(
+                                    staff.created_at
+                                  ).toLocaleDateString()
+                                : 'Unknown date'}
+                            </p>
+                            <Badge
+                              className={`text-xs ${
+                                staff.status === 'active'
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : 'bg-yellow-500/20 text-yellow-400'
+                              }`}
+                            >
+                              {staff.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-white">
-                            {new Date(staff.created_at).toLocaleDateString()}
-                          </p>
-                          <Badge className={`text-xs ${
-                            staff.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                            'bg-yellow-500/20 text-yellow-400'
-                          }`}>
-                            {staff.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -2671,7 +3403,9 @@ export default function BackOfficePage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white">Staff Management</CardTitle>
-                <CardDescription>Manage staff profiles, assignments, and schedules</CardDescription>
+                <CardDescription>
+                  Manage staff profiles, assignments, and schedules
+                </CardDescription>
               </div>
               <div className="flex items-center gap-3">
                 <Button
@@ -2726,7 +3460,12 @@ export default function BackOfficePage() {
                     placeholder="Search staff by name, email, role, or skills..."
                     className="pl-10 bg-neutral-800 border-neutral-700 text-white"
                     value={staffFilters.search || ''}
-                    onChange={(e) => setStaffFilters(prev => ({ ...prev, search: e.target.value }))}
+                    onChange={(e) =>
+                      setStaffFilters((prev) => ({
+                        ...prev,
+                        search: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <Button
@@ -2736,7 +3475,9 @@ export default function BackOfficePage() {
                   className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
                   disabled={staffLoading}
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${staffLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${staffLoading ? 'animate-spin' : ''}`}
+                  />
                   Refresh
                 </Button>
               </div>
@@ -2745,14 +3486,21 @@ export default function BackOfficePage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Role Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-neutral-300 mb-2">Role</label>
+                  <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    Role
+                  </label>
                   <select
                     value={staffFilters.role || ''}
-                    onChange={(e) => setStaffFilters(prev => ({ ...prev, role: e.target.value as any }))}
+                    onChange={(e) =>
+                      setStaffFilters((prev) => ({
+                        ...prev,
+                        role: e.target.value as any,
+                      }))
+                    }
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-white text-sm"
                   >
                     <option value="">All Roles</option>
-                    {STAFF_ROLES.map(role => (
+                    {STAFF_ROLES.map((role) => (
                       <option key={role.value} value={role.value}>
                         {role.label}
                       </option>
@@ -2762,14 +3510,21 @@ export default function BackOfficePage() {
 
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-neutral-300 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    Status
+                  </label>
                   <select
                     value={staffFilters.status || ''}
-                    onChange={(e) => setStaffFilters(prev => ({ ...prev, status: e.target.value as any }))}
+                    onChange={(e) =>
+                      setStaffFilters((prev) => ({
+                        ...prev,
+                        status: e.target.value as any,
+                      }))
+                    }
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-white text-sm"
                   >
                     <option value="">All Statuses</option>
-                    {STAFF_STATUSES.map(status => (
+                    {STAFF_STATUSES.map((status) => (
                       <option key={status.value} value={status.value}>
                         {status.label}
                       </option>
@@ -2779,10 +3534,17 @@ export default function BackOfficePage() {
 
                 {/* Sort By */}
                 <div>
-                  <label className="block text-sm font-medium text-neutral-300 mb-2">Sort By</label>
+                  <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    Sort By
+                  </label>
                   <select
                     value={staffFilters.sortBy || 'name'}
-                    onChange={(e) => setStaffFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
+                    onChange={(e) =>
+                      setStaffFilters((prev) => ({
+                        ...prev,
+                        sortBy: e.target.value as any,
+                      }))
+                    }
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-white text-sm"
                   >
                     <option value="name">Name</option>
@@ -2795,10 +3557,17 @@ export default function BackOfficePage() {
 
                 {/* Sort Order */}
                 <div>
-                  <label className="block text-sm font-medium text-neutral-300 mb-2">Order</label>
+                  <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    Order
+                  </label>
                   <select
                     value={staffFilters.sortOrder || 'asc'}
-                    onChange={(e) => setStaffFilters(prev => ({ ...prev, sortOrder: e.target.value as any }))}
+                    onChange={(e) =>
+                      setStaffFilters((prev) => ({
+                        ...prev,
+                        sortOrder: e.target.value as any,
+                      }))
+                    }
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-white text-sm"
                   >
                     <option value="asc">Ascending</option>
@@ -2808,9 +3577,13 @@ export default function BackOfficePage() {
               </div>
 
               {/* Filter Summary */}
-              {(staffFilters.search || staffFilters.role || staffFilters.status) && (
+              {(staffFilters.search ||
+                staffFilters.role ||
+                staffFilters.status) && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-neutral-400">Active filters:</span>
+                  <span className="text-sm text-neutral-400">
+                    Active filters:
+                  </span>
                   {staffFilters.search && (
                     <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                       Search: "{staffFilters.search}"
@@ -2818,12 +3591,21 @@ export default function BackOfficePage() {
                   )}
                   {staffFilters.role && (
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                      Role: {STAFF_ROLES.find(r => r.value === staffFilters.role)?.label}
+                      Role:{' '}
+                      {
+                        STAFF_ROLES.find((r) => r.value === staffFilters.role)
+                          ?.label
+                      }
                     </Badge>
                   )}
                   {staffFilters.status && (
                     <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                      Status: {STAFF_STATUSES.find(s => s.value === staffFilters.status)?.label}
+                      Status:{' '}
+                      {
+                        STAFF_STATUSES.find(
+                          (s) => s.value === staffFilters.status
+                        )?.label
+                      }
                     </Badge>
                   )}
                   <Button
@@ -2848,9 +3630,16 @@ export default function BackOfficePage() {
             ) : displayStaff.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-neutral-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No Staff Members</h3>
-                <p className="text-neutral-400 mb-4">Get started by adding your first staff member.</p>
-                <Button onClick={handleAddStaff} className="bg-blue-600 hover:bg-blue-700">
+                <h3 className="text-lg font-medium text-white mb-2">
+                  No Staff Members
+                </h3>
+                <p className="text-neutral-400 mb-4">
+                  Get started by adding your first staff member.
+                </p>
+                <Button
+                  onClick={handleAddStaff}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create First Staff Member
                 </Button>
@@ -2858,7 +3647,10 @@ export default function BackOfficePage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayStaff.map((staff) => (
-                  <Card key={staff.id} className="bg-neutral-800 border-neutral-700 hover:border-neutral-600 transition-colors">
+                  <Card
+                    key={staff.id}
+                    className="bg-neutral-800 border-neutral-700 hover:border-neutral-600 transition-colors"
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -2866,7 +3658,9 @@ export default function BackOfficePage() {
                             <User className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <CardTitle className="text-white text-lg">{staff.name}</CardTitle>
+                            <CardTitle className="text-white text-lg">
+                              {staff.name}
+                            </CardTitle>
                             <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
                               {staff.role}
                             </Badge>
@@ -2877,7 +3671,9 @@ export default function BackOfficePage() {
                             size="sm"
                             variant="ghost"
                             className="p-1 hover:bg-neutral-700"
-                            onClick={() => handlePropertyAssignment(staff as StaffProfile)}
+                            onClick={() =>
+                              handlePropertyAssignment(staff as StaffProfile)
+                            }
                             disabled={loading}
                             title="Assign Properties"
                           >
@@ -2887,7 +3683,9 @@ export default function BackOfficePage() {
                             size="sm"
                             variant="ghost"
                             className="p-1 hover:bg-neutral-700"
-                            onClick={() => handleEditStaff(staff as StaffProfile)}
+                            onClick={() =>
+                              handleEditStaff(staff as StaffProfile)
+                            }
                             disabled={loading}
                             title="Edit Staff"
                           >
@@ -2897,7 +3695,9 @@ export default function BackOfficePage() {
                             size="sm"
                             variant="ghost"
                             className="p-1 text-blue-400 hover:bg-blue-500/10"
-                            onClick={() => handleManageCredentials(staff as StaffProfile)}
+                            onClick={() =>
+                              handleManageCredentials(staff as StaffProfile)
+                            }
                             disabled={loading}
                             title="Manage Login Credentials"
                           >
@@ -2907,7 +3707,9 @@ export default function BackOfficePage() {
                             size="sm"
                             variant="ghost"
                             className="p-1 text-red-400 hover:bg-red-500/10"
-                            onClick={() => handleDeleteStaff(staff as StaffProfile)}
+                            onClick={() =>
+                              handleDeleteStaff(staff as StaffProfile)
+                            }
                             disabled={loading}
                             title="Delete Staff"
                           >
@@ -2930,92 +3732,129 @@ export default function BackOfficePage() {
                         </div>
                         <div className="flex items-center gap-2 text-neutral-400">
                           <Activity className="h-3 w-3" />
-                          <Badge className={`text-xs ${staff.status === 'active' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                          <Badge
+                            className={`text-xs ${staff.status === 'active' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}
+                          >
                             {staff.status}
                           </Badge>
                         </div>
                       </div>
-                      {staff.assignedProperties && staff.assignedProperties.length > 0 && (
-                        <div>
-                          <p className="text-xs text-neutral-500 mb-1">Assigned Properties:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {staff.assignedProperties.map((property) => (
-                              <Badge
-                                key={property}
-                                className="bg-green-500/20 text-green-400 border-green-500/30 text-xs"
-                              >
-                                {property}
-                              </Badge>
-                            ))}
+                      {staff.assignedProperties &&
+                        staff.assignedProperties.length > 0 && (
+                          <div>
+                            <p className="text-xs text-neutral-500 mb-1">
+                              Assigned Properties:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {staff.assignedProperties.map((property) => (
+                                <Badge
+                                  key={property}
+                                  className="bg-green-500/20 text-green-400 border-green-500/30 text-xs"
+                                >
+                                  {property}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Performance Metrics */}
                       <div className="border-t border-neutral-700 pt-3 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-neutral-500">Performance</span>
+                          <span className="text-xs text-neutral-500">
+                            Performance
+                          </span>
                           {(staff as StaffProfile).averageRating && (
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                              <span className="text-xs text-white">{(staff as StaffProfile).averageRating?.toFixed(1)}</span>
+                              <span className="text-xs text-white">
+                                {(staff as StaffProfile).averageRating?.toFixed(
+                                  1
+                                )}
+                              </span>
                             </div>
                           )}
                         </div>
 
                         {/* Task Completion */}
-                        {(staff as StaffProfile).completedTasks !== undefined && (staff as StaffProfile).totalAssignedTasks !== undefined && (
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-neutral-500">Tasks Completed</span>
-                              <span className="text-white">{(staff as StaffProfile).completedTasks}/{(staff as StaffProfile).totalAssignedTasks}</span>
+                        {(staff as StaffProfile).completedTasks !== undefined &&
+                          (staff as StaffProfile).totalAssignedTasks !==
+                            undefined && (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-neutral-500">
+                                  Tasks Completed
+                                </span>
+                                <span className="text-white">
+                                  {(staff as StaffProfile).completedTasks}/
+                                  {(staff as StaffProfile).totalAssignedTasks}
+                                </span>
+                              </div>
+                              <div className="w-full bg-neutral-700 rounded-full h-1.5">
+                                <div
+                                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${((staff as StaffProfile).totalAssignedTasks || 0) > 0 ? (((staff as StaffProfile).completedTasks || 0) / ((staff as StaffProfile).totalAssignedTasks || 1)) * 100 : 0}%`,
+                                  }}
+                                />
+                              </div>
                             </div>
-                            <div className="w-full bg-neutral-700 rounded-full h-1.5">
-                              <div
-                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${((staff as StaffProfile).totalAssignedTasks || 0) > 0 ? (((staff as StaffProfile).completedTasks || 0) / ((staff as StaffProfile).totalAssignedTasks || 1)) * 100 : 0}%`
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* Completion Rate */}
-                        {(staff as StaffProfile).completionRate !== undefined && (
+                        {(staff as StaffProfile).completionRate !==
+                          undefined && (
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-neutral-500">Completion Rate</span>
-                            <span className={`font-medium ${
-                              ((staff as StaffProfile).completionRate || 0) >= 90 ? 'text-green-400' :
-                              ((staff as StaffProfile).completionRate || 0) >= 75 ? 'text-yellow-400' :
-                              'text-red-400'
-                            }`}>
-                              {(staff as StaffProfile).completionRate?.toFixed(1)}%
+                            <span className="text-neutral-500">
+                              Completion Rate
+                            </span>
+                            <span
+                              className={`font-medium ${
+                                ((staff as StaffProfile).completionRate || 0) >=
+                                90
+                                  ? 'text-green-400'
+                                  : ((staff as StaffProfile).completionRate ||
+                                        0) >= 75
+                                    ? 'text-yellow-400'
+                                    : 'text-red-400'
+                              }`}
+                            >
+                              {(staff as StaffProfile).completionRate?.toFixed(
+                                1
+                              )}
+                              %
                             </span>
                           </div>
                         )}
 
                         {/* Skills */}
-                        {(staff as StaffProfile).skills && (staff as StaffProfile).skills!.length > 0 && (
-                          <div>
-                            <p className="text-xs text-neutral-500 mb-1">Skills:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {(staff as StaffProfile).skills!.slice(0, 3).map((skill) => (
-                                <Badge
-                                  key={skill}
-                                  className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs"
-                                >
-                                  {skill}
-                                </Badge>
-                              ))}
-                              {(staff as StaffProfile).skills!.length > 3 && (
-                                <Badge className="bg-neutral-600/20 text-neutral-400 border-neutral-600/30 text-xs">
-                                  +{(staff as StaffProfile).skills!.length - 3} more
-                                </Badge>
-                              )}
+                        {(staff as StaffProfile).skills &&
+                          (staff as StaffProfile).skills!.length > 0 && (
+                            <div>
+                              <p className="text-xs text-neutral-500 mb-1">
+                                Skills:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {(staff as StaffProfile)
+                                  .skills!.slice(0, 3)
+                                  .map((skill) => (
+                                    <Badge
+                                      key={skill}
+                                      className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs"
+                                    >
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                {(staff as StaffProfile).skills!.length > 3 && (
+                                  <Badge className="bg-neutral-600/20 text-neutral-400 border-neutral-600/30 text-xs">
+                                    +
+                                    {(staff as StaffProfile).skills!.length - 3}{' '}
+                                    more
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     </CardContent>
                   </Card>
@@ -3045,9 +3884,16 @@ export default function BackOfficePage() {
       return (
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No Financial Data Available</h3>
-          <p className="text-neutral-400 mb-4">Unable to load financial dashboard data.</p>
-          <Button onClick={loadFinancialData} className="bg-blue-600 hover:bg-blue-700">
+          <h3 className="text-lg font-medium text-white mb-2">
+            No Financial Data Available
+          </h3>
+          <p className="text-neutral-400 mb-4">
+            Unable to load financial dashboard data.
+          </p>
+          <Button
+            onClick={loadFinancialData}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
@@ -3062,32 +3908,47 @@ export default function BackOfficePage() {
         {/* Financial Filters */}
         <Card className="bg-neutral-900 border-neutral-800">
           <CardHeader>
-            <CardTitle className="text-white">Financial Analytics Dashboard</CardTitle>
-            <CardDescription>Comprehensive financial overview and performance metrics</CardDescription>
+            <CardTitle className="text-white">
+              Financial Analytics Dashboard
+            </CardTitle>
+            <CardDescription>
+              Comprehensive financial overview and performance metrics
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">Start Date</label>
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  Start Date
+                </label>
                 <Input
                   type="date"
                   value={financialFilters.dateRange.startDate}
-                  onChange={(e) => setFinancialFilters(prev => ({
-                    ...prev,
-                    dateRange: { ...prev.dateRange, startDate: e.target.value }
-                  }))}
+                  onChange={(e) =>
+                    setFinancialFilters((prev) => ({
+                      ...prev,
+                      dateRange: {
+                        ...prev.dateRange,
+                        startDate: e.target.value,
+                      },
+                    }))
+                  }
                   className="bg-neutral-800 border-neutral-700 text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">End Date</label>
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  End Date
+                </label>
                 <Input
                   type="date"
                   value={financialFilters.dateRange.endDate}
-                  onChange={(e) => setFinancialFilters(prev => ({
-                    ...prev,
-                    dateRange: { ...prev.dateRange, endDate: e.target.value }
-                  }))}
+                  onChange={(e) =>
+                    setFinancialFilters((prev) => ({
+                      ...prev,
+                      dateRange: { ...prev.dateRange, endDate: e.target.value },
+                    }))
+                  }
                   className="bg-neutral-800 border-neutral-700 text-white"
                 />
               </div>
@@ -3097,7 +3958,9 @@ export default function BackOfficePage() {
                   disabled={financialLoading}
                   className="bg-blue-600 hover:bg-blue-700 w-full"
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${financialLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${financialLoading ? 'animate-spin' : ''}`}
+                  />
                   Update
                 </Button>
               </div>
@@ -3122,7 +3985,8 @@ export default function BackOfficePage() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-400" />
                   <span className="text-sm text-green-400">
-                    +{(revenue?.revenueGrowth?.monthly || 0).toFixed(1)}% vs last month
+                    +{(revenue?.revenueGrowth?.monthly || 0).toFixed(1)}% vs
+                    last month
                   </span>
                 </div>
                 <div className="text-sm text-neutral-400">
@@ -3191,7 +4055,8 @@ export default function BackOfficePage() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-orange-400" />
                   <span className="text-sm text-orange-400">
-                    +{(expenses?.expenseGrowth?.monthly || 0).toFixed(1)}% vs last month
+                    +{(expenses?.expenseGrowth?.monthly || 0).toFixed(1)}% vs
+                    last month
                   </span>
                 </div>
                 <div className="text-sm text-neutral-400">
@@ -3209,36 +4074,57 @@ export default function BackOfficePage() {
               <Building2 className="h-5 w-5" />
               Revenue by Property
             </CardTitle>
-            <CardDescription>Performance breakdown by individual properties</CardDescription>
+            <CardDescription>
+              Performance breakdown by individual properties
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {revenue?.revenueByProperty && revenue.revenueByProperty.length > 0 ? (
+            {revenue?.revenueByProperty &&
+            revenue.revenueByProperty.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {revenue.revenueByProperty.map((property) => (
-                  <Card key={property.propertyId} className="bg-neutral-800 border-neutral-700">
+                  <Card
+                    key={property.propertyId}
+                    className="bg-neutral-800 border-neutral-700"
+                  >
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-white text-lg">{property.propertyName}</CardTitle>
+                      <CardTitle className="text-white text-lg">
+                        {property.propertyName}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-neutral-400">Total Revenue</span>
-                        <span className="text-white font-semibold">${(property.totalRevenue || 0).toLocaleString()}</span>
+                        <span className="text-white font-semibold">
+                          ${(property.totalRevenue || 0).toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-neutral-400">Bookings</span>
-                        <span className="text-white">{property.bookingCount || 0}</span>
+                        <span className="text-white">
+                          {property.bookingCount || 0}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-neutral-400">Avg Booking Value</span>
-                        <span className="text-white">${(property.averageBookingValue || 0).toLocaleString()}</span>
+                        <span className="text-neutral-400">
+                          Avg Booking Value
+                        </span>
+                        <span className="text-white">
+                          $
+                          {(property.averageBookingValue || 0).toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-neutral-400">Occupancy Rate</span>
-                        <span className="text-green-400">{(property.occupancyRate || 0).toFixed(1)}%</span>
+                        <span className="text-green-400">
+                          {(property.occupancyRate || 0).toFixed(1)}%
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-neutral-400">ADR</span>
-                        <span className="text-blue-400">${(property.adr || 0).toFixed(0)}</span>
+                        <span className="text-blue-400">
+                          ${(property.adr || 0).toFixed(0)}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
@@ -3247,8 +4133,13 @@ export default function BackOfficePage() {
             ) : (
               <div className="text-center py-8">
                 <Building2 className="h-12 w-12 text-neutral-500 mx-auto mb-4" />
-                <p className="text-neutral-400">No property revenue data available</p>
-                <p className="text-neutral-500 text-sm">Property-specific revenue will be calculated when booking data is available</p>
+                <p className="text-neutral-400">
+                  No property revenue data available
+                </p>
+                <p className="text-neutral-500 text-sm">
+                  Property-specific revenue will be calculated when booking data
+                  is available
+                </p>
               </div>
             )}
           </CardContent>
@@ -3261,15 +4152,22 @@ export default function BackOfficePage() {
               <ExternalLink className="h-5 w-5" />
               Revenue by Booking Source
             </CardTitle>
-            <CardDescription>Channel performance and commission analysis</CardDescription>
+            <CardDescription>
+              Channel performance and commission analysis
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
                 {revenue.revenueBySource.map((source) => (
-                  <div key={source.source} className="bg-neutral-800 rounded-lg p-4">
+                  <div
+                    key={source.source}
+                    className="bg-neutral-800 rounded-lg p-4"
+                  >
                     <div className="flex justify-between items-center mb-3">
-                      <h4 className="text-white font-medium capitalize">{source.source.replace('_', ' ')}</h4>
+                      <h4 className="text-white font-medium capitalize">
+                        {source.source.replace('_', ' ')}
+                      </h4>
                       <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                         {source.percentage.toFixed(1)}%
                       </Badge>
@@ -3277,56 +4175,83 @@ export default function BackOfficePage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-neutral-400">Revenue</span>
-                        <span className="text-white">${source.revenue.toLocaleString()}</span>
+                        <span className="text-white">
+                          ${source.revenue.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-neutral-400">Bookings</span>
-                        <span className="text-white">{source.bookingCount}</span>
+                        <span className="text-white">
+                          {source.bookingCount}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-neutral-400">Avg Value</span>
-                        <span className="text-white">${source.averageValue.toLocaleString()}</span>
+                        <span className="text-white">
+                          ${source.averageValue.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-neutral-400">Commission</span>
-                        <span className="text-red-400">-${source.commission.toLocaleString()}</span>
+                        <span className="text-red-400">
+                          -${source.commission.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between border-t border-neutral-700 pt-2">
                         <span className="text-neutral-400">Net Revenue</span>
-                        <span className="text-green-400 font-medium">${source.netRevenue.toLocaleString()}</span>
+                        <span className="text-green-400 font-medium">
+                          ${source.netRevenue.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="bg-neutral-800 rounded-lg p-4">
-                <h4 className="text-white font-medium mb-4">Channel Performance Summary</h4>
+                <h4 className="text-white font-medium mb-4">
+                  Channel Performance Summary
+                </h4>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Total Channels</span>
-                    <span className="text-white">{revenue.revenueBySource?.length || 0}</span>
+                    <span className="text-white">
+                      {revenue.revenueBySource?.length || 0}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Best Performing</span>
                     <span className="text-green-400">
-                      {revenue.revenueBySource?.length > 0 
-                        ? revenue.revenueBySource.reduce((best, current) =>
-                            current.revenue > best.revenue ? current : best
-                          ).source.replace('_', ' ')
-                        : 'No data'
-                      }
+                      {revenue.revenueBySource?.length > 0
+                        ? revenue.revenueBySource
+                            .reduce((best, current) =>
+                              current.revenue > best.revenue ? current : best
+                            )
+                            .source.replace('_', ' ')
+                        : 'No data'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-neutral-400">Total Commission</span>
                     <span className="text-red-400">
-                      -${(revenue.revenueBySource?.reduce((sum, s) => sum + s.commission, 0) || 0).toLocaleString()}
+                      -$
+                      {(
+                        revenue.revenueBySource?.reduce(
+                          (sum, s) => sum + s.commission,
+                          0
+                        ) || 0
+                      ).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-neutral-700 pt-2">
                     <span className="text-neutral-400">Net Revenue</span>
                     <span className="text-green-400 font-medium">
-                      ${(revenue.revenueBySource?.reduce((sum, s) => sum + s.netRevenue, 0) || 0).toLocaleString()}
+                      $
+                      {(
+                        revenue.revenueBySource?.reduce(
+                          (sum, s) => sum + s.netRevenue,
+                          0
+                        ) || 0
+                      ).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -3342,7 +4267,9 @@ export default function BackOfficePage() {
               <ArrowUpDown className="h-5 w-5" />
               Cash Flow Overview
             </CardTitle>
-            <CardDescription>Current cash position and flow analysis</CardDescription>
+            <CardDescription>
+              Current cash position and flow analysis
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -3352,7 +4279,13 @@ export default function BackOfficePage() {
                   <h4 className="text-white font-medium">Cash Inflows</h4>
                 </div>
                 <p className="text-2xl font-bold text-green-400 mb-2">
-                  ${(cashFlow.cashInflows?.reduce((sum, inflow) => sum + inflow.amount, 0) || 0).toLocaleString()}
+                  $
+                  {(
+                    cashFlow.cashInflows?.reduce(
+                      (sum, inflow) => sum + inflow.amount,
+                      0
+                    ) || 0
+                  ).toLocaleString()}
                 </p>
                 <p className="text-sm text-neutral-400">
                   {cashFlow.cashInflows?.length || 0} transactions
@@ -3365,7 +4298,13 @@ export default function BackOfficePage() {
                   <h4 className="text-white font-medium">Cash Outflows</h4>
                 </div>
                 <p className="text-2xl font-bold text-red-400 mb-2">
-                  ${(cashFlow.cashOutflows?.reduce((sum, outflow) => sum + outflow.amount, 0) || 0).toLocaleString()}
+                  $
+                  {(
+                    cashFlow.cashOutflows?.reduce(
+                      (sum, outflow) => sum + outflow.amount,
+                      0
+                    ) || 0
+                  ).toLocaleString()}
                 </p>
                 <p className="text-sm text-neutral-400">
                   {cashFlow.cashOutflows?.length || 0} transactions
@@ -3377,9 +4316,13 @@ export default function BackOfficePage() {
                   <DollarSign className="h-5 w-5 text-blue-400" />
                   <h4 className="text-white font-medium">Net Cash Flow</h4>
                 </div>
-                <p className={`text-2xl font-bold mb-2 ${
-                  cashFlow.totalCashFlow >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
+                <p
+                  className={`text-2xl font-bold mb-2 ${
+                    cashFlow.totalCashFlow >= 0
+                      ? 'text-green-400'
+                      : 'text-red-400'
+                  }`}
+                >
                   ${cashFlow.totalCashFlow.toLocaleString()}
                 </p>
                 <p className="text-sm text-neutral-400">
@@ -3397,7 +4340,9 @@ export default function BackOfficePage() {
               <Target className="h-5 w-5" />
               Key Performance Indicators
             </CardTitle>
-            <CardDescription>Comprehensive financial and operational metrics</CardDescription>
+            <CardDescription>
+              Comprehensive financial and operational metrics
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <FinancialKPIsDashboard kpis={kpis} loading={financialLoading} />
@@ -3411,10 +4356,15 @@ export default function BackOfficePage() {
               <ArrowUpDown className="h-5 w-5" />
               Advanced Cash Flow Management
             </CardTitle>
-            <CardDescription>Detailed cash flow analysis, payment methods, and projections</CardDescription>
+            <CardDescription>
+              Detailed cash flow analysis, payment methods, and projections
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <CashFlowManagement cashFlow={cashFlow} loading={financialLoading} />
+            <CashFlowManagement
+              cashFlow={cashFlow}
+              loading={financialLoading}
+            />
           </CardContent>
         </Card>
 
@@ -3425,7 +4375,9 @@ export default function BackOfficePage() {
               <TrendingDown className="h-5 w-5" />
               Expense Management System
             </CardTitle>
-            <CardDescription>Track operational costs, staff expenses, and property maintenance</CardDescription>
+            <CardDescription>
+              Track operational costs, staff expenses, and property maintenance
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ExpenseTrackingSystem
@@ -3457,7 +4409,9 @@ export default function BackOfficePage() {
               <FileText className="h-5 w-5" />
               Profit & Loss Statement
             </CardTitle>
-            <CardDescription>Comprehensive financial performance analysis and reporting</CardDescription>
+            <CardDescription>
+              Comprehensive financial performance analysis and reporting
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ProfitLossStatement
@@ -3465,7 +4419,9 @@ export default function BackOfficePage() {
               loading={financialLoading}
               onExport={(format) => {
                 console.log(`Exporting P&L as ${format}`)
-                toast.success(`P&L statement exported as ${format.toUpperCase()}`)
+                toast.success(
+                  `P&L statement exported as ${format.toUpperCase()}`
+                )
               }}
               onGenerateReport={() => {
                 console.log('Generating P&L report')
@@ -3482,7 +4438,10 @@ export default function BackOfficePage() {
               <BarChart3 className="h-5 w-5" />
               Financial Forecasting & Predictive Analytics
             </CardTitle>
-            <CardDescription>Advanced forecasting with scenario analysis and predictive modeling</CardDescription>
+            <CardDescription>
+              Advanced forecasting with scenario analysis and predictive
+              modeling
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <FinancialForecasting
@@ -3507,7 +4466,10 @@ export default function BackOfficePage() {
               <BarChart3 className="h-5 w-5" />
               Interactive Financial Charts & Analytics
             </CardTitle>
-            <CardDescription>Visual data analysis with interactive charts and performance metrics</CardDescription>
+            <CardDescription>
+              Visual data analysis with interactive charts and performance
+              metrics
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <FinancialCharts
@@ -3525,7 +4487,9 @@ export default function BackOfficePage() {
               <Download className="h-5 w-5" />
               Report Export & Management
             </CardTitle>
-            <CardDescription>Generate, export, and manage comprehensive financial reports</CardDescription>
+            <CardDescription>
+              Generate, export, and manage comprehensive financial reports
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <FinancialExportManager
@@ -3540,7 +4504,6 @@ export default function BackOfficePage() {
 
   // Properties Section - Enhanced Property Management System
   function renderProperties() {
-
     return (
       <div className="space-y-6">
         {/* Property Management Navigation */}
@@ -3548,16 +4511,21 @@ export default function BackOfficePage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white">Property Management System</CardTitle>
-                <CardDescription>Comprehensive property oversight and management</CardDescription>
+                <CardTitle className="text-white">
+                  Property Management System
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive property oversight and management
+                </CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button
                   onClick={() => setPropertyView('dashboard')}
                   variant={propertyView === 'dashboard' ? 'default' : 'outline'}
-                  className={propertyView === 'dashboard'
-                    ? 'bg-blue-600 hover:bg-blue-700'
-                    : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                  className={
+                    propertyView === 'dashboard'
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
                   }
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
@@ -3566,9 +4534,10 @@ export default function BackOfficePage() {
                 <Button
                   onClick={() => setPropertyView('listing')}
                   variant={propertyView === 'listing' ? 'default' : 'outline'}
-                  className={propertyView === 'listing'
-                    ? 'bg-blue-600 hover:bg-blue-700'
-                    : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                  className={
+                    propertyView === 'listing'
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'border-neutral-700 text-neutral-300 hover:bg-neutral-800'
                   }
                 >
                   <Building2 className="h-4 w-4 mr-2" />
@@ -3606,34 +4575,62 @@ export default function BackOfficePage() {
         <Card className="bg-neutral-900 border-neutral-800">
           <CardHeader>
             <CardTitle className="text-white">Daily Operations</CardTitle>
-            <CardDescription>Manage daily tasks and operational activities</CardDescription>
+            <CardDescription>
+              Manage daily tasks and operational activities
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Active Tasks</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  Active Tasks
+                </h3>
                 {[
-                  { task: 'Villa Sunset - Cleaning', staff: 'Maria Santos', due: '2 hours', priority: 'high' },
-                  { task: 'Villa Paradise - Maintenance', staff: 'Carlos Rodriguez', due: '4 hours', priority: 'medium' },
-                  { task: 'Guest Check-in Preparation', staff: 'Maria Santos', due: '6 hours', priority: 'high' },
+                  {
+                    task: 'Villa Sunset - Cleaning',
+                    staff: 'Maria Santos',
+                    due: '2 hours',
+                    priority: 'high',
+                  },
+                  {
+                    task: 'Villa Paradise - Maintenance',
+                    staff: 'Carlos Rodriguez',
+                    due: '4 hours',
+                    priority: 'medium',
+                  },
+                  {
+                    task: 'Guest Check-in Preparation',
+                    staff: 'Maria Santos',
+                    due: '6 hours',
+                    priority: 'high',
+                  },
                 ].map((item, index) => (
                   <div key={index} className="p-3 bg-neutral-800 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-white font-medium">{item.task}</h4>
-                      <Badge className={
-                        item.priority === 'high' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                        'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                      }>
+                      <Badge
+                        className={
+                          item.priority === 'high'
+                            ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                        }
+                      >
                         {item.priority}
                       </Badge>
                     </div>
-                    <p className="text-sm text-neutral-400">Assigned to: {item.staff}</p>
-                    <p className="text-sm text-neutral-400">Due in: {item.due}</p>
+                    <p className="text-sm text-neutral-400">
+                      Assigned to: {item.staff}
+                    </p>
+                    <p className="text-sm text-neutral-400">
+                      Due in: {item.due}
+                    </p>
                   </div>
                 ))}
               </div>
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  Quick Actions
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <Button className="bg-green-600 hover:bg-green-700 h-auto p-4 flex-col gap-2">
                     <CheckCircle className="h-5 w-5" />
@@ -3701,7 +4698,9 @@ export default function BackOfficePage() {
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
               <CardTitle className="text-white">System Status</CardTitle>
-              <CardDescription>Current system health and status</CardDescription>
+              <CardDescription>
+                Current system health and status
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
@@ -3731,24 +4730,75 @@ export default function BackOfficePage() {
   function renderSettings() {
     return (
       <div className="space-y-6">
+        {/* AI Automation Control */}
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardHeader>
+            <CardTitle className="text-white">AI Automation Control</CardTitle>
+            <CardDescription>
+              Manage automated operations and AI-driven features
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AIAutomationToggle />
+          </CardContent>
+        </Card>
+
+        {/* AI Booking Test Panel */}
+        <AIBookingTestPanel />
+
+        {/* Smart Job Assignment Test Panel */}
+        <SmartJobTestPanel />
+
+        {/* Smart Job Analytics Dashboard */}
+        <SmartJobAnalyticsDashboard />
+
+        {/* Calendar Synchronization Dashboard */}
+        <CalendarSyncDashboard />
+
+        {/* Advanced Calendar View */}
+        <AdvancedCalendarView />
+
+        {/* Financial Dashboard */}
+        <FinancialDashboardComponent />
+
+        {/* Job Completion Analytics */}
+        <JobCompletionAnalytics />
+
+        {/* Notification Dashboard */}
+        <NotificationDashboard />
+
+        {/* Job Acceptance Panel */}
+        <JobAcceptancePanel />
+
+        {/* AI Audit Log Viewer */}
+        <AIAuditLogViewer />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
-              <CardTitle className="text-white">Notification Settings</CardTitle>
-              <CardDescription>Configure system notifications and alerts</CardDescription>
+              <CardTitle className="text-white">
+                Notification Settings
+              </CardTitle>
+              <CardDescription>
+                Configure system notifications and alerts
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white">New Booking Alerts</p>
-                  <p className="text-sm text-neutral-400">Get notified of new bookings</p>
+                  <p className="text-sm text-neutral-400">
+                    Get notified of new bookings
+                  </p>
                 </div>
                 <input type="checkbox" defaultChecked className="toggle" />
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white">Staff Assignment Reminders</p>
-                  <p className="text-sm text-neutral-400">Remind to assign staff to bookings</p>
+                  <p className="text-sm text-neutral-400">
+                    Remind to assign staff to bookings
+                  </p>
                 </div>
                 <input type="checkbox" defaultChecked className="toggle" />
               </div>
@@ -3764,7 +4814,9 @@ export default function BackOfficePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white">Auto Backup</p>
-                  <p className="text-sm text-neutral-400">Daily automatic backups</p>
+                  <p className="text-sm text-neutral-400">
+                    Daily automatic backups
+                  </p>
                 </div>
                 <input type="checkbox" defaultChecked className="toggle" />
               </div>

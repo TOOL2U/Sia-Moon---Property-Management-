@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "localId": "temp_user_001",
+      "email": "shaun@siamoon.com",
+      "emailVerified": true,
+      "passwordHash": "TestPass123!",
+      "displayName": "Shaun Ducker",
+      "disabled": false,
+      "createdAt": "2025-01-17T12:00:00.000Z",
+      "lastLoginAt": "2025-01-17T12:00:00.000Z"
+    }
+  ]
+}

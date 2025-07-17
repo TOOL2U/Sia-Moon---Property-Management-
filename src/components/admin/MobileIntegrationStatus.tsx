@@ -1,24 +1,23 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { clientToast as toast } from '@/utils/clientToast'
 import {
+  AlertTriangle,
+  Bell,
+  CheckCircle,
+  Loader2,
+  RefreshCw,
   Smartphone,
+  TestTube,
+  Users,
   Wifi,
   WifiOff,
-  Users,
-  Bell,
-  BellOff,
-  TestTube,
-  RefreshCw,
-  CheckCircle,
   XCircle,
-  AlertTriangle,
-  Loader2
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface MobileStatus {
   activeStaffCount: number
@@ -46,11 +45,23 @@ export function MobileIntegrationStatus() {
   const loadStatus = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/test-mobile-integration?action=status')
+      const response = await fetch(
+        '/api/admin/test-mobile-integration?action=status'
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response is not JSON')
+      }
+
       const data = await response.json()
 
       if (data.success) {
-        setStatus(data.data)
+        setStatus(data.status)
         setLastRefresh(new Date())
       } else {
         toast.error('Failed to load mobile status')
@@ -59,6 +70,23 @@ export function MobileIntegrationStatus() {
     } catch (error) {
       toast.error('Error loading mobile status')
       console.error('Error loading mobile status:', error)
+
+      // Set default status if API fails
+      setStatus({
+        activeStaffCount: 0,
+        testJobsCount: 0,
+        deviceTokens: {
+          totalTokens: 0,
+          activeTokens: 0,
+          platforms: {
+            ios: 0,
+            android: 0,
+            web: 0,
+          },
+        },
+        firebaseAdminConfigured: false,
+        timestamp: new Date().toISOString(),
+      })
     } finally {
       setLoading(false)
     }
@@ -71,15 +99,17 @@ export function MobileIntegrationStatus() {
       const response = await fetch('/api/admin/test-mobile-integration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_test_job' })
+        body: JSON.stringify({ action: 'create_test_job' }),
       })
 
       const data = await response.json()
 
       if (data.success) {
-        toast.success(`✅ Test job created!\nAssigned to: ${data.data.assignedStaffName}`)
+        toast.success(
+          `✅ Test job created!\nAssigned to: ${data.data.assignedStaffName}`
+        )
         console.log('Test job created:', data.data)
-        
+
         // Refresh status
         await loadStatus()
       } else {
@@ -100,13 +130,15 @@ export function MobileIntegrationStatus() {
       const response = await fetch('/api/admin/test-mobile-integration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'test_notifications' })
+        body: JSON.stringify({ action: 'test_notifications' }),
       })
 
       const data = await response.json()
 
       if (data.success) {
-        toast.success(`✅ Test notifications sent to ${data.data.staffCount} staff members`)
+        toast.success(
+          `✅ Test notifications sent to ${data.data.staffCount} staff members`
+        )
         console.log('Test notifications sent:', data.data)
       } else {
         toast.error(`❌ Failed to send test notifications: ${data.error}`)
@@ -126,15 +158,17 @@ export function MobileIntegrationStatus() {
       const response = await fetch('/api/admin/test-mobile-integration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_test_suite' })
+        body: JSON.stringify({ action: 'create_test_suite' }),
       })
 
       const data = await response.json()
 
       if (data.success) {
-        toast.success(`✅ Test suite created!\n${data.data.jobsCreated} jobs assigned to staff`)
+        toast.success(
+          `✅ Test suite created!\n${data.data.jobsCreated} jobs assigned to staff`
+        )
         console.log('Test suite created:', data.data)
-        
+
         // Refresh status
         await loadStatus()
       } else {
@@ -150,7 +184,7 @@ export function MobileIntegrationStatus() {
 
   useEffect(() => {
     loadStatus()
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadStatus, 30000)
     return () => clearInterval(interval)
@@ -179,7 +213,7 @@ export function MobileIntegrationStatus() {
 
   const getStatusBadge = (isConnected: boolean, label: string) => {
     return (
-      <Badge variant={isConnected ? "success" : "destructive"}>
+      <Badge variant={isConnected ? 'success' : 'destructive'}>
         {isConnected ? '✅' : '❌'} {label}
       </Badge>
     )
@@ -239,7 +273,8 @@ export function MobileIntegrationStatus() {
               <span className="text-sm text-neutral-300">Device Tokens</span>
             </div>
             <div className="text-2xl font-bold text-white">
-              {status?.deviceTokens.activeTokens || 0}/{status?.deviceTokens.totalTokens || 0}
+              {status?.deviceTokens?.activeTokens || 0}/
+              {status?.deviceTokens?.totalTokens || 0}
             </div>
           </div>
 
@@ -253,8 +288,10 @@ export function MobileIntegrationStatus() {
               <span className="text-sm text-neutral-300">Firebase Admin</span>
             </div>
             <div className="text-sm font-medium">
-              {getStatusBadge(status?.firebaseAdminConfigured || false, 
-                status?.firebaseAdminConfigured ? 'Connected' : 'Not Configured')}
+              {getStatusBadge(
+                status?.firebaseAdminConfigured || false,
+                status?.firebaseAdminConfigured ? 'Connected' : 'Not Configured'
+              )}
             </div>
           </div>
         </div>
@@ -265,15 +302,21 @@ export function MobileIntegrationStatus() {
             <h4 className="text-white font-medium mb-3">Device Platforms</h4>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-lg font-bold text-white">{status.deviceTokens.platforms.ios}</div>
+                <div className="text-lg font-bold text-white">
+                  {status.deviceTokens?.platforms?.ios || 0}
+                </div>
                 <div className="text-xs text-neutral-400">iOS</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-white">{status.deviceTokens.platforms.android}</div>
+                <div className="text-lg font-bold text-white">
+                  {status.deviceTokens?.platforms?.android || 0}
+                </div>
                 <div className="text-xs text-neutral-400">Android</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-white">{status.deviceTokens.platforms.web}</div>
+                <div className="text-lg font-bold text-white">
+                  {status.deviceTokens?.platforms?.web || 0}
+                </div>
                 <div className="text-xs text-neutral-400">Web</div>
               </div>
             </div>
@@ -289,7 +332,11 @@ export function MobileIntegrationStatus() {
               disabled={testing}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              {testing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <TestTube className="w-4 h-4 mr-2" />}
+              {testing ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <TestTube className="w-4 h-4 mr-2" />
+              )}
               Send Test Job
             </Button>
 
@@ -298,7 +345,11 @@ export function MobileIntegrationStatus() {
               disabled={testing}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              {testing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
+              {testing ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Bell className="w-4 h-4 mr-2" />
+              )}
               Test Notifications
             </Button>
 
@@ -307,7 +358,11 @@ export function MobileIntegrationStatus() {
               disabled={testing}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              {testing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <TestTube className="w-4 h-4 mr-2" />}
+              {testing ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <TestTube className="w-4 h-4 mr-2" />
+              )}
               Create Test Suite
             </Button>
           </div>
@@ -318,10 +373,13 @@ export function MobileIntegrationStatus() {
           <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
             <div className="flex items-center gap-2 text-yellow-400">
               <AlertTriangle className="w-5 h-5" />
-              <span className="font-medium">Firebase Admin SDK Not Configured</span>
+              <span className="font-medium">
+                Firebase Admin SDK Not Configured
+              </span>
             </div>
             <p className="text-sm text-yellow-300 mt-1">
-              Push notifications will be queued but not sent. Configure FIREBASE_PRIVATE_KEY environment variable.
+              Push notifications will be queued but not sent. Configure
+              FIREBASE_PRIVATE_KEY environment variable.
             </p>
           </div>
         )}

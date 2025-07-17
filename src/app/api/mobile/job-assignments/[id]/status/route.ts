@@ -3,10 +3,14 @@
  * Handles job status updates from mobile app
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { withMobileAuth, createMobileSuccessResponse, createMobileErrorResponse } from '@/lib/middleware/mobileAuth'
+import {
+  createMobileErrorResponse,
+  createMobileSuccessResponse,
+  withMobileAuth,
+} from '@/lib/middleware/mobileAuth'
 import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
 import { JobStatus } from '@/types/jobAssignment'
+import { NextRequest } from 'next/server'
 
 /**
  * PATCH /api/mobile/job-assignments/[id]/status
@@ -20,14 +24,14 @@ export async function PATCH(
     try {
       const { id: jobId } = await params
       const body = await request.json()
-      const { 
-        status, 
-        progress, 
-        notes, 
-        completionNotes, 
-        completionPhotos, 
-        qualityRating, 
-        issuesReported 
+      const {
+        status,
+        progress,
+        notes,
+        completionNotes,
+        completionPhotos,
+        qualityRating,
+        issuesReported,
       } = body
 
       // Validate required fields
@@ -36,19 +40,40 @@ export async function PATCH(
       }
 
       // Validate status value
-      const validStatuses: JobStatus[] = ['assigned', 'accepted', 'declined', 'in_progress', 'completed', 'cancelled']
+      const validStatuses: JobStatus[] = [
+        'assigned',
+        'accepted',
+        'declined',
+        'in_progress',
+        'completed',
+        'cancelled',
+      ]
       if (!validStatuses.includes(status)) {
-        return createMobileErrorResponse(`Invalid status. Must be one of: ${validStatuses.join(', ')}`)
+        return createMobileErrorResponse(
+          `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        )
       }
 
       // Validate progress if provided
-      if (progress !== undefined && (typeof progress !== 'number' || progress < 0 || progress > 100)) {
-        return createMobileErrorResponse('Progress must be a number between 0 and 100')
+      if (
+        progress !== undefined &&
+        (typeof progress !== 'number' || progress < 0 || progress > 100)
+      ) {
+        return createMobileErrorResponse(
+          'Progress must be a number between 0 and 100'
+        )
       }
 
       // Validate quality rating if provided
-      if (qualityRating !== undefined && (typeof qualityRating !== 'number' || qualityRating < 1 || qualityRating > 5)) {
-        return createMobileErrorResponse('Quality rating must be a number between 1 and 5')
+      if (
+        qualityRating !== undefined &&
+        (typeof qualityRating !== 'number' ||
+          qualityRating < 1 ||
+          qualityRating > 5)
+      ) {
+        return createMobileErrorResponse(
+          'Quality rating must be a number between 1 and 5'
+        )
       }
 
       const updates = {
@@ -57,7 +82,7 @@ export async function PATCH(
         completionNotes,
         completionPhotos,
         qualityRating,
-        issuesReported
+        issuesReported,
       }
 
       const result = await JobAssignmentService.updateJobStatus(
@@ -68,7 +93,25 @@ export async function PATCH(
       )
 
       if (!result.success) {
-        return createMobileErrorResponse(result.error || 'Failed to update job status')
+        return createMobileErrorResponse(
+          result.error || 'Failed to update job status'
+        )
+      }
+
+      // Update calendar event with new status
+      try {
+        const CalendarEventService = (
+          await import('@/services/CalendarEventService')
+        ).default
+        await CalendarEventService.updateEventStatus(jobId, status, {
+          progress,
+          notes,
+          completionNotes,
+          updatedBy: auth.staffId,
+        })
+      } catch (calendarError) {
+        console.warn('⚠️ Failed to update calendar event:', calendarError)
+        // Don't fail the request if calendar update fails
       }
 
       return createMobileSuccessResponse({
@@ -76,7 +119,7 @@ export async function PATCH(
         jobId,
         status,
         progress,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       })
     } catch (error) {
       console.error(`❌ Error updating mobile job status:`, error)

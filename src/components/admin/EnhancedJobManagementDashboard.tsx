@@ -5,56 +5,54 @@
  * Comprehensive job management interface with full CRUD operations
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { clientToast as toast } from '@/utils/clientToast'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Plus,
-  Search,
-  Filter,
-  Calendar,
-  Clock,
-  User,
-  MapPin,
   AlertCircle,
-  CheckCircle,
-  XCircle,
-  Pause,
-  Play,
-  Edit,
-  Trash2,
-  Eye,
-  MoreHorizontal,
-  TrendingUp,
-  Timer,
-  DollarSign,
-  Briefcase,
-  Users,
-  Building2,
-  ClipboardList,
-  Loader2,
-  RefreshCw,
-  Download,
-  Upload,
-  Settings,
   Bell,
+  Briefcase,
+  Building2,
+  Calendar,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  Edit,
+  Eye,
+  Loader2,
+  Play,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings,
   Star,
-  Zap
+  Timer,
+  Trash2,
+  TrendingUp,
+  User,
+  Users,
+  XCircle,
+  Zap,
 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 // Services
-import JobAssignmentService, { JobData, JobStatus, JobType, JobPriority } from '@/services/JobAssignmentService'
+import JobAssignmentService, {
+  JobData,
+  JobPriority,
+  JobStatus,
+  JobType,
+} from '@/services/JobAssignmentService'
 
 // Components
 import { CreateJobWizardModal } from './CreateJobWizardModal'
-import { JobDetailsModal } from './JobDetailsModal'
-import { EditJobModal } from './EditJobModal'
 import { DeleteJobConfirmModal } from './DeleteJobConfirmModal'
+import { EditJobModal } from './EditJobModal'
+import { JobDetailsModal } from './JobDetailsModal'
 
 interface EnhancedJobManagementDashboardProps {
   className?: string
@@ -68,9 +66,9 @@ const containerVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 }
 
 const itemVariants = {
@@ -78,8 +76,8 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4 }
-  }
+    transition: { duration: 0.4 },
+  },
 }
 
 const cardHoverVariants = {
@@ -88,12 +86,14 @@ const cardHoverVariants = {
     scale: 1.02,
     transition: {
       duration: 0.2,
-      ease: "easeOut"
-    }
-  }
+      ease: 'easeOut',
+    },
+  },
 }
 
-export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagementDashboardProps) {
+export function EnhancedJobManagementDashboard({
+  className,
+}: EnhancedJobManagementDashboardProps) {
   // State management
   const [jobs, setJobs] = useState<JobData[]>([])
   const [filteredJobs, setFilteredJobs] = useState<JobData[]>([])
@@ -101,7 +101,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
   const [updating, setUpdating] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>('all')
-  const [priorityFilter, setPriorityFilter] = useState<JobPriority | 'all'>('all')
+  const [priorityFilter, setPriorityFilter] = useState<JobPriority | 'all'>(
+    'all'
+  )
   const [staffFilter, setStaffFilter] = useState<string>('all')
   const [dateFilter, setDateFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
@@ -110,19 +112,26 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
 
   // Modal states
   const [showCreateJobModal, setShowCreateJobModal] = useState(false)
-  const [showJobDetailsModal, setShowJobDetailsModal] = useState<JobData | null>(null)
+  const [showJobDetailsModal, setShowJobDetailsModal] =
+    useState<JobData | null>(null)
   const [showEditJobModal, setShowEditJobModal] = useState<JobData | null>(null)
-  const [showDeleteJobModal, setShowDeleteJobModal] = useState<JobData | null>(null)
+  const [showDeleteJobModal, setShowDeleteJobModal] = useState<JobData | null>(
+    null
+  )
 
   // Load jobs with real-time updates
   const loadJobs = useCallback(() => {
     console.log('📋 Setting up real-time job subscription...')
 
-    const unsubscribeFn = JobAssignmentService.subscribeToJobs((updatedJobs) => {
-      console.log(`✅ Received ${updatedJobs.length} jobs via real-time subscription`)
-      setJobs(updatedJobs)
-      setLoading(false)
-    })
+    const unsubscribeFn = JobAssignmentService.subscribeToJobs(
+      (updatedJobs) => {
+        console.log(
+          `✅ Received ${updatedJobs.length} jobs via real-time subscription`
+        )
+        setJobs(updatedJobs)
+        setLoading(false)
+      }
+    )
 
     setUnsubscribe(() => unsubscribeFn)
     return unsubscribeFn
@@ -134,49 +143,59 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
 
     // Search filter
     if (searchQuery) {
-      filtered = filtered.filter(job =>
-        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.assignedStaffRef?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.propertyRef?.name.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (job) =>
+          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.assignedStaffRef?.name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          job.propertyRef?.name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
       )
     }
 
     // Status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(job => job.status === statusFilter)
+      filtered = filtered.filter((job) => job.status === statusFilter)
     }
 
     // Priority filter
     if (priorityFilter !== 'all') {
-      filtered = filtered.filter(job => job.priority === priorityFilter)
+      filtered = filtered.filter((job) => job.priority === priorityFilter)
     }
 
     // Staff filter
     if (staffFilter !== 'all') {
-      filtered = filtered.filter(job => job.assignedStaffId === staffFilter)
+      filtered = filtered.filter((job) => job.assignedStaffId === staffFilter)
     }
 
     // Date filter
     if (dateFilter !== 'all') {
       const today = new Date().toISOString().split('T')[0]
-      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0]
+      const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0]
 
       switch (dateFilter) {
         case 'today':
-          filtered = filtered.filter(job => job.scheduledDate === today)
+          filtered = filtered.filter((job) => job.scheduledDate === today)
           break
         case 'tomorrow':
-          filtered = filtered.filter(job => job.scheduledDate === tomorrow)
+          filtered = filtered.filter((job) => job.scheduledDate === tomorrow)
           break
         case 'week':
-          filtered = filtered.filter(job => job.scheduledDate <= weekFromNow)
+          filtered = filtered.filter((job) => job.scheduledDate <= weekFromNow)
           break
         case 'overdue':
-          filtered = filtered.filter(job => 
-            job.scheduledDate < today && 
-            !['completed', 'verified', 'cancelled'].includes(job.status)
+          filtered = filtered.filter(
+            (job) =>
+              job.scheduledDate < today &&
+              !['completed', 'verified', 'cancelled'].includes(job.status)
           )
           break
       }
@@ -188,7 +207,7 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
   // Setup real-time subscription on mount
   useEffect(() => {
     const unsubscribeFn = loadJobs()
-    
+
     return () => {
       if (unsubscribeFn) {
         unsubscribeFn()
@@ -208,28 +227,37 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
   // Calculate statistics
   const stats = {
     total: jobs.length,
-    pending: jobs.filter(j => j.status === 'pending').length,
-    assigned: jobs.filter(j => j.status === 'assigned').length,
-    inProgress: jobs.filter(j => j.status === 'in_progress').length,
-    completed: jobs.filter(j => j.status === 'completed').length,
-    urgent: jobs.filter(j => j.priority === 'urgent').length,
-    todayJobs: jobs.filter(j => {
+    pending: jobs.filter((j) => j.status === 'pending').length,
+    assigned: jobs.filter((j) => j.status === 'assigned').length,
+    inProgress: jobs.filter((j) => j.status === 'in_progress').length,
+    completed: jobs.filter((j) => j.status === 'completed').length,
+    urgent: jobs.filter((j) => j.priority === 'urgent').length,
+    todayJobs: jobs.filter((j) => {
       const today = new Date().toISOString().split('T')[0]
       return j.scheduledDate === today
     }).length,
-    overdueJobs: jobs.filter(j => {
+    overdueJobs: jobs.filter((j) => {
       const today = new Date().toISOString().split('T')[0]
-      return j.scheduledDate < today && !['completed', 'verified', 'cancelled'].includes(j.status)
-    }).length
+      return (
+        j.scheduledDate < today &&
+        !['completed', 'verified', 'cancelled'].includes(j.status)
+      )
+    }).length,
   }
 
   // Get unique staff for filter
-  const uniqueStaff = Array.from(new Set(jobs
-    .filter(job => job.assignedStaffRef && job.assignedStaffRef.name)
-    .map(job => ({
+  const uniqueStaff = jobs
+    .filter(
+      (job) =>
+        job.assignedStaffRef && job.assignedStaffRef.name && job.assignedStaffId
+    )
+    .map((job) => ({
       id: job.assignedStaffId,
-      name: job.assignedStaffRef.name
-    }))))
+      name: job.assignedStaffRef.name,
+    }))
+    .filter(
+      (staff, index, self) => index === self.findIndex((s) => s.id === staff.id)
+    )
 
   // Handle job actions
   const handleCreateJob = () => {
@@ -306,8 +334,13 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
 
     try {
       setLoading(true)
-      const promises = selectedJobs.map(jobId =>
-        JobAssignmentService.updateJobStatus(jobId, newStatus, 'admin', `Bulk update to ${newStatus}`)
+      const promises = selectedJobs.map((jobId) =>
+        JobAssignmentService.updateJobStatus(
+          jobId,
+          newStatus,
+          'admin',
+          `Bulk update to ${newStatus}`
+        )
       )
 
       await Promise.all(promises)
@@ -327,7 +360,11 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
       return
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedJobs.length} jobs? This action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedJobs.length} jobs? This action cannot be undone.`
+      )
+    ) {
       return
     }
 
@@ -406,7 +443,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <TrendingUp className="w-4 h-4 text-blue-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-blue-400 mb-1">{stats.total}</div>
+              <div className="text-2xl font-bold text-blue-400 mb-1">
+                {stats.total}
+              </div>
               <p className="text-xs text-blue-300 font-medium">Total Jobs</p>
             </CardContent>
           </Card>
@@ -421,7 +460,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <Timer className="w-4 h-4 text-yellow-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-yellow-400 mb-1">{stats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-400 mb-1">
+                {stats.pending}
+              </div>
               <p className="text-xs text-yellow-300 font-medium">Pending</p>
             </CardContent>
           </Card>
@@ -436,7 +477,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <Users className="w-4 h-4 text-purple-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-purple-400 mb-1">{stats.assigned}</div>
+              <div className="text-2xl font-bold text-purple-400 mb-1">
+                {stats.assigned}
+              </div>
               <p className="text-xs text-purple-300 font-medium">Assigned</p>
             </CardContent>
           </Card>
@@ -451,7 +494,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <Zap className="w-4 h-4 text-orange-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-orange-400 mb-1">{stats.inProgress}</div>
+              <div className="text-2xl font-bold text-orange-400 mb-1">
+                {stats.inProgress}
+              </div>
               <p className="text-xs text-orange-300 font-medium">In Progress</p>
             </CardContent>
           </Card>
@@ -466,7 +511,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <Star className="w-4 h-4 text-green-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-green-400 mb-1">{stats.completed}</div>
+              <div className="text-2xl font-bold text-green-400 mb-1">
+                {stats.completed}
+              </div>
               <p className="text-xs text-green-300 font-medium">Completed</p>
             </CardContent>
           </Card>
@@ -481,7 +528,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <Bell className="w-4 h-4 text-red-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-red-400 mb-1">{stats.urgent}</div>
+              <div className="text-2xl font-bold text-red-400 mb-1">
+                {stats.urgent}
+              </div>
               <p className="text-xs text-red-300 font-medium">Urgent</p>
             </CardContent>
           </Card>
@@ -496,7 +545,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <Clock className="w-4 h-4 text-cyan-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-cyan-400 mb-1">{stats.todayJobs}</div>
+              <div className="text-2xl font-bold text-cyan-400 mb-1">
+                {stats.todayJobs}
+              </div>
               <p className="text-xs text-cyan-300 font-medium">Today</p>
             </CardContent>
           </Card>
@@ -511,7 +562,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </div>
                 <AlertCircle className="w-4 h-4 text-rose-400 opacity-60" />
               </div>
-              <div className="text-2xl font-bold text-rose-400 mb-1">{stats.overdueJobs}</div>
+              <div className="text-2xl font-bold text-rose-400 mb-1">
+                {stats.overdueJobs}
+              </div>
               <p className="text-xs text-rose-300 font-medium">Overdue</p>
             </CardContent>
           </Card>
@@ -539,7 +592,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
               {/* Status Filter */}
               <Select
                 value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as JobStatus | 'all')}
+                onValueChange={(value) =>
+                  setStatusFilter(value as JobStatus | 'all')
+                }
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -554,7 +609,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
               {/* Priority Filter */}
               <Select
                 value={priorityFilter}
-                onValueChange={(value) => setPriorityFilter(value as JobPriority | 'all')}
+                onValueChange={(value) =>
+                  setPriorityFilter(value as JobPriority | 'all')
+                }
               >
                 <option value="all">All Priority</option>
                 <option value="low">Low</option>
@@ -564,21 +621,17 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
               </Select>
 
               {/* Staff Filter */}
-              <Select
-                value={staffFilter}
-                onValueChange={setStaffFilter}
-              >
+              <Select value={staffFilter} onValueChange={setStaffFilter}>
                 <option value="all">All Staff</option>
-                {uniqueStaff.map(staff => (
-                  <option key={staff.id} value={staff.id}>{staff.name}</option>
+                {uniqueStaff.map((staff) => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.name}
+                  </option>
                 ))}
               </Select>
 
               {/* Date Filter */}
-              <Select
-                value={dateFilter}
-                onValueChange={setDateFilter}
-              >
+              <Select value={dateFilter} onValueChange={setDateFilter}>
                 <option value="all">All Dates</option>
                 <option value="today">Today</option>
                 <option value="tomorrow">Tomorrow</option>
@@ -592,7 +645,8 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
               <div className="mt-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-blue-400 font-medium">
-                    {selectedJobs.length} job{selectedJobs.length > 1 ? 's' : ''} selected
+                    {selectedJobs.length} job
+                    {selectedJobs.length > 1 ? 's' : ''} selected
                   </span>
                   <div className="flex items-center gap-2">
                     <Button
@@ -649,7 +703,9 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+                  onClick={() =>
+                    setViewMode(viewMode === 'list' ? 'grid' : 'list')
+                  }
                   className="border-gray-600 text-gray-300 hover:bg-gray-700"
                 >
                   {viewMode === 'list' ? 'Grid View' : 'List View'}
@@ -666,12 +722,13 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
             ) : filteredJobs.length === 0 ? (
               <div className="text-center py-12">
                 <ClipboardList className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-400 mb-2">No jobs found</h3>
+                <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                  No jobs found
+                </h3>
                 <p className="text-gray-500 mb-6">
                   {jobs.length === 0
-                    ? "No jobs have been created yet. Create your first job to get started."
-                    : "No jobs match your current filters. Try adjusting your search criteria."
-                  }
+                    ? 'No jobs have been created yet. Create your first job to get started.'
+                    : 'No jobs match your current filters. Try adjusting your search criteria.'}
                 </p>
                 <Button
                   onClick={handleCreateJob}
@@ -682,10 +739,13 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                 </Button>
               </div>
             ) : (
-              <div className={viewMode === 'grid'
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                : "space-y-4"
-              }>
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                    : 'space-y-4'
+                }
+              >
                 {filteredJobs.map((job) => (
                   <JobCard
                     key={job.id}
@@ -697,13 +757,17 @@ export function EnhancedJobManagementDashboard({ className }: EnhancedJobManagem
                       if (selected) {
                         setSelectedJobs([...selectedJobs, job.id!])
                       } else {
-                        setSelectedJobs(selectedJobs.filter(id => id !== job.id))
+                        setSelectedJobs(
+                          selectedJobs.filter((id) => id !== job.id)
+                        )
                       }
                     }}
                     onView={() => handleViewJob(job)}
                     onEdit={() => handleEditJob(job)}
                     onDelete={() => handleDeleteJob(job)}
-                    onStatusUpdate={(status) => updateJobStatus(job.id!, status)}
+                    onStatusUpdate={(status) =>
+                      updateJobStatus(job.id!, status)
+                    }
                   />
                 ))}
               </div>
@@ -785,40 +849,60 @@ function JobCard({
   onView,
   onEdit,
   onDelete,
-  onStatusUpdate
+  onStatusUpdate,
 }: JobCardProps) {
   const getStatusColor = (status: JobStatus) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-      case 'assigned': return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-      case 'accepted': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      case 'in_progress': return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'verified': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-      case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/30'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+      case 'assigned':
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+      case 'accepted':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      case 'in_progress':
+        return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      case 'completed':
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'verified':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+      case 'cancelled':
+        return 'bg-red-500/20 text-red-400 border-red-500/30'
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
   }
 
   const getPriorityColor = (priority: JobPriority) => {
     switch (priority) {
-      case 'low': return 'text-green-400'
-      case 'medium': return 'text-yellow-400'
-      case 'high': return 'text-orange-400'
-      case 'urgent': return 'text-red-400'
-      default: return 'text-gray-400'
+      case 'low':
+        return 'text-green-400'
+      case 'medium':
+        return 'text-yellow-400'
+      case 'high':
+        return 'text-orange-400'
+      case 'urgent':
+        return 'text-red-400'
+      default:
+        return 'text-gray-400'
     }
   }
 
   const getJobTypeIcon = (jobType: JobType) => {
     switch (jobType) {
-      case 'cleaning': return <Briefcase className="w-4 h-4" />
-      case 'maintenance': return <Settings className="w-4 h-4" />
-      case 'inspection': return <Eye className="w-4 h-4" />
-      case 'setup': return <Building2 className="w-4 h-4" />
-      case 'checkout': return <CheckCircle className="w-4 h-4" />
-      case 'emergency': return <AlertCircle className="w-4 h-4" />
-      default: return <Briefcase className="w-4 h-4" />
+      case 'cleaning':
+        return <Briefcase className="w-4 h-4" />
+      case 'maintenance':
+        return <Settings className="w-4 h-4" />
+      case 'inspection':
+        return <Eye className="w-4 h-4" />
+      case 'setup':
+        return <Building2 className="w-4 h-4" />
+      case 'checkout':
+        return <CheckCircle className="w-4 h-4" />
+      case 'emergency':
+        return <AlertCircle className="w-4 h-4" />
+      default:
+        return <Briefcase className="w-4 h-4" />
     }
   }
 
@@ -827,7 +911,7 @@ function JobCard({
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     })
   }
 
@@ -836,7 +920,7 @@ function JobCard({
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     })
   }
 
@@ -847,7 +931,9 @@ function JobCard({
         transition={{ duration: 0.2 }}
         className="group"
       >
-        <Card className={`bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 ${isSelected ? 'ring-2 ring-blue-500/50' : ''}`}>
+        <Card
+          className={`bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 ${isSelected ? 'ring-2 ring-blue-500/50' : ''}`}
+        >
           <CardContent className="p-6">
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
@@ -866,12 +952,16 @@ function JobCard({
                     <h3 className="font-semibold text-white text-sm truncate max-w-[150px]">
                       {job.title}
                     </h3>
-                    <p className="text-xs text-gray-400 capitalize">{job.jobType}</p>
+                    <p className="text-xs text-gray-400 capitalize">
+                      {job.jobType}
+                    </p>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Badge className={`text-xs px-2 py-1 ${getStatusColor(job.status)}`}>
+                <Badge
+                  className={`text-xs px-2 py-1 ${getStatusColor(job.status)}`}
+                >
                   {job.status.replace('_', ' ')}
                 </Badge>
               </div>
@@ -881,30 +971,46 @@ function JobCard({
             <div className="space-y-3 mb-4">
               <div className="flex items-center gap-2 text-sm">
                 <Building2 className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-300 truncate">{job.propertyRef?.name || 'Unknown Property'}</span>
+                <span className="text-gray-300 truncate">
+                  {job.propertyRef?.name || 'Unknown Property'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
                 <User className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-300 truncate">{job.assignedStaffRef?.name || 'Unassigned'}</span>
+                <span className="text-gray-300 truncate">
+                  {job.assignedStaffRef?.name || 'Unassigned'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-300">{formatDate(job.scheduledDate)}</span>
+                <span className="text-gray-300">
+                  {formatDate(job.scheduledDate)}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-300">{formatTime(job.scheduledStartTime)}</span>
+                <span className="text-gray-300">
+                  {formatTime(job.scheduledStartTime)}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className={`w-4 h-4 ${getPriorityColor(job.priority)}`} />
-                  <span className={`capitalize ${getPriorityColor(job.priority)}`}>{job.priority}</span>
+                  <AlertCircle
+                    className={`w-4 h-4 ${getPriorityColor(job.priority)}`}
+                  />
+                  <span
+                    className={`capitalize ${getPriorityColor(job.priority)}`}
+                  >
+                    {job.priority}
+                  </span>
                 </div>
-                <span className="text-gray-400">{job.estimatedDuration}min</span>
+                <span className="text-gray-400">
+                  {job.estimatedDuration}min
+                </span>
               </div>
             </div>
 
@@ -984,7 +1090,9 @@ function JobCard({
       transition={{ duration: 0.2 }}
       className="group"
     >
-      <Card className={`bg-gradient-to-r from-gray-800/30 to-gray-900/30 border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 ${isSelected ? 'ring-2 ring-blue-500/50' : ''}`}>
+      <Card
+        className={`bg-gradient-to-r from-gray-800/30 to-gray-900/30 border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 ${isSelected ? 'ring-2 ring-blue-500/50' : ''}`}
+      >
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             {/* Left section */}
@@ -1002,7 +1110,9 @@ function JobCard({
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">{job.title}</h3>
-                  <p className="text-sm text-gray-400 capitalize">{job.jobType}</p>
+                  <p className="text-sm text-gray-400 capitalize">
+                    {job.jobType}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1011,37 +1121,53 @@ function JobCard({
             <div className="flex items-center gap-6 flex-1">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-300">{job.propertyRef?.name || 'Unknown'}</span>
+                <span className="text-sm text-gray-300">
+                  {job.propertyRef?.name || 'Unknown'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-300">{job.assignedStaffRef?.name || 'Unassigned'}</span>
+                <span className="text-sm text-gray-300">
+                  {job.assignedStaffRef?.name || 'Unassigned'}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-300">{formatDate(job.scheduledDate)}</span>
+                <span className="text-sm text-gray-300">
+                  {formatDate(job.scheduledDate)}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-300">{formatTime(job.scheduledStartTime)}</span>
+                <span className="text-sm text-gray-300">
+                  {formatTime(job.scheduledStartTime)}
+                </span>
               </div>
             </div>
 
             {/* Right section */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <AlertCircle className={`w-4 h-4 ${getPriorityColor(job.priority)}`} />
-                <span className={`text-sm capitalize ${getPriorityColor(job.priority)}`}>{job.priority}</span>
+                <AlertCircle
+                  className={`w-4 h-4 ${getPriorityColor(job.priority)}`}
+                />
+                <span
+                  className={`text-sm capitalize ${getPriorityColor(job.priority)}`}
+                >
+                  {job.priority}
+                </span>
               </div>
 
               <Badge className={`${getStatusColor(job.status)}`}>
                 {job.status.replace('_', ' ')}
               </Badge>
 
-              <span className="text-sm text-gray-400 min-w-[60px]">{job.estimatedDuration}min</span>
+              <span className="text-sm text-gray-400 min-w-[60px]">
+                {job.estimatedDuration}min
+              </span>
 
               {/* Actions */}
               <div className="flex items-center gap-1">
