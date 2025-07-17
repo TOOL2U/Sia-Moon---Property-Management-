@@ -99,11 +99,11 @@ export default function MobileIntegrationLayer({
           staffName: staff.name,
           deviceType: 'unknown' as const, // TODO: Track actual device type
           appVersion: '2.1.3', // TODO: Track actual app version
-          isOnline: Math.random() > 0.3, // TODO: Track actual online status
-          lastSync: new Date(Date.now() - Math.random() * 60 * 60000), // TODO: Track actual sync time
-          batteryLevel: Math.floor(Math.random() * 100), // TODO: Track actual battery level
-          pendingUpdates: Math.floor(Math.random() * 3), // TODO: Track actual pending updates
-          unreadNotifications: Math.floor(Math.random() * 5) // TODO: Track actual notifications
+          isOnline: false, // TODO: Track actual online status
+          lastSync: new Date(), // TODO: Track actual sync time
+          batteryLevel: 0, // TODO: Track actual battery level
+          pendingUpdates: 0, // TODO: Track actual pending updates
+          unreadNotifications: 0 // TODO: Track actual notifications
         }))
 
       setDevices(deviceData)

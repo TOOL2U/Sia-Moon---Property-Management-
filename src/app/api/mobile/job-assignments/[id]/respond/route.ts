@@ -13,11 +13,11 @@ import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return withMobileAuth(request, async (staffId: string) => {
+  return withMobileAuth(async (req, auth) => {
     try {
-      const jobId = params.id
+      const { id: jobId } = await params
       const body = await request.json()
       const { accepted, notes, estimatedArrival, alternativeTime } = body
 
@@ -35,7 +35,7 @@ export async function POST(
 
       const result = await JobAssignmentService.respondToJobAssignment(
         jobId,
-        staffId,
+        auth.staffId,
         response
       )
 
@@ -55,8 +55,8 @@ export async function POST(
         }
       })
     } catch (error) {
-      console.error(`❌ Error in mobile job response for job ${params?.id}:`, error)
+      console.error(`❌ Error in mobile job response:`, error)
       return createMobileErrorResponse('Failed to process job response')
     }
-  })
+  })(request)
 }

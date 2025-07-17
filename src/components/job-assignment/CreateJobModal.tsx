@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import {
   X, Calendar, Clock, Users, MapPin, AlertCircle, Plus, Minus,
   ChevronLeft, ChevronRight, Check, Edit3, Wrench, Shield,

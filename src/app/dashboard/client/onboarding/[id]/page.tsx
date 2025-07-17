@@ -29,7 +29,7 @@ import {
   Edit
 } from 'lucide-react'
 import Link from 'next/link'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function ClientOnboardingDetailPage() {
   const { user } = useAuth()

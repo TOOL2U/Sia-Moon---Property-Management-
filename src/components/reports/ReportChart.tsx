@@ -1,16 +1,18 @@
-import { 
-  ResponsiveContainer, 
-  LineChart, 
-  AreaChart, 
-  BarChart, 
-  Line, 
-  Area, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
+'use client'
+
+import {
+  ResponsiveContainer,
+  LineChart,
+  AreaChart,
+  BarChart,
+  Line,
+  Area,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ChartDataPoint } from '@/types'

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import {
   Calendar as CalendarIcon,
   Filter,
@@ -23,21 +23,23 @@ import {
   AlertTriangle
 } from 'lucide-react'
 
-// FullCalendar imports
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import resourceDayGridPlugin from '@fullcalendar/resource-daygrid'
+// FullCalendar imports - dynamically imported to avoid SSR issues
+import dynamic from 'next/dynamic'
+
+// Dynamically import FullCalendar and plugins to avoid SSR issues
+const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
+
+// Dynamic plugin imports
+const dayGridPlugin = dynamic(() => import('@fullcalendar/daygrid'), { ssr: false })
+const timeGridPlugin = dynamic(() => import('@fullcalendar/timegrid'), { ssr: false })
+const resourceDayGridPlugin = dynamic(() => import('@fullcalendar/resource-daygrid'), { ssr: false })
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
 // Firebase imports
 import { db } from '@/lib/firebase'
 import { collection, onSnapshot, query, orderBy, Unsubscribe } from 'firebase/firestore'
-import CalendarTestService from '@/services/CalendarTestService'
 import CalendarEventService from '@/services/CalendarEventService'
-import AISchedulingService from '@/services/AISchedulingService'
-import AutoAssignmentModal from '@/components/admin/AutoAssignmentModal'
 
 interface CalendarEvent {
   id: string
@@ -67,19 +69,11 @@ export function CalendarView({ className }: CalendarViewProps) {
     property: 'all',
     status: 'all'
   })
-  const [creatingEvents, setCreatingEvents] = useState(false)
-
-  // AI Scheduling state
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [showAISuggestions, setShowAISuggestions] = useState(false)
-  const [aiSuggestions, setAiSuggestions] = useState<any[]>([])
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [conflictCheck, setConflictCheck] = useState<any>(null)
   const [showConflictDialog, setShowConflictDialog] = useState(false)
 
-  // Auto-Assignment Modal state
-  const [showAutoAssignment, setShowAutoAssignment] = useState(false)
-  const [autoAssignmentEvent, setAutoAssignmentEvent] = useState<CalendarEvent | null>(null)
+  // Auto-assignment removed - use manual assignment
 
   // Filter options
   const [staffOptions, setStaffOptions] = useState<Array<{ id: string; name: string }>>([])
@@ -206,7 +200,7 @@ export function CalendarView({ className }: CalendarViewProps) {
 
     return filteredEvents.map(event => {
       const eventColor = getEventColor(event)
-      const staffIndicator = event.assignedStaff ? `👤 ${event.assignedStaff}` : '🔍 Click for AI suggestions'
+      const staffIndicator = event.assignedStaff ? `👤 ${event.assignedStaff}` : '🔍 Unassigned'
 
       return {
         id: event.id,
@@ -269,39 +263,13 @@ export function CalendarView({ className }: CalendarViewProps) {
       type: props.bookingType || 'Villa Service'
     }
 
-    // Show auto-assignment modal if no staff assigned
-    if (!props.assignedStaff) {
-      openAutoAssignment(calendarEvent)
-    } else {
-      toast(`Event: ${event.title}\nStaff: ${props.assignedStaff} • Status: ${props.status}`, {
-        icon: 'ℹ️'
-      })
-    }
+    // Show event details
+    toast(`Event: ${event.title}\nStaff: ${props.assignedStaff || 'Unassigned'} • Status: ${props.status}`, {
+      icon: 'ℹ️'
+    })
   }
 
-  // Create sample calendar events
-  const createSampleEvents = async () => {
-    try {
-      setCreatingEvents(true)
-      console.log('📅 Creating sample calendar events...')
-
-      const result = await CalendarTestService.createSampleEvents()
-
-      if (result.success) {
-        toast.success(`✅ Created ${result.eventsCreated} sample calendar events`)
-        console.log('✅ Sample events created successfully')
-      } else {
-        toast.error(`❌ Failed to create sample events: ${result.error}`)
-        console.error('❌ Sample events creation failed:', result.error)
-      }
-
-    } catch (error) {
-      console.error('❌ Error creating sample events:', error)
-      toast.error(`❌ Failed to create sample events: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setCreatingEvents(false)
-    }
-  }
+  // Sample events creation removed - use real booking data instead
 
   // Handle drag-and-drop event rescheduling
   const handleEventDrop = async (dropInfo: any) => {
@@ -312,18 +280,7 @@ export function CalendarView({ className }: CalendarViewProps) {
       const newStart = dropInfo.event.start.toISOString()
       const newEnd = dropInfo.event.end?.toISOString() || new Date(dropInfo.event.start.getTime() + 2 * 60 * 60 * 1000).toISOString()
 
-      // Check for conflicts if staff is assigned
-      const staffId = dropInfo.event.extendedProps.staffId
-      if (staffId) {
-        const conflicts = await AISchedulingService.checkConflicts(staffId, newStart, newEnd, eventId)
-
-        if (conflicts.hasConflict) {
-          setConflictCheck(conflicts)
-          setShowConflictDialog(true)
-          dropInfo.revert() // Revert the drag
-          return
-        }
-      }
+      // Conflict checking removed - manual verification required
 
       // Update event times in Firebase
       const result = await CalendarEventService.updateEventTimes(eventId, newStart, newEnd)
@@ -371,98 +328,11 @@ export function CalendarView({ className }: CalendarViewProps) {
   }
 
   // Get AI staff suggestions
-  const getAIStaffSuggestions = async (event: CalendarEvent) => {
-    try {
-      setLoadingSuggestions(true)
-      setSelectedEvent(event)
-      setShowAISuggestions(true)
+  // AI staff suggestions removed - use manual assignment
 
-      console.log('🧠 Getting AI staff suggestions for event:', event.id)
+  // Staff assignment now handled manually through calendar interface
 
-      const suggestions = await AISchedulingService.getStaffSuggestions({
-        startDate: event.startDate,
-        endDate: event.endDate,
-        propertyId: event.propertyName || undefined,
-        type: event.bookingType || 'Villa Service'
-      })
-
-      setAiSuggestions(suggestions)
-      console.log(`✅ Got ${suggestions.length} AI suggestions`)
-
-    } catch (error) {
-      console.error('❌ Error getting AI suggestions:', error)
-      toast.error('❌ Failed to get AI suggestions')
-    } finally {
-      setLoadingSuggestions(false)
-    }
-  }
-
-  // Apply AI staff suggestion
-  const applyStaffSuggestion = async (suggestion: any) => {
-    try {
-      if (!selectedEvent) return
-
-      console.log('👤 Applying staff suggestion:', suggestion)
-
-      // Check for conflicts
-      const conflicts = await AISchedulingService.checkConflicts(
-        suggestion.staffId,
-        selectedEvent.startDate,
-        selectedEvent.endDate,
-        selectedEvent.id
-      )
-
-      if (conflicts.hasConflict) {
-        setConflictCheck(conflicts)
-        setShowConflictDialog(true)
-        return
-      }
-
-      // Update event staff assignment
-      const result = await CalendarEventService.updateEventStaff(
-        selectedEvent.id,
-        suggestion.staffId,
-        suggestion.staffName
-      )
-
-      if (result.success) {
-        toast.success(`✅ ${suggestion.staffName} assigned to event`)
-        setShowAISuggestions(false)
-        setSelectedEvent(null)
-      } else {
-        toast.error(`❌ Failed to assign staff: ${result.error}`)
-      }
-
-    } catch (error) {
-      console.error('❌ Error applying staff suggestion:', error)
-      toast.error('❌ Failed to assign staff')
-    }
-  }
-
-  // Open auto-assignment modal
-  const openAutoAssignment = (event: CalendarEvent) => {
-    console.log('🤖 Opening auto-assignment for event:', event.id)
-    setAutoAssignmentEvent(event)
-    setShowAutoAssignment(true)
-  }
-
-  // Handle auto-assignment completion
-  const handleAutoAssignmentComplete = (eventId: string, staffId: string, staffName: string) => {
-    console.log(`✅ Auto-assignment completed: ${staffName} assigned to ${eventId}`)
-
-    // Update local events state to reflect the assignment
-    setEvents(prevEvents =>
-      prevEvents.map(event =>
-        event.id === eventId
-          ? { ...event, staffId, assignedStaff: staffName, status: 'pending' }
-          : event
-      )
-    )
-
-    // Close modal
-    setShowAutoAssignment(false)
-    setAutoAssignmentEvent(null)
-  }
+  // Auto-assignment functions removed - use manual assignment
 
   // Setup Firebase listener on mount
   useEffect(() => {
@@ -515,40 +385,9 @@ export function CalendarView({ className }: CalendarViewProps) {
                 Live Updates
               </Badge>
 
-              <Button
-                onClick={createSampleEvents}
-                disabled={creatingEvents}
-                size="sm"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-              >
-                {creatingEvents ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4 mr-2" />
-                )}
-                Sample Events
-              </Button>
+              {/* Sample events creation removed - use real booking data */}
 
-              <Button
-                onClick={() => {
-                  const unassignedEvents = events.filter(e => !e.assignedStaff)
-                  if (unassignedEvents.length > 0) {
-                    openAutoAssignment(unassignedEvents[0])
-                  } else {
-                    toast('All events have staff assigned', { icon: 'ℹ️' })
-                  }
-                }}
-                disabled={loadingSuggestions}
-                size="sm"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
-              >
-                {loadingSuggestions ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <span className="mr-2">🤖</span>
-                )}
-                Auto-Assign
-              </Button>
+              {/* Auto-assignment removed - use manual assignment */}
 
               <Button
                 onClick={loadCalendarEvents}
@@ -731,93 +570,7 @@ export function CalendarView({ className }: CalendarViewProps) {
         </CardContent>
       </Card>
 
-      {/* AI Staff Suggestions Modal */}
-      {showAISuggestions && selectedEvent && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  🧠 AI Staff Suggestions
-                </h3>
-                <p className="text-gray-400 mt-1">
-                  {selectedEvent.title} • {new Date(selectedEvent.startDate).toLocaleString()}
-                </p>
-              </div>
-              <Button
-                onClick={() => {
-                  setShowAISuggestions(false)
-                  setSelectedEvent(null)
-                }}
-                variant="outline"
-                size="sm"
-                className="border-gray-600 text-gray-400 hover:bg-gray-800"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {loadingSuggestions ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-                <span className="ml-3 text-gray-400">Getting AI suggestions...</span>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {aiSuggestions.length > 0 ? (
-                  aiSuggestions.map((suggestion, index) => (
-                    <div
-                      key={suggestion.staffId}
-                      className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 hover:bg-gray-800/70 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                              {suggestion.staffName.charAt(0)}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-white">{suggestion.staffName}</h4>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  suggestion.availability === 'available' ? 'bg-green-400' :
-                                  suggestion.availability === 'busy' ? 'bg-red-400' : 'bg-yellow-400'
-                                }`}></div>
-                                <span className="text-sm text-gray-400 capitalize">{suggestion.availability}</span>
-                                <span className="text-sm text-gray-500">• {suggestion.currentJobs} current jobs</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-sm text-gray-300 mb-2">
-                            <strong>{Math.round(suggestion.confidence * 100)}% match:</strong> {suggestion.reasons.slice(0, 2).join(', ')}
-                          </div>
-                          {suggestion.reasons.length > 2 && (
-                            <div className="text-xs text-gray-500">
-                              +{suggestion.reasons.length - 2} more reasons
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          onClick={() => applyStaffSuggestion(suggestion)}
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                          size="sm"
-                        >
-                          Assign
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-400">No staff suggestions available</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* AI Staff Suggestions Modal removed - use manual assignment */}
 
       {/* Conflict Detection Dialog */}
       {showConflictDialog && conflictCheck && (
@@ -865,9 +618,7 @@ export function CalendarView({ className }: CalendarViewProps) {
               <Button
                 onClick={() => {
                   setShowConflictDialog(false)
-                  if (selectedEvent) {
-                    getAIStaffSuggestions(selectedEvent)
-                  }
+                  setSelectedEvent(null)
                 }}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
@@ -878,16 +629,7 @@ export function CalendarView({ className }: CalendarViewProps) {
         </div>
       )}
 
-      {/* Auto-Assignment Modal */}
-      <AutoAssignmentModal
-        isOpen={showAutoAssignment}
-        onClose={() => {
-          setShowAutoAssignment(false)
-          setAutoAssignmentEvent(null)
-        }}
-        event={autoAssignmentEvent}
-        onAssignmentComplete={handleAutoAssignmentComplete}
-      />
+      {/* Auto-Assignment Modal removed - use manual assignment */}
     </div>
   )
 }

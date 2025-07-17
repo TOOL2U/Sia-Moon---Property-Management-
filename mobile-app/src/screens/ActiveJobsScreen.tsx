@@ -59,11 +59,13 @@ export default function ActiveJobsScreen() {
   };
 
   const handleViewJobDetails = (job: JobAssignment) => {
-    navigation.navigate('JobDetails' as never, { job } as never);
+    // Fixed: Remove type assertion that causes TypeScript error
+    navigation.navigate('JobDetails', { job });
   };
 
   const handleCompleteJob = (job: JobAssignment) => {
-    navigation.navigate('JobCompletion' as never, { job } as never);
+    // Fixed: Remove type assertion that causes TypeScript error
+    navigation.navigate('JobCompletion', { job });
   };
 
   const getPriorityColor = (priority: string) => {

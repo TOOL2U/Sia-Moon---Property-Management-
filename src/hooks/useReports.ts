@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { MonthlyReport, Property } from '@/lib/db'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export interface UseReportsOptions {
   propertyId?: string

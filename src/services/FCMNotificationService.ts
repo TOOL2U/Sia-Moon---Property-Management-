@@ -1,427 +1,361 @@
 /**
- * Firebase Cloud Messaging (FCM) Notification Service
- * Handles push notifications for mobile app integration
+ * FCM Notification Service
+ * Handles Firebase Cloud Messaging push notifications
  */
 
-import { getMessaging, getToken, onMessage, MessagePayload } from 'firebase/messaging'
-import { doc, setDoc, updateDoc, getDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { collection, doc, setDoc, deleteDoc, query, where, getDocs, Timestamp } from 'firebase/firestore'
+import { getDb } from '@/lib/firebase'
 
-// FCM configuration
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || 'your-vapid-key'
-
-// Device token interface
-export interface DeviceToken {
+export interface FCMTokenData {
   staffId: string
   deviceToken: string
-  platform: 'web' | 'ios' | 'android'
+  platform: 'ios' | 'android' | 'web'
   appVersion: string
-  userAgent?: string
-  lastActive: any
+  lastActive: Timestamp
   notificationsEnabled: boolean
-  createdAt: any
-  updatedAt: any
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 
-// Notification payload interface
 export interface NotificationPayload {
   title: string
   body: string
-  icon?: string
-  badge?: string
   data?: Record<string, any>
-  actions?: Array<{
-    action: string
-    title: string
-    icon?: string
-  }>
-}
-
-// Job notification data
-export interface JobNotificationData {
-  type: 'job_assigned' | 'job_updated' | 'job_reminder'
-  jobId: string
-  jobTitle: string
-  jobType: string
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  propertyName: string
-  scheduledDate: string
-  scheduledStartTime?: string
-  estimatedDuration: number
-  specialInstructions?: string
+  imageUrl?: string
+  icon?: string
+  badge?: number
+  sound?: string
+  clickAction?: string
 }
 
 class FCMNotificationService {
-  private messaging: any = null
-  private isInitialized = false
-  private currentToken: string | null = null
+  private static instance: FCMNotificationService
+  private get tokenCollection() { return collection(getDb(), 'staff_device_tokens') }
+  private get notificationCollection() { return collection(getDb(), 'push_notifications') }
 
-  /**
-   * Initialize FCM messaging
-   */
-  async initialize(): Promise<boolean> {
-    try {
-      if (typeof window === 'undefined') {
-        console.log('⚠️ FCM not available in server environment')
-        return false
-      }
-
-      // Check if service worker is supported
-      if (!('serviceWorker' in navigator)) {
-        console.error('❌ Service Worker not supported')
-        return false
-      }
-
-      // Check if notifications are supported
-      if (!('Notification' in window)) {
-        console.error('❌ Notifications not supported')
-        return false
-      }
-
-      this.messaging = getMessaging()
-      this.isInitialized = true
-
-      console.log('✅ FCM Notification Service initialized')
-      return true
-
-    } catch (error) {
-      console.error('❌ Error initializing FCM:', error)
-      return false
+  static getInstance(): FCMNotificationService {
+    if (!FCMNotificationService.instance) {
+      FCMNotificationService.instance = new FCMNotificationService()
     }
+    return FCMNotificationService.instance
   }
 
   /**
-   * Request notification permission and get FCM token
+   * Register a device token for push notifications
    */
-  async requestPermissionAndGetToken(staffId: string): Promise<string | null> {
+  async registerDeviceToken(
+    staffId: string,
+    deviceToken: string,
+    platform: 'ios' | 'android' | 'web' = 'web',
+    appVersion: string = '1.0.0'
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      if (!this.isInitialized) {
-        const initialized = await this.initialize()
-        if (!initialized) return null
-      }
+      console.log(`📱 Registering FCM device token for staff ${staffId}`)
 
-      // Request notification permission
-      const permission = await Notification.requestPermission()
-      
-      if (permission !== 'granted') {
-        console.log('⚠️ Notification permission denied')
-        return null
-      }
-
-      // Get FCM token
-      const token = await getToken(this.messaging, {
-        vapidKey: VAPID_KEY
-      })
-
-      if (token) {
-        console.log('✅ FCM token obtained:', token.substring(0, 20) + '...')
-        
-        // Store token in Firestore
-        await this.storeDeviceToken(staffId, token)
-        this.currentToken = token
-        
-        return token
-      } else {
-        console.error('❌ No FCM token available')
-        return null
-      }
-
-    } catch (error) {
-      console.error('❌ Error getting FCM token:', error)
-      return null
-    }
-  }
-
-  /**
-   * Store device token in Firestore
-   */
-  private async storeDeviceToken(staffId: string, token: string): Promise<void> {
-    try {
-      const deviceTokenData: DeviceToken = {
+      const tokenData: FCMTokenData = {
         staffId,
-        deviceToken: token,
-        platform: this.detectPlatform(),
-        appVersion: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
-        userAgent: navigator.userAgent,
-        lastActive: serverTimestamp(),
+        deviceToken,
+        platform,
+        appVersion,
+        lastActive: Timestamp.now(),
         notificationsEnabled: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
       }
 
       // Use token as document ID to prevent duplicates
-      const tokenRef = doc(db, 'staff_device_tokens', token)
-      await setDoc(tokenRef, deviceTokenData, { merge: true })
+      const tokenRef = doc(this.tokenCollection, deviceToken)
+      await setDoc(tokenRef, tokenData, { merge: true })
 
-      console.log('✅ Device token stored for staff:', staffId)
+      console.log(`✅ FCM device token registered for staff ${staffId}`)
+      return { success: true }
 
     } catch (error) {
-      console.error('❌ Error storing device token:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Detect platform type
-   */
-  private detectPlatform(): 'web' | 'ios' | 'android' {
-    const userAgent = navigator.userAgent.toLowerCase()
-    
-    if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
-      return 'ios'
-    } else if (userAgent.includes('android')) {
-      return 'android'
-    } else {
-      return 'web'
-    }
-  }
-
-  /**
-   * Set up foreground message listener
-   */
-  setupForegroundMessageListener(
-    onMessageReceived: (payload: MessagePayload) => void
-  ): () => void {
-    if (!this.isInitialized || !this.messaging) {
-      console.error('❌ FCM not initialized')
-      return () => {}
-    }
-
-    const unsubscribe = onMessage(this.messaging, (payload) => {
-      console.log('📱 Foreground message received:', payload)
-      
-      // Handle the message
-      onMessageReceived(payload)
-      
-      // Show notification if app is in foreground
-      this.showForegroundNotification(payload)
-    })
-
-    console.log('✅ Foreground message listener set up')
-    return unsubscribe
-  }
-
-  /**
-   * Show notification when app is in foreground
-   */
-  private showForegroundNotification(payload: MessagePayload): void {
-    try {
-      const { notification, data } = payload
-      
-      if (!notification?.title) return
-
-      const notificationOptions: NotificationOptions = {
-        body: notification.body || '',
-        icon: notification.icon || '/icons/notification-icon.png',
-        badge: '/icons/badge-icon.png',
-        tag: data?.jobId || 'job-notification',
-        requireInteraction: data?.priority === 'urgent',
-        actions: [
-          {
-            action: 'view',
-            title: 'View Job'
-          },
-          {
-            action: 'dismiss',
-            title: 'Dismiss'
-          }
-        ],
-        data: data || {}
+      console.error('❌ Error registering FCM device token:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to register device token'
       }
+    }
+  }
 
-      const notification_instance = new Notification(notification.title, notificationOptions)
+  /**
+   * Remove a device token
+   */
+  async removeDeviceToken(deviceToken: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`🗑️ Removing FCM device token: ${deviceToken.substring(0, 20)}...`)
 
-      // Handle notification click
-      notification_instance.onclick = () => {
-        window.focus()
-        
-        // Navigate to job if jobId is provided
-        if (data?.jobId) {
-          window.location.href = `/jobs/${data.jobId}`
-        }
-        
-        notification_instance.close()
+      const tokenRef = doc(this.tokenCollection, deviceToken)
+      await deleteDoc(tokenRef)
+
+      console.log(`✅ FCM device token removed`)
+      return { success: true }
+
+    } catch (error) {
+      console.error('❌ Error removing FCM device token:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to remove device token'
       }
-
-      // Auto-close after 10 seconds
-      setTimeout(() => {
-        notification_instance.close()
-      }, 10000)
-
-    } catch (error) {
-      console.error('❌ Error showing foreground notification:', error)
     }
   }
 
   /**
-   * Update device token activity
+   * Get device tokens for a specific staff member
    */
-  async updateTokenActivity(staffId: string): Promise<void> {
+  async getStaffDeviceTokens(staffId: string): Promise<{ success: boolean; tokens?: string[]; error?: string }> {
     try {
-      if (!this.currentToken) return
-
-      const tokenRef = doc(db, 'staff_device_tokens', this.currentToken)
-      await updateDoc(tokenRef, {
-        lastActive: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      })
-
-    } catch (error) {
-      console.error('❌ Error updating token activity:', error)
-    }
-  }
-
-  /**
-   * Enable/disable notifications for staff member
-   */
-  async toggleNotifications(staffId: string, enabled: boolean): Promise<void> {
-    try {
-      // Update all tokens for this staff member
       const tokensQuery = query(
-        collection(db, 'staff_device_tokens'),
-        where('staffId', '==', staffId)
+        this.tokenCollection,
+        where('staffId', '==', staffId),
+        where('notificationsEnabled', '==', true)
       )
 
       const tokensSnapshot = await getDocs(tokensQuery)
+      const tokens: string[] = []
+
+      tokensSnapshot.forEach((doc) => {
+        const tokenData = doc.data() as FCMTokenData
+        tokens.push(tokenData.deviceToken)
+      })
+
+      return { success: true, tokens }
+
+    } catch (error) {
+      console.error('❌ Error getting staff device tokens:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get device tokens'
+      }
+    }
+  }
+
+  /**
+   * Send push notification to specific device tokens
+   */
+  async sendNotification(
+    tokens: string[],
+    notification: NotificationPayload,
+    staffId?: string
+  ): Promise<{ success: boolean; results?: any; error?: string }> {
+    try {
+      console.log(`📨 Sending FCM notification to ${tokens.length} device(s)`)
+
+      // Check if we have the Firebase Admin SDK initialized
+      if (!process.env.FIREBASE_PRIVATE_KEY) {
+        console.warn('⚠️ Firebase Admin SDK not configured, notifications will be queued')
+        
+        // Store notification for later processing
+        await this.queueNotification(tokens, notification, staffId)
+        return { success: true, results: { queued: true } }
+      }
+
+      // In a real implementation, you would use Firebase Admin SDK here
+      // For now, we'll just log and queue the notification
+      console.log('📨 Notification payload:', {
+        tokens: tokens.map(t => t.substring(0, 20) + '...'),
+        notification: {
+          title: notification.title,
+          body: notification.body,
+          data: notification.data
+        }
+      })
+
+      await this.queueNotification(tokens, notification, staffId)
+
+      return { 
+        success: true, 
+        results: { 
+          queued: true,
+          tokenCount: tokens.length,
+          message: 'Notification queued for processing'
+        } 
+      }
+
+    } catch (error) {
+      console.error('❌ Error sending FCM notification:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send notification'
+      }
+    }
+  }
+
+  /**
+   * Send notification to all devices for a staff member
+   */
+  async sendNotificationToStaff(
+    staffId: string,
+    notification: NotificationPayload
+  ): Promise<{ success: boolean; results?: any; error?: string }> {
+    try {
+      const tokenResult = await this.getStaffDeviceTokens(staffId)
       
-      const updatePromises = tokensSnapshot.docs.map(doc => 
-        updateDoc(doc.ref, {
-          notificationsEnabled: enabled,
-          updatedAt: serverTimestamp()
-        })
-      )
+      if (!tokenResult.success || !tokenResult.tokens || tokenResult.tokens.length === 0) {
+        console.warn(`⚠️ No device tokens found for staff ${staffId}`)
+        return { success: true, results: { message: 'No device tokens found' } }
+      }
 
-      await Promise.all(updatePromises)
+      return await this.sendNotification(tokenResult.tokens, notification, staffId)
 
-      console.log(`✅ Notifications ${enabled ? 'enabled' : 'disabled'} for staff ${staffId}`)
+    } catch (error) {
+      console.error('❌ Error sending notification to staff:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send notification to staff'
+      }
+    }
+  }
+
+  /**
+   * Queue notification for later processing
+   */
+  private async queueNotification(
+    tokens: string[],
+    notification: NotificationPayload,
+    staffId?: string
+  ): Promise<void> {
+    try {
+      const notificationDoc = {
+        tokens,
+        notification,
+        staffId,
+        status: 'queued',
+        createdAt: Timestamp.now(),
+        scheduledFor: Timestamp.now(),
+        attempts: 0,
+        maxAttempts: 3,
+        lastAttempt: null,
+        completedAt: null,
+        error: null
+      }
+
+      await setDoc(doc(this.notificationCollection), notificationDoc)
+      console.log(`📋 Notification queued for ${tokens.length} device(s)`)
+
+    } catch (error) {
+      console.error('❌ Error queuing notification:', error)
+    }
+  }
+
+  /**
+   * Update last active timestamp for a device token
+   */
+  async updateLastActive(deviceToken: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const tokenRef = doc(this.tokenCollection, deviceToken)
+      await setDoc(tokenRef, { 
+        lastActive: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      }, { merge: true })
+
+      return { success: true }
+
+    } catch (error) {
+      console.error('❌ Error updating last active:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update last active'
+      }
+    }
+  }
+
+  /**
+   * Enable/disable notifications for a device token
+   */
+  async toggleNotifications(
+    deviceToken: string,
+    enabled: boolean
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const tokenRef = doc(this.tokenCollection, deviceToken)
+      await setDoc(tokenRef, { 
+        notificationsEnabled: enabled,
+        updatedAt: Timestamp.now()
+      }, { merge: true })
+
+      console.log(`📱 Notifications ${enabled ? 'enabled' : 'disabled'} for device`)
+      return { success: true }
 
     } catch (error) {
       console.error('❌ Error toggling notifications:', error)
-      throw error
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to toggle notifications'
+      }
     }
   }
 
   /**
-   * Get notification settings for staff member
+   * Get all active device tokens (for broadcast notifications)
    */
-  async getNotificationSettings(staffId: string): Promise<{
-    enabled: boolean
-    tokenCount: number
-    lastActive?: Date
-  }> {
+  async getAllActiveTokens(): Promise<{ success: boolean; tokens?: string[]; error?: string }> {
     try {
       const tokensQuery = query(
-        collection(db, 'staff_device_tokens'),
-        where('staffId', '==', staffId)
+        this.tokenCollection,
+        where('notificationsEnabled', '==', true)
       )
 
       const tokensSnapshot = await getDocs(tokensQuery)
-      
-      if (tokensSnapshot.empty) {
-        return { enabled: false, tokenCount: 0 }
-      }
+      const tokens: string[] = []
 
-      let enabled = false
-      let lastActive: Date | undefined
+      tokensSnapshot.forEach((doc) => {
+        const tokenData = doc.data() as FCMTokenData
+        tokens.push(tokenData.deviceToken)
+      })
+
+      return { success: true, tokens }
+
+    } catch (error) {
+      console.error('❌ Error getting all active tokens:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get active tokens'
+      }
+    }
+  }
+
+  /**
+   * Clean up expired tokens
+   */
+  async cleanupExpiredTokens(): Promise<{ success: boolean; removedCount?: number; error?: string }> {
+    try {
+      console.log('🧹 Cleaning up expired device tokens...')
+
+      // Remove tokens that haven't been active for 30 days
+      const expiredDate = new Date()
+      expiredDate.setDate(expiredDate.getDate() - 30)
+
+      const tokensQuery = query(this.tokenCollection)
+      const tokensSnapshot = await getDocs(tokensQuery)
       
-      tokensSnapshot.forEach(doc => {
-        const data = doc.data()
-        if (data.notificationsEnabled) enabled = true
+      let removedCount = 0
+      const deletePromises: Promise<void>[] = []
+
+      tokensSnapshot.forEach((doc) => {
+        const tokenData = doc.data() as FCMTokenData
+        const lastActive = tokenData.lastActive.toDate()
         
-        const tokenLastActive = data.lastActive?.toDate()
-        if (!lastActive || (tokenLastActive && tokenLastActive > lastActive)) {
-          lastActive = tokenLastActive
+        if (lastActive < expiredDate) {
+          deletePromises.push(deleteDoc(doc.ref))
+          removedCount++
         }
       })
 
+      await Promise.all(deletePromises)
+
+      console.log(`✅ Cleaned up ${removedCount} expired device tokens`)
+      return { success: true, removedCount }
+
+    } catch (error) {
+      console.error('❌ Error cleaning up expired tokens:', error)
       return {
-        enabled,
-        tokenCount: tokensSnapshot.size,
-        lastActive
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to cleanup expired tokens'
       }
-
-    } catch (error) {
-      console.error('❌ Error getting notification settings:', error)
-      return { enabled: false, tokenCount: 0 }
     }
-  }
-
-  /**
-   * Remove device token (on logout or app uninstall)
-   */
-  async removeDeviceToken(token?: string): Promise<void> {
-    try {
-      const tokenToRemove = token || this.currentToken
-      
-      if (!tokenToRemove) {
-        console.log('⚠️ No token to remove')
-        return
-      }
-
-      const tokenRef = doc(db, 'staff_device_tokens', tokenToRemove)
-      const tokenDoc = await getDoc(tokenRef)
-      
-      if (tokenDoc.exists()) {
-        await tokenDoc.ref.delete()
-        console.log('✅ Device token removed')
-      }
-
-      if (tokenToRemove === this.currentToken) {
-        this.currentToken = null
-      }
-
-    } catch (error) {
-      console.error('❌ Error removing device token:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Test notification functionality
-   */
-  async testNotification(staffId: string): Promise<boolean> {
-    try {
-      // Create a test notification document
-      const testNotificationRef = doc(collection(db, 'staff_notifications'))
-      
-      await setDoc(testNotificationRef, {
-        staffId,
-        type: 'test',
-        title: '🧪 Test Notification',
-        message: 'This is a test notification from Sia Moon',
-        data: {
-          type: 'test',
-          timestamp: new Date().toISOString()
-        },
-        status: 'sent',
-        createdAt: serverTimestamp(),
-        readAt: null,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-      })
-
-      console.log('✅ Test notification sent')
-      return true
-
-    } catch (error) {
-      console.error('❌ Error sending test notification:', error)
-      return false
-    }
-  }
-
-  /**
-   * Get current FCM token
-   */
-  getCurrentToken(): string | null {
-    return this.currentToken
-  }
-
-  /**
-   * Check if FCM is initialized
-   */
-  isReady(): boolean {
-    return this.isInitialized
   }
 }
 
-// Export singleton instance
-export default new FCMNotificationService()
+export default FCMNotificationService.getInstance()

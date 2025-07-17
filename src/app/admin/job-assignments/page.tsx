@@ -85,10 +85,7 @@ export default function JobAssignmentsPage() {
     // Open job details modal or navigate to details page
   }
 
-  const handleViewJobById = (jobId: string) => {
-    console.log(`Viewing job details for ID: ${jobId}`)
-    // Implementation to find job by ID and view details
-  }
+  // handleViewJobById removed - not used by StaffMonitoringDashboard
 
   const handleStaffSelect = (staffId: string) => {
     // Switch to staff monitoring tab and select the staff member
@@ -250,7 +247,6 @@ export default function JobAssignmentsPage() {
           <TabsContent value="staff-monitoring" className="space-y-6">
             <StaffMonitoringDashboard
               onMessageStaff={handleMessageStaff}
-              onViewJobDetails={handleViewJobById}
             />
           </TabsContent>
 

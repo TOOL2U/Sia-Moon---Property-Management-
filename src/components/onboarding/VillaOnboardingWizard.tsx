@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import {
   ChevronLeft, ChevronRight, Check, Home, User, Settings,
   MapPin, Wifi, Shield, Star, Camera, FileText, Send

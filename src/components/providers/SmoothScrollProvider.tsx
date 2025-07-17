@@ -41,7 +41,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       // Handle anchor links with smooth scrolling
       const handleAnchorClick = (e: Event) => {
         const target = e.target as HTMLAnchorElement
-        if (target.tagName === 'A' && target.hash && target.hostname === window.location.hostname) {
+        if (target.tagName === 'A' && target.hash && typeof window !== 'undefined' && target.hostname === window.location.hostname) {
           e.preventDefault()
           const targetElement = document.querySelector(target.hash)
           if (targetElement && targetElement instanceof HTMLElement) {

@@ -1,8 +1,25 @@
 'use client'
 
-import { Toaster } from 'react-hot-toast'
+import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+// Dynamically import Toaster to avoid SSR issues
+const Toaster = dynamic(
+  () => import('react-hot-toast').then((mod) => mod.Toaster),
+  { ssr: false }
+)
 
 export function ToasterProvider() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
   return (
     <Toaster
       position="top-right"

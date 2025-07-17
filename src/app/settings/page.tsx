@@ -20,7 +20,7 @@ import {
   Save,
   Smartphone
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface UserSettings {
   notifications: {

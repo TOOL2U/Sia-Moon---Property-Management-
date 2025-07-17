@@ -54,8 +54,8 @@ export class ErrorBoundary extends Component<Props, State> {
       stack: error.stack,
       componentStack: errorInfo.componentStack,
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      url: typeof window !== 'undefined' ? window.location.href : 'unknown'
     }
 
     // Example: Send to your error tracking service
@@ -73,7 +73,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleGoHome = () => {
-    window.location.href = '/'
+    if (typeof window !== 'undefined') {
+      window.location.href = '/'
+    }
   }
 
   render() {
@@ -156,8 +158,8 @@ export const useErrorHandler = () => {
         stack: error.stack,
         additionalInfo: errorInfo,
         timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown'
       }
 
       console.error('Production Error:', errorData)

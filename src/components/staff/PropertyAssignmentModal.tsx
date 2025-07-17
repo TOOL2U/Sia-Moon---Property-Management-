@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { StaffProfile } from '@/types/staff'
 import StaffService from '@/lib/staffService'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface PropertyAssignmentModalProps {
   isOpen: boolean

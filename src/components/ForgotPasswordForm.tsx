@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface ForgotPasswordFormProps {
   onEmailSent?: () => void // Optional callback for parent component
@@ -72,7 +72,7 @@ export default function ForgotPasswordForm({ onEmailSent, className = '' }: Forg
       const actionCodeSettings = {
         // URL you want to redirect back to. The domain (www.example.com) for this
         // URL must be in the authorized domains list in the Firebase Console.
-        url: `${window.location.origin}/auth/reset-password`,
+        url: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/reset-password`,
         // This must be true
         handleCodeInApp: true,
       }

@@ -321,7 +321,7 @@ export class StaffTaskService {
   }
   
   /**
-   * Get staff info (mock data for now, replace with actual staff service)
+   * Get staff info from Firebase staff_accounts collection
    */
   private static async getStaffInfo(staffId: string): Promise<{
     id: string
@@ -329,22 +329,39 @@ export class StaffTaskService {
     email: string
     role: string
   }> {
-    // Mock staff data - replace with actual database query
-    const mockStaff: Record<string, { name: string; email: string; role: string }> = {
-      'staff_cleaner_001': { name: 'Maria Santos', email: 'maria@example.com', role: 'cleaner' },
-      'staff_cleaner_002': { name: 'John Smith', email: 'john@example.com', role: 'cleaner' },
-      'staff_cleaner_003': { name: 'Lisa Wong', email: 'lisa@example.com', role: 'cleaner' },
-      'staff_cleaner_004': { name: 'Carlos Rodriguez', email: 'carlos@example.com', role: 'cleaner' },
-      'staff_maintenance_001': { name: 'Mike Johnson', email: 'mike@example.com', role: 'maintenance' },
-      'staff_maintenance_002': { name: 'David Lee', email: 'david@example.com', role: 'maintenance' },
-      'staff_maintenance_003': { name: 'Sarah Brown', email: 'sarah@example.com', role: 'maintenance' }
-    }
-    
-    const staff = mockStaff[staffId] || { name: 'Unknown Staff', email: 'unknown@example.com', role: 'cleaner' }
-    
-    return {
-      id: staffId,
-      ...staff
+    try {
+      const { getDb } = await import('@/lib/firebase')
+      const { doc, getDoc } = await import('firebase/firestore')
+
+      const db = getDb()
+      const staffRef = doc(db, 'staff_accounts', staffId)
+      const staffDoc = await getDoc(staffRef)
+
+      if (staffDoc.exists()) {
+        const data = staffDoc.data()
+        return {
+          id: staffId,
+          name: data.name || 'Unknown Staff',
+          email: data.email || 'unknown@example.com',
+          role: data.role || 'staff'
+        }
+      } else {
+        console.warn(`Staff member ${staffId} not found in Firebase`)
+        return {
+          id: staffId,
+          name: 'Unknown Staff',
+          email: 'unknown@example.com',
+          role: 'staff'
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching staff info:', error)
+      return {
+        id: staffId,
+        name: 'Unknown Staff',
+        email: 'unknown@example.com',
+        role: 'staff'
+      }
     }
   }
   
@@ -396,6 +413,7 @@ export class StaffTaskService {
       total: 0, // Will be calculated from staff data
       active: 0, // Will be calculated from staff data
       inactive: 0, // Will be calculated from staff data
+      onLeave: 0, // Will be calculated from staff data
       byRole: {}, // Will be calculated from staff data
       totalTasks: tasks.length,
       pendingTasks: tasks.filter(t => t.status === 'assigned').length,
@@ -408,7 +426,15 @@ export class StaffTaskService {
       todayTasks: tasks.filter(t => t.scheduledDate === today).length,
       upcomingTasks: tasks.filter(t => t.scheduledDate >= tomorrow).length,
       averageCompletionTime: 0, // Calculate based on completed tasks
-      completionRate: 0
+      completionRate: 0,
+      averageRating: 0,
+      performanceMetrics: {
+        topPerformers: [],
+        lowPerformers: [],
+        recentHires: [],
+        staffUtilization: 0,
+        averageTasksPerStaff: 0
+      }
     }
     
     // Calculate completion rate
@@ -438,6 +464,7 @@ export class StaffTaskService {
       total: 0,
       active: 0,
       inactive: 0,
+      onLeave: 0,
       byRole: {},
       totalTasks: 0,
       pendingTasks: 0,
@@ -447,7 +474,15 @@ export class StaffTaskService {
       todayTasks: 0,
       upcomingTasks: 0,
       averageCompletionTime: 0,
-      completionRate: 0
+      completionRate: 0,
+      averageRating: 0,
+      performanceMetrics: {
+        topPerformers: [],
+        lowPerformers: [],
+        recentHires: [],
+        staffUtilization: 0,
+        averageTasksPerStaff: 0
+      }
     }
   }
   

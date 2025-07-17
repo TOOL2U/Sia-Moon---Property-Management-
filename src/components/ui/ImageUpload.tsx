@@ -6,7 +6,7 @@ import CloudinaryImage from '@/components/ui/CloudinaryImage'
 import { uploadToCloudinary, validateImageFile, CloudinaryUploadResult } from '@/lib/cloudinary-upload'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/utils/cn'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface ImageUploadProps {
   onUpload: (result: CloudinaryUploadResult) => void

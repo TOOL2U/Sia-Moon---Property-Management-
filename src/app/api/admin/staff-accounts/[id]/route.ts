@@ -114,7 +114,6 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         message: result.message,
-        data: result.staffAccount,
         timestamp: new Date().toISOString()
       })
     } else {

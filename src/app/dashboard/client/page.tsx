@@ -30,7 +30,7 @@ import {
   BarChart3
 } from 'lucide-react'
 import { format, subMonths, isAfter, isBefore, addDays } from 'date-fns'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 // No mock data - all data comes from live sources only
 

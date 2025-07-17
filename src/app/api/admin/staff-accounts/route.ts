@@ -53,17 +53,11 @@ export async function GET(request: NextRequest) {
           inactive: staffProfiles.filter(s => s.status === 'inactive').length,
           onLeave: staffProfiles.filter(s => s.status === 'suspended').length,
           byRole: {
+            admin: staffProfiles.filter(s => s.role === 'admin').length,
+            manager: staffProfiles.filter(s => s.role === 'manager').length,
             cleaner: staffProfiles.filter(s => s.role === 'cleaner').length,
             maintenance: staffProfiles.filter(s => s.role === 'maintenance').length,
-            admin: staffProfiles.filter(s => s.role === 'admin').length,
-            supervisor: staffProfiles.filter(s => s.role === 'supervisor').length,
-            housekeeper: staffProfiles.filter(s => s.role === 'housekeeper').length,
-            manager: staffProfiles.filter(s => s.role === 'manager').length,
-            concierge: staffProfiles.filter(s => s.role === 'concierge').length,
-            security: staffProfiles.filter(s => s.role === 'security').length,
-            gardener: staffProfiles.filter(s => s.role === 'gardener').length,
-            chef: staffProfiles.filter(s => s.role === 'chef').length,
-            driver: staffProfiles.filter(s => s.role === 'driver').length
+            staff: staffProfiles.filter(s => s.role === 'staff').length
           },
           totalTasks: staffProfiles.reduce((sum, s) => sum + (s.totalAssignedTasks || 0), 0),
           completedTasks: staffProfiles.reduce((sum, s) => sum + (s.completedTasks || 0), 0),

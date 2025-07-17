@@ -51,31 +51,31 @@ export default function FinancialKPIsDashboard({ kpis, loading }: FinancialKPIsD
     {
       name: 'Average Daily Rate (ADR)',
       value: kpis.adr,
-      previousValue: kpis.adr * 0.95,
-      change: kpis.adr * 0.05,
-      changePercentage: 5.2,
+      previousValue: 0, // TODO: Calculate from historical data
+      change: 0, // TODO: Calculate from historical data
+      changePercentage: 0,
       trend: 'up',
-      target: kpis.adr * 1.1,
+      target: 0, // TODO: Set realistic targets
       status: 'good'
     },
     {
       name: 'Revenue per Available Room (RevPAR)',
       value: kpis.revPAR,
-      previousValue: kpis.revPAR * 0.92,
-      change: kpis.revPAR * 0.08,
-      changePercentage: 8.7,
+      previousValue: 0, // TODO: Calculate from historical data
+      change: 0, // TODO: Calculate from historical data
+      changePercentage: 0,
       trend: 'up',
-      target: kpis.revPAR * 1.15,
+      target: 0, // TODO: Set realistic targets
       status: 'good'
     },
     {
       name: 'Average Booking Value',
       value: kpis.averageBookingValue,
-      previousValue: kpis.averageBookingValue * 0.97,
-      change: kpis.averageBookingValue * 0.03,
-      changePercentage: 3.1,
+      previousValue: 0, // TODO: Calculate from historical data
+      change: 0, // TODO: Calculate from historical data
+      changePercentage: 0,
       trend: 'up',
-      target: kpis.averageBookingValue * 1.2,
+      target: 0, // TODO: Set realistic targets
       status: 'good'
     }
   ]
@@ -84,9 +84,9 @@ export default function FinancialKPIsDashboard({ kpis, loading }: FinancialKPIsD
     {
       name: 'Occupancy Rate',
       value: kpis.occupancyRate,
-      previousValue: kpis.occupancyRate - 5.2,
-      change: 5.2,
-      changePercentage: 7.3,
+      previousValue: 0, // TODO: Calculate from historical data
+      change: 0, // TODO: Calculate from historical data
+      changePercentage: 0,
       trend: 'up',
       target: 85,
       status: kpis.occupancyRate >= 80 ? 'good' : kpis.occupancyRate >= 70 ? 'warning' : 'critical'

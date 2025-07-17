@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Download, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ReportEntry, ReportMetrics, DateRange } from '@/types'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface ExportButtonsProps {
   data: ReportEntry[]

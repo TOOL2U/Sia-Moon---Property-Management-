@@ -24,7 +24,7 @@ import {
   Brain
 } from 'lucide-react'
 import BookingApprovalPanel from '@/components/admin/BookingApprovalPanel'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -322,7 +322,7 @@ export default function AdminDashboard() {
               </div>
               <Button 
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                onClick={() => window.location.href = '/admin/bookings'}
+                onClick={() => router.push('/admin/bookings')}
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 Open Booking Manager
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
               </div>
               <Button 
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                onClick={() => window.location.href = '/admin/analytics'}
+                onClick={() => router.push('/admin/analytics')}
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 View Analytics
@@ -394,7 +394,7 @@ export default function AdminDashboard() {
               </div>
               <Button 
                 className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                onClick={() => window.location.href = '/admin/automation'}
+                onClick={() => router.push('/admin/automation')}
               >
                 <Bot className="h-4 w-4 mr-2" />
                 Manage Rules
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
               </div>
               <Button 
                 className="w-full mt-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                onClick={() => window.location.href = '/admin/conflicts'}
+                onClick={() => router.push('/admin/conflicts')}
               >
                 <Shield className="h-4 w-4 mr-2" />
                 View Conflicts
@@ -460,7 +460,7 @@ export default function AdminDashboard() {
               </div>
               <Button 
                 className="w-full mt-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
-                onClick={() => window.location.href = '/admin/recommendations'}
+                onClick={() => router.push('/admin/recommendations')}
               >
                 <Brain className="h-4 w-4 mr-2" />
                 View Recommendations
@@ -484,7 +484,7 @@ export default function AdminDashboard() {
             </p>
             <Button 
               className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => window.location.href = '/admin/bookings-legacy'}
+              onClick={() => router.push('/admin/bookings-legacy')}
             >
               <Calendar className="h-4 w-4 mr-2" />
               Manage Bookings (Legacy)
@@ -508,7 +508,7 @@ export default function AdminDashboard() {
                 View, approve, and manage all guest bookings from the automation pipeline
               </p>
               <Button
-                onClick={() => window.location.href = '/admin/bookings'}
+                onClick={() => router.push('/admin/bookings')}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 Manage Bookings
@@ -546,7 +546,7 @@ export default function AdminDashboard() {
                 Review AI analysis of booking-property matching, provide feedback, and monitor automation performance
               </p>
               <Button
-                onClick={() => window.location.href = '/admin/ai-log'}
+                onClick={() => router.push('/admin/ai-log')}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 View AI Analysis Log

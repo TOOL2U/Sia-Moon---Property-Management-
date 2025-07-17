@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import {
   Activity,
   Clock,
@@ -130,7 +130,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | 'week' | 'month'>('today')
-  const [sendingTestJob, setSendingTestJob] = useState(false)
+  // sendingTestJob state removed for production
 
   // Real-time subscription
   const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null)
@@ -297,23 +297,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
     }
   }
 
-  // Send test job to mobile app
-  const sendTestJobToMobile = async () => {
-    try {
-      setSendingTestJob(true)
-      console.log('🧪 Sending test job to mobile app...')
-
-      // TestJobService removed - was using mock data
-      toast.success('Test job functionality removed - was using mock data')
-      console.log('🧪 Test job functionality removed - was using mock data')
-
-    } catch (error) {
-      console.error('❌ Error sending test job:', error)
-      toast.error(`❌ Failed to send test job\n${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setSendingTestJob(false)
-    }
-  }
+  // Test job functionality removed for production
 
   // Setup real-time subscription on mount
   useEffect(() => {
@@ -380,18 +364,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
                 <option value="month">This Month</option>
               </select>
 
-              <Button
-                onClick={sendTestJobToMobile}
-                disabled={sendingTestJob}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/25"
-              >
-                {sendingTestJob ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Zap className="w-4 h-4 mr-2" />
-                )}
-                Test Job
-              </Button>
+              {/* Test job button removed for production */}
 
               <Button
                 onClick={refreshDashboard}

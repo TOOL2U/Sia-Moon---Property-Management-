@@ -5,7 +5,7 @@ import "./globals.css";
 import '@/lib/polyfills'; // Import polyfills for server-side compatibility
 import { Navbar } from '@/components/layout/Navbar';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ToasterProvider } from '@/components/providers/ToasterProvider';
+import { ToastProvider } from '@/components/ui/SimpleToast';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,9 +34,10 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased bg-black text-white transition-colors duration-200`}>
         <AuthProvider>
-          <Navbar />
-          <main className="page-transition">{children}</main>
-          <ToasterProvider />
+          <ToastProvider>
+            <Navbar />
+            <main className="page-transition">{children}</main>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

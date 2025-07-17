@@ -31,7 +31,7 @@ import {
   EyeOff
 } from 'lucide-react'
 import Link from 'next/link'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function AccountsPage() {
   const { user } = useAuth()

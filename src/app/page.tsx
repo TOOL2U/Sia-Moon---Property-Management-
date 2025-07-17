@@ -94,12 +94,16 @@ export default function Home() {
 
       // Fallback after a short delay if router.push doesn't work
       setTimeout(() => {
-        console.log('🔄 Router.push fallback - using window.location')
-        window.location.href = '/dashboard'
+        if (typeof window !== 'undefined') {
+          console.log('🔄 Router.push fallback - using window.location')
+          window.location.href = '/dashboard'
+        }
       }, 1000)
     } catch (error) {
       console.error('❌ Router.push failed, using window.location:', error)
-      window.location.href = '/dashboard'
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard'
+      }
     }
   }, [user, profile, loading, router])
 

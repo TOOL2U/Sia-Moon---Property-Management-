@@ -21,7 +21,7 @@ import {
   Mail,
   Globe
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import Image from 'next/image'
 
 export default function OnboardingSubmissionDetail() {

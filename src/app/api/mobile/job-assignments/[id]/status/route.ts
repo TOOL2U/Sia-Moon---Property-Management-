@@ -14,11 +14,11 @@ import { JobStatus } from '@/types/jobAssignment'
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return withMobileAuth(request, async (staffId: string) => {
+  return withMobileAuth(async (req, auth) => {
     try {
-      const jobId = params.id
+      const { id: jobId } = await params
       const body = await request.json()
       const { 
         status, 
@@ -62,7 +62,7 @@ export async function PATCH(
 
       const result = await JobAssignmentService.updateJobStatus(
         jobId,
-        staffId,
+        auth.staffId,
         status,
         updates
       )
@@ -79,8 +79,8 @@ export async function PATCH(
         updatedAt: new Date().toISOString()
       })
     } catch (error) {
-      console.error(`❌ Error updating mobile job status for job ${params?.id}:`, error)
+      console.error(`❌ Error updating mobile job status:`, error)
       return createMobileErrorResponse('Failed to update job status')
     }
-  })
+  })(request)
 }

@@ -50,7 +50,8 @@ export default function JobDetailsScreen() {
   };
 
   const handleCompleteJob = () => {
-    navigation.navigate('JobCompletion' as never, { job } as never);
+    // Fixed: Remove type assertion that causes TypeScript error
+    navigation.navigate('JobCompletion', { job });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -133,7 +134,7 @@ export default function JobDetailsScreen() {
             <List.Item
               title={job.propertyName}
               description={job.propertyAddress || 'Address not available'}
-              left={(props) => <List.Icon {...props} icon="home" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="home" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -157,7 +158,7 @@ export default function JobDetailsScreen() {
             <List.Item
               title={job.guestName}
               description={`${job.numberOfGuests} guest${job.numberOfGuests !== 1 ? 's' : ''}`}
-              left={(props) => <List.Icon {...props} icon="account" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="account" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -166,8 +167,8 @@ export default function JobDetailsScreen() {
               <List.Item
                 title={formatPhoneNumber(job.guestPhone)}
                 description="Phone number"
-                left={(props) => <List.Icon {...props} icon="phone" color="#10B981" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                left={(props: any) => <List.Icon {...props} icon="phone" color="#10B981" />}
+                right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
                 onPress={handleCallGuest}
                 titleStyle={styles.listTitle}
                 descriptionStyle={styles.listDescription}
@@ -178,8 +179,8 @@ export default function JobDetailsScreen() {
               <List.Item
                 title={job.guestEmail}
                 description="Email address"
-                left={(props) => <List.Icon {...props} icon="email" color="#10B981" />}
-                right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                left={(props: any) => <List.Icon {...props} icon="email" color="#10B981" />}
+                right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
                 onPress={handleEmailGuest}
                 titleStyle={styles.listTitle}
                 descriptionStyle={styles.listDescription}

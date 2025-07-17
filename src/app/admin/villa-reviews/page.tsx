@@ -18,7 +18,7 @@ import {
   FileText,
   Download
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function VillaReviewsAdmin() {
   const [submissions, setSubmissions] = useState<OnboardingSubmission[]>([])
@@ -114,7 +114,7 @@ export default function VillaReviewsAdmin() {
           {['all', 'pending', 'under_review', 'approved', 'rejected'].map((status) => (
             <Button
               key={status}
-              variant={filter === status ? 'primary' : 'outline'}
+              variant={filter === status ? 'default' : 'outline'}
               onClick={() => setFilter(status as typeof filter)}
               size="sm"
             >
@@ -141,7 +141,7 @@ export default function VillaReviewsAdmin() {
                       {submission.ownerFullName}
                     </CardDescription>
                   </div>
-                  {getStatusBadge(submission.status)}
+                  {getStatusBadge(submission.status || 'pending')}
                 </div>
               </CardHeader>
               
@@ -159,7 +159,7 @@ export default function VillaReviewsAdmin() {
 
                   <div className="flex items-center text-sm text-gray-600">
                     <Clock className="h-4 w-4 mr-2" />
-                    <span>{formatDate(submission.createdAt.toDate())}</span>
+                    <span>{formatDate(submission.createdAt.toDate().toISOString())}</span>
                   </div>
 
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -224,9 +224,9 @@ export default function VillaReviewsAdmin() {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">{selectedSubmission.property_name}</h2>
+                <h2 className="text-2xl font-bold">{selectedSubmission.propertyName}</h2>
                 <div className="flex items-center gap-2">
-                  {getStatusBadge(selectedSubmission.status)}
+                  {getStatusBadge(selectedSubmission.status || 'pending')}
                   <Button variant="outline" onClick={() => setSelectedSubmission(null)}>
                     Close
                   </Button>
@@ -243,14 +243,14 @@ export default function VillaReviewsAdmin() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div><strong>Name:</strong> {selectedSubmission.owner_full_name}</div>
+                    <div><strong>Name:</strong> {selectedSubmission.ownerFullName}</div>
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2" />
-                      {selectedSubmission.owner_email}
+                      {selectedSubmission.ownerEmail}
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2" />
-                      {selectedSubmission.owner_contact_number}
+                      {selectedSubmission.ownerContactNumber}
                     </div>
                   </CardContent>
                 </Card>
@@ -264,53 +264,15 @@ export default function VillaReviewsAdmin() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div><strong>Address:</strong> {selectedSubmission.property_address}</div>
+                    <div><strong>Address:</strong> {selectedSubmission.propertyAddress}</div>
                     <div><strong>Bedrooms:</strong> {selectedSubmission.bedrooms}</div>
                     <div><strong>Bathrooms:</strong> {selectedSubmission.bathrooms}</div>
-                    <div><strong>Submitted:</strong> {formatDate(selectedSubmission.created_at)}</div>
+                    <div><strong>Submitted:</strong> {formatDate(selectedSubmission.createdAt.toDate().toISOString())}</div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Documents */}
-              {(selectedSubmission.title_deed_url || selectedSubmission.floor_plans_url || selectedSubmission.furniture_appliances_list_url) && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <FileText className="h-5 w-5 mr-2" />
-                      Documents
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {selectedSubmission.title_deed_url && (
-                        <Button variant="outline" className="justify-start" asChild>
-                          <a href={selectedSubmission.title_deed_url} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4 mr-2" />
-                            Title Deed
-                          </a>
-                        </Button>
-                      )}
-                      {selectedSubmission.floor_plans_url && (
-                        <Button variant="outline" className="justify-start" asChild>
-                          <a href={selectedSubmission.floor_plans_url} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4 mr-2" />
-                            Floor Plans
-                          </a>
-                        </Button>
-                      )}
-                      {selectedSubmission.furniture_appliances_list_url && (
-                        <Button variant="outline" className="justify-start" asChild>
-                          <a href={selectedSubmission.furniture_appliances_list_url} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4 mr-2" />
-                            Furniture List
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Documents section removed - properties not available in interface */}
 
               {/* Action Buttons */}
               {selectedSubmission.status === 'pending' && (

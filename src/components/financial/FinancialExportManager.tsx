@@ -21,7 +21,7 @@ import {
   Archive
 } from 'lucide-react'
 import { FinancialDashboard, FinancialReport } from '@/types/financial'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface FinancialExportManagerProps {
   financialData: FinancialDashboard

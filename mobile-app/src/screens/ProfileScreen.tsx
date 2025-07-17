@@ -116,7 +116,7 @@ export default function ProfileScreen() {
             <List.Item
               title="Employee ID"
               description={staffProfile.id}
-              left={(props) => <List.Icon {...props} icon="badge-account" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="badge-account" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -124,7 +124,7 @@ export default function ProfileScreen() {
             <List.Item
               title="Role"
               description={staffProfile.role}
-              left={(props) => <List.Icon {...props} icon="account-tie" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="account-tie" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
             <List.Item
               title="Status"
               description={staffProfile.isActive ? 'Active' : 'Inactive'}
-              left={(props) => <List.Icon {...props} icon="account-check" color={staffProfile.isActive ? '#10B981' : '#EF4444'} />}
+              left={(props: any) => <List.Icon {...props} icon="account-check" color={staffProfile.isActive ? '#10B981' : '#EF4444'} />}
               titleStyle={styles.listTitle}
               descriptionStyle={[
                 styles.listDescription,
@@ -143,7 +143,7 @@ export default function ProfileScreen() {
             <List.Item
               title="Member Since"
               description={formatDate(staffProfile.createdAt)}
-              left={(props) => <List.Icon {...props} icon="calendar" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="calendar" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
               <List.Item
                 title="Last Login"
                 description={formatDate(staffProfile.lastLoginAt)}
-                left={(props) => <List.Icon {...props} icon="login" color="#3B82F6" />}
+                left={(props: any) => <List.Icon {...props} icon="login" color="#3B82F6" />}
                 titleStyle={styles.listTitle}
                 descriptionStyle={styles.listDescription}
               />
@@ -161,7 +161,7 @@ export default function ProfileScreen() {
             <List.Item
               title="Login Count"
               description={`${staffProfile.loginCount} times`}
-              left={(props) => <List.Icon {...props} icon="counter" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="counter" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -176,7 +176,7 @@ export default function ProfileScreen() {
             <List.Item
               title="App Version"
               description="1.0.0"
-              left={(props) => <List.Icon {...props} icon="cellphone" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="cellphone" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -184,7 +184,7 @@ export default function ProfileScreen() {
             <List.Item
               title="Company"
               description="Sia Moon Property Management"
-              left={(props) => <List.Icon {...props} icon="domain" color="#3B82F6" />}
+              left={(props: any) => <List.Icon {...props} icon="domain" color="#3B82F6" />}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />

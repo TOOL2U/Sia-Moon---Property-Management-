@@ -127,7 +127,12 @@ export interface StaffAccountCreationResult {
 }
 
 export class StaffAccountService {
-  private static db = db
+  private static get db() {
+    if (!db) {
+      throw new Error('Firebase db is not initialized')
+    }
+    return db
+  }
 
   /**
    * Create a new staff account with bcrypt password hashing
@@ -378,15 +383,22 @@ export class StaffAccountService {
           message: 'Staff account not found',
           error: 'Staff account not found'
         }
-      }
-
-      const data = docSnapshot.data()
-      const staffAccount: StaffAccount = {
-        id: docSnapshot.id,
-        ...data,
-        createdAt: data?.createdAt?.toDate?.() || new Date(),
-        updatedAt: data?.updatedAt?.toDate?.() || new Date()
-      } as StaffAccount
+      }        const data = docSnapshot.data()
+        if (!data) {
+          return {
+            success: false,
+            message: 'Staff account not found',
+            error: 'Staff account data is null'
+          }
+        }
+        
+        const staffAccount: StaffAccount = {
+          id: docSnapshot.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || new Date(),
+          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          lastLogin: data.lastLogin?.toDate?.() || null
+        } as StaffAccount
 
       console.log(`✅ Found staff account: ${staffAccount.name}`)
       

@@ -1,251 +1,209 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
-import { uploadToCloudinary, validateImageFile, deleteFromCloudinary } from '@/lib/cloudinary-upload'
-import { Upload, Trash2, Download, Image as ImageIcon, AlertCircle } from 'lucide-react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
-import Image from 'next/image'
-import toast from 'react-hot-toast'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Upload, X, Image as ImageIcon, AlertCircle } from 'lucide-react'
 
-interface VillaPhotoUploadProps {
+interface VillaPhotoUploadCloudinaryProps {
   userId: string
   villaId?: string
   disabled?: boolean
-  onPhotosChange?: (photoUrls: string[]) => void
+  onPhotosChange: (urls: string[]) => void
 }
 
-interface UploadedPhoto {
-  id: string
-  name: string
-  url: string
-  publicId: string
-  size: number
-  uploadedAt: Date
-}
-
-export function VillaPhotoUploadCloudinary({ userId, villaId, disabled = false, onPhotosChange }: VillaPhotoUploadProps) {
-  const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([])
+export function VillaPhotoUploadCloudinary({
+  userId,
+  villaId,
+  disabled = false,
+  onPhotosChange
+}: VillaPhotoUploadCloudinaryProps) {
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
-  const [dragActive, setDragActive] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Generate folder path for Cloudinary uploads
-  const getCloudinaryFolder = useCallback(() => {
-    const safeUserId = userId.replace(/[^a-zA-Z0-9-_]/g, '_')
-    const safeVillaId = villaId ? villaId.replace(/[^a-zA-Z0-9-_]/g, '_') : 'temp'
-    return `villa-photos/${safeUserId}/${safeVillaId}`
-  }, [userId, villaId])
-
-  // Notify parent when photos change
-  React.useEffect(() => {
-    if (onPhotosChange) {
-      onPhotosChange(uploadedPhotos.map(photo => photo.url))
-    }
-  }, [uploadedPhotos, onPhotosChange])
-
-  // Handle file upload using Cloudinary
-  const handleFileUpload = useCallback(async (files: FileList | File[]) => {
-    if (!userId || disabled) return
-
-    const fileArray = Array.from(files)
-    const validFiles = fileArray.filter(file => {
-      const validation = validateImageFile(file)
-      if (!validation.valid) {
-        toast.error(`${file.name}: ${validation.error}`)
-        return false
-      }
-      return true
-    })
-
-    if (validFiles.length === 0) return
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
     setIsUploading(true)
-    const uploadPromises = validFiles.map(async (file) => {
-      try {
-        // Upload to Cloudinary
-        const result = await uploadToCloudinary(file, {
-          folder: getCloudinaryFolder(),
-          quality: 'auto',
-          format: 'webp',
-          crop: 'limit',
-          width: 2000,
-          height: 2000,
-          tags: ['villa-management', 'villa-photos', userId, villaId || 'temp']
-        })
-
-        const newPhoto: UploadedPhoto = {
-          id: result.public_id,
-          name: file.name,
-          url: result.secure_url,
-          publicId: result.public_id,
-          size: file.size,
-          uploadedAt: new Date()
-        }
-
-        setUploadedPhotos(prev => [newPhoto, ...prev])
-        toast.success(`${file.name} uploaded successfully`)
-        
-        return newPhoto
-      } catch (error) {
-        console.error('Upload failed:', error)
-        toast.error(`Failed to upload ${file.name}`)
-        throw error
-      }
-    })
+    setError(null)
 
     try {
-      await Promise.all(uploadPromises)
-    } catch (error) {
-      console.error('Some uploads failed:', error)
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`File ${file.name} is not an image`)
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`File ${file.name} is too large. Maximum size is 5MB.`)
+        }
+
+        // Create FormData for upload
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('upload_preset', 'villa_photos') // You'll need to configure this in Cloudinary
+        formData.append('folder', `villa_management/${userId}/${villaId || 'temp'}`)
+
+        // Upload to Cloudinary
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${file.name}`)
+        }
+
+        const data = await response.json()
+        return data.secure_url
+      })
+
+      const uploadedUrls = await Promise.all(uploadPromises)
+      const newPhotos = [...uploadedPhotos, ...uploadedUrls]
+      
+      setUploadedPhotos(newPhotos)
+      onPhotosChange(newPhotos)
+      setUploadProgress(100)
+      
+      // Reset progress after a delay
+      setTimeout(() => setUploadProgress(0), 1000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+      console.error('Upload error:', err)
     } finally {
       setIsUploading(false)
     }
-  }, [userId, disabled, getCloudinaryFolder, onPhotosChange, villaId])
+  }
 
-  // Handle file deletion
-  const handleDeletePhoto = useCallback(async (photo: UploadedPhoto) => {
-    if (disabled) return
+  const handleRemovePhoto = (indexToRemove: number) => {
+    const newPhotos = uploadedPhotos.filter((_, index) => index !== indexToRemove)
+    setUploadedPhotos(newPhotos)
+    onPhotosChange(newPhotos)
+  }
 
-    try {
-      // Delete from Cloudinary (this will call the API route)
-      await deleteFromCloudinary(photo.publicId)
-      
-      setUploadedPhotos(prev => prev.filter(p => p.id !== photo.id))
-      toast.success('Photo deleted successfully')
-    } catch (error) {
-      console.error('Delete failed:', error)
-      toast.error('Failed to delete photo')
-    }
-  }, [disabled, onPhotosChange])
-
-  // Handle drag events
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
-  }, [])
-
-  // Handle drop
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files)
-    }
-  }, [handleFileUpload])
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Upload Area */}
-      <div
-        className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 ${
-          dragActive
-            ? 'border-purple-400 bg-purple-500/10'
-            : 'border-neutral-600 hover:border-purple-500 bg-neutral-800/50'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={() => !disabled && document.getElementById('villa-photo-input')?.click()}
-      >
-        <input
-          id="villa-photo-input"
-          type="file"
-          multiple
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-          disabled={disabled || isUploading}
-        />
-
-        <div className="text-center">
-          <Upload className={`mx-auto h-12 w-12 mb-4 ${dragActive ? 'text-purple-400' : 'text-neutral-400'}`} />
-          <h3 className="text-lg font-medium text-white mb-2">
-            {isUploading ? 'Uploading...' : 'Upload Villa Photos'}
-          </h3>
-          <p className="text-neutral-400 mb-4">
-            Drag and drop photos here, or click to select files
-          </p>
-          <p className="text-sm text-neutral-500">
-            Supports: JPEG, PNG, WebP, GIF (max 10MB each)
-          </p>
-        </div>
-
-        {isUploading && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-            <div className="text-white text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"></div>
-              <p>Uploading photos...</p>
+    <div className="space-y-4">
+      {/* Upload Button */}
+      <Card className="border-dashed border-2 border-gray-300 hover:border-gray-400 transition-colors">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              disabled={disabled || isUploading}
+            />
+            
+            <div className="flex flex-col items-center space-y-2">
+              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                <Upload className="w-6 h-6 text-blue-600" />
+              </div>
+              
+              <div>
+                <Button
+                  onClick={handleUploadClick}
+                  disabled={disabled || isUploading}
+                  variant="outline"
+                  className="mb-2"
+                >
+                  {isUploading ? 'Uploading...' : 'Upload Villa Photos'}
+                </Button>
+                
+                <p className="text-sm text-gray-500">
+                  Click to select multiple images or drag and drop
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  PNG, JPG, JPEG up to 5MB each
+                </p>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Uploaded Photos Grid */}
-      {uploadedPhotos.length > 0 && (
-        <div>
-          <h4 className="text-lg font-medium text-white mb-4">
-            Uploaded Photos ({uploadedPhotos.length})
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {uploadedPhotos.map((photo) => (
-              <div key={photo.id} className="relative group">
-                <div className="aspect-square bg-neutral-800 rounded-lg overflow-hidden">
-                  <Image
-                    src={photo.url}
-                    alt={photo.name}
-                    width={200}
-                    height={200}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                      onClick={() => window.open(photo.url, '_blank')}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-red-500/20 border-red-500/40 text-red-300 hover:bg-red-500/30"
-                      onClick={() => handleDeletePhoto(photo)}
-                      disabled={disabled}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <p className="text-sm text-neutral-300 truncate">{photo.name}</p>
-                  <p className="text-xs text-neutral-500">
-                    {(photo.size / 1024 / 1024).toFixed(1)} MB
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Upload Progress */}
+      {isUploading && (
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${uploadProgress}%` }}
+          />
         </div>
       )}
 
-      {/* Upload Instructions */}
-      {uploadedPhotos.length === 0 && !isUploading && (
-        <div className="text-center py-8">
-          <ImageIcon className="mx-auto h-16 w-16 text-neutral-600 mb-4" />
-          <p className="text-neutral-400 mb-2">No photos uploaded yet</p>
-          <p className="text-sm text-neutral-500">
-            Upload high-quality photos of your villa to attract more guests
-          </p>
+      {/* Error Message */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Uploaded Photos Grid */}
+      {uploadedPhotos.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {uploadedPhotos.map((url, index) => (
+            <Card key={index} className="relative group">
+              <CardContent className="p-2">
+                <div className="relative aspect-square">
+                  <img
+                    src={url}
+                    alt={`Villa photo ${index + 1}`}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                  
+                  {/* Remove Button */}
+                  <button
+                    onClick={() => handleRemovePhoto(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={disabled}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Photos Summary */}
+      {uploadedPhotos.length > 0 && (
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <ImageIcon className="w-4 h-4 text-gray-600" />
+            <span className="text-sm text-gray-600">
+              {uploadedPhotos.length} photo{uploadedPhotos.length !== 1 ? 's' : ''} uploaded
+            </span>
+          </div>
+          
+          <Button
+            onClick={handleUploadClick}
+            variant="outline"
+            size="sm"
+            disabled={disabled || isUploading}
+          >
+            Add More
+          </Button>
         </div>
       )}
     </div>

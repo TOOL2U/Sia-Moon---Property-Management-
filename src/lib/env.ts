@@ -74,7 +74,6 @@ export const appConfig = {
 export const featureFlags = {
   enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
   enableDebugMode: isDevelopment || process.env.NEXT_PUBLIC_DEBUG_MODE === 'true',
-  enableMockData: isDevelopment && process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA === 'true',
 }
 
 // Logging configuration

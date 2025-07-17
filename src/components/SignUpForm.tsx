@@ -11,7 +11,7 @@ import { auth, db } from '@/lib/firebase'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import { useUserSync } from '@/hooks/useUserSync'
 
 
@@ -65,12 +65,14 @@ export default function SignUpForm({ onSuccess, className = '' }: SignUpFormProp
 
   const testButtonClick = () => {
     console.log('🚨 BUTTON CLICKED DIRECTLY!')
-    console.log('🚨 Current form values:', {
-      fullName: (document.querySelector('input[placeholder="Full Name"]') as HTMLInputElement)?.value,
-      email: (document.querySelector('input[placeholder="Email Address"]') as HTMLInputElement)?.value,
-      password: (document.querySelector('input[placeholder="Password"]') as HTMLInputElement)?.value,
-      confirmPassword: (document.querySelector('input[placeholder="Confirm Password"]') as HTMLInputElement)?.value
-    })
+    if (typeof window !== 'undefined') {
+      console.log('🚨 Current form values:', {
+        fullName: (document.querySelector('input[placeholder="Full Name"]') as HTMLInputElement)?.value,
+        email: (document.querySelector('input[placeholder="Email Address"]') as HTMLInputElement)?.value,
+        password: (document.querySelector('input[placeholder="Password"]') as HTMLInputElement)?.value,
+        confirmPassword: (document.querySelector('input[placeholder="Confirm Password"]') as HTMLInputElement)?.value
+      })
+    }
   }
 
   const onSubmit = async (data: SignUpFormData) => {

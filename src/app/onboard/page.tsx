@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
 import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
 import { VillaPhotoUploadCloudinary } from '@/components/VillaPhotoUploadCloudinary'
+import { Label } from '@/components/ui/Label'
 import { OnboardingService } from '@/lib/services/onboardingService'
 import { PropertyService } from '@/lib/services/propertyService'
 import Link from 'next/link'
@@ -407,14 +408,16 @@ function OnboardYourVillaContent() {
 
       // Scroll to first error field and highlight it
       const firstErrorField = Object.keys(newErrors)[0]
-      const errorElement = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement
-      if (errorElement) {
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        // Add temporary highlight
-        errorElement.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.5)'
-        setTimeout(() => {
-          errorElement.style.boxShadow = ''
-        }, 3000)
+      if (typeof window !== 'undefined') {
+        const errorElement = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          // Add temporary highlight
+          errorElement.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.5)'
+          setTimeout(() => {
+            errorElement.style.boxShadow = ''
+          }, 3000)
+        }
       }
 
       return false
@@ -798,10 +801,10 @@ function OnboardYourVillaContent() {
                 </ul>
               </div>
               <div className="space-y-3">
-                <Button onClick={() => router.push('/')} fullWidth className="h-11">
+                <Button onClick={() => router.push('/')} className="h-11 w-full">
                   Return to Home
                 </Button>
-                <Button variant="outline" onClick={() => setSubmitted(false)} fullWidth className="h-11">
+                <Button variant="outline" onClick={() => setSubmitted(false)} className="h-11 w-full">
                   Submit Another Villa
                 </Button>
               </div>
@@ -884,10 +887,12 @@ function OnboardYourVillaContent() {
                           <button
                             type="button"
                             onClick={() => {
-                              const element = document.querySelector(`[name="${field}"]`) as HTMLElement
-                              if (element) {
-                                element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                element.focus()
+                              if (typeof window !== 'undefined') {
+                                const element = document.querySelector(`[name="${field}"]`) as HTMLElement
+                                if (element) {
+                                  element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                  element.focus()
+                                }
                               }
                             }}
                             className="text-left hover:text-red-200 underline"
@@ -914,48 +919,66 @@ function OnboardYourVillaContent() {
             >
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Full Name"
-                    name="ownerFullName"
-                    value={formData.ownerFullName}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    required
-                    placeholder="John Smith"
-                    error={validationErrors.ownerFullName}
-                  />
-                  <Input
-                    label="Nationality"
-                    name="ownerNationality"
-                    value={formData.ownerNationality}
-                    onChange={handleInputChange}
-                    placeholder="Thai, American, British, etc."
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="ownerFullName">Full Name</Label>
+                    <Input
+                      id="ownerFullName"
+                      name="ownerFullName"
+                      value={formData.ownerFullName}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      required
+                      placeholder="John Smith"
+                    />
+                    {validationErrors.ownerFullName && (
+                      <p className="text-sm text-red-500">{validationErrors.ownerFullName}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ownerNationality">Nationality</Label>
+                    <Input
+                      id="ownerNationality"
+                      name="ownerNationality"
+                      value={formData.ownerNationality}
+                      onChange={handleInputChange}
+                      placeholder="Thai, American, British, etc."
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Contact Number"
-                    name="ownerContactNumber"
-                    type="tel"
-                    value={formData.ownerContactNumber}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    required
-                    placeholder="+66 81 234 5678"
-                    error={validationErrors.ownerContactNumber}
-                  />
-                  <Input
-                    label="Email Address"
-                    name="ownerEmail"
-                    type="email"
-                    value={formData.ownerEmail}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    required
-                    placeholder="john@example.com"
-                    error={validationErrors.ownerEmail}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="ownerContactNumber">Contact Number</Label>
+                    <Input
+                      id="ownerContactNumber"
+                      name="ownerContactNumber"
+                      type="tel"
+                      value={formData.ownerContactNumber}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      required
+                      placeholder="+66 81 234 5678"
+                    />
+                    {validationErrors.ownerContactNumber && (
+                      <p className="text-sm text-red-500">{validationErrors.ownerContactNumber}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ownerEmail">Email Address</Label>
+                    <Input
+                      id="ownerEmail"
+                      name="ownerEmail"
+                      type="email"
+                      value={formData.ownerEmail}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      required
+                      placeholder="john@example.com"
+                    />
+                    {validationErrors.ownerEmail && (
+                      <p className="text-sm text-red-500">{validationErrors.ownerEmail}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -1002,23 +1025,49 @@ function OnboardYourVillaContent() {
             >
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Property Name"
-                    name="propertyName"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="propertyName">Property Name</Label>
+
+                    <Input
+
+                      id="propertyName"
+
+                      name="propertyName"
                     value={formData.propertyName}
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
                     required
-                    placeholder="Villa Paradise"
-                    error={validationErrors.propertyName}
-                  />
-                  <Input
-                    label="Google Maps Pin URL"
-                    name="googleMapsUrl"
+                    placeholder="Villa Paradise"/>
+
+                    {validationErrors.propertyName && (
+
+                      <p className="text-sm text-red-500">{validationErrors.propertyName}</p>
+
+                    )}
+
+                  </div>
+                  <div className="space-y-2">
+
+                    <Label htmlFor="googleMapsUrl">Google Maps Pin URL</Label>
+
+                    <Input
+
+                      id="googleMapsUrl"
+
+                      name="googleMapsUrl"
                     value={formData.googleMapsUrl}
                     onChange={handleInputChange}
                     placeholder="https://maps.google.com/..."
                   />
+
+                    {validationErrors.googleMapsUrl && (
+
+                      <p className="text-sm text-red-500">{validationErrors.googleMapsUrl}</p>
+
+                    )}
+
+                  </div>
                 </div>
 
                 <div>
@@ -1045,21 +1094,39 @@ function OnboardYourVillaContent() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <Input
-                    label="Bedrooms"
-                    name="bedrooms"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="bedrooms">Bedrooms</Label>
+
+                    <Input
+
+                      id="bedrooms"
+
+                      name="bedrooms"
                     type="number"
                     min="1"
                     value={formData.bedrooms}
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
                     required
-                    placeholder="4"
-                    error={validationErrors.bedrooms}
-                  />
-                  <Input
-                    label="Bathrooms"
-                    name="bathrooms"
+                    placeholder="4"/>
+
+                    {validationErrors.bedrooms && (
+
+                      <p className="text-sm text-red-500">{validationErrors.bedrooms}</p>
+
+                    )}
+
+                  </div>
+                  <div className="space-y-2">
+
+                    <Label htmlFor="bathrooms">Bathrooms</Label>
+
+                    <Input
+
+                      id="bathrooms"
+
+                      name="bathrooms"
                     type="number"
                     min="1"
                     step="0.5"
@@ -1067,31 +1134,71 @@ function OnboardYourVillaContent() {
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
                     required
-                    placeholder="3"
-                    error={validationErrors.bathrooms}
-                  />
-                  <Input
-                    label="Land Size (sqm)"
-                    name="landSizeSqm"
+                    placeholder="3"/>
+
+                    {validationErrors.bathrooms && (
+
+                      <p className="text-sm text-red-500">{validationErrors.bathrooms}</p>
+
+                    )}
+
+                  </div>
+                  <div className="space-y-2">
+
+                    <Label htmlFor="landSizeSqm">Land Size (sqm)</Label>
+
+                    <Input
+
+                      id="landSizeSqm"
+
+                      name="landSizeSqm"
                     type="number"
                     value={formData.landSizeSqm}
                     onChange={handleInputChange}
                     placeholder="800"
                   />
-                  <Input
-                    label="Villa Size (sqm)"
-                    name="villaSizeSqm"
+
+                    {validationErrors.landSizeSqm && (
+
+                      <p className="text-sm text-red-500">{validationErrors.landSizeSqm}</p>
+
+                    )}
+
+                  </div>
+                  <div className="space-y-2">
+
+                    <Label htmlFor="villaSizeSqm">Villa Size (sqm)</Label>
+
+                    <Input
+
+                      id="villaSizeSqm"
+
+                      name="villaSizeSqm"
                     type="number"
                     value={formData.villaSizeSqm}
                     onChange={handleInputChange}
                     placeholder="400"
                   />
+
+                    {validationErrors.villaSizeSqm && (
+
+                      <p className="text-sm text-red-500">{validationErrors.villaSizeSqm}</p>
+
+                    )}
+
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Year Built"
-                    name="yearBuilt"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="yearBuilt">Year Built</Label>
+
+                    <Input
+
+                      id="yearBuilt"
+
+                      name="yearBuilt"
                     type="number"
                     min="1900"
                     max={new Date().getFullYear()}
@@ -1099,6 +1206,14 @@ function OnboardYourVillaContent() {
                     onChange={handleInputChange}
                     placeholder="2020"
                   />
+
+                    {validationErrors.yearBuilt && (
+
+                      <p className="text-sm text-red-500">{validationErrors.yearBuilt}</p>
+
+                    )}
+
+                  </div>
                   <div></div>
                 </div>
 
@@ -1159,13 +1274,27 @@ function OnboardYourVillaContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Internet Provider"
-                    name="internetProvider"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="internetProvider">Internet Provider</Label>
+
+                    <Input
+
+                      id="internetProvider"
+
+                      name="internetProvider"
                     value={formData.internetProvider}
                     onChange={handleInputChange}
                     placeholder="AIS, True, 3BB, etc."
                   />
+
+                    {validationErrors.internetProvider && (
+
+                      <p className="text-sm text-red-500">{validationErrors.internetProvider}</p>
+
+                    )}
+
+                  </div>
                   <div></div>
                 </div>
               </div>
@@ -1177,27 +1306,69 @@ function OnboardYourVillaContent() {
               description="Electricity, water, and internet details"
             >
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <Input
-                  label="Electricity Provider"
-                  name="electricityProvider"
+                <div className="space-y-2">
+
+                  <Label htmlFor="electricityProvider">Electricity Provider</Label>
+
+                  <Input
+
+                    id="electricityProvider"
+
+                    name="electricityProvider"
                   value={formData.electricityProvider}
                   onChange={handleInputChange}
                   placeholder="PEA, MEA, etc."
                 />
-                <Input
-                  label="Water Source"
-                  name="waterSource"
+
+                  {validationErrors.electricityProvider && (
+
+                    <p className="text-sm text-red-500">{validationErrors.electricityProvider}</p>
+
+                  )}
+
+                </div>
+                <div className="space-y-2">
+
+                  <Label htmlFor="waterSource">Water Source</Label>
+
+                  <Input
+
+                    id="waterSource"
+
+                    name="waterSource"
                   value={formData.waterSource}
                   onChange={handleInputChange}
                   placeholder="Municipal, well, etc."
                 />
-                <Input
-                  label="Internet Package/Speed"
-                  name="internetPackage"
+
+                  {validationErrors.waterSource && (
+
+                    <p className="text-sm text-red-500">{validationErrors.waterSource}</p>
+
+                  )}
+
+                </div>
+                <div className="space-y-2">
+
+                  <Label htmlFor="internetPackage">Internet Package/Speed</Label>
+
+                  <Input
+
+                    id="internetPackage"
+
+                    name="internetPackage"
                   value={formData.internetPackage}
                   onChange={handleInputChange}
                   placeholder="100 Mbps, Fiber, etc."
                 />
+
+                  {validationErrors.internetPackage && (
+
+                    <p className="text-sm text-red-500">{validationErrors.internetPackage}</p>
+
+                  )}
+
+                </div>
               </div>
             </CollapsibleSection>
 
@@ -1246,20 +1417,48 @@ function OnboardYourVillaContent() {
                   <>
                     {/* Brand/System */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <Input
-                        label="What brand/system is installed?"
-                        name="smartSystemBrand"
+                      <div className="space-y-2">
+
+                        <Label htmlFor="smartSystemBrand">What brand/system is installed?</Label>
+
+                        <Input
+
+                          id="smartSystemBrand"
+
+                          name="smartSystemBrand"
                         value={formData.smartSystemBrand}
                         onChange={handleInputChange}
                         placeholder="Philips Hue, Xiaomi, Google Home, etc."
                       />
-                      <Input
-                        label="App/platform used for control"
-                        name="smartSystemAppPlatform"
+
+                        {validationErrors.smartSystemBrand && (
+
+                          <p className="text-sm text-red-500">{validationErrors.smartSystemBrand}</p>
+
+                        )}
+
+                      </div>
+                      <div className="space-y-2">
+
+                        <Label htmlFor="smartSystemAppPlatform">App/platform used for control</Label>
+
+                        <Input
+
+                          id="smartSystemAppPlatform"
+
+                          name="smartSystemAppPlatform"
                         value={formData.smartSystemAppPlatform}
                         onChange={handleInputChange}
                         placeholder="Mi Home, Google Home, Alexa, etc."
                       />
+
+                        {validationErrors.smartSystemAppPlatform && (
+
+                          <p className="text-sm text-red-500">{validationErrors.smartSystemAppPlatform}</p>
+
+                        )}
+
+                      </div>
                     </div>
 
                     {/* Devices controlled */}
@@ -1284,13 +1483,27 @@ function OnboardYourVillaContent() {
                       </div>
                       {formData.smartDevicesControlled.includes('Other') && (
                         <div className="mt-3">
-                          <Input
-                            label="Other devices (specify)"
-                            name="smartDevicesOther"
+                          <div className="space-y-2">
+
+                            <Label htmlFor="smartDevicesOther">Other devices (specify)</Label>
+
+                            <Input
+
+                              id="smartDevicesOther"
+
+                              name="smartDevicesOther"
                             value={formData.smartDevicesOther}
                             onChange={handleInputChange}
                             placeholder="Security cameras, door locks, etc."
                           />
+
+                            {validationErrors.smartDevicesOther && (
+
+                              <p className="text-sm text-red-500">{validationErrors.smartDevicesOther}</p>
+
+                            )}
+
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1387,13 +1600,27 @@ function OnboardYourVillaContent() {
                         </label>
                       </div>
                       {formData.hasHubGateway && (
-                        <Input
-                          label="Hub/Gateway location"
-                          name="hubGatewayLocation"
+                        <div className="space-y-2">
+
+                          <Label htmlFor="hubGatewayLocation">Hub/Gateway location</Label>
+
+                          <Input
+
+                            id="hubGatewayLocation"
+
+                            name="hubGatewayLocation"
                           value={formData.hubGatewayLocation}
                           onChange={handleInputChange}
                           placeholder="Living room, master bedroom, etc."
                         />
+
+                          {validationErrors.hubGatewayLocation && (
+
+                            <p className="text-sm text-red-500">{validationErrors.hubGatewayLocation}</p>
+
+                          )}
+
+                        </div>
                       )}
                     </div>
 
@@ -1418,13 +1645,27 @@ function OnboardYourVillaContent() {
                         ))}
                       </div>
                       {formData.controlAccountOwner === 'Other' && (
-                        <Input
-                          label="Other account owner (specify)"
-                          name="controlAccountOwnerOther"
+                        <div className="space-y-2">
+
+                          <Label htmlFor="controlAccountOwnerOther">Other account owner (specify)</Label>
+
+                          <Input
+
+                            id="controlAccountOwnerOther"
+
+                            name="controlAccountOwnerOther"
                           value={formData.controlAccountOwnerOther}
                           onChange={handleInputChange}
                           placeholder="Maintenance company, previous owner, etc."
                         />
+
+                          {validationErrors.controlAccountOwnerOther && (
+
+                            <p className="text-sm text-red-500">{validationErrors.controlAccountOwnerOther}</p>
+
+                          )}
+
+                        </div>
                       )}
                     </div>
 
@@ -1576,9 +1817,15 @@ function OnboardYourVillaContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Average Occupancy Rate (%)"
-                    name="averageOccupancyRate"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="averageOccupancyRate">Average Occupancy Rate (%)</Label>
+
+                    <Input
+
+                      id="averageOccupancyRate"
+
+                      name="averageOccupancyRate"
                     type="number"
                     min="0"
                     max="100"
@@ -1586,23 +1833,59 @@ function OnboardYourVillaContent() {
                     onChange={handleInputChange}
                     placeholder="75"
                   />
-                  <Input
-                    label="Minimum Stay Requirements"
-                    name="minimumStayRequirements"
+
+                    {validationErrors.averageOccupancyRate && (
+
+                      <p className="text-sm text-red-500">{validationErrors.averageOccupancyRate}</p>
+
+                    )}
+
+                  </div>
+                  <div className="space-y-2">
+
+                    <Label htmlFor="minimumStayRequirements">Minimum Stay Requirements</Label>
+
+                    <Input
+
+                      id="minimumStayRequirements"
+
+                      name="minimumStayRequirements"
                     value={formData.minimumStayRequirements}
                     onChange={handleInputChange}
                     placeholder="3 nights minimum"
                   />
+
+                    {validationErrors.minimumStayRequirements && (
+
+                      <p className="text-sm text-red-500">{validationErrors.minimumStayRequirements}</p>
+
+                    )}
+
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Target Guests"
-                    name="targetGuests"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="targetGuests">Target Guests</Label>
+
+                    <Input
+
+                      id="targetGuests"
+
+                      name="targetGuests"
                     value={formData.targetGuests}
                     onChange={handleInputChange}
                     placeholder="Families, couples, business travelers"
                   />
+
+                    {validationErrors.targetGuests && (
+
+                      <p className="text-sm text-red-500">{validationErrors.targetGuests}</p>
+
+                    )}
+
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Owner Use Blackout Dates
@@ -1645,15 +1928,29 @@ function OnboardYourVillaContent() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input
-                    label="Maintenance Auto-Approval Limit (THB)"
-                    name="maintenanceAutoApprovalLimit"
+                  <div className="space-y-2">
+
+                    <Label htmlFor="maintenanceAutoApprovalLimit">Maintenance Auto-Approval Limit (THB)</Label>
+
+                    <Input
+
+                      id="maintenanceAutoApprovalLimit"
+
+                      name="maintenanceAutoApprovalLimit"
                     type="number"
                     value={formData.maintenanceAutoApprovalLimit}
                     onChange={handleInputChange}
                     placeholder="5000"
-                    helperText="Amount we can spend on maintenance without prior approval"
                   />
+                    <p className="text-sm text-neutral-400 mt-1">Amount we can spend on maintenance without prior approval</p>
+
+                    {validationErrors.maintenanceAutoApprovalLimit && (
+
+                      <p className="text-sm text-red-500">{validationErrors.maintenanceAutoApprovalLimit}</p>
+
+                    )}
+
+                  </div>
                   <div></div>
                 </div>
               </div>
@@ -1742,27 +2039,51 @@ function OnboardYourVillaContent() {
               required={true}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Input
-                  label="Emergency Contact Name"
-                  name="emergencyContactName"
+                <div className="space-y-2">
+
+                  <Label htmlFor="emergencyContactName">Emergency Contact Name</Label>
+
+                  <Input
+
+                    id="emergencyContactName"
+
+                    name="emergencyContactName"
                   value={formData.emergencyContactName}
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
                   required
-                  placeholder="Local contact person"
-                  error={validationErrors.emergencyContactName}
-                />
-                <Input
-                  label="Emergency Contact Phone"
-                  name="emergencyContactPhone"
+                  placeholder="Local contact person"/>
+
+                  {validationErrors.emergencyContactName && (
+
+                    <p className="text-sm text-red-500">{validationErrors.emergencyContactName}</p>
+
+                  )}
+
+                </div>
+                <div className="space-y-2">
+
+                  <Label htmlFor="emergencyContactPhone">Emergency Contact Phone</Label>
+
+                  <Input
+
+                    id="emergencyContactPhone"
+
+                    name="emergencyContactPhone"
                   type="tel"
                   value={formData.emergencyContactPhone}
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
                   required
-                  placeholder="+66 81 234 5678"
-                  error={validationErrors.emergencyContactPhone}
-                />
+                  placeholder="+66 81 234 5678"/>
+
+                  {validationErrors.emergencyContactPhone && (
+
+                    <p className="text-sm text-red-500">{validationErrors.emergencyContactPhone}</p>
+
+                  )}
+
+                </div>
               </div>
             </CollapsibleSection>
 
@@ -1799,9 +2120,8 @@ function OnboardYourVillaContent() {
 
                 <Button
                   type="submit"
-                  fullWidth
                   disabled={loading}
-                  className="h-12 text-base font-medium"
+                  className="h-12 text-base font-medium w-full"
                   size="lg"
                 >
                   {loading ? (

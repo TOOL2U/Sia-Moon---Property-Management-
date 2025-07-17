@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function LoginPage() {
   const { user, loading, signIn } = useAuth()

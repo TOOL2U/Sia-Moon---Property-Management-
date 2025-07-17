@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { StaffProfile, UpdateStaffData, STAFF_ROLES, STAFF_STATUSES, COMMON_SKILLS, StaffFormErrors } from '@/types/staff'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface EditStaffModalProps {
   isOpen: boolean

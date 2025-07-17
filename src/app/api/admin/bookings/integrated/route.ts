@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { 
-  collection, 
-  getDocs, 
-  query, 
-  orderBy, 
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
   where,
   limit as firestoreLimit,
   startAfter,
   doc,
-  getDoc
+  getDoc,
+  addDoc
 } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
 
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Remove duplicates (prefer pending > main > live)
     const uniqueBookings = allBookings.reduce((acc, booking) => {
-      const existingIndex = acc.findIndex(b => b.id === booking.id)
+      const existingIndex = acc.findIndex((b: any) => b.id === booking.id)
       
       if (existingIndex === -1) {
         acc.push(booking)
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
         const existing = acc[existingIndex]
         const priorityOrder = { high: 3, medium: 2, low: 1 }
         
-        if (priorityOrder[booking.priority] > priorityOrder[existing.priority]) {
+        if (priorityOrder[booking.priority as keyof typeof priorityOrder] > priorityOrder[existing.priority as keyof typeof priorityOrder]) {
           acc[existingIndex] = booking
         }
       }
@@ -138,23 +139,23 @@ export async function GET(request: NextRequest) {
     let filteredBookings = uniqueBookings
 
     if (property !== 'all') {
-      filteredBookings = filteredBookings.filter(booking => 
-        booking.propertyName === property || 
+      filteredBookings = filteredBookings.filter((booking: any) =>
+        booking.propertyName === property ||
         booking.property === property
       )
     }
 
     if (source !== 'all') {
-      filteredBookings = filteredBookings.filter(booking => 
-        booking.source === source || 
+      filteredBookings = filteredBookings.filter((booking: any) =>
+        booking.source === source ||
         booking.bookingSource === source
       )
     }
 
     // 6. Sort by priority and date
-    filteredBookings.sort((a, b) => {
+    filteredBookings.sort((a: any, b: any) => {
       const priorityOrder = { high: 3, medium: 2, low: 1 }
-      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
+      const priorityDiff = priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder]
       
       if (priorityDiff !== 0) return priorityDiff
       
@@ -168,26 +169,26 @@ export async function GET(request: NextRequest) {
     // 7. Calculate statistics
     const stats = {
       total: filteredBookings.length,
-      pending: filteredBookings.filter(b => 
-        b.status === 'pending' || 
+      pending: filteredBookings.filter((b: any) =>
+        b.status === 'pending' ||
         b.status === 'pending_approval'
       ).length,
-      approved: filteredBookings.filter(b => 
-        b.status === 'approved' || 
+      approved: filteredBookings.filter((b: any) =>
+        b.status === 'approved' ||
         b.status === 'confirmed'
       ).length,
-      rejected: filteredBookings.filter(b => 
+      rejected: filteredBookings.filter((b: any) =>
         b.status === 'rejected'
       ).length,
-      todayCheckIns: filteredBookings.filter(b => {
+      todayCheckIns: filteredBookings.filter((b: any) => {
         const checkIn = new Date(b.checkInDate || b.checkIn || b.check_in || 0)
         const today = new Date()
         return checkIn.toDateString() === today.toDateString()
       }).length,
       sources: {
-        pending: filteredBookings.filter(b => b.source === 'pending_collection').length,
-        main: filteredBookings.filter(b => b.source === 'main_collection').length,
-        live: filteredBookings.filter(b => b.source === 'live_collection').length
+        pending: filteredBookings.filter((b: any) => b.source === 'pending_collection').length,
+        main: filteredBookings.filter((b: any) => b.source === 'main_collection').length,
+        live: filteredBookings.filter((b: any) => b.source === 'live_collection').length
       }
     }
 
@@ -266,7 +267,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add to pending_bookings collection
-    const docRef = await collection(db, 'pending_bookings').add(bookingData)
+    const docRef = await addDoc(collection(db, 'pending_bookings'), bookingData)
     
     console.log(`✅ Booking created for Back Office approval: ${docRef.id}`)
 

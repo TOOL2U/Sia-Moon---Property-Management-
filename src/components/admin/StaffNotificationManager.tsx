@@ -31,7 +31,6 @@ import {
   Loader2
 } from 'lucide-react'
 import JobAssignmentService from '@/services/JobAssignmentService'
-import FCMNotificationService from '@/services/FCMNotificationService'
 
 interface StaffNotificationManagerProps {
   className?: string
@@ -126,17 +125,16 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
 
       // Get notification settings for each staff member
       const settingsPromises = staffData.data.map(async (staff: any) => {
-        const notificationSettings = await FCMNotificationService.getNotificationSettings(staff.id)
         const notifications = await JobAssignmentService.getStaffNotifications(staff.id, 10, true)
-        
+
         return {
           staffId: staff.id,
           staffName: staff.name,
           staffEmail: staff.email,
-          notificationsEnabled: notificationSettings.enabled,
-          deviceTokens: [], // Will be populated from device tokens API
+          notificationsEnabled: false, // FCM service removed
+          deviceTokens: [], // FCM service removed
           unreadCount: notifications.notifications?.length || 0,
-          lastNotificationAt: notificationSettings.lastActive
+          lastNotificationAt: null // FCM service removed
         }
       })
 
@@ -179,31 +177,9 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
     }
   }
 
-  // Send test notification
+  // Send test notification - FCM service removed
   const sendTestNotification = async () => {
-    if (!testNotification.staffId || !testNotification.title) {
-      toast.error('Please select staff member and enter notification title')
-      return
-    }
-
-    try {
-      setSending('test')
-      
-      const success = await FCMNotificationService.testNotification(testNotification.staffId)
-      
-      if (success) {
-        toast.success('Test notification sent successfully!')
-        setTestNotification(prev => ({ ...prev, staffId: '', title: 'Test Notification', message: 'This is a test notification from Sia Moon admin panel' }))
-      } else {
-        toast.error('Failed to send test notification')
-      }
-
-    } catch (error) {
-      console.error('❌ Error sending test notification:', error)
-      toast.error('Failed to send test notification')
-    } finally {
-      setSending(null)
-    }
+    toast.error('Push notification service not implemented')
   }
 
   // Filter staff settings

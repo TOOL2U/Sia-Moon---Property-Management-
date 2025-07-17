@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { ExternalLink, Mail, Send, Eye, TestTube } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function EmailTestPage() {
   const [testEmail, setTestEmail] = useState('test@example.com')

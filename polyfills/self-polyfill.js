@@ -1,4 +1,4 @@
-// Polyfill for 'self' in server-side environment
+// Server-side polyfill for self
 if (typeof self === 'undefined') {
   global.self = global;
 }

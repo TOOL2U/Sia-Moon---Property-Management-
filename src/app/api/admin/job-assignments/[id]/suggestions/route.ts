@@ -12,10 +12,10 @@ import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id
+    const { id: jobId } = await params
     const { searchParams } = new URL(request.url)
     
     // Parse options from query parameters
@@ -47,7 +47,7 @@ export async function GET(
       suggestions: result.suggestions || []
     })
   } catch (error) {
-    console.error(`❌ Error in GET /api/admin/job-assignments/${params?.id}/suggestions:`, error)
+    console.error(`❌ Error in GET /api/admin/job-assignments/[id]/suggestions:`, error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ArrowLeft, Building, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface PropertyFormData {
   name: string

@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { PropertyDashboard as PropertyDashboardType, Property } from '@/types/property'
 import { PropertyService } from '@/lib/services/propertyService'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 // Utility function to safely convert Firebase Timestamp to Date
 const toDate = (timestamp: any): Date => {

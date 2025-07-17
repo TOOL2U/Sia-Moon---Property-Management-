@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 // BookingService and EnhancedBookingService removed - now using direct API calls
 // FinancialService removed - was using mock data
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -36,16 +36,15 @@ import StaffAssignmentModal from '@/components/booking/StaffAssignmentModal'
 // SimpleIntegratedBookingsTab removed - unused
 import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
 import { JobManagementDashboard } from '@/components/admin/JobManagementDashboard'
+import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
 import { JobProgressDashboard } from '@/components/admin/JobProgressDashboard'
-import { CalendarView } from '@/components/admin/CalendarView'
+// import { CalendarView } from '@/components/admin/CalendarView' // Temporarily disabled due to SSR issues
+import { MobileIntegrationStatus } from '@/components/admin/MobileIntegrationStatus'
 // TestJobService removed - was mock data
 import CalendarEventService from '@/services/CalendarEventService'
 import KPIDashboard from '@/components/admin/KPIDashboard'
 // BookingSyncService removed - unused
-import { RealTimeSyncService } from '@/lib/services/realTimeSyncService'
-import { OptimizedSyncService } from '@/lib/services/optimizedSyncService'
-import { FallbackSyncService } from '@/lib/services/fallbackSyncService'
-import { SyncBooking, TaskAssignment } from '@/types/booking-sync'
+// Real-time sync services removed - handled by individual components
 import {
   Calendar,
   Users,
@@ -91,7 +90,7 @@ import {
   Loader2,
   ExternalLink,
   Calendar as CalendarDays,
-  TrendingUp as TrendingUpIcon,
+
   PieChart,
   // MoreHorizontal removed - unused
   X,
@@ -204,12 +203,7 @@ export default function BackOfficePage() {
   // Enhanced booking sync modals
   const [bookingApprovalModal, setBookingApprovalModal] = useState<{ booking: any } | null>(null)
   const [staffAssignmentModal, setStaffAssignmentModal] = useState<{ booking: any } | null>(null)
-  const [syncBookings, setSyncBookings] = useState<SyncBooking[]>([])
-  const [syncTasks, setSyncTasks] = useState<TaskAssignment[]>([])
-  const [realTimeSubscriptions, setRealTimeSubscriptions] = useState<string[]>([])
-  const [bookingEditDialog, setBookingEditDialog] = useState<{ booking: any } | null>(null)
-  const [showConflictAlert, setShowConflictAlert] = useState(false)
-  const [conflictDetails, setConflictDetails] = useState<any>(null)
+  // Unused state variables removed
 
   // Test job state
   const [sendingTestJob, setSendingTestJob] = useState(false)
@@ -236,15 +230,9 @@ export default function BackOfficePage() {
     if (user && user.role === 'admin') {
       loadAllBookingData()
       loadStaffData()
-      setupRealTimeSync()
     }
 
-    // Cleanup subscriptions on unmount
-    return () => {
-      RealTimeSyncService.unsubscribeAll()
-      OptimizedSyncService.unsubscribeAll()
-      FallbackSyncService.unsubscribeAll()
-    }
+    // Real-time sync cleanup removed - handled by individual components
   }, [user])
 
   // Reload staff data when filters change (with debouncing)
@@ -622,171 +610,8 @@ export default function BackOfficePage() {
     }
   }
 
-  // Setup real-time sync for cross-platform updates
-  const setupRealTimeSync = () => {
-    try {
-      console.log('🔄 Setting up real-time sync...')
-
-      // Try to setup admin dashboard sync with comprehensive handlers
-      // Use optimized service as fallback if indexes are not ready
-      let subscriptionIds: string[] = []
-
-      try {
-        subscriptionIds = RealTimeSyncService.setupAdminDashboardSync({
-        onPendingBookingUpdate: (booking, changeType) => {
-          console.log(`📋 Booking ${changeType}:`, booking.id)
-
-          if (changeType === 'added' || changeType === 'modified') {
-            setSyncBookings(prev => {
-              const filtered = prev.filter(b => b.id !== booking.id)
-              return [booking, ...filtered]
-            })
-
-            // Show toast for new pending bookings
-            if (changeType === 'added' && booking.status === 'pending_approval') {
-              toast.success(`New booking received: ${booking.guestName} at ${booking.propertyName}`)
-            }
-          }
-        },
-
-        onTaskUpdate: (task, changeType) => {
-          console.log(`📝 Task ${changeType}:`, task.id)
-
-          if (changeType === 'added' || changeType === 'modified') {
-            setSyncTasks(prev => {
-              const filtered = prev.filter(t => t.id !== task.id)
-              return [task, ...filtered]
-            })
-
-            // Show toast for task completions
-            if (changeType === 'modified' && task.status === 'completed') {
-              toast.success(`Task completed: ${task.title}`)
-            }
-          }
-        },
-
-        onUrgentEvent: (event, changeType) => {
-          console.log(`🚨 Urgent event ${changeType}:`, event.type)
-
-          // Show notifications for urgent events
-          if (changeType === 'added') {
-            switch (event.type) {
-              case 'booking_approved':
-                toast.success(`Booking approved by ${event.triggeredByName}`)
-                break
-              case 'booking_rejected':
-                toast.error(`Booking rejected by ${event.triggeredByName}`)
-                break
-              case 'staff_assigned':
-                toast.success(`Staff assigned by ${event.triggeredByName}`)
-                break
-            }
-          }
-        },
-
-        onError: (error, context) => {
-          console.error(`❌ Real-time sync error in ${context}:`, error)
-          toast.error(`Sync error: ${error.message}`)
-        }
-      })
-
-      setRealTimeSubscriptions(subscriptionIds)
-      console.log(`✅ Real-time sync setup complete with ${subscriptionIds.length} subscriptions`)
-
-      } catch (indexError) {
-        console.warn('⚠️ Firebase indexes not ready, trying optimized sync service:', indexError)
-
-        try {
-          // Fallback to optimized sync service
-          subscriptionIds = OptimizedSyncService.setupOptimizedAdminSync({
-          onBookingUpdate: (booking, changeType) => {
-            console.log(`📋 Optimized booking ${changeType}:`, booking.id)
-
-            if (changeType === 'added' || changeType === 'modified') {
-              setSyncBookings(prev => {
-                const filtered = prev.filter(b => b.id !== booking.id)
-                return [booking, ...filtered]
-              })
-
-              if (changeType === 'added' && booking.status === 'pending_approval') {
-                toast.success(`New booking received: ${booking.guestName} at ${booking.propertyName}`)
-              }
-            }
-          },
-
-          onTaskUpdate: (task, changeType) => {
-            console.log(`📝 Optimized task ${changeType}:`, task.id)
-
-            if (changeType === 'added' || changeType === 'modified') {
-              setSyncTasks(prev => {
-                const filtered = prev.filter(t => t.id !== task.id)
-                return [task, ...filtered]
-              })
-
-              if (changeType === 'modified' && task.status === 'completed') {
-                toast.success(`Task completed: ${task.title}`)
-              }
-            }
-          },
-
-          onSyncEvent: (event, changeType) => {
-            console.log(`🚨 Optimized sync event ${changeType}:`, event.type)
-
-            if (changeType === 'added') {
-              switch (event.type) {
-                case 'booking_approved':
-                  toast.success(`Booking approved by ${event.triggeredByName}`)
-                  break
-                case 'booking_rejected':
-                  toast.error(`Booking rejected by ${event.triggeredByName}`)
-                  break
-                case 'staff_assigned':
-                case 'staff_created_enhanced':
-                  toast.success(`Staff action by ${event.triggeredByName}`)
-                  break
-              }
-            }
-          },
-
-          onError: (error, context) => {
-            console.error(`❌ Optimized sync error in ${context}:`, error)
-            toast.error(`Sync error: ${error.message}`)
-          }
-        })
-
-          setRealTimeSubscriptions(subscriptionIds)
-          console.log(`✅ Optimized sync setup complete with ${subscriptionIds.length} subscriptions`)
-          toast.success('Real-time sync active (optimized mode)')
-
-        } catch (optimizedError) {
-          console.warn('⚠️ Optimized sync also failed, using fallback service:', optimizedError)
-
-          // Final fallback to basic service
-          subscriptionIds = FallbackSyncService.setupAdminDashboardSync({
-            onPendingBookingUpdate: (booking, changeType) => {
-              console.log(`📋 Fallback booking ${changeType}:`, booking.id)
-            },
-            onTaskUpdate: (task, changeType) => {
-              console.log(`📝 Fallback task ${changeType}:`, task.id)
-            },
-            onUrgentEvent: (event, changeType) => {
-              console.log(`🚨 Fallback event ${changeType}:`, event.type)
-            },
-            onError: (error, context) => {
-              console.error(`❌ Fallback error in ${context}:`, error)
-            }
-          })
-
-          setRealTimeSubscriptions(subscriptionIds)
-          console.log(`✅ Fallback sync setup complete`)
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ Failed to setup any sync service:', error)
-      toast.error('Real-time updates temporarily unavailable')
-    }
-  }
+  // Real-time sync is now handled by individual components
+  // EnhancedBookingManagement handles its own real-time updates
 
   // Enhanced booking approval handler
   const handleBookingApproval = async (bookingId: string, action: 'approve' | 'reject') => {
@@ -890,7 +715,7 @@ export default function BackOfficePage() {
       console.log('🧪 Sending test job to mobile app...')
 
       // TestJobService removed - was using mock data
-      toast('Test job functionality removed - was using mock data')
+      toast.success('Test job functionality removed - was using mock data')
       console.log('🧪 Test job functionality removed - was using mock data')
 
     } catch (error) {
@@ -1106,7 +931,7 @@ export default function BackOfficePage() {
     try {
       console.log('Update booking:', bookingId, 'Updates:', updates)
       toast.success('Booking updated successfully')
-      setBookingEditDialog(null)
+      // Booking edit dialog removed - handled by EnhancedBookingManagement
     } catch (error) {
       toast.error('Failed to update booking')
     } finally {
@@ -1527,7 +1352,7 @@ export default function BackOfficePage() {
       case 'bookings':
         return renderBookings()
       case 'calendar':
-        return <CalendarView />
+        return <div className="p-8 text-center text-gray-400">Calendar view temporarily disabled due to SSR issues</div>
       case 'kpi-dashboard':
         return <KPIDashboard />
       case 'job-assignments':
@@ -2077,6 +1902,9 @@ export default function BackOfficePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Mobile Integration Status */}
+        <MobileIntegrationStatus />
       </div>
     )
   }
@@ -2097,10 +1925,10 @@ export default function BackOfficePage() {
     )
   }
 
-  // Job Assignments Section - Real-time Job Management Dashboard
+  // Job Assignments Section - Enhanced Job Management Dashboard
   function renderJobAssignments() {
     return (
-      <JobManagementDashboard />
+      <EnhancedJobManagementDashboard />
     )
   }
 
@@ -2509,15 +2337,7 @@ export default function BackOfficePage() {
                               </Button>
                             )}
 
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setBookingEditDialog({ booking })}
-                              className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
+                            {/* Edit button removed - handled by EnhancedBookingManagement */}
 
                             <Button
                               size="sm"

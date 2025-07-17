@@ -122,14 +122,32 @@ export async function POST(request: NextRequest) {
     }
     
     const database = getDb()
-    
-    // Get the booking to verify it exists
-    const bookingRef = doc(database, 'bookings', bookingId)
-    const bookingDoc = await getDoc(bookingRef)
-    
-    if (!bookingDoc.exists()) {
+
+    // Find the booking in all possible collections
+    const collections = ['pending_bookings', 'bookings', 'live_bookings']
+    let bookingDoc: any = null
+    let bookingCollection = ''
+
+    for (const collectionName of collections) {
+      try {
+        const bookingRef = doc(database, collectionName, bookingId)
+        const docSnapshot = await getDoc(bookingRef)
+
+        if (docSnapshot.exists()) {
+          bookingDoc = docSnapshot
+          bookingCollection = collectionName
+          console.log(`✅ Found booking ${bookingId} in ${collectionName} collection`)
+          break
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error checking ${collectionName}:`, error)
+      }
+    }
+
+    if (!bookingDoc || !bookingDoc.exists()) {
+      console.error(`❌ Booking ${bookingId} not found in any collection`)
       return NextResponse.json(
-        { success: false, error: 'Booking not found' },
+        { success: false, error: 'Booking not found in any collection' },
         { status: 404 }
       )
     }
@@ -158,7 +176,12 @@ export async function POST(request: NextRequest) {
     
     if (notes) updates.notes = notes
     
-    // Update booking in all collections
+    // Update the specific booking in the collection where it was found
+    const targetBookingRef = doc(database, bookingCollection, bookingId)
+    await updateDoc(targetBookingRef, updates)
+    console.log(`✅ Updated booking ${bookingId} in ${bookingCollection} collection`)
+
+    // Also try to update in other collections for consistency (optional)
     await updateBookingInAllCollections(bookingId, updates)
     
     // Create approval action record

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Building, MapPin, Plus, Trash2, Users, Calendar, Home, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
 import { formatLocalDate } from '@/utils/dateUtils'
 

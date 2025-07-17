@@ -4,24 +4,22 @@
  * Optimized for mobile app synchronization and real-time updates
  */
 
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  updateDoc, 
-  getDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit,
-  serverTimestamp,
-  writeBatch,
-  onSnapshot,
-  Timestamp
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  setDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit as firestoreLimit,
+  Timestamp,
+  onSnapshot
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import FCMNotificationService from './FCMNotificationService'
+import { getDb } from '@/lib/firebase'
 
 // Job status workflow
 export type JobStatus = 
@@ -187,9 +185,9 @@ export interface StaffNotificationData {
 
 class JobAssignmentService {
   private static instance: JobAssignmentService
-  private jobsCollection = collection(db, 'jobs')
-  private notificationsCollection = collection(db, 'notifications')
-  private staffCollection = collection(db, 'staff_accounts')
+  private get jobsCollection() { return collection(getDb(), 'jobs') }
+  private get notificationsCollection() { return collection(getDb(), 'notifications') }
+  private get staffCollection() { return collection(getDb(), 'staff_accounts') }
 
   static getInstance(): JobAssignmentService {
     if (!JobAssignmentService.instance) {
@@ -287,21 +285,21 @@ class JobAssignmentService {
         },
         
         // Assignment Details
-        assignedAt: serverTimestamp(),
+        assignedAt: Timestamp.now(),
         assignedBy,
-        
+
         // Job Status
         status: 'assigned',
         statusHistory: [
           {
             status: 'pending',
-            timestamp: serverTimestamp(),
+            timestamp: Timestamp.now(),
             updatedBy: 'system',
             notes: 'Job created from booking approval'
           },
           {
             status: 'assigned',
-            timestamp: serverTimestamp(),
+            timestamp: Timestamp.now(),
             updatedBy: assignedBy.id,
             notes: `Assigned to ${staffData.name}`
           }
@@ -327,11 +325,11 @@ class JobAssignmentService {
         },
         
         // Timestamps
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+
         // Mobile Sync Optimization
-        lastSyncedAt: serverTimestamp(),
+        lastSyncedAt: Timestamp.now(),
         syncVersion: 1,
         mobileOptimized: {
           essentialData: {
@@ -345,8 +343,8 @@ class JobAssignmentService {
         // Notification System - Will trigger Cloud Function
         notificationSent: false,
         mobileNotificationPending: true,
-        lastNotificationAt: null,
-        notificationAcknowledgedAt: null,
+        lastNotificationAt: undefined,
+        notificationAcknowledgedAt: undefined,
         pushNotificationSent: false
       }
 
@@ -402,7 +400,7 @@ class JobAssignmentService {
       }
 
       if (filters?.limit) {
-        jobQuery = query(jobQuery, limit(filters.limit))
+        jobQuery = query(jobQuery, firestoreLimit(filters.limit))
       }
 
       const querySnapshot = await getDocs(jobQuery)
@@ -434,11 +432,24 @@ class JobAssignmentService {
     additionalData?: Partial<JobData>
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log(`🔄 Updating job status: ${jobId} -> ${newStatus}`)
+
       const jobRef = doc(this.jobsCollection, jobId)
       const jobDoc = await getDoc(jobRef)
 
       if (!jobDoc.exists()) {
-        throw new Error('Job not found')
+        console.error(`❌ Job not found in database: ${jobId}`)
+        console.log('🔍 Checking jobs collection for debugging...')
+
+        // Debug: List all jobs to see what's in the collection
+        const allJobsQuery = query(this.jobsCollection, firestoreLimit(10))
+        const allJobsSnapshot = await getDocs(allJobsQuery)
+        console.log(`📋 Found ${allJobsSnapshot.size} jobs in collection:`)
+        allJobsSnapshot.forEach(doc => {
+          console.log(`  - ${doc.id}: ${doc.data().title || 'No title'}`)
+        })
+
+        throw new Error(`Job not found: ${jobId}`)
       }
 
       const currentJob = jobDoc.data() as JobData
@@ -446,29 +457,33 @@ class JobAssignmentService {
       // Prepare status history entry
       const statusHistoryEntry = {
         status: newStatus,
-        timestamp: serverTimestamp(),
+        timestamp: Timestamp.now(),
         updatedBy,
         notes
       }
 
-      // Prepare update data
-      const updateData: Partial<JobData> = {
+      // Prepare update data (filter out undefined values)
+      const cleanAdditionalData = additionalData ? Object.fromEntries(
+        Object.entries(additionalData).filter(([_, value]) => value !== undefined)
+      ) : {}
+
+      const updateData: any = {
         status: newStatus,
         statusHistory: [...(currentJob.statusHistory || []), statusHistoryEntry],
-        updatedAt: serverTimestamp(),
-        lastSyncedAt: serverTimestamp(),
+        updatedAt: Timestamp.now(),
+        lastSyncedAt: Timestamp.now(),
         syncVersion: (currentJob.syncVersion || 0) + 1,
-        ...additionalData
+        ...cleanAdditionalData
       }
 
       // Add completion timestamp if job is completed
       if (newStatus === 'completed') {
-        updateData.completedAt = serverTimestamp()
+        updateData.completedAt = Timestamp.now()
       }
 
       // Add verification timestamp if job is verified
       if (newStatus === 'verified') {
-        updateData.verifiedAt = serverTimestamp()
+        updateData.verifiedAt = Timestamp.now()
       }
 
       await updateDoc(jobRef, updateData)
@@ -520,14 +535,14 @@ class JobAssignmentService {
         channels: {
           push: {
             sent: notificationData.sendPush || false,
-            sentAt: notificationData.sendPush ? serverTimestamp() : null
+            sentAt: notificationData.sendPush ? Timestamp.now() : null
           },
           email: {
             sent: notificationData.sendEmail || false,
-            sentAt: notificationData.sendEmail ? serverTimestamp() : null
+            sentAt: notificationData.sendEmail ? Timestamp.now() : null
           }
         },
-        createdAt: serverTimestamp(),
+        createdAt: Timestamp.now(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
       }
 
@@ -550,7 +565,7 @@ class JobAssignmentService {
         where('assignedStaffId', '==', staffId),
         where('status', 'in', ['assigned', 'accepted', 'in_progress']),
         orderBy('scheduledDate', 'asc'),
-        limit(10)
+        firestoreLimit(10)
       )
 
       const activeJobsSnapshot = await getDocs(activeJobsQuery)
@@ -560,13 +575,13 @@ class JobAssignmentService {
         const job = doc.data() as JobData
         activeJobs.push({
           id: job.id,
-          title: job.title,
-          propertyName: job.propertyRef.name,
+          title: job.title || 'Untitled Job',
+          propertyName: job.propertyRef?.name || 'Unknown Property',
           scheduledTime: job.scheduledStartTime || 'TBD',
-          priority: job.priority,
-          status: job.status,
+          priority: job.priority || 'medium',
+          status: job.status || 'pending',
           location: {
-            address: job.location.address,
+            address: job.location?.address || 'Location not specified',
             distance: '0 km' // Can be calculated with geolocation
           }
         })
@@ -574,36 +589,76 @@ class JobAssignmentService {
 
       // Get today's schedule
       const today = new Date().toISOString().split('T')[0]
-      const todayJobsQuery = query(
-        this.jobsCollection,
-        where('assignedStaffId', '==', staffId),
-        where('scheduledDate', '==', today),
-        orderBy('scheduledStartTime', 'asc')
-      )
+      let todaySchedule: any[] = []
+      
+      try {
+        const todayJobsQuery = query(
+          this.jobsCollection,
+          where('assignedStaffId', '==', staffId),
+          where('scheduledDate', '==', today),
+          orderBy('scheduledStartTime', 'asc')
+        )
 
-      const todayJobsSnapshot = await getDocs(todayJobsQuery)
-      const todaySchedule: any[] = []
+        const todayJobsSnapshot = await getDocs(todayJobsQuery)
 
-      todayJobsSnapshot.forEach((doc) => {
-        const job = doc.data() as JobData
-        todaySchedule.push({
-          jobId: job.id,
-          time: job.scheduledStartTime || 'TBD',
-          duration: job.estimatedDuration,
-          propertyName: job.propertyRef.name,
-          jobType: job.jobType
+        todayJobsSnapshot.forEach((doc) => {
+          const job = doc.data() as JobData
+          todaySchedule.push({
+            jobId: job.id,
+            time: job.scheduledStartTime || 'TBD',
+            duration: job.estimatedDuration || '1 hour',
+            propertyName: job.propertyRef?.name || 'Unknown Property',
+            jobType: job.jobType || 'general'
+          })
         })
-      })
+      } catch (indexError) {
+        console.warn('⚠️ Index not ready for today schedule query, using fallback:', indexError)
+        // Fallback: get all jobs for this staff and filter client-side
+        const allJobsQuery = query(
+          this.jobsCollection,
+          where('assignedStaffId', '==', staffId)
+        )
+        const allJobsSnapshot = await getDocs(allJobsQuery)
+        allJobsSnapshot.forEach((doc) => {
+          const job = doc.data() as JobData
+          if (job.scheduledDate === today) {
+            todaySchedule.push({
+              jobId: job.id,
+              time: job.scheduledStartTime || 'TBD',
+              duration: job.estimatedDuration || '1 hour',
+              propertyName: job.propertyRef?.name || 'Unknown Property',
+              jobType: job.jobType || 'general'
+            })
+          }
+        })
+      }
 
       // Calculate performance stats (simplified)
-      const completedJobsQuery = query(
-        this.jobsCollection,
-        where('assignedStaffId', '==', staffId),
-        where('status', '==', 'completed')
-      )
+      let completedCount = 0
+      try {
+        const completedJobsQuery = query(
+          this.jobsCollection,
+          where('assignedStaffId', '==', staffId),
+          where('status', '==', 'completed')
+        )
 
-      const completedJobsSnapshot = await getDocs(completedJobsQuery)
-      const completedCount = completedJobsSnapshot.size
+        const completedJobsSnapshot = await getDocs(completedJobsQuery)
+        completedCount = completedJobsSnapshot.size
+      } catch (indexError) {
+        console.warn('⚠️ Index not ready for completed jobs query, using fallback:', indexError)
+        // Fallback: get all jobs for this staff and filter client-side
+        const allJobsQuery = query(
+          this.jobsCollection,
+          where('assignedStaffId', '==', staffId)
+        )
+        const allJobsSnapshot = await getDocs(allJobsQuery)
+        allJobsSnapshot.forEach((doc) => {
+          const job = doc.data() as JobData
+          if (job.status === 'completed') {
+            completedCount++
+          }
+        })
+      }
 
       // Get unread notifications count
       const unreadNotificationsQuery = query(
@@ -615,29 +670,36 @@ class JobAssignmentService {
       const unreadNotificationsSnapshot = await getDocs(unreadNotificationsQuery)
       const unreadCount = unreadNotificationsSnapshot.size
 
-      // Prepare dashboard data
+      // Filter out any undefined values from arrays
+      const cleanActiveJobs = activeJobs.filter(job => job && job.id)
+      const cleanTodaySchedule = todaySchedule.filter(item => item && item.jobId)
+
+      // Prepare dashboard data with no undefined values
       const dashboardData = {
-        staffId,
-        activeJobs,
-        todaySchedule,
+        staffId: staffId || '',
+        activeJobs: cleanActiveJobs,
+        todaySchedule: cleanTodaySchedule,
         stats: {
-          completedToday: 0, // Can be calculated with date filtering
-          completedThisWeek: 0, // Can be calculated with date filtering
-          completedTotal: completedCount,
-          averageRating: 4.8, // Placeholder - can be calculated from reviews
-          onTimePercentage: 95 // Placeholder - can be calculated from completion times
+          completedToday: 0, // TODO: Calculate with date filtering
+          completedThisWeek: 0, // TODO: Calculate with date filtering
+          completedTotal: completedCount || 0,
+          averageRating: 0, // TODO: Calculate from reviews
+          onTimePercentage: 0 // TODO: Calculate from completion times
         },
-        unreadNotifications: unreadCount,
+        unreadNotifications: unreadCount || 0,
         urgentNotifications: 0, // Can be calculated from notification priorities
-        lastUpdated: serverTimestamp(),
+        lastUpdated: Timestamp.now(),
         cacheExpiry: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
       }
 
+      // Clean the dashboard data to remove any undefined values
+      const cleanDashboardData = this.removeUndefinedValues(dashboardData)
+
       // Update staff dashboard document
-      const dashboardRef = doc(db, 'staff_dashboard', staffId)
-      await updateDoc(dashboardRef, dashboardData).catch(async () => {
+      const dashboardRef = doc(getDb(), 'staff_dashboard', staffId)
+      await updateDoc(dashboardRef, cleanDashboardData).catch(async () => {
         // Create if doesn't exist
-        await addDoc(collection(db, 'staff_dashboard'), { id: staffId, ...dashboardData })
+        await addDoc(collection(getDb(), 'staff_dashboard'), { id: staffId, ...cleanDashboardData })
       })
 
       console.log(`📊 Staff dashboard updated for ${staffId}`)
@@ -645,6 +707,31 @@ class JobAssignmentService {
     } catch (error) {
       console.error('❌ Error updating staff dashboard:', error)
     }
+  }
+
+  /**
+   * Remove undefined values from an object recursively
+   */
+  private removeUndefinedValues(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return null
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.filter(item => item !== undefined).map(item => this.removeUndefinedValues(item))
+    }
+
+    if (typeof obj === 'object') {
+      const cleaned: any = {}
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+          cleaned[key] = this.removeUndefinedValues(value)
+        }
+      }
+      return cleaned
+    }
+
+    return obj
   }
 
   /**
@@ -690,7 +777,7 @@ class JobAssignmentService {
 
         // Filter by skills if specified
         if (filters?.skills && filters.skills.length > 0) {
-          const staffSkills = staff.skills || []
+          const staffSkills = (staff as any).skills || []
           const hasRequiredSkills = filters.skills.some(skill =>
             staffSkills.includes(skill)
           )
@@ -721,7 +808,7 @@ class JobAssignmentService {
     callback: (jobs: JobData[]) => void,
     filters?: { staffId?: string; status?: JobStatus }
   ): () => void {
-    let jobQuery = query(this.jobsCollection, orderBy('createdAt', 'desc'), limit(50))
+    let jobQuery = query(this.jobsCollection, orderBy('createdAt', 'desc'), firestoreLimit(50))
 
     if (filters?.staffId) {
       jobQuery = query(jobQuery, where('assignedStaffId', '==', filters.staffId))
@@ -733,8 +820,21 @@ class JobAssignmentService {
 
     return onSnapshot(jobQuery, (snapshot) => {
       const jobs: JobData[] = []
+      console.log(`📋 Job subscription update: ${snapshot.size} jobs found`)
       snapshot.forEach((doc) => {
-        jobs.push({ id: doc.id, ...doc.data() } as JobData)
+        const docData = doc.data()
+        // Always use Firebase document ID, ignore any custom 'id' field in the data
+        const jobData = {
+          ...docData,
+          id: doc.id  // Firebase document ID always takes precedence
+        } as JobData
+        jobs.push(jobData)
+        console.log(`  - Job: ${doc.id} (${jobData.title || 'No title'}) - Status: ${jobData.status}`)
+
+        // Debug: Show if there was a custom ID field that got overridden
+        if (docData.id && docData.id !== doc.id) {
+          console.log(`    ⚠️  Custom ID field '${docData.id}' overridden with Firebase ID '${doc.id}'`)
+        }
       })
       callback(jobs)
     })
@@ -755,15 +855,15 @@ class JobAssignmentService {
       const jobRef = doc(this.jobsCollection, jobId)
       await updateDoc(jobRef, {
         mobileNotificationPending: false,
-        notificationAcknowledgedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        notificationAcknowledgedAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
       })
 
       // Update notification document if provided
       if (notificationId) {
-        const notificationRef = doc(db, 'staff_notifications', notificationId)
+        const notificationRef = doc(getDb(), 'staff_notifications', notificationId)
         await updateDoc(notificationRef, {
-          readAt: serverTimestamp(),
+          readAt: Timestamp.now(),
           status: 'read'
         })
       }
@@ -796,14 +896,14 @@ class JobAssignmentService {
         deviceToken,
         platform,
         appVersion: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
-        lastActive: serverTimestamp(),
+        lastActive: Timestamp.now(),
         notificationsEnabled: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
       }
 
       // Use token as document ID to prevent duplicates
-      const tokenRef = doc(db, 'staff_device_tokens', deviceToken)
+      const tokenRef = doc(getDb(), 'staff_device_tokens', deviceToken)
       await setDoc(tokenRef, tokenData, { merge: true })
 
       console.log(`✅ Device token registered for staff ${staffId}`)
@@ -828,10 +928,10 @@ class JobAssignmentService {
   ): Promise<{ success: boolean; notifications?: any[]; error?: string }> {
     try {
       let notificationsQuery = query(
-        collection(db, 'staff_notifications'),
+        collection(getDb(), 'staff_notifications'),
         where('staffId', '==', staffId),
         orderBy('createdAt', 'desc'),
-        limit(limit)
+        firestoreLimit(limit)
       )
 
       if (unreadOnly) {
@@ -915,6 +1015,111 @@ class JobAssignmentService {
     // TODO: Implement smart scheduling
     console.log('🧠 Smart scheduling extension called with:', data)
     return { message: 'Smart scheduling not yet implemented' }
+  }
+
+  /**
+   * Create a manual job (not tied to a booking)
+   */
+  async createManualJob(jobData: any, createdBy: any): Promise<{ success: boolean; jobId?: string; error?: string }> {
+    try {
+      console.log('🔧 Creating manual job:', jobData.title)
+
+      // Validate required fields
+      if (!jobData.title || !jobData.assignedStaffId || !jobData.propertyId) {
+        return {
+          success: false,
+          error: 'Missing required fields: title, assignedStaffId, propertyId'
+        }
+      }
+
+      // Get staff and property references
+      const staffRef = doc(this.staffCollection, jobData.assignedStaffId)
+      const staffDoc = await getDoc(staffRef)
+
+      if (!staffDoc.exists()) {
+        return {
+          success: false,
+          error: 'Assigned staff member not found'
+        }
+      }
+
+      // Get property reference (try properties collection)
+      const propertiesCollection = collection(getDb(), 'properties')
+      const propertyRef = doc(propertiesCollection, jobData.propertyId)
+      const propertyDoc = await getDoc(propertyRef)
+
+      let propertyData = null
+      if (propertyDoc.exists()) {
+        propertyData = propertyDoc.data()
+      }
+
+      const staffData = staffDoc.data()
+
+      // Create the job document (DO NOT include custom 'id' field)
+      const jobDocument = {
+        // Spread jobData but exclude any 'id' field to avoid confusion
+        jobType: jobData.jobType,
+        title: jobData.title,
+        description: jobData.description,
+        priority: jobData.priority,
+        estimatedDuration: jobData.estimatedDuration,
+        scheduledDate: jobData.scheduledDate,
+        scheduledStartTime: jobData.scheduledStartTime,
+        deadline: jobData.deadline,
+        specialInstructions: jobData.specialInstructions,
+        requiredSkills: jobData.requiredSkills || [],
+        requiredSupplies: jobData.requiredSupplies || [],
+        propertyId: jobData.propertyId,
+        assignedStaffId: jobData.assignedStaffId,
+        status: jobData.status,
+        createdBy: jobData.createdBy,
+        isManualJob: jobData.isManualJob,
+        relatedBookingId: jobData.relatedBookingId,
+        // Add references
+        assignedStaffRef: {
+          id: staffData.id || jobData.assignedStaffId,
+          name: staffData.name || 'Unknown Staff',
+          email: staffData.email,
+          phone: staffData.phone,
+          role: staffData.role
+        },
+        propertyRef: propertyData ? {
+          id: propertyData.id || jobData.propertyId,
+          name: propertyData.name || propertyData.title || 'Unknown Property',
+          address: propertyData.address || propertyData.location || 'Address not available'
+        } : {
+          id: jobData.propertyId,
+          name: 'Unknown Property',
+          address: 'Address not available'
+        },
+        statusHistory: [{
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          updatedBy: createdBy.name || createdBy.id,
+          notes: 'Job created manually'
+        }],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      // Add the job to Firestore
+      const docRef = await addDoc(this.jobsCollection, jobDocument)
+      console.log('✅ Manual job created with ID:', docRef.id)
+
+      // TODO: Send notification to assigned staff
+      console.log('📱 Job notification would be sent to staff:', jobData.assignedStaffId)
+
+      return {
+        success: true,
+        jobId: docRef.id
+      }
+    } catch (error) {
+      console.error('❌ Error creating manual job:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create job'
+      }
+    }
   }
 }
 

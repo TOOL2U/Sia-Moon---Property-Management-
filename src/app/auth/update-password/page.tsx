@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 // TODO: Replace with Firebase Auth
 // import { auth } from '@/lib/firebase'
 

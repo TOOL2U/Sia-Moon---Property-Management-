@@ -25,7 +25,7 @@ import { DateRangePicker } from '@/components/reports/DateRangePicker'
 import { ExportButtons } from '@/components/reports/ExportButtons'
 
 import { ReportEntry, ReportMetrics, ChartDataPoint, ReportFilters, DateRange } from '@/types'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function ReportsPage() {
   // Authentication and loading states

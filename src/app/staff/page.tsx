@@ -48,7 +48,7 @@ import {
   TrendingUp,
   Activity
 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import { format, isToday, isTomorrow, isPast } from 'date-fns'
 
 export default function StaffDashboard() {

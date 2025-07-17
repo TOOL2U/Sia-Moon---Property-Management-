@@ -84,7 +84,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Listen for notification responses
   useEffect(() => {
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const data = response.notification.request.content.data;
       console.log('📱 Notification tapped:', data);
       
@@ -94,7 +94,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
     });
 
-    const notificationSubscription = Notifications.addNotificationReceivedListener(notification => {
+    const notificationSubscription = Notifications.addNotificationReceivedListener((notification: any) => {
       setNotification(notification);
     });
 

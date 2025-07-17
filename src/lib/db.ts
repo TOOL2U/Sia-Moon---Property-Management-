@@ -367,7 +367,7 @@ class LocalDatabase {
 
   constructor() {
     this.loadFromStorage()
-    this.initializeTestData()
+    this.initializeEmptyData()
   }
 
   // Load data from localStorage
@@ -448,90 +448,19 @@ class LocalDatabase {
     }
   }
 
-  // Initialize with test data (only for demo purposes)
-  private async initializeTestData() {
-    // Only initialize if no users exist (first time setup)
-    if (this.users.length === 0) {
-      // Hash the default password for test users
-      const defaultPasswordHash = await bcrypt.hash('password123', 10)
-
-      // Test users (only for demo/development)
-      this.users = [
-        {
-          id: '12b47961-1777-4dac-8744-74aa29d43730',
-          email: 'test@example.com',
-          name: 'Test User',
-          role: 'client',
-          password_hash: defaultPasswordHash,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'staff-user-id',
-          email: 'sarah.johnson@siamoon.com',
-          name: 'Sarah Johnson',
-          role: 'staff',
-          password_hash: defaultPasswordHash,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
-
-      // Test properties (only for the demo test user)
-      this.properties = [
-        {
-          id: 'prop-1',
-          name: 'Villa Sunset',
-          description: 'Beautiful beachfront villa',
-          location: 'Phuket, Thailand',
-          owner_id: '12b47961-1777-4dac-8744-74aa29d43730', // Only belongs to test user
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
-
-      // Test bookings (only for the demo test property)
-      this.bookings = [
-        {
-          id: 'booking-1',
-          property_id: 'prop-1', // Only belongs to test property
-          guest_name: 'John Smith',
-          guest_email: 'john.smith@email.com',
-          check_in: '2024-07-15',
-          check_out: '2024-07-22',
-          status: 'confirmed' as const,
-          created_at: new Date('2024-07-01').toISOString(),
-          updated_at: new Date('2024-07-01').toISOString()
-        },
-        {
-          id: 'booking-2',
-          property_id: 'prop-1', // Only belongs to test property
-          guest_name: 'Sarah Johnson',
-          guest_email: 'sarah.j@email.com',
-          check_in: '2024-08-01',
-          check_out: '2024-08-05',
-          status: 'pending' as const,
-          created_at: new Date('2024-07-20').toISOString(),
-          updated_at: new Date('2024-07-20').toISOString()
-        },
-        {
-          id: 'booking-3',
-          property_id: 'prop-1', // Only belongs to test property
-          guest_name: 'Mike Wilson',
-          guest_email: 'mike.wilson@email.com',
-          check_in: '2024-06-10',
-          check_out: '2024-06-17',
-          status: 'cancelled' as const,
-          created_at: new Date('2024-06-01').toISOString(),
-          updated_at: new Date('2024-06-05').toISOString()
-        }
-      ]
-    } else {
-      // For fresh database, initialize empty arrays
-      if (!this.properties) this.properties = []
-      if (!this.bookings) this.bookings = []
-    }
+  // Initialize empty arrays for production
+  private initializeEmptyData() {
+    if (!this.users) this.users = []
+    if (!this.properties) this.properties = []
+    if (!this.bookings) this.bookings = []
+    if (!this.villaOnboardings) this.villaOnboardings = []
+    if (!this.tasks) this.tasks = []
+    if (!this.bookingSyncLogs) this.bookingSyncLogs = []
+    if (!this.financialTransactions) this.financialTransactions = []
+    if (!this.monthlyReports) this.monthlyReports = []
+    if (!this.notifications) this.notifications = []
+    if (!this.notificationPreferences) this.notificationPreferences = []
+    if (!this.notificationTemplates) this.notificationTemplates = []
   }
 
   // Utility methods

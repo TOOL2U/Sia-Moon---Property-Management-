@@ -22,7 +22,7 @@ import {
   XCircle,
   Eye
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function AILogPage() {
   const { user, loading: authLoading } = useAuth()

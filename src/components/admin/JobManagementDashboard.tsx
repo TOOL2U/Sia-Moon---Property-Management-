@@ -82,7 +82,7 @@ export function JobManagementDashboard({ className }: JobManagementDashboardProp
   const [filteredJobs, setFilteredJobs] = useState<JobData[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
-  const [sendingTestJob, setSendingTestJob] = useState(false)
+  // sendingTestJob state removed for production
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('')
@@ -294,45 +294,9 @@ export function JobManagementDashboard({ className }: JobManagementDashboardProp
     }
   }, [unsubscribe])
 
-  // Send test job to mobile app
-  const sendTestJobToMobile = async () => {
-    try {
-      setSendingTestJob(true)
-      console.log('🧪 Sending test job to mobile app...')
+  // Test job functionality removed for production
 
-      // TestJobService removed - was using mock data
-      toast.success('Test job functionality removed - was using mock data')
-      console.log('🧪 Test job functionality removed - was using mock data')
-
-    } catch (error) {
-      console.error('❌ Error sending test job:', error)
-      toast.error('❌ Failed to send test job', {
-        description: error instanceof Error ? error.message : 'Unknown error'
-      })
-    } finally {
-      setSendingTestJob(false)
-    }
-  }
-
-  // Send multiple test jobs
-  const sendTestJobSuite = async () => {
-    try {
-      setSendingTestJob(true)
-      console.log('🧪 Sending test job suite to mobile app...')
-
-      // TestJobService removed - was using mock data
-      toast.success('Test job suite functionality removed - was using mock data')
-      console.log('🧪 Test job suite functionality removed - was using mock data')
-
-    } catch (error) {
-      console.error('❌ Error sending test job suite:', error)
-      toast.error('❌ Failed to send test job suite', {
-        description: error instanceof Error ? error.message : 'Unknown error'
-      })
-    } finally {
-      setSendingTestJob(false)
-    }
-  }
+  // Test job suite functionality removed for production
 
   return (
     <motion.div 
@@ -364,43 +328,7 @@ export function JobManagementDashboard({ className }: JobManagementDashboardProp
             </div>
             
             <div className="flex items-center gap-4">
-              {/* Test Job Buttons */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  onClick={sendTestJobToMobile}
-                  disabled={sendingTestJob}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/25 transition-all duration-300"
-                >
-                  {sendingTestJob ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Zap className="w-4 h-4 mr-2" />
-                  )}
-                  Send Test Job
-                </Button>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  onClick={sendTestJobSuite}
-                  disabled={sendingTestJob}
-                  variant="outline"
-                  className="border-green-500/50 text-green-300 hover:bg-green-500/10 transition-all duration-300"
-                >
-                  {sendingTestJob ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Target className="w-4 h-4 mr-2" />
-                  )}
-                  Test Suite
-                </Button>
-              </motion.div>
+              {/* Test job buttons removed for production */}
 
               <motion.div
                 whileHover={{ scale: 1.05 }}

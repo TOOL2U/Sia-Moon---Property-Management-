@@ -80,11 +80,11 @@ function validateAssignmentUpdateData(data: any): { isValid: boolean; errors: st
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { assignmentId: string } }
+  { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   return withMobileAuth(async (req, auth) => {
     try {
-      const { assignmentId } = params
+      const { assignmentId } = await params
       console.log(`📱 Mobile API: Updating assignment ${assignmentId}`)
       
       // Parse request body
@@ -193,11 +193,11 @@ export async function PATCH(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { assignmentId: string } }
+  { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   return withMobileAuth(async (req, auth) => {
     try {
-      const { assignmentId } = params
+      const { assignmentId } = await params
       console.log(`📱 Mobile API: Fetching assignment ${assignmentId}`)
       
       const database = getDb()
@@ -213,21 +213,21 @@ export async function GET(
       // Convert to mobile format
       const mobileAssignment = {
         id: assignmentData.id,
-        staffId: assignmentData.staffId || assignmentData.assignedTo || '',
-        staffName: assignmentData.staffName || assignmentData.assignedToName || 'Unknown Staff',
-        bookingId: assignmentData.bookingId || assignmentData.relatedBooking || '',
-        propertyId: assignmentData.propertyId || assignmentData.bookingId || '',
-        propertyName: assignmentData.propertyName || assignmentData.property || 'Unknown Property',
-        taskType: assignmentData.taskType || assignmentData.type || 'cleaning',
-        title: assignmentData.title || assignmentData.taskTitle || 'Task',
-        description: assignmentData.description || assignmentData.notes || '',
-        scheduledDate: assignmentData.scheduledDate || assignmentData.dueDate || new Date().toISOString().split('T')[0],
-        scheduledTime: assignmentData.scheduledTime || assignmentData.time || '09:00',
-        status: assignmentData.status || 'pending',
-        priority: assignmentData.priority || 'medium',
-        notes: assignmentData.notes || assignmentData.description || '',
-        photos: assignmentData.photos || assignmentData.mobilePhotos || [],
-        timeSpent: assignmentData.timeSpent || assignmentData.actualTimeSpent || 0
+        staffId: (assignmentData as any).staffId || (assignmentData as any).assignedTo || '',
+        staffName: (assignmentData as any).staffName || (assignmentData as any).assignedToName || 'Unknown Staff',
+        bookingId: (assignmentData as any).bookingId || (assignmentData as any).relatedBooking || '',
+        propertyId: (assignmentData as any).propertyId || (assignmentData as any).bookingId || '',
+        propertyName: (assignmentData as any).propertyName || (assignmentData as any).property || 'Unknown Property',
+        taskType: (assignmentData as any).taskType || (assignmentData as any).type || 'cleaning',
+        title: (assignmentData as any).title || (assignmentData as any).taskTitle || 'Task',
+        description: (assignmentData as any).description || (assignmentData as any).notes || '',
+        scheduledDate: (assignmentData as any).scheduledDate || (assignmentData as any).dueDate || new Date().toISOString().split('T')[0],
+        scheduledTime: (assignmentData as any).scheduledTime || (assignmentData as any).time || '09:00',
+        status: (assignmentData as any).status || 'pending',
+        priority: (assignmentData as any).priority || 'medium',
+        notes: (assignmentData as any).notes || (assignmentData as any).description || '',
+        photos: (assignmentData as any).photos || (assignmentData as any).mobilePhotos || [],
+        timeSpent: (assignmentData as any).timeSpent || (assignmentData as any).actualTimeSpent || 0
       }
       
       console.log(`✅ Returning assignment details for ${assignmentId}`)

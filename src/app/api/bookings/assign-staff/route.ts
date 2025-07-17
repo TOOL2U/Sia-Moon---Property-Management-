@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
             action: 'task_assigned',
             bookingId,
             staffId: staffProfile.id,
-            staffName: staffProfile.name,
+            staffName: (staffProfile as any).name || 'Unknown Staff',
             taskType: task.taskType,
             property: bookingData.property || bookingData.propertyName
           }
@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
     const response: StaffAssignmentResponse = {
       success: true,
       bookingId,
-      assignedStaff: staffProfiles,
+      assignedStaff: staffProfiles as any,
       createdTasks,
       assignedBy,
       assignedAt: timestamp as any,

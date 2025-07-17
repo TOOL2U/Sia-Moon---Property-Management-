@@ -81,11 +81,11 @@ function validateUpdateData(data: any): { isValid: boolean; errors: string[] } {
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   return withMobileAuth(async (req, auth) => {
     try {
-      const { bookingId } = params
+      const { bookingId } = await params
       console.log(`📱 Mobile API: Updating booking ${bookingId}`)
       
       // Parse request body
@@ -189,11 +189,11 @@ export async function PATCH(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { bookingId: string } }
+  { params }: { params: Promise<{ bookingId: string }> }
 ) {
   return withMobileAuth(async (req, auth) => {
     try {
-      const { bookingId } = params
+      const { bookingId } = await params
       console.log(`📱 Mobile API: Fetching booking ${bookingId}`)
       
       const database = getDb()
@@ -210,21 +210,21 @@ export async function GET(
       const mobileBooking = {
         id: bookingData.id,
         propertyId: bookingData.id,
-        propertyName: bookingData.property || bookingData.propertyName || 'Unknown Property',
-        propertyAddress: bookingData.address || 'Address not available',
-        guestName: bookingData.guestName || 'Unknown Guest',
-        guestEmail: bookingData.guestEmail || '',
-        guestPhone: bookingData.guestPhone || bookingData.phone || '',
-        checkIn: bookingData.checkInDate || bookingData.checkIn || '',
-        checkOut: bookingData.checkOutDate || bookingData.checkOut || '',
-        status: bookingData.status || 'approved',
-        totalAmount: bookingData.totalAmount || bookingData.price || 0,
-        paymentStatus: bookingData.paymentStatus || 'pending',
-        specialRequests: bookingData.specialRequests || bookingData.notes || '',
-        assignedStaff: bookingData.assignedStaff || [],
-        tasks: bookingData.tasks || [],
-        createdAt: bookingData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        approvedAt: bookingData.approvedAt?.toDate?.()?.toISOString() || bookingData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        propertyName: (bookingData as any).property || (bookingData as any).propertyName || 'Unknown Property',
+        propertyAddress: (bookingData as any).address || 'Address not available',
+        guestName: (bookingData as any).guestName || 'Unknown Guest',
+        guestEmail: (bookingData as any).guestEmail || '',
+        guestPhone: (bookingData as any).guestPhone || (bookingData as any).phone || '',
+        checkIn: (bookingData as any).checkInDate || (bookingData as any).checkIn || '',
+        checkOut: (bookingData as any).checkOutDate || (bookingData as any).checkOut || '',
+        status: (bookingData as any).status || 'approved',
+        totalAmount: (bookingData as any).totalAmount || (bookingData as any).price || 0,
+        paymentStatus: (bookingData as any).paymentStatus || 'pending',
+        specialRequests: (bookingData as any).specialRequests || (bookingData as any).notes || '',
+        assignedStaff: (bookingData as any).assignedStaff || [],
+        tasks: (bookingData as any).tasks || [],
+        createdAt: (bookingData as any).createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        approvedAt: (bookingData as any).approvedAt?.toDate?.()?.toISOString() || (bookingData as any).updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
       }
       
       console.log(`✅ Returning booking details for ${bookingId}`)

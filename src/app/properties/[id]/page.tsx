@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building, Image as ImageIcon, Home, Users } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
 import { formatLocalDate } from '@/utils/dateUtils'
 

@@ -213,7 +213,7 @@ export class OptimizedSyncService {
       const bookingId = this.subscribeToBookings({
         onBookingUpdated: (booking, changeType) => {
           // Client-side filtering for pending bookings
-          if (booking.status === 'pending_approval' || booking.status === 'pending') {
+          if (booking.status === 'pending_approval') {
             handlers.onBookingUpdate?.(booking, changeType)
           }
         },

@@ -22,7 +22,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface FinancialReport {
   id: string

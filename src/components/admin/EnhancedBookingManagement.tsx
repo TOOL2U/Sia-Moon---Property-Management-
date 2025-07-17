@@ -215,12 +215,12 @@ export function EnhancedBookingManagement({
     })
   }
 
-  // Confirm booking rejection
+  // Confirm booking rejection with enhanced logging
   const confirmBookingRejection = async () => {
     if (!rejectionDialog.booking) return
 
     const { booking } = rejectionDialog
-    const rejectionReason = rejectionDialog.rejectionReason.trim() || 'Booking rejected by admin'
+    const rejectionReason = rejectionDialog.rejectionReason.trim() || 'Manual'
 
     // Close dialog first
     setRejectionDialog({
@@ -229,8 +229,143 @@ export function EnhancedBookingManagement({
       rejectionReason: ''
     })
 
-    // Proceed with rejection
-    await handleBookingApproval(booking.id, 'reject', rejectionReason)
+    try {
+      // Enhanced rejection with proper Firebase fields and debugging
+      console.log('🔄 Rejecting booking:', {
+        id: booking.id,
+        status: booking.status,
+        source: booking.source,
+        guestName: booking.guestName || booking.guest_name
+      })
+
+      const response = await fetch('/api/bookings/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          action: 'reject',
+          adminId: 'current-admin-id',
+          adminName: 'Admin User',
+          notes: rejectionReason,
+          reason: rejectionReason,
+          rejectionMetadata: {
+            rejectedAt: new Date().toISOString(),
+            rejectedBy: 'current-admin-id',
+            rejectionReason: rejectionReason,
+            bookingValue: booking.price || booking.amount || 0,
+            propertyName: booking.propertyName || booking.property,
+            guestName: booking.guestName || booking.guest_name,
+            originalSource: booking.source
+          }
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ API Response Error:', response.status, errorText)
+        toast.error(`Failed to reject booking: ${response.status}`)
+        return
+      }
+
+      const result = await response.json()
+      console.log('📋 Rejection API Response:', result)
+
+      if (result.success) {
+        toast.success('Booking rejected successfully!', {
+          description: 'Booking has been moved to rejected list'
+        })
+
+        // Update local state to mark as rejected instead of removing
+        setAllBookings(prev => prev.map(b =>
+          b.id === booking.id
+            ? {
+                ...b,
+                status: 'rejected',
+                rejectionReason: rejectionReason,
+                rejectedAt: new Date().toISOString(),
+                rejectedBy: 'current-admin-id'
+              }
+            : b
+        ))
+
+        // Log for AI feedback loop (if AI automation is enabled)
+        if (automationEnabled) {
+          try {
+            await logRejectionForAI(booking.id, rejectionReason)
+          } catch (aiError) {
+            console.warn('⚠️ AI logging failed:', aiError)
+          }
+        }
+
+        // Log to audit trail
+        try {
+          await logRejectionAudit(booking.id, rejectionReason, booking)
+        } catch (auditError) {
+          console.warn('⚠️ Audit logging failed:', auditError)
+        }
+
+      } else {
+        toast.error(`Failed to reject booking: ${result.error}`)
+        console.error('❌ Rejection failed:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ Error rejecting booking:', error)
+      toast.error('Error rejecting booking')
+    }
+  }
+
+  // Log rejection for AI feedback loop
+  const logRejectionForAI = async (bookingId: string, reason: string) => {
+    try {
+      // Check if AI automation is enabled in settings
+      const aiSettings = await fetch('/api/settings/aiAutomation').catch(() => ({ ok: false }))
+
+      if (aiSettings.ok) {
+        await fetch('/api/ai/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking_rejection',
+            bookingId,
+            rejectedBy: 'current-admin-id',
+            reason,
+            timestamp: new Date().toISOString(),
+            metadata: {
+              source: 'enhanced_booking_management',
+              automationEnabled: automationEnabled
+            }
+          })
+        })
+        console.log('✅ AI feedback logged for booking rejection')
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to log AI feedback:', error)
+    }
+  }
+
+  // Log rejection to audit trail
+  const logRejectionAudit = async (bookingId: string, reason: string, booking: any) => {
+    try {
+      await fetch('/api/logs/rejections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          rejectionReason: reason,
+          rejectedBy: 'current-admin-id',
+          rejectedAt: new Date().toISOString(),
+          bookingMetadata: {
+            guestName: booking.guestName || booking.guest_name,
+            propertyName: booking.propertyName || booking.property,
+            checkInDate: booking.checkInDate || booking.checkIn,
+            bookingValue: booking.price || booking.amount || 0
+          }
+        })
+      })
+      console.log('✅ Rejection audit logged')
+    } catch (error) {
+      console.warn('⚠️ Failed to log rejection audit:', error)
+    }
   }
 
   // Enhanced booking approval with workflow trigger
@@ -383,12 +518,23 @@ export function EnhancedBookingManagement({
     return skillMap[jobType] || ['general']
   }
 
-  // Filter and sort bookings (exclude rejected bookings by default)
+  // Filter and sort bookings (show rejected bookings only when specifically filtered)
   const filteredAndSortedBookings = allBookings
     .filter(booking => {
-      // Always exclude rejected bookings from the main display
-      if (booking.status === 'rejected') {
-        return false
+      // Handle status filtering - show rejected bookings only when explicitly filtered
+      if (statusFilter === 'rejected') {
+        if (booking.status !== 'rejected') {
+          return false
+        }
+      } else if (statusFilter !== 'all') {
+        if (booking.status !== statusFilter) {
+          return false
+        }
+      } else {
+        // For 'all' filter, exclude rejected bookings from main view
+        if (booking.status === 'rejected') {
+          return false
+        }
       }
 
       const matchesSearch = !searchTerm ||
@@ -834,7 +980,11 @@ export function EnhancedBookingManagement({
                       whileHover={cardHoverVariants.hover}
                       className="group"
                     >
-                      <Card className="bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/50 hover:border-gray-600/70 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm">
+                      <Card className={`${
+                        booking.status === 'rejected'
+                          ? 'bg-gradient-to-br from-gray-900/30 to-slate-900/30 border-gray-800/50 opacity-75'
+                          : 'bg-gradient-to-br from-gray-900/50 to-slate-900/50 border-gray-700/50 hover:border-gray-600/70'
+                      } transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm`}>
                         <CardContent className="p-6">
                           {/* Booking Header */}
                           <div className="flex items-start justify-between mb-6">
@@ -957,6 +1107,34 @@ export function EnhancedBookingManagement({
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-3">
+                            {booking.status === 'rejected' && (
+                              <div className="w-full bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/30 rounded-lg p-4">
+                                <div className="flex items-start gap-3">
+                                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-red-300 font-medium">Booking Rejected</span>
+                                      {booking.rejectedAt && (
+                                        <span className="text-red-400/70 text-xs">
+                                          {new Date(booking.rejectedAt).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {booking.rejectionReason && (
+                                      <p className="text-red-200/80 text-sm">
+                                        <strong>Reason:</strong> {booking.rejectionReason}
+                                      </p>
+                                    )}
+                                    {booking.rejectedBy && (
+                                      <p className="text-red-200/60 text-xs mt-1">
+                                        Rejected by: {booking.rejectedBy}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             {(booking.status === 'pending' || booking.status === 'pending_approval') && (
                               <>
                                 <motion.div

@@ -1,9 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 
 // Firebase configuration - same as webapp
 const firebaseConfig = {
@@ -20,23 +18,14 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth with AsyncStorage persistence
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+// Initialize Auth
+const auth = getAuth(app);
 
 // Initialize Firestore
 const db = getFirestore(app);
 
 // Initialize Storage
 const storage = getStorage(app);
-
-// Connect to emulator in development
-if (__DEV__ && Constants.expoConfig?.extra?.useEmulator) {
-  // Uncomment these lines if you want to use Firebase emulators in development
-  // connectFirestoreEmulator(db, 'localhost', 8080);
-  // connectAuthEmulator(auth, 'http://localhost:9099');
-}
 
 export { auth, db, storage };
 export default app;

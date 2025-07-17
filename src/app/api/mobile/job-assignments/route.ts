@@ -14,16 +14,16 @@ import { JobAssignment } from '@/types/jobAssignment'
  * Get job assignments for authenticated staff member
  */
 export async function GET(request: NextRequest) {
-  return withMobileAuth(request, async (staffId: string) => {
+  return withMobileAuth(async (req, auth) => {
     try {
       const { searchParams } = new URL(request.url)
       const status = searchParams.get('status')
       const limit_param = searchParams.get('limit')
-      
+
       const db = getDb()
       let q = query(
         collection(db, 'job_assignments'),
-        where('assignedStaffId', '==', staffId),
+        where('assignedStaffId', '==', auth.staffId),
         orderBy('createdAt', 'desc')
       )
 
@@ -61,5 +61,5 @@ export async function GET(request: NextRequest) {
       console.error('❌ Error fetching mobile job assignments:', error)
       return createMobileErrorResponse('Failed to fetch job assignments')
     }
-  })
+  })(request)
 }

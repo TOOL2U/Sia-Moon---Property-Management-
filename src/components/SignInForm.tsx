@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function SignInForm() {
   const { signIn } = useAuth()

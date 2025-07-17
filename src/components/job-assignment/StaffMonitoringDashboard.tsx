@@ -114,27 +114,27 @@ export default function StaffMonitoringDashboard({
           status: 'available' as StaffStatus, // TODO: Track actual status
           avatar: '/avatars/default.jpg', // TODO: Store actual avatars
           currentLocation: {
-            latitude: -8.6705 + (Math.random() - 0.5) * 0.1, // TODO: Track actual location
-            longitude: 115.2126 + (Math.random() - 0.5) * 0.1, // TODO: Track actual location
-            accuracy: 'medium' as const,
+            latitude: 0, // TODO: Track actual location
+            longitude: 0, // TODO: Track actual location
+            accuracy: 'low' as const,
             timestamp: new Date(),
             address: 'Location tracking not implemented' // TODO: Reverse geocode
           },
-          lastSeen: new Date(Date.now() - Math.random() * 60 * 60000),
-          isOnline: Math.random() > 0.2, // TODO: Track actual online status
+          lastSeen: new Date(),
+          isOnline: false, // TODO: Track actual online status
           currentJobs: [], // TODO: Load actual current jobs
-          completedJobsToday: Math.floor(Math.random() * 5), // TODO: Calculate from actual data
-          totalJobsAssigned: Math.floor(Math.random() * 100), // TODO: Calculate from actual data
-          rating: 4.0 + Math.random(), // TODO: Calculate from actual ratings
-          completionRate: 80 + Math.random() * 20, // TODO: Calculate from actual data
-          averageJobTime: 60 + Math.random() * 120, // TODO: Calculate from actual data
+          completedJobsToday: 0, // TODO: Calculate from actual data
+          totalJobsAssigned: 0, // TODO: Calculate from actual data
+          rating: 0, // TODO: Calculate from actual ratings
+          completionRate: 0, // TODO: Calculate from actual data
+          averageJobTime: 0, // TODO: Calculate from actual data
           skills: staff.skills || [], // Use actual skills if available
           availability: {
-            isAvailable: Math.random() > 0.5,
+            isAvailable: staff.status === 'active',
             maxConcurrentJobs: 2,
-            currentJobCount: Math.floor(Math.random() * 3)
+            currentJobCount: 0 // TODO: Calculate from real job assignments
           },
-          unreadMessages: Math.floor(Math.random() * 5),
+          unreadMessages: 0, // TODO: Calculate from real messaging system
           hiredDate: new Date(staff.createdAt || '2023-01-01'),
           isActive: staff.status === 'active'
         }))

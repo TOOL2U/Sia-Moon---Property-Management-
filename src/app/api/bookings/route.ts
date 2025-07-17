@@ -65,7 +65,7 @@ interface BookingData {
   date: string
 }
 
-interface ProcessedBooking extends Omit<SyncBooking, 'id' | 'createdAt' | 'updatedAt'> {
+interface ProcessedBooking extends Omit<SyncBooking, 'id' | 'createdAt' | 'updatedAt' | 'lastSyncedAt'> {
   property: string
   villaName: string // Add villaName for compatibility with LiveBooking interface
   address: string
@@ -86,7 +86,7 @@ interface ProcessedBooking extends Omit<SyncBooking, 'id' | 'createdAt' | 'updat
   updatedAt: unknown // Use serverTimestamp() for Firestore
   duplicateCheckHash: string
   syncVersion: number
-  lastSyncedAt: unknown
+  lastSyncedAt?: unknown // Use serverTimestamp() for Firestore
 }
 
 /**

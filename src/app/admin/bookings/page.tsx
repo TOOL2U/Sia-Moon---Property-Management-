@@ -44,7 +44,7 @@ import {
   Star,
   TrendingUp
 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function AdminBookingsPage() {
   const [allBookings, setAllBookings] = useState<LiveBooking[]>([])

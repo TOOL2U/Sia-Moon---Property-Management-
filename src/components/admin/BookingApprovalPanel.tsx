@@ -17,7 +17,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 export default function BookingApprovalPanel() {
   const [pendingBookings, setPendingBookings] = useState<LiveBooking[]>([])

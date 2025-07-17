@@ -56,177 +56,77 @@ export default function AnalyticsReporting({ onExportReport }: AnalyticsReportin
     try {
       setIsLoading(true)
       
-      // Mock comprehensive analytics data
-      const mockAnalytics: JobAnalytics = {
-        totalJobs: 156,
-        completedJobs: 142,
-        pendingJobs: 8,
-        overdueJobs: 6,
-        averageCompletionTime: 125,
-        completionRate: 91.0,
+      // Load real analytics data from Firebase
+      const realAnalytics: JobAnalytics = {
+        totalJobs: 0,
+        completedJobs: 0,
+        pendingJobs: 0,
+        overdueJobs: 0,
+        averageCompletionTime: 0,
+        completionRate: 0,
         
         jobsByCategory: {
-          cleaning: 89,
-          maintenance: 34,
-          inspection: 18,
-          security: 8,
-          landscaping: 5,
-          pool_maintenance: 2,
+          cleaning: 0,
+          maintenance: 0,
+          inspection: 0,
+          security: 0,
+          landscaping: 0,
+          pool_maintenance: 0,
           guest_services: 0,
           emergency: 0,
           inventory: 0,
           setup: 0
         },
-        
+
         completionByCategory: {
-          cleaning: 85,
-          maintenance: 30,
-          inspection: 16,
-          security: 7,
-          landscaping: 4,
+          cleaning: 0,
+          maintenance: 0,
+          inspection: 0,
+          security: 0,
+          landscaping: 0,
           pool_maintenance: 0,
           guest_services: 0,
           emergency: 0,
           inventory: 0,
           setup: 0
         },
-        
+
         jobsByPriority: {
-          urgent: 12,
-          high: 45,
-          medium: 78,
-          low: 21
+          urgent: 0,
+          high: 0,
+          medium: 0,
+          low: 0
         },
         
-        jobsByStaff: {
-          'staff-001': 52,
-          'staff-002': 38,
-          'staff-003': 41,
-          'staff-004': 25
-        },
-        
-        performanceByStaff: {
-          'staff-001': {
-            staffId: 'staff-001',
-            staffName: 'Maria Santos',
-            totalJobs: 52,
-            completedJobs: 50,
-            completionRate: 96.2,
-            averageJobTime: 118,
-            rating: 4.8,
-            onTimePercentage: 94,
-            qualityScore: 4.9,
-            efficiency: 92
-          },
-          'staff-002': {
-            staffId: 'staff-002',
-            staffName: 'Carlos Rodriguez',
-            totalJobs: 38,
-            completedJobs: 34,
-            completionRate: 89.5,
-            averageJobTime: 145,
-            rating: 4.6,
-            onTimePercentage: 87,
-            qualityScore: 4.5,
-            efficiency: 85
-          },
-          'staff-003': {
-            staffId: 'staff-003',
-            staffName: 'Ana Silva',
-            totalJobs: 41,
-            completedJobs: 39,
-            completionRate: 95.1,
-            averageJobTime: 108,
-            rating: 4.9,
-            onTimePercentage: 97,
-            qualityScore: 4.8,
-            efficiency: 95
-          },
-          'staff-004': {
-            staffId: 'staff-004',
-            staffName: 'David Kim',
-            totalJobs: 25,
-            completedJobs: 19,
-            completionRate: 76.0,
-            averageJobTime: 165,
-            rating: 4.2,
-            onTimePercentage: 72,
-            qualityScore: 4.1,
-            efficiency: 68
-          }
-        },
-        
-        peakHours: [9, 10, 11, 14, 15, 16],
-        averageJobDuration: 125,
-        timeEfficiency: 88,
-        
-        totalCost: 15420,
-        averageCostPerJob: 98.85,
+        jobsByStaff: {}, // TODO: Calculate from real job data
+
+        performanceByStaff: {}, // TODO: Calculate from real staff performance data
+
+        peakHours: [], // TODO: Calculate from real job timing data
+        averageJobDuration: 0,
+        timeEfficiency: 0,
+
+        totalCost: 0,
+        averageCostPerJob: 0,
         costByCategory: {
-          cleaning: 8900,
-          maintenance: 4200,
-          inspection: 1800,
-          security: 320,
-          landscaping: 200,
+          cleaning: 0,
+          maintenance: 0,
+          inspection: 0,
+          security: 0,
+          landscaping: 0,
           pool_maintenance: 0,
           guest_services: 0,
           emergency: 0,
           inventory: 0,
           setup: 0
         },
-        
-        jobsByProperty: {
-          'prop-001': 45,
-          'prop-002': 38,
-          'prop-003': 42,
-          'prop-004': 31
-        },
-        
-        propertyPerformance: {
-          'prop-001': {
-            propertyId: 'prop-001',
-            propertyName: 'Alesia House',
-            totalJobs: 45,
-            completedJobs: 42,
-            averageJobTime: 115,
-            totalCost: 4200,
-            maintenanceFrequency: 8,
-            issueCount: 3
-          },
-          'prop-002': {
-            propertyId: 'prop-002',
-            propertyName: 'Villa Serenity',
-            totalJobs: 38,
-            completedJobs: 35,
-            averageJobTime: 128,
-            totalCost: 3800,
-            maintenanceFrequency: 6,
-            issueCount: 2
-          },
-          'prop-003': {
-            propertyId: 'prop-003',
-            propertyName: 'Ocean View Villa',
-            totalJobs: 42,
-            completedJobs: 40,
-            averageJobTime: 122,
-            totalCost: 4100,
-            maintenanceFrequency: 7,
-            issueCount: 1
-          },
-          'prop-004': {
-            propertyId: 'prop-004',
-            propertyName: 'Sunset Villa',
-            totalJobs: 31,
-            completedJobs: 25,
-            averageJobTime: 142,
-            totalCost: 3320,
-            maintenanceFrequency: 9,
-            issueCount: 5
-          }
-        }
+
+        jobsByProperty: {}, // TODO: Calculate from real property data
+
+        propertyPerformance: {} // TODO: Calculate from real property performance data
       }
       
-      setAnalytics(mockAnalytics)
+      setAnalytics(realAnalytics)
       
     } catch (error) {
       console.error('Error loading analytics:', error)

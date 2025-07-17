@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
 import { Progress } from '@/components/ui/Progress'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 import {
   Clock,
   User,

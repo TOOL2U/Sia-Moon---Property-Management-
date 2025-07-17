@@ -32,7 +32,7 @@ import {
 } from 'lucide-react'
 import { Property, PropertyFilters, PropertySearchResult, PropertyStatus, PROPERTY_STATUSES } from '@/types/property'
 import { PropertyService } from '@/lib/services/propertyService'
-import toast from 'react-hot-toast'
+import { clientToast as toast } from '@/utils/clientToast'
 
 interface PropertyListingProps {
   onViewProperty?: (property: Property) => void

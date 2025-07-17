@@ -12,10 +12,10 @@ import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id
+    const { id: jobId } = await params
     const body = await request.json()
     const { staffId, assignedBy, options } = body
 
@@ -53,7 +53,8 @@ export async function POST(
       message: 'Staff assigned successfully'
     })
   } catch (error) {
-    console.error(`❌ Error in POST /api/admin/job-assignments/${params?.id}/assign:`, error)
+    const { id: jobId } = await params
+    console.error(`❌ Error in POST /api/admin/job-assignments/${jobId}/assign:`, error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
