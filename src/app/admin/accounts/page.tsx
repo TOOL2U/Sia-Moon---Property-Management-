@@ -1,8 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
+import { clientToast as toast } from '@/utils/clientToast'
+import {
+  ArrowLeft,
+  Copy,
+  Eye,
+  EyeOff,
+  Search,
+  // Mail,
+  // Calendar,
+  Shield,
+  User as UserIcon,
+  Users,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 // TODO: Replace with Firebase service
 // import FirebaseService from '@/lib/firebaseService'
 
@@ -14,24 +38,6 @@ interface Profile {
   created_at: string
   updated_at?: string
 }
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { Input } from '@/components/ui/Input'
-import { 
-  ArrowLeft,
-  User as UserIcon, 
-  // Mail, 
-  // Calendar,
-  Shield,
-  Users,
-  Search,
-  Copy,
-  Eye,
-  EyeOff
-} from 'lucide-react'
-import Link from 'next/link'
-import { clientToast as toast } from '@/utils/clientToast'
 
 export default function AccountsPage() {
   const { user } = useAuth()
@@ -48,7 +54,7 @@ export default function AccountsPage() {
       router.push('/dashboard/client')
       return
     }
-    
+
     if (user) {
       fetchAccounts()
     }
@@ -61,7 +67,9 @@ export default function AccountsPage() {
       // const usersSnapshot = await getDocs(collection(db, 'users'))
       // const data = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
-      console.log('⚠️ Account fetching not implemented - Firebase integration needed')
+      console.log(
+        '⚠️ Account fetching not implemented - Firebase integration needed'
+      )
 
       // Placeholder data for development
       const mockAccounts: Profile[] = [
@@ -70,15 +78,15 @@ export default function AccountsPage() {
           email: 'admin@example.com',
           full_name: 'Admin User',
           role: 'admin',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         },
         {
           id: '2',
           email: 'client@example.com',
           full_name: 'Client User',
           role: 'client',
-          created_at: new Date().toISOString()
-        }
+          created_at: new Date().toISOString(),
+        },
       ]
 
       setAccounts(mockAccounts)
@@ -99,25 +107,29 @@ export default function AccountsPage() {
     const variants: Record<string, string> = {
       client: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
       staff: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-      admin: 'bg-green-500/10 text-green-500 border-green-500/20'
+      admin: 'bg-green-500/10 text-green-500 border-green-500/20',
     }
     const icons: Record<string, React.ElementType> = {
       client: UserIcon,
       staff: Shield,
-      admin: Shield
+      admin: Shield,
     }
     const Icon = icons[role as keyof typeof icons] || UserIcon
     return (
-      <Badge className={`${variants[role as keyof typeof variants] || ''} flex items-center gap-1`}>
+      <Badge
+        className={`${variants[role as keyof typeof variants] || ''} flex items-center gap-1`}
+      >
         <Icon className="h-3 w-3" />
         {role}
       </Badge>
     )
   }
 
-  const filteredAccounts = accounts.filter(account => {
-    const matchesSearch = searchTerm === '' || 
-      (account.full_name && account.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+  const filteredAccounts = accounts.filter((account) => {
+    const matchesSearch =
+      searchTerm === '' ||
+      (account.full_name &&
+        account.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.role.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesSearch
@@ -128,7 +140,9 @@ export default function AccountsPage() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-neutral-400">Admin privileges required to access this page.</p>
+          <p className="text-neutral-400">
+            Admin privileges required to access this page.
+          </p>
           <Link href="/dashboard/client">
             <Button className="mt-4">Go to Dashboard</Button>
           </Link>
@@ -150,20 +164,26 @@ export default function AccountsPage() {
               </Button>
             </Link>
           </div>
-          
+
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">User Accounts</h1>
-              <p className="text-neutral-400">View all registered user accounts</p>
+              <p className="text-neutral-400">
+                View all registered user accounts
+              </p>
             </div>
-            
+
             <div className="flex gap-2">
-              <Button 
-                onClick={() => setShowPasswords(!showPasswords)} 
-                variant="outline" 
+              <Button
+                onClick={() => setShowPasswords(!showPasswords)}
+                variant="outline"
                 size="sm"
               >
-                {showPasswords ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                {showPasswords ? (
+                  <EyeOff className="h-4 w-4 mr-2" />
+                ) : (
+                  <Eye className="h-4 w-4 mr-2" />
+                )}
                 {showPasswords ? 'Hide' : 'Show'} Passwords
               </Button>
             </div>
@@ -202,7 +222,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-sm text-neutral-400">Client Accounts</p>
                   <p className="text-2xl font-bold text-blue-500">
-                    {accounts.filter(a => a.role === 'client').length}
+                    {accounts.filter((a) => a.role === 'client').length}
                   </p>
                 </div>
                 <UserIcon className="h-8 w-8 text-blue-500" />
@@ -215,7 +235,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="text-sm text-neutral-400">Staff Accounts</p>
                   <p className="text-2xl font-bold text-purple-500">
-                    {accounts.filter(a => a.role === 'staff').length}
+                    {accounts.filter((a) => a.role === 'staff').length}
                   </p>
                 </div>
                 <Shield className="h-8 w-8 text-purple-500" />
@@ -240,8 +260,8 @@ export default function AccountsPage() {
               {searchTerm ? 'No matching accounts' : 'No user accounts found'}
             </h3>
             <p className="text-neutral-400">
-              {searchTerm 
-                ? 'Try adjusting your search criteria.' 
+              {searchTerm
+                ? 'Try adjusting your search criteria.'
                 : 'User accounts will appear here when created.'}
             </p>
           </div>
@@ -251,7 +271,10 @@ export default function AccountsPage() {
         {!loading && filteredAccounts.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredAccounts.map((account) => (
-              <Card key={account.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={account.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -269,7 +292,9 @@ export default function AccountsPage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs text-neutral-400 uppercase tracking-wide">User ID</label>
+                      <label className="text-xs text-neutral-400 uppercase tracking-wide">
+                        User ID
+                      </label>
                       <div className="flex items-center gap-2 mt-1">
                         <code className="text-sm bg-neutral-800 px-2 py-1 rounded font-mono">
                           {account.id.substring(0, 8)}...
@@ -286,13 +311,17 @@ export default function AccountsPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs text-neutral-400 uppercase tracking-wide">Email</label>
+                      <label className="text-xs text-neutral-400 uppercase tracking-wide">
+                        Email
+                      </label>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm">{account.email}</span>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => copyToClipboard(account.email, 'Email')}
+                          onClick={() =>
+                            copyToClipboard(account.email, 'Email')
+                          }
                           className="h-6 w-6 p-0"
                         >
                           <Copy className="h-3 w-3" />
@@ -304,15 +333,21 @@ export default function AccountsPage() {
 
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-neutral-800">
                       <div>
-                        <label className="text-xs text-neutral-400 uppercase tracking-wide">Created</label>
+                        <label className="text-xs text-neutral-400 uppercase tracking-wide">
+                          Created
+                        </label>
                         <p className="text-sm mt-1">
                           {new Date(account.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <div>
-                        <label className="text-xs text-neutral-400 uppercase tracking-wide">Updated</label>
+                        <label className="text-xs text-neutral-400 uppercase tracking-wide">
+                          Updated
+                        </label>
                         <p className="text-sm mt-1">
-                          {account.updated_at ? new Date(account.updated_at).toLocaleDateString() : 'N/A'}
+                          {account.updated_at
+                            ? new Date(account.updated_at).toLocaleDateString()
+                            : 'N/A'}
                         </p>
                       </div>
                     </div>

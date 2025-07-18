@@ -1,30 +1,24 @@
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native'
+import React from 'react'
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native'
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Linking,
-  Alert,
-} from 'react-native';
-import {
-  Text,
-  Card,
-  Title,
-  Paragraph,
   Button,
+  Card,
   Chip,
   Divider,
   List,
-} from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { JobAssignment } from '../types/job';
-import { NavigationService } from '../services/navigationService';
+  Paragraph,
+  Text,
+  Title,
+} from 'react-native-paper'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { NavigationService } from '../services/navigationService'
+import { JobAssignment } from '../types/job'
 
 export default function JobDetailsScreen() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const job = (route.params as any)?.job as JobAssignment;
+  const route = useRoute()
+  const navigation = useNavigation()
+  const job = (route.params as any)?.job as JobAssignment
 
   if (!job) {
     return (
@@ -33,73 +27,89 @@ export default function JobDetailsScreen() {
           <Text style={styles.errorText}>Job not found</Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   const handleNavigateToJob = async () => {
     if (!job.propertyAddress) {
-      Alert.alert('No Address', 'Property address not available for navigation.');
-      return;
+      Alert.alert(
+        'No Address',
+        'Property address not available for navigation.'
+      )
+      return
     }
 
     try {
-      await NavigationService.navigateToAddress(job.propertyAddress, 'driving');
+      await NavigationService.navigateToAddress(job.propertyAddress, 'driving')
     } catch (error) {
-      Alert.alert('Navigation Error', 'Unable to open navigation app.');
+      Alert.alert('Navigation Error', 'Unable to open navigation app.')
     }
-  };
+  }
 
   const handleCompleteJob = () => {
     // Fixed: Remove type assertion that causes TypeScript error
-    navigation.navigate('JobCompletion', { job });
-  };
+    navigation.navigate('JobCompletion', { job })
+  }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return '#EF4444';
-      case 'high': return '#F97316';
-      case 'medium': return '#EAB308';
-      case 'low': return '#10B981';
-      default: return '#6B7280';
+      case 'urgent':
+        return '#EF4444'
+      case 'high':
+        return '#F97316'
+      case 'medium':
+        return '#EAB308'
+      case 'low':
+        return '#10B981'
+      default:
+        return '#6B7280'
     }
-  };
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'accepted': return '#3B82F6';
-      case 'in_progress': return '#8B5CF6';
-      case 'completed': return '#10B981';
-      default: return '#6B7280';
+      case 'accepted':
+        return '#3B82F6'
+      case 'in_progress':
+        return '#8B5CF6'
+      case 'completed':
+        return '#10B981'
+      default:
+        return '#6B7280'
     }
-  };
+  }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+    const date = new Date(dateString)
+    return (
+      date.toLocaleDateString() +
+      ' ' +
+      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    )
+  }
 
   const formatPhoneNumber = (phone: string) => {
     // Simple phone number formatting
-    const cleaned = phone.replace(/\D/g, '');
+    const cleaned = phone.replace(/\D/g, '')
     if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
     }
-    return phone;
-  };
+    return phone
+  }
 
   const handleCallGuest = () => {
     if (job.guestPhone) {
-      const phoneUrl = `tel:${job.guestPhone}`;
-      Linking.openURL(phoneUrl);
+      const phoneUrl = `tel:${job.guestPhone}`
+      Linking.openURL(phoneUrl)
     }
-  };
+  }
 
   const handleEmailGuest = () => {
     if (job.guestEmail) {
-      const emailUrl = `mailto:${job.guestEmail}`;
-      Linking.openURL(emailUrl);
+      const emailUrl = `mailto:${job.guestEmail}`
+      Linking.openURL(emailUrl)
     }
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,14 +120,20 @@ export default function JobDetailsScreen() {
             <View style={styles.headerContent}>
               <Title style={styles.jobTitle}>{job.title}</Title>
               <View style={styles.chipContainer}>
-                <Chip 
-                  style={[styles.priorityChip, { backgroundColor: getPriorityColor(job.priority) }]}
+                <Chip
+                  style={[
+                    styles.priorityChip,
+                    { backgroundColor: getPriorityColor(job.priority) },
+                  ]}
                   textStyle={styles.chipText}
                 >
                   {job.priority.toUpperCase()}
                 </Chip>
-                <Chip 
-                  style={[styles.statusChip, { backgroundColor: getStatusColor(job.status) }]}
+                <Chip
+                  style={[
+                    styles.statusChip,
+                    { backgroundColor: getStatusColor(job.status) },
+                  ]}
                   textStyle={styles.chipText}
                 >
                   {job.status.replace('_', ' ').toUpperCase()}
@@ -134,7 +150,9 @@ export default function JobDetailsScreen() {
             <List.Item
               title={job.propertyName}
               description={job.propertyAddress || 'Address not available'}
-              left={(props: any) => <List.Icon {...props} icon="home" color="#3B82F6" />}
+              left={(props: any) => (
+                <List.Icon {...props} icon="home" color="#3B82F6" />
+              )}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
@@ -158,29 +176,39 @@ export default function JobDetailsScreen() {
             <List.Item
               title={job.guestName}
               description={`${job.numberOfGuests} guest${job.numberOfGuests !== 1 ? 's' : ''}`}
-              left={(props: any) => <List.Icon {...props} icon="account" color="#3B82F6" />}
+              left={(props: any) => (
+                <List.Icon {...props} icon="account" color="#3B82F6" />
+              )}
               titleStyle={styles.listTitle}
               descriptionStyle={styles.listDescription}
             />
-            
+
             {job.guestPhone && (
               <List.Item
                 title={formatPhoneNumber(job.guestPhone)}
                 description="Phone number"
-                left={(props: any) => <List.Icon {...props} icon="phone" color="#10B981" />}
-                right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
+                left={(props: any) => (
+                  <List.Icon {...props} icon="phone" color="#10B981" />
+                )}
+                right={(props: any) => (
+                  <List.Icon {...props} icon="chevron-right" />
+                )}
                 onPress={handleCallGuest}
                 titleStyle={styles.listTitle}
                 descriptionStyle={styles.listDescription}
               />
             )}
-            
+
             {job.guestEmail && (
               <List.Item
                 title={job.guestEmail}
                 description="Email address"
-                left={(props: any) => <List.Icon {...props} icon="email" color="#10B981" />}
-                right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
+                left={(props: any) => (
+                  <List.Icon {...props} icon="email" color="#10B981" />
+                )}
+                right={(props: any) => (
+                  <List.Icon {...props} icon="chevron-right" />
+                )}
                 onPress={handleEmailGuest}
                 titleStyle={styles.listTitle}
                 descriptionStyle={styles.listDescription}
@@ -193,22 +221,28 @@ export default function JobDetailsScreen() {
         <Card style={styles.card}>
           <Card.Content>
             <Title style={styles.sectionTitle}>Job Details</Title>
-            
+
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Type:</Text>
-              <Text style={styles.detailValue}>{job.jobType.replace('_', ' ')}</Text>
+              <Text style={styles.detailValue}>
+                {job.jobType.replace('_', ' ')}
+              </Text>
             </View>
-            
+
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Scheduled:</Text>
-              <Text style={styles.detailValue}>{formatDate(job.scheduledDate)}</Text>
+              <Text style={styles.detailValue}>
+                {formatDate(job.scheduledDate)}
+              </Text>
             </View>
-            
+
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Duration:</Text>
-              <Text style={styles.detailValue}>{job.estimatedDuration} minutes</Text>
+              <Text style={styles.detailValue}>
+                {job.estimatedDuration} minutes
+              </Text>
             </View>
-            
+
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Deadline:</Text>
               <Text style={styles.detailValue}>{formatDate(job.deadline)}</Text>
@@ -218,7 +252,9 @@ export default function JobDetailsScreen() {
               <>
                 <Divider style={styles.divider} />
                 <Text style={styles.detailLabel}>Description:</Text>
-                <Paragraph style={styles.description}>{job.description}</Paragraph>
+                <Paragraph style={styles.description}>
+                  {job.description}
+                </Paragraph>
               </>
             )}
 
@@ -226,7 +262,9 @@ export default function JobDetailsScreen() {
               <>
                 <Divider style={styles.divider} />
                 <Text style={styles.detailLabel}>Special Instructions:</Text>
-                <Paragraph style={styles.specialInstructions}>{job.specialInstructions}</Paragraph>
+                <Paragraph style={styles.specialInstructions}>
+                  {job.specialInstructions}
+                </Paragraph>
               </>
             )}
 
@@ -236,7 +274,11 @@ export default function JobDetailsScreen() {
                 <Text style={styles.detailLabel}>Required Skills:</Text>
                 <View style={styles.skillsContainer}>
                   {job.requiredSkills.map((skill, index) => (
-                    <Chip key={index} style={styles.skillChip} textStyle={styles.skillText}>
+                    <Chip
+                      key={index}
+                      style={styles.skillChip}
+                      textStyle={styles.skillText}
+                    >
                       {skill}
                     </Chip>
                   ))}
@@ -263,7 +305,7 @@ export default function JobDetailsScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -384,4 +426,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     paddingVertical: 4,
   },
-});
+})

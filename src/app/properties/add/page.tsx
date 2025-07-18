@@ -1,16 +1,22 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 // TODO: Replace with new database service when implemented
 // import DatabaseService from '@/lib/newDatabaseService'
-import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { useAuth } from '@/contexts/AuthContext'
+import { clientToast as toast } from '@/utils/clientToast'
 import { ArrowLeft, Building, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
-import { clientToast as toast } from '@/utils/clientToast'
 
 interface PropertyFormData {
   name: string
@@ -20,7 +26,7 @@ interface PropertyFormData {
 export default function AddPropertyPage() {
   const [formData, setFormData] = useState<PropertyFormData>({
     name: '',
-    address: ''
+    address: '',
   })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -28,13 +34,15 @@ export default function AddPropertyPage() {
   const router = useRouter()
   const { user } = useAuth()
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
-    
+
     // Clear error when user starts typing
     if (error) setError('')
   }
@@ -53,9 +61,9 @@ export default function AddPropertyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
-    
+
     setLoading(true)
     setError('')
 
@@ -71,7 +79,7 @@ export default function AddPropertyPage() {
 
       // TODO: Replace with real database creation when new database service is implemented
       // Simulate creation delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500))
 
       // Mock property creation
       const mockProperty = {
@@ -80,7 +88,7 @@ export default function AddPropertyPage() {
         address: formData.address,
         owner_id: user.id || 'dev-user',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       console.log('✅ Property created (mock):', mockProperty)
@@ -91,7 +99,6 @@ export default function AddPropertyPage() {
       setTimeout(() => {
         router.push('/properties')
       }, 2000)
-
     } catch (err: unknown) {
       console.error('Error adding property:', err)
 
@@ -124,9 +131,12 @@ export default function AddPropertyPage() {
             <div className="mx-auto w-16 h-16 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl text-white">Property Added Successfully!</CardTitle>
+            <CardTitle className="text-2xl text-white">
+              Property Added Successfully!
+            </CardTitle>
             <CardDescription className="text-neutral-400">
-              Your property has been added to your portfolio. You can now manage bookings and tasks for this property.
+              Your property has been added to your portfolio. You can now manage
+              bookings and tasks for this property.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -134,7 +144,11 @@ export default function AddPropertyPage() {
               <Button onClick={() => router.push('/properties')} fullWidth>
                 View All Properties
               </Button>
-              <Button variant="outline" onClick={() => setSubmitted(false)} fullWidth>
+              <Button
+                variant="outline"
+                onClick={() => setSubmitted(false)}
+                fullWidth
+              >
                 Add Another Property
               </Button>
             </div>
@@ -168,7 +182,8 @@ export default function AddPropertyPage() {
               Add New Property
             </h1>
             <p className="mt-3 text-base text-neutral-400">
-              Add a villa property to your portfolio for management by Sia Moon Property Managament Team.
+              Add a villa property to your portfolio for management by Sia Moon
+              Property Managament Team.
             </p>
           </div>
 
@@ -206,7 +221,8 @@ export default function AddPropertyPage() {
                     placeholder="123 Beach Road, Tambon Choeng Thale, Thalang District, Phuket 83110, Thailand"
                   />
                   <p className="text-sm text-neutral-400 mt-1">
-                    Include full address with district, province, and postal code
+                    Include full address with district, province, and postal
+                    code
                   </p>
                 </div>
 
@@ -217,24 +233,24 @@ export default function AddPropertyPage() {
                 )}
 
                 <div className="bg-blue-950/20 border border-blue-800/30 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-100 mb-2">What happens next?</h4>
+                  <h4 className="font-medium text-blue-100 mb-2">
+                    What happens next?
+                  </h4>
                   <ul className="text-sm text-blue-200 space-y-1">
                     <li>• Your property will be added to your portfolio</li>
                     <li>• You can manage bookings and view reports</li>
                     <li>• Staff can be assigned tasks for this property</li>
-                    <li>• For comprehensive onboarding, use the villa survey form</li>
+                    <li>
+                      • For comprehensive onboarding, use the villa survey form
+                    </li>
                   </ul>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1"
-                  >
+                  <Button type="submit" disabled={loading} className="flex-1">
                     {loading ? 'Adding Property...' : 'Add Property'}
                   </Button>
-                  
+
                   <Link href="/onboard" className="flex-1">
                     <Button variant="outline" fullWidth>
                       Use Full Onboarding Form

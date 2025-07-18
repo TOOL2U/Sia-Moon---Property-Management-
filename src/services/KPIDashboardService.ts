@@ -3,7 +3,7 @@
  * Comprehensive analytics and metrics calculation for Back Office dashboard
  */
 
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore'
 
 export interface TimeFilter {
@@ -157,7 +157,7 @@ class KPIDashboardService {
    */
   private async getBookings(startDate: Date, endDate: Date, filters?: any): Promise<any[]> {
     try {
-      const bookingsRef = collection(db, this.BOOKINGS_COLLECTION)
+      const bookingsRef = collection(getDb(), this.BOOKINGS_COLLECTION)
       let q = query(bookingsRef)
 
       // Add date filter if available
@@ -182,7 +182,7 @@ class KPIDashboardService {
    */
   private async getCalendarEvents(startDate: Date, endDate: Date, filters?: any): Promise<any[]> {
     try {
-      const eventsRef = collection(db, this.CALENDAR_EVENTS_COLLECTION)
+      const eventsRef = collection(getDb(), this.CALENDAR_EVENTS_COLLECTION)
       let q = query(eventsRef, orderBy('startDate', 'desc'))
 
       const snapshot = await getDocs(q)
@@ -211,7 +211,7 @@ class KPIDashboardService {
    */
   private async getStaff(): Promise<any[]> {
     try {
-      const staffRef = collection(db, this.STAFF_COLLECTION)
+      const staffRef = collection(getDb(), this.STAFF_COLLECTION)
       const snapshot = await getDocs(staffRef)
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 
@@ -226,7 +226,7 @@ class KPIDashboardService {
    */
   private async getProperties(): Promise<any[]> {
     try {
-      const propertiesRef = collection(db, this.PROPERTIES_COLLECTION)
+      const propertiesRef = collection(getDb(), this.PROPERTIES_COLLECTION)
       const snapshot = await getDocs(propertiesRef)
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 

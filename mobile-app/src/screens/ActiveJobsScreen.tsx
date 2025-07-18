@@ -1,101 +1,115 @@
-import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native'
+import React, { useState } from 'react'
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
   Alert,
-  Linking,
-} from 'react-native';
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native'
 import {
-  Text,
-  Card,
-  Title,
-  Paragraph,
   Button,
+  Card,
   Chip,
-  IconButton,
-  ProgressBar,
   Divider,
-} from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useJobs } from '../contexts/JobContext';
-import { JobAssignment } from '../types/job';
-import { NavigationService } from '../services/navigationService';
+  Paragraph,
+  ProgressBar,
+  Text,
+  Title,
+} from 'react-native-paper'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useJobs } from '../contexts/JobContext'
+import { NavigationService } from '../services/navigationService'
+import { JobAssignment } from '../types/job'
 
 export default function ActiveJobsScreen() {
-  const navigation = useNavigation();
-  const { activeJobs, loading, refreshJobs, startJob } = useJobs();
-  const [startingJobs, setStartingJobs] = useState<string[]>([]);
+  const navigation = useNavigation()
+  const { activeJobs, loading, refreshJobs, startJob } = useJobs()
+  const [startingJobs, setStartingJobs] = useState<string[]>([])
 
   const handleRefresh = () => {
-    refreshJobs();
-  };
+    refreshJobs()
+  }
 
   const handleStartJob = async (jobId: string) => {
     try {
-      setStartingJobs(prev => [...prev, jobId]);
-      await startJob(jobId);
-      Alert.alert('Success', 'Job started successfully!');
+      setStartingJobs((prev) => [...prev, jobId])
+      await startJob(jobId)
+      Alert.alert('Success', 'Job started successfully!')
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to start job: ' + error.message);
+      Alert.alert('Error', 'Failed to start job: ' + error.message)
     } finally {
-      setStartingJobs(prev => prev.filter(id => id !== jobId));
+      setStartingJobs((prev) => prev.filter((id) => id !== jobId))
     }
-  };
+  }
 
   const handleNavigateToJob = async (job: JobAssignment) => {
     if (!job.propertyAddress) {
-      Alert.alert('No Address', 'Property address not available for navigation.');
-      return;
+      Alert.alert(
+        'No Address',
+        'Property address not available for navigation.'
+      )
+      return
     }
 
     try {
-      await NavigationService.navigateToAddress(job.propertyAddress, 'driving');
+      await NavigationService.navigateToAddress(job.propertyAddress, 'driving')
     } catch (error) {
-      Alert.alert('Navigation Error', 'Unable to open navigation app.');
+      Alert.alert('Navigation Error', 'Unable to open navigation app.')
     }
-  };
+  }
 
   const handleViewJobDetails = (job: JobAssignment) => {
     // Fixed: Remove type assertion that causes TypeScript error
-    navigation.navigate('JobDetails', { job });
-  };
+    navigation.navigate('JobDetails', { job })
+  }
 
   const handleCompleteJob = (job: JobAssignment) => {
     // Fixed: Remove type assertion that causes TypeScript error
-    navigation.navigate('JobCompletion', { job });
-  };
+    navigation.navigate('JobCompletion', { job })
+  }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return '#EF4444';
-      case 'high': return '#F97316';
-      case 'medium': return '#EAB308';
-      case 'low': return '#10B981';
-      default: return '#6B7280';
+      case 'urgent':
+        return '#EF4444'
+      case 'high':
+        return '#F97316'
+      case 'medium':
+        return '#EAB308'
+      case 'low':
+        return '#10B981'
+      default:
+        return '#6B7280'
     }
-  };
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'accepted': return '#3B82F6';
-      case 'in_progress': return '#8B5CF6';
-      case 'completed': return '#10B981';
-      default: return '#6B7280';
+      case 'accepted':
+        return '#3B82F6'
+      case 'in_progress':
+        return '#8B5CF6'
+      case 'completed':
+        return '#10B981'
+      default:
+        return '#6B7280'
     }
-  };
+  }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+    const date = new Date(dateString)
+    return (
+      date.toLocaleDateString() +
+      ' ' +
+      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    )
+  }
 
   const renderJobCard = (job: JobAssignment) => {
-    const isStarting = startingJobs.includes(job.id);
-    const canStart = job.status === 'accepted';
-    const canComplete = job.status === 'in_progress';
+    const isStarting = startingJobs.includes(job.id)
+    const canStart = job.status === 'accepted'
+    const canComplete = job.status === 'in_progress'
 
     return (
       <Card key={job.id} style={styles.jobCard}>
@@ -107,14 +121,20 @@ export default function ActiveJobsScreen() {
                 {job.title}
               </Title>
               <View style={styles.chipContainer}>
-                <Chip 
-                  style={[styles.priorityChip, { backgroundColor: getPriorityColor(job.priority) }]}
+                <Chip
+                  style={[
+                    styles.priorityChip,
+                    { backgroundColor: getPriorityColor(job.priority) },
+                  ]}
                   textStyle={styles.chipText}
                 >
                   {job.priority.toUpperCase()}
                 </Chip>
-                <Chip 
-                  style={[styles.statusChip, { backgroundColor: getStatusColor(job.status) }]}
+                <Chip
+                  style={[
+                    styles.statusChip,
+                    { backgroundColor: getStatusColor(job.status) },
+                  ]}
                   textStyle={styles.chipText}
                 >
                   {job.status.replace('_', ' ').toUpperCase()}
@@ -138,9 +158,11 @@ export default function ActiveJobsScreen() {
           {/* Progress Bar */}
           {job.status === 'in_progress' && (
             <View style={styles.progressContainer}>
-              <Text style={styles.progressLabel}>Progress: {job.progress}%</Text>
-              <ProgressBar 
-                progress={job.progress / 100} 
+              <Text style={styles.progressLabel}>
+                Progress: {job.progress}%
+              </Text>
+              <ProgressBar
+                progress={job.progress / 100}
                 color="#3B82F6"
                 style={styles.progressBar}
               />
@@ -160,7 +182,7 @@ export default function ActiveJobsScreen() {
               >
                 Details
               </Button>
-              
+
               {job.propertyAddress && (
                 <Button
                   mode="outlined"
@@ -201,8 +223,8 @@ export default function ActiveJobsScreen() {
           </View>
         </Card.Content>
       </Card>
-    );
-  };
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -226,8 +248,8 @@ export default function ActiveJobsScreen() {
             <Card.Content style={styles.emptyContent}>
               <Text style={styles.emptyTitle}>No Active Jobs</Text>
               <Paragraph style={styles.emptyText}>
-                You don't have any active jobs at the moment. 
-                Check back later or refresh to see new assignments.
+                You don't have any active jobs at the moment. Check back later
+                or refresh to see new assignments.
               </Paragraph>
               <Button
                 mode="outlined"
@@ -240,13 +262,11 @@ export default function ActiveJobsScreen() {
             </Card.Content>
           </Card>
         ) : (
-          <View style={styles.jobsList}>
-            {activeJobs.map(renderJobCard)}
-          </View>
+          <View style={styles.jobsList}>{activeJobs.map(renderJobCard)}</View>
         )}
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -382,4 +402,4 @@ const styles = StyleSheet.create({
   refreshButton: {
     borderColor: '#3B82F6',
   },
-});
+})

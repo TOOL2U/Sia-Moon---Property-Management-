@@ -64,7 +64,7 @@ export class AuthenticatedJobAssignmentService {
   static async getAllJobAssignments(idToken: string, filters: any = {}) {
     return AuthenticatedFirebaseService.executeWithAuth(idToken, async (db) => {
       try {
-        let jobQuery = collection(db, 'job_assignments')
+        let jobQuery = collection(getDb(), 'job_assignments')
         
         // Apply filters
         const constraints = []
@@ -122,7 +122,7 @@ export class AuthenticatedJobAssignmentService {
           status: 'pending'
         }
         
-        const docRef = await addDoc(collection(db, 'job_assignments'), jobAssignment)
+        const docRef = await addDoc(collection(getDb(), 'job_assignments'), jobAssignment)
         
         return { 
           success: true, 
@@ -147,7 +147,7 @@ export class AuthenticatedStaffService {
     return AuthenticatedFirebaseService.executeWithAuth(idToken, async (db) => {
       try {
         const staffQuery = query(
-          collection(db, 'staff_accounts'),
+          collection(getDb(), 'staff_accounts'),
           where('isActive', '==', true)
         )
         

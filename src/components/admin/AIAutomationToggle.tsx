@@ -1,9 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Loader2, AlertTriangle, CheckCircle2, BrainCircuit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,8 +9,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import AIAutomationService, { AIAutomationSettings } from '@/services/AIAutomationService'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/contexts/AuthContext'
+import AIAutomationService, {
+  AIAutomationSettings,
+} from '@/services/AIAutomationService'
+import {
+  AlertTriangle,
+  BrainCircuit,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export default function AIAutomationToggle() {
   const [enabled, setEnabled] = useState(false)
@@ -24,18 +31,22 @@ export default function AIAutomationToggle() {
   const [modifiedBy, setModifiedBy] = useState<string>('system')
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingState, setPendingState] = useState(false)
-  
+
   const { user } = useAuth()
 
   useEffect(() => {
     // Initialize settings if they don't exist
     AIAutomationService.initializeSettings()
-    
+
     // Set up real-time listener
     const unsubscribe = AIAutomationService.subscribeToSettings(
       (settings: AIAutomationSettings) => {
         setEnabled(settings.enabled)
-        setLastModified(settings.lastModified ? new Date(settings.lastModified.toDate()) : null)
+        setLastModified(
+          settings.lastModified
+            ? new Date(settings.lastModified.toDate())
+            : null
+        )
         setModifiedBy(settings.modifiedBy)
         setLoading(false)
       },
@@ -98,8 +109,13 @@ export default function AIAutomationToggle() {
       <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BrainCircuit className={`h-5 w-5 ${enabled ? 'text-green-400' : 'text-neutral-400'}`} />
-            <Label htmlFor="ai-automation" className="text-lg font-medium text-white">
+            <BrainCircuit
+              className={`h-5 w-5 ${enabled ? 'text-green-400' : 'text-neutral-400'}`}
+            />
+            <Label
+              htmlFor="ai-automation"
+              className="text-lg font-medium text-white"
+            >
               Enable AI Operations
             </Label>
           </div>
@@ -127,18 +143,15 @@ export default function AIAutomationToggle() {
           </div>
         </div>
         <p className="text-sm text-neutral-400 ml-7">
-          Allow AI to automatically manage bookings, job assignments, and staff scheduling
+          Allow AI to automatically manage bookings, job assignments, and staff
+          scheduling
         </p>
         {lastModified && (
           <p className="text-xs text-neutral-500 ml-7">
             Last modified: {lastModified.toLocaleString()} by {modifiedBy}
           </p>
         )}
-        {error && (
-          <p className="text-xs text-red-400 ml-7">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-xs text-red-400 ml-7">{error}</p>}
       </div>
 
       {/* Confirmation Dialog */}
@@ -150,8 +163,9 @@ export default function AIAutomationToggle() {
               Disable AI Operations?
             </DialogTitle>
             <DialogDescription className="text-neutral-400">
-              Disabling AI operations will require manual oversight for all bookings, job assignments, and staff scheduling.
-              Calendar events will not be created automatically.
+              Disabling AI operations will require manual oversight for all
+              bookings, job assignments, and staff scheduling. Calendar events
+              will not be created automatically.
             </DialogDescription>
           </DialogHeader>
           <div className="bg-neutral-800 p-4 rounded-md text-sm text-yellow-400 flex items-start gap-2">
@@ -159,8 +173,8 @@ export default function AIAutomationToggle() {
             <div>
               <p className="font-medium">Important:</p>
               <p className="text-neutral-300">
-                You will need to manually create calendar events, assign jobs to staff, and process bookings
-                until AI operations are re-enabled.
+                You will need to manually create calendar events, assign jobs to
+                staff, and process bookings until AI operations are re-enabled.
               </p>
             </div>
           </div>

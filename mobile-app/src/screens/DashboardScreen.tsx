@@ -1,59 +1,55 @@
-import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native'
+import React, { useState } from 'react'
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-} from 'react-native';
-import {
-  Text,
-  Card,
-  Title,
-  Paragraph,
-  Button,
-  FAB,
   Badge,
+  Button,
+  Card,
+  FAB,
   IconButton,
-} from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../contexts/AuthContext';
-import { useJobs } from '../contexts/JobContext';
-import JobNotificationBanner from '../components/JobNotificationBanner';
+  Paragraph,
+  Text,
+  Title,
+} from 'react-native-paper'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import JobNotificationBanner from '../components/JobNotificationBanner'
+import { useAuth } from '../contexts/AuthContext'
+import { useJobs } from '../contexts/JobContext'
 
 export default function DashboardScreen() {
-  const navigation = useNavigation();
-  const { staffProfile, signOut } = useAuth();
-  const { pendingJobs, activeJobs, completedJobs, loading, refreshJobs } = useJobs();
-  const [dismissedJobs, setDismissedJobs] = useState<string[]>([]);
+  const navigation = useNavigation()
+  const { staffProfile, signOut } = useAuth()
+  const { pendingJobs, activeJobs, completedJobs, loading, refreshJobs } =
+    useJobs()
+  const [dismissedJobs, setDismissedJobs] = useState<string[]>([])
 
   const handleRefresh = () => {
-    refreshJobs();
-  };
+    refreshJobs()
+  }
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await signOut()
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Sign out error:', error)
     }
-  };
+  }
 
   const dismissJobNotification = (jobId: string) => {
-    setDismissedJobs(prev => [...prev, jobId]);
-  };
+    setDismissedJobs((prev) => [...prev, jobId])
+  }
 
   // Filter out dismissed pending jobs
   const visiblePendingJobs = pendingJobs.filter(
-    job => !job.staffResponse && !dismissedJobs.includes(job.id)
-  );
+    (job) => !job.staffResponse && !dismissedJobs.includes(job.id)
+  )
 
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -82,7 +78,7 @@ export default function DashboardScreen() {
         </View>
 
         {/* Job Notifications */}
-        {visiblePendingJobs.map(job => (
+        {visiblePendingJobs.map((job) => (
           <JobNotificationBanner
             key={job.id}
             job={job}
@@ -98,14 +94,14 @@ export default function DashboardScreen() {
               <Text style={styles.statLabel}>Pending</Text>
             </Card.Content>
           </Card>
-          
+
           <Card style={styles.statCard}>
             <Card.Content style={styles.statContent}>
               <Text style={styles.statNumber}>{activeJobs.length}</Text>
               <Text style={styles.statLabel}>Active</Text>
             </Card.Content>
           </Card>
-          
+
           <Card style={styles.statCard}>
             <Card.Content style={styles.statContent}>
               <Text style={styles.statNumber}>{completedJobs.length}</Text>
@@ -118,7 +114,7 @@ export default function DashboardScreen() {
         <Card style={styles.actionCard}>
           <Card.Content>
             <Title style={styles.actionTitle}>Quick Actions</Title>
-            
+
             <Button
               mode="contained"
               onPress={() => navigation.navigate('ActiveJobs' as never)}
@@ -146,7 +142,7 @@ export default function DashboardScreen() {
         <Card style={styles.activityCard}>
           <Card.Content>
             <Title style={styles.activityTitle}>Today's Summary</Title>
-            
+
             {activeJobs.length === 0 && pendingJobs.length === 0 ? (
               <Paragraph style={styles.noActivity}>
                 No active jobs at the moment. Great work!
@@ -155,16 +151,19 @@ export default function DashboardScreen() {
               <View>
                 {pendingJobs.length > 0 && (
                   <Paragraph style={styles.activityText}>
-                    • {pendingJobs.length} job{pendingJobs.length !== 1 ? 's' : ''} awaiting response
+                    • {pendingJobs.length} job
+                    {pendingJobs.length !== 1 ? 's' : ''} awaiting response
                   </Paragraph>
                 )}
                 {activeJobs.length > 0 && (
                   <Paragraph style={styles.activityText}>
-                    • {activeJobs.length} active job{activeJobs.length !== 1 ? 's' : ''} in progress
+                    • {activeJobs.length} active job
+                    {activeJobs.length !== 1 ? 's' : ''} in progress
                   </Paragraph>
                 )}
                 <Paragraph style={styles.activityText}>
-                  • {completedJobs.length} job{completedJobs.length !== 1 ? 's' : ''} completed today
+                  • {completedJobs.length} job
+                  {completedJobs.length !== 1 ? 's' : ''} completed today
                 </Paragraph>
               </View>
             )}
@@ -182,7 +181,7 @@ export default function DashboardScreen() {
         />
       )}
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -286,4 +285,4 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#3B82F6',
   },
-});
+})

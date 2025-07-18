@@ -17,7 +17,7 @@ import {
   writeBatch,
   DocumentSnapshot
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
 import { getAuth } from 'firebase/auth'
 import {
   Property as PropertyType,
@@ -184,7 +184,7 @@ export class PropertyService {
         updatedAt: Timestamp.now()
       }
 
-      const docRef = await addDoc(collection(db, this.collection), propertyData)
+      const docRef = await addDoc(collection(getDb(), this.collection), propertyData)
       console.log('✅ Property created:', docRef.id)
       return docRef.id
     } catch (error) {
@@ -379,7 +379,7 @@ export class PropertyService {
       }
 
       // Save to user's properties subcollection
-      const propertyRef = doc(db, 'users', userId, 'properties', propertyId)
+      const propertyRef = doc(getDb(), 'users', userId, 'properties', propertyId)
       await setDoc(propertyRef, propertyData)
 
       console.log('✅ Property saved to user profile:', propertyId)
@@ -402,7 +402,7 @@ export class PropertyService {
       }
 
       const q = query(
-        collection(db, this.collection),
+        collection(getDb(), this.collection),
         where('userId', '==', userId),
         orderBy('createdAt', 'desc')
       )
@@ -444,7 +444,7 @@ export class PropertyService {
       }
 
       // Query user's properties subcollection
-      const propertiesRef = collection(db, 'users', userId, 'properties')
+      const propertiesRef = collection(getDb(), 'users', userId, 'properties')
       const q = query(propertiesRef, orderBy('createdAt', 'desc'))
 
       const querySnapshot = await getDocs(q)
@@ -486,7 +486,7 @@ export class PropertyService {
       }
 
       // Get specific property document from user's subcollection
-      const propertyRef = doc(db, 'users', userId, 'properties', propertyId)
+      const propertyRef = doc(getDb(), 'users', userId, 'properties', propertyId)
       const propertyDoc = await getDoc(propertyRef)
 
       if (propertyDoc.exists()) {
@@ -517,7 +517,7 @@ export class PropertyService {
       }
 
       const q = query(
-        collection(db, this.collection),
+        collection(getDb(), this.collection),
         orderBy('createdAt', 'desc')
       )
       
@@ -548,7 +548,7 @@ export class PropertyService {
         throw new Error('Firebase Firestore not initialized')
       }
 
-      const docRef = doc(db, this.collection, id)
+      const docRef = doc(getDb(), this.collection, id)
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {
@@ -574,7 +574,7 @@ export class PropertyService {
         throw new Error('Firebase Firestore not initialized')
       }
 
-      const docRef = doc(db, this.collection, id)
+      const docRef = doc(getDb(), this.collection, id)
       await updateDoc(docRef, {
         status,
         isActive: status === 'active',
@@ -597,7 +597,7 @@ export class PropertyService {
         throw new Error('Firebase Firestore not initialized')
       }
 
-      const propertyRef = doc(db, this.collection, propertyId)
+      const propertyRef = doc(getDb(), this.collection, propertyId)
       await updateDoc(propertyRef, {
         coverPhoto: coverPhotoUrl,
         updatedAt: Timestamp.now()
@@ -637,7 +637,7 @@ export class PropertyService {
     try {
       console.log('🏠 PropertyService: Fetching all properties with advanced filters:', filters)
 
-      let q = collection(db, this.collection)
+      let q = collection(getDb(), this.collection)
 
       // Apply filters
       if (filters?.status && filters.status.length > 0) {
@@ -726,7 +726,7 @@ export class PropertyService {
     try {
       console.log('🏠 PropertyService: Updating property status:', propertyId, status)
 
-      const docRef = doc(db, this.collection, propertyId)
+      const docRef = doc(getDb(), this.collection, propertyId)
       const updateData: any = {
         status,
         isActive: status === 'active',
@@ -757,7 +757,7 @@ export class PropertyService {
       const batch = writeBatch(db)
 
       for (const propertyId of operation.propertyIds) {
-        const docRef = doc(db, this.collection, propertyId)
+        const docRef = doc(getDb(), this.collection, propertyId)
 
         switch (operation.operation) {
           case 'update_status':
@@ -875,7 +875,7 @@ export class PropertyService {
   static subscribeToPropertyUpdates(callback: (properties: Property[]) => void): () => void {
     console.log('🏠 PropertyService: Setting up real-time property updates')
 
-    const q = query(collection(db, this.collection), orderBy('updatedAt', 'desc'))
+    const q = query(collection(getDb(), this.collection), orderBy('updatedAt', 'desc'))
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const properties: Property[] = []
@@ -1011,7 +1011,7 @@ export class PropertyService {
       console.log('🏠 PropertyService: Fetching properties by status:', status)
 
       const q = query(
-        collection(db, this.collection),
+        collection(getDb(), this.collection),
         where('status', '==', status),
         orderBy('updatedAt', 'desc')
       )

@@ -1,27 +1,39 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { FileUpload } from '@/components/ui/FileUpload'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
+import { FileUpload } from '@/components/ui/FileUpload'
+import { Input } from '@/components/ui/Input'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 // TODO: Replace with new database service when implemented
 // import { createClient } from '@/lib/newDatabase/client'
-import { validateVillaOnboarding, validateField } from '@/lib/validations/villa-onboarding'
+import {
+  validateField,
+  validateVillaOnboarding,
+} from '@/lib/validations/villa-onboarding'
 // import DatabaseService from '@/lib/newDatabaseService'
-import { useAuth } from '@/contexts/AuthContext'
-import { useOnboardingSubmit, OnboardingSubmissionData } from '@/hooks/useOnboardingSubmit'
-import { Building, CheckCircle, ArrowLeft, Upload } from 'lucide-react'
 import { VillaPhotoUploadCloudinary } from '@/components/VillaPhotoUploadCloudinary'
 import { Label } from '@/components/ui/Label'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  OnboardingSubmissionData,
+  useOnboardingSubmit,
+} from '@/hooks/useOnboardingSubmit'
+import { useUserSync } from '@/hooks/useUserSync'
 import { OnboardingService } from '@/lib/services/onboardingService'
 import { PropertyService } from '@/lib/services/propertyService'
+import { ArrowLeft, Building, CheckCircle, Upload } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { useUserSync } from '@/hooks/useUserSync'
 
 interface VillaOnboardingData {
   // Owner Details
@@ -212,41 +224,53 @@ function OnboardYourVillaContent() {
     informationConfirmed: false,
   })
 
-  const [uploadedFiles, setUploadedFiles] = useState<{[key: string]: File[]}>({
-    furnitureAppliances: [],
-    floorPlans: [],
-    titleDeed: [],
-    houseRegistration: [],
-    insurancePolicy: [],
-    licenses: []
-  })
+  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: File[] }>(
+    {
+      furnitureAppliances: [],
+      floorPlans: [],
+      titleDeed: [],
+      houseRegistration: [],
+      insurancePolicy: [],
+      licenses: [],
+    }
+  )
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string
+  }>({})
   const [loadingExisting, setLoadingExisting] = useState(false)
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const loadExistingData = useCallback(async (_id: string) => { // _id unused in dev mode
-    if (!user) return
+  const loadExistingData = useCallback(
+    async (_id: string) => {
+      // _id unused in dev mode
+      if (!user) return
 
-    try {
-      setLoadingExisting(true)
-      // TODO: Replace with new database service when implemented
-      console.log('🔄 Loading existing villa data (development mode - not implemented)')
+      try {
+        setLoadingExisting(true)
+        // TODO: Replace with new database service when implemented
+        console.log(
+          '🔄 Loading existing villa data (development mode - not implemented)'
+        )
 
-      // For now, just show a message that editing is not available in development mode
-      toast.error('Editing existing villa data is not available in development mode')
-      router.push('/dashboard/client/onboarding')
-    } catch (error) {
-      console.error('Error loading existing data:', error)
-      toast.error('Failed to load villa data for editing')
-      router.push('/dashboard/client/onboarding')
-    } finally {
-      setLoadingExisting(false)
-    }
-  }, [user, router])
+        // For now, just show a message that editing is not available in development mode
+        toast.error(
+          'Editing existing villa data is not available in development mode'
+        )
+        router.push('/dashboard/client/onboarding')
+      } catch (error) {
+        console.error('Error loading existing data:', error)
+        toast.error('Failed to load villa data for editing')
+        router.push('/dashboard/client/onboarding')
+      } finally {
+        setLoadingExisting(false)
+      }
+    },
+    [user, router]
+  )
 
   // Load existing data when editing
   useEffect(() => {
@@ -257,36 +281,60 @@ function OnboardYourVillaContent() {
 
   // Using Firebase for storage and database operations
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
     const newValue = type === 'checkbox' ? checked : value
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: newValue
+      [name]: newValue,
     }))
 
     // Clear validation error when user starts typing
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }))
     }
   }
 
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputBlur = (
+    e: React.FocusEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target
-    const newValue = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    const newValue =
+      e.target.type === 'checkbox'
+        ? (e.target as HTMLInputElement).checked
+        : value
 
     // Required fields validation
-    const requiredFields = ['ownerFullName', 'ownerContactNumber', 'ownerEmail', 'propertyName', 'propertyAddress', 'bedrooms', 'bathrooms', 'emergencyContactName', 'emergencyContactPhone']
+    const requiredFields = [
+      'ownerFullName',
+      'ownerContactNumber',
+      'ownerEmail',
+      'propertyName',
+      'propertyAddress',
+      'bedrooms',
+      'bathrooms',
+      'emergencyContactName',
+      'emergencyContactPhone',
+    ]
 
-    if (requiredFields.includes(name) && (!newValue || (typeof newValue === 'string' && newValue.trim() === ''))) {
-      setValidationErrors(prev => ({
+    if (
+      requiredFields.includes(name) &&
+      (!newValue || (typeof newValue === 'string' && newValue.trim() === ''))
+    ) {
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: `${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`
+        [name]: `${name.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())} is required`,
       }))
       return
     }
@@ -294,47 +342,53 @@ function OnboardYourVillaContent() {
     // Real-time validation with Zod
     const validation = validateField(name, newValue)
     if (!validation.isValid && validation.error) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: validation.error!
+        [name]: validation.error!,
       }))
     } else {
       // Clear validation error when field becomes valid
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }))
     }
   }
 
   const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: checked
+      [name]: checked,
     }))
   }
 
-  const handleMultiSelectChange = (name: string, value: string, checked: boolean) => {
-    setFormData(prev => ({
+  const handleMultiSelectChange = (
+    name: string,
+    value: string,
+    checked: boolean
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       [name]: checked
         ? [...(prev[name as keyof VillaOnboardingData] as string[]), value]
-        : (prev[name as keyof VillaOnboardingData] as string[]).filter(item => item !== value)
+        : (prev[name as keyof VillaOnboardingData] as string[]).filter(
+            (item) => item !== value
+          ),
     }))
   }
 
   const handleFileUpload = (category: string, files: FileList | null) => {
     if (files) {
-      setUploadedFiles(prev => ({
+      setUploadedFiles((prev) => ({
         ...prev,
-        [category]: Array.from(files)
+        [category]: Array.from(files),
       }))
     }
   }
 
   const validateForm = () => {
     const validation = validateVillaOnboarding(formData)
-    const newErrors: {[key: string]: string} = {}
+    const newErrors: { [key: string]: string } = {}
 
     // Only check required fields for new submissions, not when editing
     if (!isEditing) {
@@ -349,7 +403,7 @@ function OnboardYourVillaContent() {
         bathrooms: 'Number of bathrooms is required',
         emergencyContactName: 'Emergency contact name is required',
         emergencyContactPhone: 'Emergency contact phone is required',
-        informationConfirmed: 'You must confirm the information is accurate'
+        informationConfirmed: 'You must confirm the information is accurate',
       }
 
       // Debug: Log form data to see what's missing
@@ -383,10 +437,13 @@ function OnboardYourVillaContent() {
     } else {
       // When editing, only validate the confirmation checkbox if it's unchecked
       if (!formData.informationConfirmed) {
-        newErrors.informationConfirmed = 'You must confirm the information is accurate'
+        newErrors.informationConfirmed =
+          'You must confirm the information is accurate'
         console.log('❌ Information confirmation required for updates')
       }
-      console.log('🔍 Form validation - Editing mode: skipping required field validation')
+      console.log(
+        '🔍 Form validation - Editing mode: skipping required field validation'
+      )
     }
 
     // Add validation errors from Zod schema
@@ -404,12 +461,16 @@ function OnboardYourVillaContent() {
       const errorCount = Object.keys(newErrors).length
       const firstError = Object.entries(newErrors)[0]
 
-      toast.error(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}. First error: ${firstError[1]}`)
+      toast.error(
+        `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}. First error: ${firstError[1]}`
+      )
 
       // Scroll to first error field and highlight it
       const firstErrorField = Object.keys(newErrors)[0]
       if (typeof window !== 'undefined') {
-        const errorElement = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement
+        const errorElement = document.querySelector(
+          `[name="${firstErrorField}"]`
+        ) as HTMLElement
         if (errorElement) {
           errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
           // Add temporary highlight
@@ -430,8 +491,10 @@ function OnboardYourVillaContent() {
   // Upload files function (prepared for Firebase Storage)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const uploadFiles = async () => {
-    const uploadedUrls: {[key: string]: string} = {}
-    const filesToUpload = Object.entries(uploadedFiles).filter(([, files]) => files.length > 0)
+    const uploadedUrls: { [key: string]: string } = {}
+    const filesToUpload = Object.entries(uploadedFiles).filter(
+      ([, files]) => files.length > 0
+    )
 
     if (filesToUpload.length === 0) {
       return uploadedUrls
@@ -443,17 +506,22 @@ function OnboardYourVillaContent() {
       const [category, files] = filesToUpload[i]!
       const file = files[0]
       // Simulate upload with a placeholder URL
-      uploadedUrls[category] = `https://firebase-storage.example.com/uploads/${Date.now()}-${category}-${file.name}`
-      toast.success(`Simulated upload: ${category} (${i + 1}/${filesToUpload.length})`)
+      uploadedUrls[category] =
+        `https://firebase-storage.example.com/uploads/${Date.now()}-${category}-${file.name}`
+      toast.success(
+        `Simulated upload: ${category} (${i + 1}/${filesToUpload.length})`
+      )
     }
 
     return uploadedUrls
   }
 
   // Utility function to sanitize form data and remove undefined values
-  const sanitizeFormData = (obj: Record<string, unknown>): Record<string, unknown> => {
+  const sanitizeFormData = (
+    obj: Record<string, unknown>
+  ): Record<string, unknown> => {
     const sanitized: Record<string, unknown> = {}
-    
+
     for (const [key, value] of Object.entries(obj)) {
       if (value !== undefined) {
         // Keep all non-undefined values
@@ -463,12 +531,14 @@ function OnboardYourVillaContent() {
         console.log(`⚠️ Removing undefined field: ${key}`)
       }
     }
-    
+
     return sanitized
   }
 
   // Alternative: Convert undefined to null for numeric fields that might be optional
-  const sanitizeNumericField = (value: string | undefined): number | undefined => {
+  const sanitizeNumericField = (
+    value: string | undefined
+  ): number | undefined => {
     if (!value || value.trim() === '') return undefined
     const parsed = Number(value)
     return isNaN(parsed) ? undefined : parsed
@@ -478,9 +548,10 @@ function OnboardYourVillaContent() {
     e.preventDefault()
 
     if (!validateForm()) {
-      setError(isEditing
-        ? 'Please confirm the information is accurate to save changes'
-        : 'Please fill in all required fields correctly'
+      setError(
+        isEditing
+          ? 'Please confirm the information is accurate to save changes'
+          : 'Please fill in all required fields correctly'
       )
       return
     }
@@ -489,7 +560,9 @@ function OnboardYourVillaContent() {
     setError('')
 
     try {
-      console.log('🔄 Submitting villa onboarding data to Firestore and webhook')
+      console.log(
+        '🔄 Submitting villa onboarding data to Firestore and webhook'
+      )
 
       if (isEditing && editId) {
         // Editing not supported yet
@@ -570,15 +643,20 @@ function OnboardYourVillaContent() {
         notes: formData.repairsNeeded || '',
 
         // Submission metadata
-        submissionType: 'comprehensive_villa_onboarding'
+        submissionType: 'comprehensive_villa_onboarding',
       }
 
       // Sanitize the data to remove undefined values
-      const submissionData = sanitizeFormData(rawSubmissionData) as Record<string, unknown>
+      const submissionData = sanitizeFormData(rawSubmissionData) as Record<
+        string,
+        unknown
+      >
 
       // Save to Firestore
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const submissionId = await OnboardingService.createSubmission(submissionData as any)
+      const submissionId = await OnboardingService.createSubmission(
+        submissionData as any
+      )
       console.log('✅ Onboarding submission saved to Firestore:', submissionId)
 
       // Create property directly in user's profile subcollection
@@ -597,21 +675,32 @@ function OnboardYourVillaContent() {
           user.id
         )
         console.log('✅ Property created in user profile with ID:', propertyId)
-        console.log('📍 Saved to: /users/' + user.id + '/properties/' + propertyId)
+        console.log(
+          '📍 Saved to: /users/' + user.id + '/properties/' + propertyId
+        )
 
         // Sync user profile with the new property
         console.log('🔄 Syncing user profile after property creation...')
-        const syncResult = await syncAfterPropertyCreation(user.id, user.email || '')
+        const syncResult = await syncAfterPropertyCreation(
+          user.id,
+          user.email || ''
+        )
 
         if (syncResult.success) {
-          console.log(`✅ Profile synchronized with ${syncResult.propertiesLinked} properties`)
+          console.log(
+            `✅ Profile synchronized with ${syncResult.propertiesLinked} properties`
+          )
         } else {
           console.warn('⚠️ Profile synchronization failed:', syncResult.error)
         }
-
       } catch (propertyError) {
-        console.error('❌ Failed to create property in user profile:', propertyError)
-        console.warn('⚠️ Property creation failed, but onboarding submission saved')
+        console.error(
+          '❌ Failed to create property in user profile:',
+          propertyError
+        )
+        console.warn(
+          '⚠️ Property creation failed, but onboarding submission saved'
+        )
         // Don't fail the entire submission if property creation fails
       }
 
@@ -673,9 +762,11 @@ function OnboardYourVillaContent() {
           control_account_owner_other: formData.controlAccountOwnerOther,
           login_credentials_provided: formData.loginCredentialsProvided,
           login_credentials_details: formData.loginCredentialsDetails,
-          has_active_schedules_automations: formData.hasActiveSchedulesAutomations,
+          has_active_schedules_automations:
+            formData.hasActiveSchedulesAutomations,
           schedules_automations_details: formData.schedulesAutomationsDetails,
-          smart_system_special_instructions: formData.smartSystemSpecialInstructions,
+          smart_system_special_instructions:
+            formData.smartSystemSpecialInstructions,
 
           // Rental & Marketing
           rental_rates: formData.rentalRates,
@@ -689,7 +780,8 @@ function OnboardYourVillaContent() {
           pets_allowed: formData.petsAllowed,
           parties_allowed: formData.partiesAllowed,
           smoking_allowed: formData.smokingAllowed,
-          maintenance_auto_approval_limit: formData.maintenanceAutoApprovalLimit,
+          maintenance_auto_approval_limit:
+            formData.maintenanceAutoApprovalLimit,
 
           // Current Condition
           repairs_needed: formData.repairsNeeded,
@@ -708,23 +800,34 @@ function OnboardYourVillaContent() {
 
           // Submission metadata
           submission_type: 'comprehensive_villa_onboarding',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }
 
         await submitToMake(makeData)
         console.log('✅ Confirmation email sent via Make.com')
         if (propertyId) {
-          toast.success('Villa onboarding submitted successfully! Your property has been created and our team will review your submission.')
+          toast.success(
+            'Villa onboarding submitted successfully! Your property has been created and our team will review your submission.'
+          )
         } else {
-          toast.success('Villa onboarding submitted successfully! Our team will review your submission.')
+          toast.success(
+            'Villa onboarding submitted successfully! Our team will review your submission.'
+          )
         }
       } catch (makeError) {
         // Don't fail the entire submission if Make.com webhook fails
-        console.warn('⚠️ Failed to send confirmation email via Make.com:', makeError)
+        console.warn(
+          '⚠️ Failed to send confirmation email via Make.com:',
+          makeError
+        )
         if (propertyId) {
-          toast.success('Villa submitted successfully and property created! Confirmation email may be delayed.')
+          toast.success(
+            'Villa submitted successfully and property created! Confirmation email may be delayed.'
+          )
         } else {
-          toast.success('Villa submitted successfully, but confirmation email may be delayed.')
+          toast.success(
+            'Villa submitted successfully, but confirmation email may be delayed.'
+          )
         }
       }
 
@@ -736,10 +839,12 @@ function OnboardYourVillaContent() {
       }, 2000)
     } catch (err: unknown) {
       console.error('Submission error:', err)
-      const errorMessage = err instanceof Error ? err.message : (isEditing
-        ? 'Error updating villa information. Please try again.'
-        : 'Error submitting villa information. Please try again.'
-      )
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : isEditing
+            ? 'Error updating villa information. Please try again.'
+            : 'Error submitting villa information. Please try again.'
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -751,17 +856,23 @@ function OnboardYourVillaContent() {
     { value: 'phone', label: 'Phone' },
     { value: 'whatsapp', label: 'WhatsApp' },
     { value: 'line', label: 'LINE' },
-    { value: 'email', label: 'Email' }
+    { value: 'email', label: 'Email' },
   ]
 
   const photosStatusOptions = [
     { value: 'available', label: 'Available' },
     { value: 'not_available', label: 'Not Available' },
-    { value: 'need_photos', label: 'Need Photos Taken' }
+    { value: 'need_photos', label: 'Need Photos Taken' },
   ]
 
   const platformOptions = [
-    'Airbnb', 'Booking.com', 'Agoda', 'Expedia', 'VRBO', 'Direct Booking', 'Other'
+    'Airbnb',
+    'Booking.com',
+    'Agoda',
+    'Expedia',
+    'VRBO',
+    'Direct Booking',
+    'Other',
   ]
 
   if (submitted) {
@@ -772,15 +883,21 @@ function OnboardYourVillaContent() {
             <div className="mx-auto w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-6 animate-scale-in animate-delay-150 hover-glow">
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl font-semibold text-white animate-fade-in-up animate-delay-300">Villa Submitted Successfully!</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-white animate-fade-in-up animate-delay-300">
+              Villa Submitted Successfully!
+            </CardTitle>
             <CardDescription className="text-neutral-400 mt-3 animate-fade-in-up animate-delay-450">
-              Thank you for choosing Sia Moon Property Management. We&apos;ll review your comprehensive villa information and contact you within 24-48 hours to discuss next steps.
+              Thank you for choosing Sia Moon Property Management. We&apos;ll
+              review your comprehensive villa information and contact you within
+              24-48 hours to discuss next steps.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div className="p-6 bg-emerald-950/20 border border-emerald-800/30 rounded-lg text-left">
-                <h4 className="font-semibold text-emerald-100 mb-3">What happens next?</h4>
+                <h4 className="font-semibold text-emerald-100 mb-3">
+                  What happens next?
+                </h4>
                 <ul className="text-sm text-emerald-200 space-y-2">
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
@@ -801,10 +918,17 @@ function OnboardYourVillaContent() {
                 </ul>
               </div>
               <div className="space-y-3">
-                <Button onClick={() => router.push('/')} className="h-11 w-full">
+                <Button
+                  onClick={() => router.push('/')}
+                  className="h-11 w-full"
+                >
                   Return to Home
                 </Button>
-                <Button variant="outline" onClick={() => setSubmitted(false)} className="h-11 w-full">
+                <Button
+                  variant="outline"
+                  onClick={() => setSubmitted(false)}
+                  className="h-11 w-full"
+                >
                   Submit Another Villa
                 </Button>
               </div>
@@ -821,7 +945,9 @@ function OnboardYourVillaContent() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent mx-auto mb-4"></div>
-          <p className="text-neutral-400">Loading property data for editing...</p>
+          <p className="text-neutral-400">
+            Loading property data for editing...
+          </p>
         </div>
       </div>
     )
@@ -848,13 +974,14 @@ function OnboardYourVillaContent() {
               <Building className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-3xl font-semibold text-white sm:text-4xl animate-fade-in-up animate-delay-150 will-change-transform">
-              {isEditing ? 'Edit Villa Information' : 'Property Owner Onboarding Form'}
+              {isEditing
+                ? 'Edit Villa Information'
+                : 'Property Owner Onboarding Form'}
             </h1>
             <p className="mt-4 text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animate-delay-300 will-change-transform">
               {isEditing
                 ? 'Update your villa information below. Changes will be reviewed by our team.'
-                : 'Please provide comprehensive information about your villa and preferences. This detailed survey helps us deliver the best property management service tailored to your needs.'
-              }
+                : 'Please provide comprehensive information about your villa and preferences. This detailed survey helps us deliver the best property management service tailored to your needs.'}
             </p>
 
             {/* Required Fields Notice */}
@@ -862,10 +989,14 @@ function OnboardYourVillaContent() {
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
-                  <h3 className="text-blue-400 font-medium mb-1">Required Information</h3>
+                  <h3 className="text-blue-400 font-medium mb-1">
+                    Required Information
+                  </h3>
                   <p className="text-sm text-neutral-300">
-                    Fields marked with <span className="text-red-400 font-medium">*</span> are required.
-                    Please fill in all required fields to submit your villa for onboarding.
+                    Fields marked with{' '}
+                    <span className="text-red-400 font-medium">*</span> are
+                    required. Please fill in all required fields to submit your
+                    villa for onboarding.
                   </p>
                 </div>
               </div>
@@ -878,19 +1009,29 @@ function OnboardYourVillaContent() {
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div className="flex-1">
-                  <h3 className="text-red-400 font-medium mb-2">Please fix the following errors:</h3>
+                  <h3 className="text-red-400 font-medium mb-2">
+                    Please fix the following errors:
+                  </h3>
                   <ul className="space-y-1">
                     {Object.entries(validationErrors).map(([field, error]) => {
                       return (
-                        <li key={field} className="text-sm text-red-300 flex items-center gap-2">
+                        <li
+                          key={field}
+                          className="text-sm text-red-300 flex items-center gap-2"
+                        >
                           <span className="w-1 h-1 bg-red-400 rounded-full flex-shrink-0"></span>
                           <button
                             type="button"
                             onClick={() => {
                               if (typeof window !== 'undefined') {
-                                const element = document.querySelector(`[name="${field}"]`) as HTMLElement
+                                const element = document.querySelector(
+                                  `[name="${field}"]`
+                                ) as HTMLElement
                                 if (element) {
-                                  element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                  element.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                  })
                                   element.focus()
                                 }
                               }
@@ -931,7 +1072,9 @@ function OnboardYourVillaContent() {
                       placeholder="John Smith"
                     />
                     {validationErrors.ownerFullName && (
-                      <p className="text-sm text-red-500">{validationErrors.ownerFullName}</p>
+                      <p className="text-sm text-red-500">
+                        {validationErrors.ownerFullName}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -960,7 +1103,9 @@ function OnboardYourVillaContent() {
                       placeholder="+66 81 234 5678"
                     />
                     {validationErrors.ownerContactNumber && (
-                      <p className="text-sm text-red-500">{validationErrors.ownerContactNumber}</p>
+                      <p className="text-sm text-red-500">
+                        {validationErrors.ownerContactNumber}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -976,7 +1121,9 @@ function OnboardYourVillaContent() {
                       placeholder="john@example.com"
                     />
                     {validationErrors.ownerEmail && (
-                      <p className="text-sm text-red-500">{validationErrors.ownerEmail}</p>
+                      <p className="text-sm text-red-500">
+                        {validationErrors.ownerEmail}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -1026,47 +1173,40 @@ function OnboardYourVillaContent() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-
                     <Label htmlFor="propertyName">Property Name</Label>
 
                     <Input
-
                       id="propertyName"
-
                       name="propertyName"
-                    value={formData.propertyName}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    required
-                    placeholder="Villa Paradise"/>
+                      value={formData.propertyName}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      required
+                      placeholder="Villa Paradise"
+                    />
 
                     {validationErrors.propertyName && (
-
-                      <p className="text-sm text-red-500">{validationErrors.propertyName}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.propertyName}
+                      </p>
                     )}
-
                   </div>
                   <div className="space-y-2">
-
                     <Label htmlFor="googleMapsUrl">Google Maps Pin URL</Label>
 
                     <Input
-
                       id="googleMapsUrl"
-
                       name="googleMapsUrl"
-                    value={formData.googleMapsUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://maps.google.com/..."
-                  />
+                      value={formData.googleMapsUrl}
+                      onChange={handleInputChange}
+                      placeholder="https://maps.google.com/..."
+                    />
 
                     {validationErrors.googleMapsUrl && (
-
-                      <p className="text-sm text-red-500">{validationErrors.googleMapsUrl}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.googleMapsUrl}
+                      </p>
                     )}
-
                   </div>
                 </div>
 
@@ -1089,130 +1229,114 @@ function OnboardYourVillaContent() {
                     placeholder="123/45 Moo 6, Choeng Thale, Thalang District, Phuket 83110"
                   />
                   {validationErrors.propertyAddress && (
-                    <p className="text-sm text-red-400 font-medium mt-2">{validationErrors.propertyAddress}</p>
+                    <p className="text-sm text-red-400 font-medium mt-2">
+                      {validationErrors.propertyAddress}
+                    </p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="space-y-2">
-
                     <Label htmlFor="bedrooms">Bedrooms</Label>
 
                     <Input
-
                       id="bedrooms"
-
                       name="bedrooms"
-                    type="number"
-                    min="1"
-                    value={formData.bedrooms}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    required
-                    placeholder="4"/>
+                      type="number"
+                      min="1"
+                      value={formData.bedrooms}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      required
+                      placeholder="4"
+                    />
 
                     {validationErrors.bedrooms && (
-
-                      <p className="text-sm text-red-500">{validationErrors.bedrooms}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.bedrooms}
+                      </p>
                     )}
-
                   </div>
                   <div className="space-y-2">
-
                     <Label htmlFor="bathrooms">Bathrooms</Label>
 
                     <Input
-
                       id="bathrooms"
-
                       name="bathrooms"
-                    type="number"
-                    min="1"
-                    step="0.5"
-                    value={formData.bathrooms}
-                    onChange={handleInputChange}
-                    onBlur={handleInputBlur}
-                    required
-                    placeholder="3"/>
+                      type="number"
+                      min="1"
+                      step="0.5"
+                      value={formData.bathrooms}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      required
+                      placeholder="3"
+                    />
 
                     {validationErrors.bathrooms && (
-
-                      <p className="text-sm text-red-500">{validationErrors.bathrooms}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.bathrooms}
+                      </p>
                     )}
-
                   </div>
                   <div className="space-y-2">
-
                     <Label htmlFor="landSizeSqm">Land Size (sqm)</Label>
 
                     <Input
-
                       id="landSizeSqm"
-
                       name="landSizeSqm"
-                    type="number"
-                    value={formData.landSizeSqm}
-                    onChange={handleInputChange}
-                    placeholder="800"
-                  />
+                      type="number"
+                      value={formData.landSizeSqm}
+                      onChange={handleInputChange}
+                      placeholder="800"
+                    />
 
                     {validationErrors.landSizeSqm && (
-
-                      <p className="text-sm text-red-500">{validationErrors.landSizeSqm}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.landSizeSqm}
+                      </p>
                     )}
-
                   </div>
                   <div className="space-y-2">
-
                     <Label htmlFor="villaSizeSqm">Villa Size (sqm)</Label>
 
                     <Input
-
                       id="villaSizeSqm"
-
                       name="villaSizeSqm"
-                    type="number"
-                    value={formData.villaSizeSqm}
-                    onChange={handleInputChange}
-                    placeholder="400"
-                  />
+                      type="number"
+                      value={formData.villaSizeSqm}
+                      onChange={handleInputChange}
+                      placeholder="400"
+                    />
 
                     {validationErrors.villaSizeSqm && (
-
-                      <p className="text-sm text-red-500">{validationErrors.villaSizeSqm}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.villaSizeSqm}
+                      </p>
                     )}
-
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-
                     <Label htmlFor="yearBuilt">Year Built</Label>
 
                     <Input
-
                       id="yearBuilt"
-
                       name="yearBuilt"
-                    type="number"
-                    min="1900"
-                    max={new Date().getFullYear()}
-                    value={formData.yearBuilt}
-                    onChange={handleInputChange}
-                    placeholder="2020"
-                  />
+                      type="number"
+                      min="1900"
+                      max={new Date().getFullYear()}
+                      value={formData.yearBuilt}
+                      onChange={handleInputChange}
+                      placeholder="2020"
+                    />
 
                     {validationErrors.yearBuilt && (
-
-                      <p className="text-sm text-red-500">{validationErrors.yearBuilt}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.yearBuilt}
+                      </p>
                     )}
-
                   </div>
                   <div></div>
                 </div>
@@ -1220,13 +1344,17 @@ function OnboardYourVillaContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FileUpload
                     label="Furniture & Appliances List"
-                    onFileSelect={(files) => handleFileUpload('furnitureAppliances', files)}
+                    onFileSelect={(files) =>
+                      handleFileUpload('furnitureAppliances', files)
+                    }
                     acceptedTypes={['image/*', '.pdf', '.doc', '.docx']}
                     maxFiles={3}
                   />
                   <FileUpload
                     label="Floor Plans"
-                    onFileSelect={(files) => handleFileUpload('floorPlans', files)}
+                    onFileSelect={(files) =>
+                      handleFileUpload('floorPlans', files)
+                    }
                     acceptedTypes={['image/*', '.pdf']}
                     maxFiles={5}
                   />
@@ -1244,56 +1372,67 @@ function OnboardYourVillaContent() {
                   <Checkbox
                     label="Swimming Pool"
                     checked={formData.hasPool}
-                    onChange={(e) => handleCheckboxChange('hasPool', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('hasPool', e.target.checked)
+                    }
                   />
                   <Checkbox
                     label="Garden"
                     checked={formData.hasGarden}
-                    onChange={(e) => handleCheckboxChange('hasGarden', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('hasGarden', e.target.checked)
+                    }
                   />
                   <Checkbox
                     label="Air Conditioning"
                     checked={formData.hasAirConditioning}
-                    onChange={(e) => handleCheckboxChange('hasAirConditioning', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange(
+                        'hasAirConditioning',
+                        e.target.checked
+                      )
+                    }
                   />
                   <Checkbox
                     label="Parking Available"
                     checked={formData.hasParking}
-                    onChange={(e) => handleCheckboxChange('hasParking', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('hasParking', e.target.checked)
+                    }
                   />
                   <Checkbox
                     label="Laundry Facilities"
                     checked={formData.hasLaundry}
-                    onChange={(e) => handleCheckboxChange('hasLaundry', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('hasLaundry', e.target.checked)
+                    }
                   />
                   <Checkbox
                     label="Backup Power (Generator/Solar)"
                     checked={formData.hasBackupPower}
-                    onChange={(e) => handleCheckboxChange('hasBackupPower', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('hasBackupPower', e.target.checked)
+                    }
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-
                     <Label htmlFor="internetProvider">Internet Provider</Label>
 
                     <Input
-
                       id="internetProvider"
-
                       name="internetProvider"
-                    value={formData.internetProvider}
-                    onChange={handleInputChange}
-                    placeholder="AIS, True, 3BB, etc."
-                  />
+                      value={formData.internetProvider}
+                      onChange={handleInputChange}
+                      placeholder="AIS, True, 3BB, etc."
+                    />
 
                     {validationErrors.internetProvider && (
-
-                      <p className="text-sm text-red-500">{validationErrors.internetProvider}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.internetProvider}
+                      </p>
                     )}
-
                   </div>
                   <div></div>
                 </div>
@@ -1307,67 +1446,59 @@ function OnboardYourVillaContent() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="space-y-2">
-
-                  <Label htmlFor="electricityProvider">Electricity Provider</Label>
+                  <Label htmlFor="electricityProvider">
+                    Electricity Provider
+                  </Label>
 
                   <Input
-
                     id="electricityProvider"
-
                     name="electricityProvider"
-                  value={formData.electricityProvider}
-                  onChange={handleInputChange}
-                  placeholder="PEA, MEA, etc."
-                />
+                    value={formData.electricityProvider}
+                    onChange={handleInputChange}
+                    placeholder="PEA, MEA, etc."
+                  />
 
                   {validationErrors.electricityProvider && (
-
-                    <p className="text-sm text-red-500">{validationErrors.electricityProvider}</p>
-
+                    <p className="text-sm text-red-500">
+                      {validationErrors.electricityProvider}
+                    </p>
                   )}
-
                 </div>
                 <div className="space-y-2">
-
                   <Label htmlFor="waterSource">Water Source</Label>
 
                   <Input
-
                     id="waterSource"
-
                     name="waterSource"
-                  value={formData.waterSource}
-                  onChange={handleInputChange}
-                  placeholder="Municipal, well, etc."
-                />
+                    value={formData.waterSource}
+                    onChange={handleInputChange}
+                    placeholder="Municipal, well, etc."
+                  />
 
                   {validationErrors.waterSource && (
-
-                    <p className="text-sm text-red-500">{validationErrors.waterSource}</p>
-
+                    <p className="text-sm text-red-500">
+                      {validationErrors.waterSource}
+                    </p>
                   )}
-
                 </div>
                 <div className="space-y-2">
-
-                  <Label htmlFor="internetPackage">Internet Package/Speed</Label>
+                  <Label htmlFor="internetPackage">
+                    Internet Package/Speed
+                  </Label>
 
                   <Input
-
                     id="internetPackage"
-
                     name="internetPackage"
-                  value={formData.internetPackage}
-                  onChange={handleInputChange}
-                  placeholder="100 Mbps, Fiber, etc."
-                />
+                    value={formData.internetPackage}
+                    onChange={handleInputChange}
+                    placeholder="100 Mbps, Fiber, etc."
+                  />
 
                   {validationErrors.internetPackage && (
-
-                    <p className="text-sm text-red-500">{validationErrors.internetPackage}</p>
-
+                    <p className="text-sm text-red-500">
+                      {validationErrors.internetPackage}
+                    </p>
                   )}
-
                 </div>
               </div>
             </CollapsibleSection>
@@ -1391,7 +1522,9 @@ function OnboardYourVillaContent() {
                           name="hasSmartElectricSystem"
                           value="true"
                           checked={formData.hasSmartElectricSystem === true}
-                          onChange={() => handleCheckboxChange('hasSmartElectricSystem', true)}
+                          onChange={() =>
+                            handleCheckboxChange('hasSmartElectricSystem', true)
+                          }
                           className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                         />
                         <span className="text-sm text-white">Yes</span>
@@ -1402,7 +1535,12 @@ function OnboardYourVillaContent() {
                           name="hasSmartElectricSystem"
                           value="false"
                           checked={formData.hasSmartElectricSystem === false}
-                          onChange={() => handleCheckboxChange('hasSmartElectricSystem', false)}
+                          onChange={() =>
+                            handleCheckboxChange(
+                              'hasSmartElectricSystem',
+                              false
+                            )
+                          }
                           className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                         />
                         <span className="text-sm text-white">No</span>
@@ -1418,46 +1556,42 @@ function OnboardYourVillaContent() {
                     {/* Brand/System */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-
-                        <Label htmlFor="smartSystemBrand">What brand/system is installed?</Label>
+                        <Label htmlFor="smartSystemBrand">
+                          What brand/system is installed?
+                        </Label>
 
                         <Input
-
                           id="smartSystemBrand"
-
                           name="smartSystemBrand"
-                        value={formData.smartSystemBrand}
-                        onChange={handleInputChange}
-                        placeholder="Philips Hue, Xiaomi, Google Home, etc."
-                      />
+                          value={formData.smartSystemBrand}
+                          onChange={handleInputChange}
+                          placeholder="Philips Hue, Xiaomi, Google Home, etc."
+                        />
 
                         {validationErrors.smartSystemBrand && (
-
-                          <p className="text-sm text-red-500">{validationErrors.smartSystemBrand}</p>
-
+                          <p className="text-sm text-red-500">
+                            {validationErrors.smartSystemBrand}
+                          </p>
                         )}
-
                       </div>
                       <div className="space-y-2">
-
-                        <Label htmlFor="smartSystemAppPlatform">App/platform used for control</Label>
+                        <Label htmlFor="smartSystemAppPlatform">
+                          App/platform used for control
+                        </Label>
 
                         <Input
-
                           id="smartSystemAppPlatform"
-
                           name="smartSystemAppPlatform"
-                        value={formData.smartSystemAppPlatform}
-                        onChange={handleInputChange}
-                        placeholder="Mi Home, Google Home, Alexa, etc."
-                      />
+                          value={formData.smartSystemAppPlatform}
+                          onChange={handleInputChange}
+                          placeholder="Mi Home, Google Home, Alexa, etc."
+                        />
 
                         {validationErrors.smartSystemAppPlatform && (
-
-                          <p className="text-sm text-red-500">{validationErrors.smartSystemAppPlatform}</p>
-
+                          <p className="text-sm text-red-500">
+                            {validationErrors.smartSystemAppPlatform}
+                          </p>
                         )}
-
                       </div>
                     </div>
 
@@ -1467,42 +1601,61 @@ function OnboardYourVillaContent() {
                         Which devices are controlled? (Select all that apply)
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {['Lights', 'Ceiling Fans', 'Curtains/Blinds', 'Air Conditioning'].map((device) => (
+                        {[
+                          'Lights',
+                          'Ceiling Fans',
+                          'Curtains/Blinds',
+                          'Air Conditioning',
+                        ].map((device) => (
                           <Checkbox
                             key={device}
                             label={device}
-                            checked={formData.smartDevicesControlled.includes(device)}
-                            onChange={(e) => handleMultiSelectChange('smartDevicesControlled', device, e.target.checked)}
+                            checked={formData.smartDevicesControlled.includes(
+                              device
+                            )}
+                            onChange={(e) =>
+                              handleMultiSelectChange(
+                                'smartDevicesControlled',
+                                device,
+                                e.target.checked
+                              )
+                            }
                           />
                         ))}
                         <Checkbox
                           label="Other"
-                          checked={formData.smartDevicesControlled.includes('Other')}
-                          onChange={(e) => handleMultiSelectChange('smartDevicesControlled', 'Other', e.target.checked)}
+                          checked={formData.smartDevicesControlled.includes(
+                            'Other'
+                          )}
+                          onChange={(e) =>
+                            handleMultiSelectChange(
+                              'smartDevicesControlled',
+                              'Other',
+                              e.target.checked
+                            )
+                          }
                         />
                       </div>
                       {formData.smartDevicesControlled.includes('Other') && (
                         <div className="mt-3">
                           <div className="space-y-2">
-
-                            <Label htmlFor="smartDevicesOther">Other devices (specify)</Label>
+                            <Label htmlFor="smartDevicesOther">
+                              Other devices (specify)
+                            </Label>
 
                             <Input
-
                               id="smartDevicesOther"
-
                               name="smartDevicesOther"
-                            value={formData.smartDevicesOther}
-                            onChange={handleInputChange}
-                            placeholder="Security cameras, door locks, etc."
-                          />
+                              value={formData.smartDevicesOther}
+                              onChange={handleInputChange}
+                              placeholder="Security cameras, door locks, etc."
+                            />
 
                             {validationErrors.smartDevicesOther && (
-
-                              <p className="text-sm text-red-500">{validationErrors.smartDevicesOther}</p>
-
+                              <p className="text-sm text-red-500">
+                                {validationErrors.smartDevicesOther}
+                              </p>
                             )}
-
                           </div>
                         </div>
                       )}
@@ -1520,8 +1673,15 @@ function OnboardYourVillaContent() {
                               type="radio"
                               name="canControlManuallyWifiDown"
                               value="true"
-                              checked={formData.canControlManuallyWifiDown === true}
-                              onChange={() => handleCheckboxChange('canControlManuallyWifiDown', true)}
+                              checked={
+                                formData.canControlManuallyWifiDown === true
+                              }
+                              onChange={() =>
+                                handleCheckboxChange(
+                                  'canControlManuallyWifiDown',
+                                  true
+                                )
+                              }
                               className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                             />
                             <span className="text-sm text-white">Yes</span>
@@ -1531,8 +1691,15 @@ function OnboardYourVillaContent() {
                               type="radio"
                               name="canControlManuallyWifiDown"
                               value="false"
-                              checked={formData.canControlManuallyWifiDown === false}
-                              onChange={() => handleCheckboxChange('canControlManuallyWifiDown', false)}
+                              checked={
+                                formData.canControlManuallyWifiDown === false
+                              }
+                              onChange={() =>
+                                handleCheckboxChange(
+                                  'canControlManuallyWifiDown',
+                                  false
+                                )
+                              }
                               className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                             />
                             <span className="text-sm text-white">No</span>
@@ -1550,7 +1717,12 @@ function OnboardYourVillaContent() {
                               name="linkedToPropertyWifi"
                               value="true"
                               checked={formData.linkedToPropertyWifi === true}
-                              onChange={() => handleCheckboxChange('linkedToPropertyWifi', true)}
+                              onChange={() =>
+                                handleCheckboxChange(
+                                  'linkedToPropertyWifi',
+                                  true
+                                )
+                              }
                               className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                             />
                             <span className="text-sm text-white">Yes</span>
@@ -1561,7 +1733,12 @@ function OnboardYourVillaContent() {
                               name="linkedToPropertyWifi"
                               value="false"
                               checked={formData.linkedToPropertyWifi === false}
-                              onChange={() => handleCheckboxChange('linkedToPropertyWifi', false)}
+                              onChange={() =>
+                                handleCheckboxChange(
+                                  'linkedToPropertyWifi',
+                                  false
+                                )
+                              }
                               className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                             />
                             <span className="text-sm text-white">No</span>
@@ -1582,7 +1759,9 @@ function OnboardYourVillaContent() {
                             name="hasHubGateway"
                             value="true"
                             checked={formData.hasHubGateway === true}
-                            onChange={() => handleCheckboxChange('hasHubGateway', true)}
+                            onChange={() =>
+                              handleCheckboxChange('hasHubGateway', true)
+                            }
                             className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                           />
                           <span className="text-sm text-white">Yes</span>
@@ -1593,7 +1772,9 @@ function OnboardYourVillaContent() {
                             name="hasHubGateway"
                             value="false"
                             checked={formData.hasHubGateway === false}
-                            onChange={() => handleCheckboxChange('hasHubGateway', false)}
+                            onChange={() =>
+                              handleCheckboxChange('hasHubGateway', false)
+                            }
                             className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                           />
                           <span className="text-sm text-white">No</span>
@@ -1601,25 +1782,23 @@ function OnboardYourVillaContent() {
                       </div>
                       {formData.hasHubGateway && (
                         <div className="space-y-2">
-
-                          <Label htmlFor="hubGatewayLocation">Hub/Gateway location</Label>
+                          <Label htmlFor="hubGatewayLocation">
+                            Hub/Gateway location
+                          </Label>
 
                           <Input
-
                             id="hubGatewayLocation"
-
                             name="hubGatewayLocation"
-                          value={formData.hubGatewayLocation}
-                          onChange={handleInputChange}
-                          placeholder="Living room, master bedroom, etc."
-                        />
+                            value={formData.hubGatewayLocation}
+                            onChange={handleInputChange}
+                            placeholder="Living room, master bedroom, etc."
+                          />
 
                           {validationErrors.hubGatewayLocation && (
-
-                            <p className="text-sm text-red-500">{validationErrors.hubGatewayLocation}</p>
-
+                            <p className="text-sm text-red-500">
+                              {validationErrors.hubGatewayLocation}
+                            </p>
                           )}
-
                         </div>
                       )}
                     </div>
@@ -1630,41 +1809,48 @@ function OnboardYourVillaContent() {
                         Who owns the control account?
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
-                        {['Owner', 'Property Management', 'Other'].map((owner) => (
-                          <label key={owner} className="flex items-center">
-                            <input
-                              type="radio"
-                              name="controlAccountOwner"
-                              value={owner}
-                              checked={formData.controlAccountOwner === owner}
-                              onChange={(e) => setFormData(prev => ({ ...prev, controlAccountOwner: e.target.value }))}
-                              className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
-                            />
-                            <span className="text-sm text-white">{owner}</span>
-                          </label>
-                        ))}
+                        {['Owner', 'Property Management', 'Other'].map(
+                          (owner) => (
+                            <label key={owner} className="flex items-center">
+                              <input
+                                type="radio"
+                                name="controlAccountOwner"
+                                value={owner}
+                                checked={formData.controlAccountOwner === owner}
+                                onChange={(e) =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    controlAccountOwner: e.target.value,
+                                  }))
+                                }
+                                className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
+                              />
+                              <span className="text-sm text-white">
+                                {owner}
+                              </span>
+                            </label>
+                          )
+                        )}
                       </div>
                       {formData.controlAccountOwner === 'Other' && (
                         <div className="space-y-2">
-
-                          <Label htmlFor="controlAccountOwnerOther">Other account owner (specify)</Label>
+                          <Label htmlFor="controlAccountOwnerOther">
+                            Other account owner (specify)
+                          </Label>
 
                           <Input
-
                             id="controlAccountOwnerOther"
-
                             name="controlAccountOwnerOther"
-                          value={formData.controlAccountOwnerOther}
-                          onChange={handleInputChange}
-                          placeholder="Maintenance company, previous owner, etc."
-                        />
+                            value={formData.controlAccountOwnerOther}
+                            onChange={handleInputChange}
+                            placeholder="Maintenance company, previous owner, etc."
+                          />
 
                           {validationErrors.controlAccountOwnerOther && (
-
-                            <p className="text-sm text-red-500">{validationErrors.controlAccountOwnerOther}</p>
-
+                            <p className="text-sm text-red-500">
+                              {validationErrors.controlAccountOwnerOther}
+                            </p>
                           )}
-
                         </div>
                       )}
                     </div>
@@ -1681,7 +1867,12 @@ function OnboardYourVillaContent() {
                             name="loginCredentialsProvided"
                             value="true"
                             checked={formData.loginCredentialsProvided === true}
-                            onChange={() => handleCheckboxChange('loginCredentialsProvided', true)}
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'loginCredentialsProvided',
+                                true
+                              )
+                            }
                             className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                           />
                           <span className="text-sm text-white">Yes</span>
@@ -1691,8 +1882,15 @@ function OnboardYourVillaContent() {
                             type="radio"
                             name="loginCredentialsProvided"
                             value="false"
-                            checked={formData.loginCredentialsProvided === false}
-                            onChange={() => handleCheckboxChange('loginCredentialsProvided', false)}
+                            checked={
+                              formData.loginCredentialsProvided === false
+                            }
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'loginCredentialsProvided',
+                                false
+                              )
+                            }
                             className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                           />
                           <span className="text-sm text-white">No</span>
@@ -1726,8 +1924,15 @@ function OnboardYourVillaContent() {
                             type="radio"
                             name="hasActiveSchedulesAutomations"
                             value="true"
-                            checked={formData.hasActiveSchedulesAutomations === true}
-                            onChange={() => handleCheckboxChange('hasActiveSchedulesAutomations', true)}
+                            checked={
+                              formData.hasActiveSchedulesAutomations === true
+                            }
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'hasActiveSchedulesAutomations',
+                                true
+                              )
+                            }
                             className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                           />
                           <span className="text-sm text-white">Yes</span>
@@ -1737,8 +1942,15 @@ function OnboardYourVillaContent() {
                             type="radio"
                             name="hasActiveSchedulesAutomations"
                             value="false"
-                            checked={formData.hasActiveSchedulesAutomations === false}
-                            onChange={() => handleCheckboxChange('hasActiveSchedulesAutomations', false)}
+                            checked={
+                              formData.hasActiveSchedulesAutomations === false
+                            }
+                            onChange={() =>
+                              handleCheckboxChange(
+                                'hasActiveSchedulesAutomations',
+                                false
+                              )
+                            }
                             className="mr-2 h-4 w-4 text-primary-500 focus:ring-primary-500 border-neutral-600 bg-neutral-800"
                           />
                           <span className="text-sm text-white">No</span>
@@ -1764,7 +1976,8 @@ function OnboardYourVillaContent() {
                     {/* Special instructions */}
                     <div>
                       <label className="block text-sm font-medium text-white mb-2">
-                        Special instructions, troubleshooting tips, or issues to note
+                        Special instructions, troubleshooting tips, or issues to
+                        note
                       </label>
                       <textarea
                         name="smartSystemSpecialInstructions"
@@ -1810,7 +2023,13 @@ function OnboardYourVillaContent() {
                         key={platform}
                         label={platform}
                         checked={formData.platformsListed.includes(platform)}
-                        onChange={(e) => handleMultiSelectChange('platformsListed', platform, e.target.checked)}
+                        onChange={(e) =>
+                          handleMultiSelectChange(
+                            'platformsListed',
+                            platform,
+                            e.target.checked
+                          )
+                        }
                       />
                     ))}
                   </div>
@@ -1818,73 +2037,65 @@ function OnboardYourVillaContent() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-
-                    <Label htmlFor="averageOccupancyRate">Average Occupancy Rate (%)</Label>
+                    <Label htmlFor="averageOccupancyRate">
+                      Average Occupancy Rate (%)
+                    </Label>
 
                     <Input
-
                       id="averageOccupancyRate"
-
                       name="averageOccupancyRate"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.averageOccupancyRate}
-                    onChange={handleInputChange}
-                    placeholder="75"
-                  />
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.averageOccupancyRate}
+                      onChange={handleInputChange}
+                      placeholder="75"
+                    />
 
                     {validationErrors.averageOccupancyRate && (
-
-                      <p className="text-sm text-red-500">{validationErrors.averageOccupancyRate}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.averageOccupancyRate}
+                      </p>
                     )}
-
                   </div>
                   <div className="space-y-2">
-
-                    <Label htmlFor="minimumStayRequirements">Minimum Stay Requirements</Label>
+                    <Label htmlFor="minimumStayRequirements">
+                      Minimum Stay Requirements
+                    </Label>
 
                     <Input
-
                       id="minimumStayRequirements"
-
                       name="minimumStayRequirements"
-                    value={formData.minimumStayRequirements}
-                    onChange={handleInputChange}
-                    placeholder="3 nights minimum"
-                  />
+                      value={formData.minimumStayRequirements}
+                      onChange={handleInputChange}
+                      placeholder="3 nights minimum"
+                    />
 
                     {validationErrors.minimumStayRequirements && (
-
-                      <p className="text-sm text-red-500">{validationErrors.minimumStayRequirements}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.minimumStayRequirements}
+                      </p>
                     )}
-
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-
                     <Label htmlFor="targetGuests">Target Guests</Label>
 
                     <Input
-
                       id="targetGuests"
-
                       name="targetGuests"
-                    value={formData.targetGuests}
-                    onChange={handleInputChange}
-                    placeholder="Families, couples, business travelers"
-                  />
+                      value={formData.targetGuests}
+                      onChange={handleInputChange}
+                      placeholder="Families, couples, business travelers"
+                    />
 
                     {validationErrors.targetGuests && (
-
-                      <p className="text-sm text-red-500">{validationErrors.targetGuests}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.targetGuests}
+                      </p>
                     )}
-
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
@@ -1913,43 +2124,49 @@ function OnboardYourVillaContent() {
                   <Checkbox
                     label="Pets Allowed"
                     checked={formData.petsAllowed}
-                    onChange={(e) => handleCheckboxChange('petsAllowed', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('petsAllowed', e.target.checked)
+                    }
                   />
                   <Checkbox
                     label="Parties Allowed"
                     checked={formData.partiesAllowed}
-                    onChange={(e) => handleCheckboxChange('partiesAllowed', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('partiesAllowed', e.target.checked)
+                    }
                   />
                   <Checkbox
                     label="Smoking Allowed"
                     checked={formData.smokingAllowed}
-                    onChange={(e) => handleCheckboxChange('smokingAllowed', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange('smokingAllowed', e.target.checked)
+                    }
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-
-                    <Label htmlFor="maintenanceAutoApprovalLimit">Maintenance Auto-Approval Limit (THB)</Label>
+                    <Label htmlFor="maintenanceAutoApprovalLimit">
+                      Maintenance Auto-Approval Limit (THB)
+                    </Label>
 
                     <Input
-
                       id="maintenanceAutoApprovalLimit"
-
                       name="maintenanceAutoApprovalLimit"
-                    type="number"
-                    value={formData.maintenanceAutoApprovalLimit}
-                    onChange={handleInputChange}
-                    placeholder="5000"
-                  />
-                    <p className="text-sm text-neutral-400 mt-1">Amount we can spend on maintenance without prior approval</p>
+                      type="number"
+                      value={formData.maintenanceAutoApprovalLimit}
+                      onChange={handleInputChange}
+                      placeholder="5000"
+                    />
+                    <p className="text-sm text-neutral-400 mt-1">
+                      Amount we can spend on maintenance without prior approval
+                    </p>
 
                     {validationErrors.maintenanceAutoApprovalLimit && (
-
-                      <p className="text-sm text-red-500">{validationErrors.maintenanceAutoApprovalLimit}</p>
-
+                      <p className="text-sm text-red-500">
+                        {validationErrors.maintenanceAutoApprovalLimit}
+                      </p>
                     )}
-
                   </div>
                   <div></div>
                 </div>
@@ -1986,10 +2203,16 @@ function OnboardYourVillaContent() {
               <div className="space-y-6">
                 {/* Villa Photo Upload */}
                 <div>
-                  <h4 className="text-lg font-medium text-white mb-4">Villa Photo Upload</h4>
+                  <h4 className="text-lg font-medium text-white mb-4">
+                    Villa Photo Upload
+                  </h4>
                   <VillaPhotoUploadCloudinary
                     userId={user?.id || 'anonymous'}
-                    villaId={formData.propertyName ? formData.propertyName.replace(/[^a-zA-Z0-9-_]/g, '_') : undefined}
+                    villaId={
+                      formData.propertyName
+                        ? formData.propertyName.replace(/[^a-zA-Z0-9-_]/g, '_')
+                        : undefined
+                    }
                     disabled={loading}
                     onPhotosChange={setUploadedPhotoUrls}
                   />
@@ -2021,12 +2244,22 @@ function OnboardYourVillaContent() {
                   <Checkbox
                     label="Floor Plan Images Available"
                     checked={formData.floorPlanImagesAvailable}
-                    onChange={(e) => handleCheckboxChange('floorPlanImagesAvailable', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange(
+                        'floorPlanImagesAvailable',
+                        e.target.checked
+                      )
+                    }
                   />
                   <Checkbox
                     label="Video Walk-through Available"
                     checked={formData.videoWalkthroughAvailable}
-                    onChange={(e) => handleCheckboxChange('videoWalkthroughAvailable', e.target.checked)}
+                    onChange={(e) =>
+                      handleCheckboxChange(
+                        'videoWalkthroughAvailable',
+                        e.target.checked
+                      )
+                    }
                   />
                 </div>
               </div>
@@ -2040,49 +2273,47 @@ function OnboardYourVillaContent() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-
-                  <Label htmlFor="emergencyContactName">Emergency Contact Name</Label>
+                  <Label htmlFor="emergencyContactName">
+                    Emergency Contact Name
+                  </Label>
 
                   <Input
-
                     id="emergencyContactName"
-
                     name="emergencyContactName"
-                  value={formData.emergencyContactName}
-                  onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  required
-                  placeholder="Local contact person"/>
+                    value={formData.emergencyContactName}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    required
+                    placeholder="Local contact person"
+                  />
 
                   {validationErrors.emergencyContactName && (
-
-                    <p className="text-sm text-red-500">{validationErrors.emergencyContactName}</p>
-
+                    <p className="text-sm text-red-500">
+                      {validationErrors.emergencyContactName}
+                    </p>
                   )}
-
                 </div>
                 <div className="space-y-2">
-
-                  <Label htmlFor="emergencyContactPhone">Emergency Contact Phone</Label>
+                  <Label htmlFor="emergencyContactPhone">
+                    Emergency Contact Phone
+                  </Label>
 
                   <Input
-
                     id="emergencyContactPhone"
-
                     name="emergencyContactPhone"
-                  type="tel"
-                  value={formData.emergencyContactPhone}
-                  onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  required
-                  placeholder="+66 81 234 5678"/>
+                    type="tel"
+                    value={formData.emergencyContactPhone}
+                    onChange={handleInputChange}
+                    onBlur={handleInputBlur}
+                    required
+                    placeholder="+66 81 234 5678"
+                  />
 
                   {validationErrors.emergencyContactPhone && (
-
-                    <p className="text-sm text-red-500">{validationErrors.emergencyContactPhone}</p>
-
+                    <p className="text-sm text-red-500">
+                      {validationErrors.emergencyContactPhone}
+                    </p>
                   )}
-
                 </div>
               </div>
             </CollapsibleSection>
@@ -2097,16 +2328,23 @@ function OnboardYourVillaContent() {
               <div className="space-y-8">
                 <Checkbox
                   name="informationConfirmed"
-                  label={isEditing
-                    ? "I confirm that the updated information is accurate and authorize the changes to be processed."
-                    : "I confirm that the above information is accurate and authorize Sia Moon Property Management to start onboarding."
+                  label={
+                    isEditing
+                      ? 'I confirm that the updated information is accurate and authorize the changes to be processed.'
+                      : 'I confirm that the above information is accurate and authorize Sia Moon Property Management to start onboarding.'
                   }
-                  description={isEditing
-                    ? "By checking this box, you confirm that all updated information is accurate and complete, and you authorize the changes to be processed."
-                    : "By checking this box, you confirm that all provided information is accurate and complete, and you authorize Sia Moon Property Management to begin the villa onboarding process."
+                  description={
+                    isEditing
+                      ? 'By checking this box, you confirm that all updated information is accurate and complete, and you authorize the changes to be processed.'
+                      : 'By checking this box, you confirm that all provided information is accurate and complete, and you authorize Sia Moon Property Management to begin the villa onboarding process.'
                   }
                   checked={formData.informationConfirmed}
-                  onChange={(e) => handleCheckboxChange('informationConfirmed', e.target.checked)}
+                  onChange={(e) =>
+                    handleCheckboxChange(
+                      'informationConfirmed',
+                      e.target.checked
+                    )
+                  }
                   required
                   error={validationErrors.informationConfirmed}
                 />
@@ -2127,12 +2365,20 @@ function OnboardYourVillaContent() {
                   {loading ? (
                     <div className="flex items-center space-x-3">
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      <span>{isEditing ? 'Updating Villa Information...' : 'Submitting Villa Information...'}</span>
+                      <span>
+                        {isEditing
+                          ? 'Updating Villa Information...'
+                          : 'Submitting Villa Information...'}
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center space-x-3">
                       <Upload className="h-5 w-5" />
-                      <span>{isEditing ? 'Update Villa Information' : 'Submit Villa Onboarding Survey'}</span>
+                      <span>
+                        {isEditing
+                          ? 'Update Villa Information'
+                          : 'Submit Villa Onboarding Survey'}
+                      </span>
                     </div>
                   )}
                 </Button>

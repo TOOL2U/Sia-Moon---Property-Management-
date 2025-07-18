@@ -38,7 +38,24 @@ const nextConfig: NextConfig = {
 
   // Webpack configuration to handle chunk loading issues
   webpack: (config, { dev, isServer }) => {
-    // Polyfill handling is now done via src/lib/polyfills.ts
+    // Add polyfill for self on server-side
+    if (isServer) {
+      const originalEntry = config.entry
+      config.entry = async () => {
+        const entries = await originalEntry()
+
+        // Add polyfill to all server entries
+        for (const key in entries) {
+          if (Array.isArray(entries[key])) {
+            entries[key].unshift('./polyfills/self-polyfill.js')
+          } else if (typeof entries[key] === 'string') {
+            entries[key] = ['./polyfills/self-polyfill.js', entries[key]]
+          }
+        }
+
+        return entries
+      }
+    }
 
     // Fix for chunk loading errors
     if (!isServer) {

@@ -3,13 +3,16 @@
  * Handles CRUD operations for job assignments
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
-import { AdminJobAssignmentService } from '@/lib/services/adminJobAssignmentService'
-import { AuthenticatedJobAssignmentService, getIdTokenFromRequest } from '@/lib/services/authenticatedFirebaseService'
-import { JobAssignmentFilters, JobType, JobPriority } from '@/types/jobAssignment'
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
+import { getIdTokenFromRequest } from '@/lib/services/authenticatedFirebaseService'
+import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
+import {
+  JobAssignmentFilters,
+  JobPriority,
+  JobType,
+} from '@/types/jobAssignment'
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/admin/job-assignments
@@ -20,7 +23,7 @@ export async function GET(request: NextRequest) {
     // Get Firebase ID token for authentication
     const idToken = getIdTokenFromRequest(request)
     console.log('🔍 API Route Auth Debug:', {
-      idToken: idToken ? 'EXISTS' : 'MISSING'
+      idToken: idToken ? 'EXISTS' : 'MISSING',
     })
 
     if (!idToken) {
@@ -31,42 +34,44 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    
+
     // Parse filters from query parameters
     const filters: JobAssignmentFilters = {}
-    
+
     if (searchParams.get('status')) {
       filters.status = searchParams.get('status')!.split(',') as any[]
     }
-    
+
     if (searchParams.get('jobType')) {
       filters.jobType = searchParams.get('jobType')!.split(',') as JobType[]
     }
-    
+
     if (searchParams.get('priority')) {
-      filters.priority = searchParams.get('priority')!.split(',') as JobPriority[]
+      filters.priority = searchParams
+        .get('priority')!
+        .split(',') as JobPriority[]
     }
-    
+
     if (searchParams.get('assignedStaff')) {
       filters.assignedStaff = searchParams.get('assignedStaff')!.split(',')
     }
-    
+
     if (searchParams.get('property')) {
       filters.property = searchParams.get('property')!.split(',')
     }
-    
+
     if (searchParams.get('search')) {
       filters.search = searchParams.get('search')!
     }
-    
+
     if (searchParams.get('sortBy')) {
       filters.sortBy = searchParams.get('sortBy') as any
     }
-    
+
     if (searchParams.get('sortOrder')) {
       filters.sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc'
     }
-    
+
     // Date range filter
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
@@ -86,7 +91,7 @@ export async function GET(request: NextRequest) {
     )
 
     const jobsSnapshot = await getDocs(jobsQuery)
-    const realJobAssignments = jobsSnapshot.docs.map(doc => {
+    const realJobAssignments = jobsSnapshot.docs.map((doc) => {
       const data = doc.data()
       return {
         id: doc.id,
@@ -99,32 +104,43 @@ export async function GET(request: NextRequest) {
         staffNames: data.assignedStaffName ? [data.assignedStaffName] : [],
         property: data.propertyName || 'Unknown Property',
         propertyId: data.propertyId || '',
-        scheduledDate: data.startTime ? new Date(data.startTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        scheduledTime: data.startTime ? new Date(data.startTime).toTimeString().slice(0, 5) : '09:00',
-        deadline: data.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        scheduledDate: data.startTime
+          ? new Date(data.startTime).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        scheduledTime: data.startTime
+          ? new Date(data.startTime).toTimeString().slice(0, 5)
+          : '09:00',
+        deadline:
+          data.deadline ||
+          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
         createdBy: data.createdBy || 'admin',
         estimatedDuration: data.estimatedDuration || 120,
         notes: data.notes || '',
-        bookingId: data.bookingId || ''
+        bookingId: data.bookingId || '',
       }
     })
 
     // Apply filters to real data
     let filteredJobs = realJobAssignments
 
-
     if (filters.status && filters.status.length > 0) {
-      filteredJobs = filteredJobs.filter(job => filters.status!.includes(job.status))
+      filteredJobs = filteredJobs.filter((job) =>
+        filters.status!.includes(job.status)
+      )
     }
 
     if (filters.jobType && filters.jobType.length > 0) {
-      filteredJobs = filteredJobs.filter(job => filters.jobType!.includes(job.jobType))
+      filteredJobs = filteredJobs.filter((job) =>
+        filters.jobType!.includes(job.jobType)
+      )
     }
 
     if (filters.priority && filters.priority.length > 0) {
-      filteredJobs = filteredJobs.filter(job => filters.priority!.includes(job.priority))
+      filteredJobs = filteredJobs.filter((job) =>
+        filters.priority!.includes(job.priority)
+      )
     }
 
     // Apply sorting
@@ -145,19 +161,20 @@ export async function GET(request: NextRequest) {
     // Calculate stats
     const stats = {
       total: filteredJobs.length,
-      pending: filteredJobs.filter(j => j.status === 'pending').length,
-      in_progress: filteredJobs.filter(j => j.status === 'in_progress').length,
-      completed: filteredJobs.filter(j => j.status === 'completed').length,
-      overdue: filteredJobs.filter(j => {
+      pending: filteredJobs.filter((j) => j.status === 'pending').length,
+      in_progress: filteredJobs.filter((j) => j.status === 'in_progress')
+        .length,
+      completed: filteredJobs.filter((j) => j.status === 'completed').length,
+      overdue: filteredJobs.filter((j) => {
         const deadline = new Date(j.deadline)
         return deadline < new Date() && j.status !== 'completed'
-      }).length
+      }).length,
     }
     // Return the filtered mock data
     return NextResponse.json({
       success: true,
       data: filteredJobs,
-      stats: stats
+      stats: stats,
     })
   } catch (error) {
     console.error('❌ Error in GET /api/admin/job-assignments:', error)
@@ -190,13 +207,16 @@ export async function POST(request: NextRequest) {
       assignedBy,
       assignedStaffId,
       assignedStaffName,
-      notificationOptions
+      notificationOptions,
     } = body
 
     // Validate required fields
     if (!bookingData || !jobDetails || !assignedBy) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: bookingData, jobDetails, assignedBy' },
+        {
+          success: false,
+          error: 'Missing required fields: bookingData, jobDetails, assignedBy',
+        },
         { status: 400 }
       )
     }
@@ -204,13 +224,25 @@ export async function POST(request: NextRequest) {
     // MANDATORY VALIDATION: Staff assignment is required
     if (!assignedStaffId) {
       return NextResponse.json(
-        { success: false, error: 'MANDATORY: Staff assignment is required. You must assign this job to a staff member.' },
+        {
+          success: false,
+          error:
+            'MANDATORY: Staff assignment is required. You must assign this job to a staff member.',
+        },
         { status: 400 }
       )
     }
 
     // Validate booking data
-    const requiredBookingFields = ['id', 'propertyId', 'propertyName', 'guestName', 'checkInDate', 'checkOutDate', 'numberOfGuests']
+    const requiredBookingFields = [
+      'id',
+      'propertyId',
+      'propertyName',
+      'guestName',
+      'checkInDate',
+      'checkOutDate',
+      'numberOfGuests',
+    ]
     for (const field of requiredBookingFields) {
       if (!bookingData[field]) {
         return NextResponse.json(
@@ -221,7 +253,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate job details
-    const requiredJobFields = ['jobType', 'title', 'description', 'priority', 'estimatedDuration', 'requiredSkills', 'scheduledDate', 'deadline']
+    const requiredJobFields = [
+      'jobType',
+      'title',
+      'description',
+      'priority',
+      'estimatedDuration',
+      'requiredSkills',
+      'scheduledDate',
+      'deadline',
+    ]
     for (const field of requiredJobFields) {
       if (!jobDetails[field]) {
         return NextResponse.json(
@@ -234,7 +275,10 @@ export async function POST(request: NextRequest) {
     // Validate assignedBy
     if (!assignedBy.id || !assignedBy.name) {
       return NextResponse.json(
-        { success: false, error: 'Missing required assignedBy fields: id, name' },
+        {
+          success: false,
+          error: 'Missing required assignedBy fields: id, name',
+        },
         { status: 400 }
       )
     }
@@ -274,20 +318,25 @@ export async function POST(request: NextRequest) {
       assignedBy,
       {
         sendNotification: notificationOptions?.sendNotification !== false,
-        customMessage: notificationOptions?.customMessage || `New ${jobDetails.jobType} job assigned: ${jobDetails.title}`,
+        customMessage:
+          notificationOptions?.customMessage ||
+          `New ${jobDetails.jobType} job assigned: ${jobDetails.title}`,
         scheduledStartTime: jobDetails.scheduledStartTime,
-        scheduledEndTime: undefined // Will be calculated based on duration
+        scheduledEndTime: undefined, // Will be calculated based on duration
       }
     )
 
     if (!assignmentResult.success) {
       console.error('❌ Failed to assign staff to job:', assignmentResult.error)
       // Job was created but staff assignment failed
-      return NextResponse.json({
-        success: false,
-        error: `Job created but staff assignment failed: ${assignmentResult.error}`,
-        jobId: result.jobId
-      }, { status: 500 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Job created but staff assignment failed: ${assignmentResult.error}`,
+          jobId: result.jobId,
+        },
+        { status: 500 }
+      )
     }
 
     console.log('✅ Staff assigned successfully to job:', result.jobId)
@@ -298,7 +347,7 @@ export async function POST(request: NextRequest) {
       jobId: result.jobId,
       assignedStaffId,
       assignedStaffName,
-      message: `Job assignment created and assigned to ${assignedStaffName} successfully. Notifications sent to staff dashboard and mobile device.`
+      message: `Job assignment created and assigned to ${assignedStaffName} successfully. Notifications sent to staff dashboard and mobile device.`,
     })
   } catch (error) {
     console.error('❌ Error in POST /api/admin/job-assignments:', error)

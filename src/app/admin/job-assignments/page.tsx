@@ -5,33 +5,31 @@
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import {
-  MapPin,
-  Users,
-  BarChart3,
-  Smartphone,
-  Settings,
-  Plus,
   Activity,
-  Clock,
+  AlertTriangle,
+  BarChart3,
   CheckCircle,
-  AlertTriangle
+  MapPin,
+  Plus,
+  Smartphone,
+  Users,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 // Import the new enhanced components
-import StaffLocationTracker from '@/components/job-assignment/StaffLocationTracker'
-import JobManagementInterface from '@/components/job-assignment/JobManagementInterface'
-import StaffMonitoringDashboard from '@/components/job-assignment/StaffMonitoringDashboard'
 import AnalyticsReporting from '@/components/job-assignment/AnalyticsReporting'
-import MobileIntegrationLayer from '@/components/job-assignment/MobileIntegrationLayer'
 import CreateJobModal from '@/components/job-assignment/CreateJobModal'
+import JobManagementInterface from '@/components/job-assignment/JobManagementInterface'
+import MobileIntegrationLayer from '@/components/job-assignment/MobileIntegrationLayer'
+import StaffLocationTracker from '@/components/job-assignment/StaffLocationTracker'
+import StaffMonitoringDashboard from '@/components/job-assignment/StaffMonitoringDashboard'
 
-import { JobAssignment, JobAnalytics } from '@/types/enhancedJobAssignment'
+import { JobAssignment } from '@/types/enhancedJobAssignment'
 
 export default function JobAssignmentsPage() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -39,7 +37,7 @@ export default function JobAssignmentsPage() {
     totalJobs: 0,
     activeStaff: 0,
     completionRate: 0,
-    overdueJobs: 0
+    overdueJobs: 0,
   })
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateJobModal, setShowCreateJobModal] = useState(false)
@@ -59,11 +57,10 @@ export default function JobAssignmentsPage() {
         totalJobs: 156,
         activeStaff: 12,
         completionRate: 91.2,
-        overdueJobs: 6
+        overdueJobs: 6,
       }
 
       setDashboardStats(mockStats)
-
     } catch (error) {
       console.error('Error loading dashboard stats:', error)
     } finally {
@@ -119,7 +116,9 @@ export default function JobAssignmentsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-white">Job Assignment Management</h1>
+              <h1 className="text-2xl font-bold text-white">
+                Job Assignment Management
+              </h1>
               <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                 Professional System
               </Badge>
@@ -146,7 +145,9 @@ export default function JobAssignmentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Total Jobs</p>
-                  <p className="text-2xl font-bold text-white">{dashboardStats.totalJobs}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {dashboardStats.totalJobs}
+                  </p>
                 </div>
                 <Activity className="w-8 h-8 text-blue-400" />
               </div>
@@ -158,7 +159,9 @@ export default function JobAssignmentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Active Staff</p>
-                  <p className="text-2xl font-bold text-green-400">{dashboardStats.activeStaff}</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {dashboardStats.activeStaff}
+                  </p>
                 </div>
                 <Users className="w-8 h-8 text-green-400" />
               </div>
@@ -170,7 +173,9 @@ export default function JobAssignmentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Completion Rate</p>
-                  <p className="text-2xl font-bold text-blue-400">{dashboardStats.completionRate}%</p>
+                  <p className="text-2xl font-bold text-blue-400">
+                    {dashboardStats.completionRate}%
+                  </p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-blue-400" />
               </div>
@@ -182,7 +187,9 @@ export default function JobAssignmentsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Overdue Jobs</p>
-                  <p className="text-2xl font-bold text-red-400">{dashboardStats.overdueJobs}</p>
+                  <p className="text-2xl font-bold text-red-400">
+                    {dashboardStats.overdueJobs}
+                  </p>
                 </div>
                 <AlertTriangle className="w-8 h-8 text-red-400" />
               </div>
@@ -191,7 +198,11 @@ export default function JobAssignmentsPage() {
         </div>
 
         {/* Main Tabbed Interface */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-5 bg-gray-800 border border-gray-700">
             <TabsTrigger
               value="overview"
@@ -239,21 +250,15 @@ export default function JobAssignmentsPage() {
           </TabsContent>
 
           <TabsContent value="location-tracking" className="space-y-6">
-            <StaffLocationTracker
-              onStaffSelect={handleStaffSelect}
-            />
+            <StaffLocationTracker onStaffSelect={handleStaffSelect} />
           </TabsContent>
 
           <TabsContent value="staff-monitoring" className="space-y-6">
-            <StaffMonitoringDashboard
-              onMessageStaff={handleMessageStaff}
-            />
+            <StaffMonitoringDashboard onMessageStaff={handleMessageStaff} />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <AnalyticsReporting
-              onExportReport={handleExportReport}
-            />
+            <AnalyticsReporting onExportReport={handleExportReport} />
           </TabsContent>
 
           <TabsContent value="mobile-integration" className="space-y-6">

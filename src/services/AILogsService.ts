@@ -3,28 +3,34 @@
  * Tracks and manages AI decision logs and admin feedback
  */
 
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  serverTimestamp,
-  Timestamp,
-  limit,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData
-} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import {
+  collection,
+  doc,
+  DocumentData,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  QueryDocumentSnapshot,
+  serverTimestamp,
+  setDoc,
+  startAfter,
+  Timestamp,
+  where,
+} from 'firebase/firestore'
 
 // AI Log interface
 export interface AILog {
   id: string
-  type: 'booking_approved' | 'booking_rejected' | 'job_assigned' | 'job_created' | 'calendar_updated' | 'financial_calculated' | 'notification_sent'
+  type:
+    | 'booking_approved'
+    | 'booking_rejected'
+    | 'job_assigned'
+    | 'job_created'
+    | 'calendar_updated'
+    | 'financial_calculated'
+    | 'notification_sent'
   refId: string
   refType: 'booking' | 'job' | 'property' | 'staff' | 'calendar_event'
   timestamp: Timestamp
@@ -93,17 +99,19 @@ class AILogsService {
   /**
    * Log an AI decision
    */
-  async logAIDecision(logData: Omit<AILog, 'id' | 'createdAt'>): Promise<string> {
+  async logAIDecision(
+    logData: Omit<AILog, 'id' | 'createdAt'>
+  ): Promise<string> {
     try {
       const logRef = doc(collection(db, this.AI_LOGS_COLLECTION))
-      
+
       const aiLog: Omit<AILog, 'id'> = {
         ...logData,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       }
-      
+
       await setDoc(logRef, aiLog)
-      
+
       console.log(`📊 AI decision logged: ${logData.type} for ${logData.refId}`)
       return logRef.id
     } catch (error) {
@@ -141,11 +149,17 @@ class AILogsService {
       }
 
       if (filters.staffId) {
-        logsQuery = query(logsQuery, where('metadata.staffId', '==', filters.staffId))
+        logsQuery = query(
+          logsQuery,
+          where('metadata.staffId', '==', filters.staffId)
+        )
       }
 
       if (filters.propertyId) {
-        logsQuery = query(logsQuery, where('metadata.propertyId', '==', filters.propertyId))
+        logsQuery = query(
+          logsQuery,
+          where('metadata.propertyId', '==', filters.propertyId)
+        )
       }
 
       if (filters.dateRange) {
@@ -167,7 +181,7 @@ class AILogsService {
       snapshot.forEach((doc) => {
         logs.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         } as AILog)
       })
 
@@ -175,19 +189,20 @@ class AILogsService {
       let filteredLogs = logs
       if (filters.searchTerm) {
         const searchTerm = filters.searchTerm.toLowerCase()
-        filteredLogs = logs.filter(log => 
-          log.refId.toLowerCase().includes(searchTerm) ||
-          log.reason.toLowerCase().includes(searchTerm) ||
-          log.metadata.staffName?.toLowerCase().includes(searchTerm) ||
-          log.metadata.propertyName?.toLowerCase().includes(searchTerm) ||
-          log.metadata.clientName?.toLowerCase().includes(searchTerm)
+        filteredLogs = logs.filter(
+          (log) =>
+            log.refId.toLowerCase().includes(searchTerm) ||
+            log.reason.toLowerCase().includes(searchTerm) ||
+            log.metadata.staffName?.toLowerCase().includes(searchTerm) ||
+            log.metadata.propertyName?.toLowerCase().includes(searchTerm) ||
+            log.metadata.clientName?.toLowerCase().includes(searchTerm)
         )
       }
 
       return {
         logs: filteredLogs,
         hasMore: snapshot.docs.length === pageSize,
-        lastDoc: snapshot.docs[snapshot.docs.length - 1]
+        lastDoc: snapshot.docs[snapshot.docs.length - 1],
       }
     } catch (error) {
       console.error('❌ Error getting AI logs:', error)
@@ -198,18 +213,22 @@ class AILogsService {
   /**
    * Submit admin feedback for an AI decision
    */
-  async submitFeedback(feedbackData: Omit<AIFeedback, 'id' | 'timestamp'>): Promise<void> {
+  async submitFeedback(
+    feedbackData: Omit<AIFeedback, 'id' | 'timestamp'>
+  ): Promise<void> {
     try {
       const feedbackRef = doc(collection(db, this.AI_FEEDBACK_COLLECTION))
-      
+
       const feedback: Omit<AIFeedback, 'id'> = {
         ...feedbackData,
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
       }
-      
+
       await setDoc(feedbackRef, feedback)
-      
-      console.log(`👍 Admin feedback submitted for decision ${feedbackData.decisionId}`)
+
+      console.log(
+        `👍 Admin feedback submitted for decision ${feedbackData.decisionId}`
+      )
     } catch (error) {
       console.error('❌ Error submitting feedback:', error)
       throw error
@@ -233,7 +252,7 @@ class AILogsService {
       snapshot.forEach((doc) => {
         feedback.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         } as AIFeedback)
       })
 
@@ -247,7 +266,10 @@ class AILogsService {
   /**
    * Calculate AI performance KPIs
    */
-  async calculateKPIs(dateRange?: { start: Date; end: Date }): Promise<AIPerformanceKPIs> {
+  async calculateKPIs(dateRange?: {
+    start: Date
+    end: Date
+  }): Promise<AIPerformanceKPIs> {
     try {
       let logsQuery = query(collection(db, this.AI_LOGS_COLLECTION))
 
@@ -261,7 +283,7 @@ class AILogsService {
 
       const [logsSnapshot, feedbackSnapshot] = await Promise.all([
         getDocs(logsQuery),
-        getDocs(collection(db, this.AI_FEEDBACK_COLLECTION))
+        getDocs(collection(db, this.AI_FEEDBACK_COLLECTION)),
       ])
 
       const logs: AILog[] = []
@@ -275,40 +297,57 @@ class AILogsService {
       })
 
       // Calculate KPIs
-      const bookingApprovals = logs.filter(log => log.type === 'booking_approved')
-      const jobAssignments = logs.filter(log => log.type === 'job_assigned')
-      const calendarUpdates = logs.filter(log => log.type === 'calendar_updated')
+      const bookingApprovals = logs.filter(
+        (log) => log.type === 'booking_approved'
+      )
+      const jobAssignments = logs.filter((log) => log.type === 'job_assigned')
+      const calendarUpdates = logs.filter(
+        (log) => log.type === 'calendar_updated'
+      )
 
       // Average booking approval time (placeholder calculation)
-      const avgBookingApprovalTime = bookingApprovals.length > 0 
-        ? bookingApprovals.reduce((sum, log) => sum + (log.metadata.processingTime || 5000), 0) / bookingApprovals.length
-        : 0
+      const avgBookingApprovalTime =
+        bookingApprovals.length > 0
+          ? bookingApprovals.reduce(
+              (sum, log) => sum + (log.metadata.processingTime || 5000),
+              0
+            ) / bookingApprovals.length
+          : 0
 
       // Job assignment accuracy (based on successful completions)
-      const successfulJobs = jobAssignments.filter(log => log.status === 'success')
-      const jobAssignmentAccuracy = jobAssignments.length > 0 
-        ? (successfulJobs.length / jobAssignments.length) * 100
-        : 0
+      const successfulJobs = jobAssignments.filter(
+        (log) => log.status === 'success'
+      )
+      const jobAssignmentAccuracy =
+        jobAssignments.length > 0
+          ? (successfulJobs.length / jobAssignments.length) * 100
+          : 0
 
       // Average jobs per staff
       const staffJobCounts = new Map<string, number>()
-      jobAssignments.forEach(log => {
+      jobAssignments.forEach((log) => {
         if (log.metadata.staffId) {
           const current = staffJobCounts.get(log.metadata.staffId) || 0
           staffJobCounts.set(log.metadata.staffId, current + 1)
         }
       })
-      const avgJobsPerStaff = staffJobCounts.size > 0 
-        ? Array.from(staffJobCounts.values()).reduce((sum, count) => sum + count, 0) / staffJobCounts.size
-        : 0
+      const avgJobsPerStaff =
+        staffJobCounts.size > 0
+          ? Array.from(staffJobCounts.values()).reduce(
+              (sum, count) => sum + count,
+              0
+            ) / staffJobCounts.size
+          : 0
 
       // Feedback analysis
-      const positiveFeedback = feedback.filter(f => f.rating === 'positive')
-      const negativeFeedback = feedback.filter(f => f.rating === 'negative')
+      const positiveFeedback = feedback.filter((f) => f.rating === 'positive')
+      const negativeFeedback = feedback.filter((f) => f.rating === 'negative')
       const totalFeedback = feedback.length
 
-      const positiveRating = totalFeedback > 0 ? (positiveFeedback.length / totalFeedback) * 100 : 0
-      const negativeRating = totalFeedback > 0 ? (negativeFeedback.length / totalFeedback) * 100 : 0
+      const positiveRating =
+        totalFeedback > 0 ? (positiveFeedback.length / totalFeedback) * 100 : 0
+      const negativeRating =
+        totalFeedback > 0 ? (negativeFeedback.length / totalFeedback) * 100 : 0
       const overallSatisfaction = positiveRating
 
       return {
@@ -320,7 +359,7 @@ class AILogsService {
         totalAIDecisions: logs.length,
         positiveRating: Math.round(positiveRating * 100) / 100,
         negativeRating: Math.round(negativeRating * 100) / 100,
-        overallSatisfaction: Math.round(overallSatisfaction * 100) / 100
+        overallSatisfaction: Math.round(overallSatisfaction * 100) / 100,
       }
     } catch (error) {
       console.error('❌ Error calculating KPIs:', error)
@@ -333,7 +372,7 @@ class AILogsService {
         totalAIDecisions: 0,
         positiveRating: 0,
         negativeRating: 0,
-        overallSatisfaction: 0
+        overallSatisfaction: 0,
       }
     }
   }
@@ -349,7 +388,7 @@ class AILogsService {
       { value: 'job_created', label: 'Job Created' },
       { value: 'calendar_updated', label: 'Calendar Updated' },
       { value: 'financial_calculated', label: 'Financial Calculated' },
-      { value: 'notification_sent', label: 'Notification Sent' }
+      { value: 'notification_sent', label: 'Notification Sent' },
     ]
   }
 
@@ -360,7 +399,7 @@ class AILogsService {
     return [
       { value: 'success', label: 'Success' },
       { value: 'pending', label: 'Pending' },
-      { value: 'failed', label: 'Failed' }
+      { value: 'failed', label: 'Failed' },
     ]
   }
 }

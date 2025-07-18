@@ -88,8 +88,28 @@ class TestJobService {
       let staffEmail = ''
       let userId = options.useSpecificUserId || ''
 
-      // Select the first active staff member with a userId
+      // First, try to find staff@siamoon.com specifically
       if (!staffDocs.empty) {
+        for (const staffDoc of staffDocs.docs) {
+          const staffData = staffDoc.data()
+          if (staffData.email === 'staff@siamoon.com' && staffData.userId) {
+            staffId = staffDoc.id
+            staffName = staffData.name || 'Staff Member'
+            staffEmail = staffData.email
+            userId = staffData.userId
+            console.log(
+              `✅ Using target staff: ${staffName} (${staffEmail}) with userId: ${userId}`
+            )
+            break
+          }
+        }
+      }
+
+      // If staff@siamoon.com not found, fallback to first active staff with userId
+      if (!staffId && !staffDocs.empty) {
+        console.log(
+          '⚠️ staff@siamoon.com not found, using first available staff with userId...'
+        )
         for (const staffDoc of staffDocs.docs) {
           const staffData = staffDoc.data()
           if (staffData.userId) {
@@ -98,7 +118,7 @@ class TestJobService {
             staffEmail = staffData.email || 'staff@example.com'
             userId = staffData.userId
             console.log(
-              `✅ Using staff member: ${staffName} (${staffId}) with userId: ${userId}`
+              `✅ Using fallback staff: ${staffName} (${staffEmail}) with userId: ${userId}`
             )
             break
           }

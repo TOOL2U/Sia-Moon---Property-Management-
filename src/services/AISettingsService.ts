@@ -3,20 +3,20 @@
  * Manages AI configuration, automation settings, and performance tuning
  */
 
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  serverTimestamp,
-  Timestamp 
-} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import {
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
+  updateDoc,
+} from 'firebase/firestore'
 
 // AI Settings interface
 export interface AISettings {
   id: string
-  
+
   // AI Automation Controls
   automation: {
     masterEnabled: boolean
@@ -31,10 +31,14 @@ export interface AISettings {
       notifications: number // 0-1
     }
   }
-  
+
   // Performance Tuning
   performance: {
-    jobAssignmentAlgorithm: 'skills-based' | 'availability-based' | 'performance-based' | 'balanced'
+    jobAssignmentAlgorithm:
+      | 'skills-based'
+      | 'availability-based'
+      | 'performance-based'
+      | 'balanced'
     bookingApprovalCriteria: {
       guestHistoryWeight: number // 0-1
       propertyAvailabilityCheck: boolean
@@ -51,7 +55,7 @@ export interface AISettings {
       }
     }
   }
-  
+
   // Feedback & Learning
   learning: {
     adminFeedbackWeight: number // 0-1
@@ -64,7 +68,7 @@ export interface AISettings {
       minimumFeedbackCount: number
     }
   }
-  
+
   // Integration Settings
   integration: {
     mobileSync: {
@@ -81,7 +85,7 @@ export interface AISettings {
       maxConcurrentRequests: number
     }
   }
-  
+
   // Dashboard Customization
   dashboard: {
     defaultTimeRange: '24h' | '7d' | '30d' | '90d'
@@ -97,7 +101,7 @@ export interface AISettings {
       lowSatisfaction: number // percentage
     }
   }
-  
+
   // Metadata
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -105,7 +109,10 @@ export interface AISettings {
 }
 
 // Default AI Settings
-export const DEFAULT_AI_SETTINGS: Omit<AISettings, 'id' | 'createdAt' | 'updatedAt' | 'lastModifiedBy'> = {
+export const DEFAULT_AI_SETTINGS: Omit<
+  AISettings,
+  'id' | 'createdAt' | 'updatedAt' | 'lastModifiedBy'
+> = {
   automation: {
     masterEnabled: true,
     bookingApproval: true,
@@ -116,8 +123,8 @@ export const DEFAULT_AI_SETTINGS: Omit<AISettings, 'id' | 'createdAt' | 'updated
       bookingApproval: 0.8,
       jobAssignment: 0.75,
       calendarUpdates: 0.9,
-      notifications: 0.7
-    }
+      notifications: 0.7,
+    },
   },
   performance: {
     jobAssignmentAlgorithm: 'balanced',
@@ -125,7 +132,7 @@ export const DEFAULT_AI_SETTINGS: Omit<AISettings, 'id' | 'createdAt' | 'updated
       guestHistoryWeight: 0.3,
       propertyAvailabilityCheck: true,
       pricingValidation: true,
-      minimumLeadTime: 2
+      minimumLeadTime: 2,
     },
     notifications: {
       frequency: 'immediate',
@@ -133,35 +140,35 @@ export const DEFAULT_AI_SETTINGS: Omit<AISettings, 'id' | 'createdAt' | 'updated
       quietHours: {
         enabled: true,
         start: '22:00',
-        end: '07:00'
-      }
-    }
+        end: '07:00',
+      },
+    },
   },
   learning: {
     adminFeedbackWeight: 0.8,
     dataRetention: {
       aiLogs: 90,
-      feedback: 365
+      feedback: 365,
     },
     modelRetraining: {
       frequency: 'weekly',
-      minimumFeedbackCount: 10
-    }
+      minimumFeedbackCount: 10,
+    },
   },
   integration: {
     mobileSync: {
       enabled: true,
       syncInterval: 5,
-      offlineSupport: true
+      offlineSupport: true,
     },
     realTimeUpdates: {
       enabled: true,
-      updateInterval: 30
+      updateInterval: 30,
     },
     apiLimits: {
       requestsPerMinute: 100,
-      maxConcurrentRequests: 10
-    }
+      maxConcurrentRequests: 10,
+    },
   },
   dashboard: {
     defaultTimeRange: '24h',
@@ -169,14 +176,14 @@ export const DEFAULT_AI_SETTINGS: Omit<AISettings, 'id' | 'createdAt' | 'updated
       showApprovalTime: true,
       showAssignmentAccuracy: true,
       showJobsPerStaff: true,
-      showSatisfaction: true
+      showSatisfaction: true,
     },
     alertThresholds: {
       lowAccuracy: 70,
       highResponseTime: 300,
-      lowSatisfaction: 60
-    }
-  }
+      lowSatisfaction: 60,
+    },
+  },
 }
 
 class AISettingsService {
@@ -188,7 +195,11 @@ class AISettingsService {
    */
   async getSettings(): Promise<AISettings> {
     try {
-      const settingsRef = doc(db, this.SETTINGS_COLLECTION, this.SETTINGS_DOC_ID)
+      const settingsRef = doc(
+        db,
+        this.SETTINGS_COLLECTION,
+        this.SETTINGS_DOC_ID
+      )
       const settingsDoc = await getDoc(settingsRef)
 
       if (settingsDoc.exists()) {
@@ -207,14 +218,23 @@ class AISettingsService {
   /**
    * Update AI settings
    */
-  async updateSettings(updates: Partial<Omit<AISettings, 'id' | 'createdAt' | 'updatedAt' | 'lastModifiedBy'>>, updatedBy: string = 'admin'): Promise<void> {
+  async updateSettings(
+    updates: Partial<
+      Omit<AISettings, 'id' | 'createdAt' | 'updatedAt' | 'lastModifiedBy'>
+    >,
+    updatedBy: string = 'admin'
+  ): Promise<void> {
     try {
-      const settingsRef = doc(db, this.SETTINGS_COLLECTION, this.SETTINGS_DOC_ID)
-      
+      const settingsRef = doc(
+        db,
+        this.SETTINGS_COLLECTION,
+        this.SETTINGS_DOC_ID
+      )
+
       const updateData = {
         ...updates,
         updatedAt: serverTimestamp(),
-        lastModifiedBy: updatedBy
+        lastModifiedBy: updatedBy,
       }
 
       await updateDoc(settingsRef, updateData)
@@ -230,18 +250,22 @@ class AISettingsService {
    */
   async resetToDefaults(updatedBy: string = 'admin'): Promise<AISettings> {
     try {
-      const settingsRef = doc(db, this.SETTINGS_COLLECTION, this.SETTINGS_DOC_ID)
-      
+      const settingsRef = doc(
+        db,
+        this.SETTINGS_COLLECTION,
+        this.SETTINGS_DOC_ID
+      )
+
       const defaultSettings: Omit<AISettings, 'id'> = {
         ...DEFAULT_AI_SETTINGS,
         createdAt: serverTimestamp() as Timestamp,
         updatedAt: serverTimestamp() as Timestamp,
-        lastModifiedBy: updatedBy
+        lastModifiedBy: updatedBy,
       }
 
       await setDoc(settingsRef, defaultSettings)
       console.log('✅ AI settings reset to defaults')
-      
+
       return { id: this.SETTINGS_DOC_ID, ...defaultSettings } as AISettings
     } catch (error) {
       console.error('Error resetting AI settings:', error)
@@ -254,18 +278,22 @@ class AISettingsService {
    */
   private async createDefaultSettings(): Promise<AISettings> {
     try {
-      const settingsRef = doc(db, this.SETTINGS_COLLECTION, this.SETTINGS_DOC_ID)
-      
+      const settingsRef = doc(
+        db,
+        this.SETTINGS_COLLECTION,
+        this.SETTINGS_DOC_ID
+      )
+
       const defaultSettings: Omit<AISettings, 'id'> = {
         ...DEFAULT_AI_SETTINGS,
         createdAt: serverTimestamp() as Timestamp,
         updatedAt: serverTimestamp() as Timestamp,
-        lastModifiedBy: 'system'
+        lastModifiedBy: 'system',
       }
 
       await setDoc(settingsRef, defaultSettings)
       console.log('✅ Default AI settings created')
-      
+
       return { id: this.SETTINGS_DOC_ID, ...defaultSettings } as AISettings
     } catch (error) {
       console.error('Error creating default AI settings:', error)
@@ -276,7 +304,9 @@ class AISettingsService {
   /**
    * Get specific setting value
    */
-  async getSetting<K extends keyof AISettings>(key: K): Promise<AISettings[K] | null> {
+  async getSetting<K extends keyof AISettings>(
+    key: K
+  ): Promise<AISettings[K] | null> {
     try {
       const settings = await this.getSettings()
       return settings[key]

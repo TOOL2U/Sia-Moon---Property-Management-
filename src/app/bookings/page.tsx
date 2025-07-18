@@ -1,14 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 // TODO: Replace with new database service when implemented
 // import DatabaseService from '@/lib/newDatabaseService'
-import { useAuth } from '@/contexts/AuthContext'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Calendar, User, Building, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
+import { useAuth } from '@/contexts/AuthContext'
 import { clientToast as toast } from '@/utils/clientToast'
+import { Building, Calendar, Mail, User } from 'lucide-react'
 
 interface Booking {
   id: string
@@ -29,8 +35,10 @@ interface Booking {
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all')
-  const { } = useAuth() // Keep auth context for potential future use
+  const [filter, setFilter] = useState<
+    'all' | 'pending' | 'confirmed' | 'cancelled'
+  >('all')
+  const {} = useAuth() // Keep auth context for potential future use
 
   useEffect(() => {
     fetchBookings()
@@ -48,11 +56,14 @@ export default function BookingsPage() {
       const userBookings: Booking[] = []
 
       // Apply filter
-      const filteredBookings = filter === 'all'
-        ? userBookings
-        : userBookings.filter(booking => booking.status === filter)
+      const filteredBookings =
+        filter === 'all'
+          ? userBookings
+          : userBookings.filter((booking) => booking.status === filter)
 
-      console.log(`✅ Loaded ${filteredBookings.length} bookings (filter: ${filter}) - new user`)
+      console.log(
+        `✅ Loaded ${filteredBookings.length} bookings (filter: ${filter}) - new user`
+      )
       setBookings(filteredBookings)
     } catch (error) {
       console.error('❌ Error fetching bookings:', error)
@@ -66,7 +77,7 @@ export default function BookingsPage() {
     const variants = {
       pending: 'bg-yellow-900 text-yellow-300 border border-yellow-600',
       confirmed: 'bg-green-900 text-green-300 border border-green-600',
-      cancelled: 'bg-red-900 text-red-300 border border-red-600'
+      cancelled: 'bg-red-900 text-red-300 border border-red-600',
     }
 
     return (
@@ -80,7 +91,7 @@ export default function BookingsPage() {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -107,7 +118,9 @@ export default function BookingsPage() {
       <div className="max-w-7xl mx-auto px-6 py-8 lg:px-8">
         {/* Header - Linear style */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-white sm:text-3xl">Bookings</h1>
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">
+            Bookings
+          </h1>
           <p className="mt-2 text-neutral-400">Manage your property bookings</p>
         </div>
 
@@ -123,7 +136,7 @@ export default function BookingsPage() {
               {status.replace('_', ' ').toUpperCase()}
               {status !== 'all' && (
                 <span className="ml-2 bg-neutral-800 px-2 py-1 rounded-full text-xs">
-                  {bookings.filter(b => b.status === status).length}
+                  {bookings.filter((b) => b.status === status).length}
                 </span>
               )}
             </Button>
@@ -134,11 +147,16 @@ export default function BookingsPage() {
         {bookings.length > 0 ? (
           <div className="space-y-4">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
+              <Card
+                key={booking.id}
+                className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800"
+              >
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <CardTitle className="text-lg text-white">{booking.guest_name}</CardTitle>
+                      <CardTitle className="text-lg text-white">
+                        {booking.guest_name}
+                      </CardTitle>
                       <CardDescription className="flex items-center mt-1 text-neutral-400">
                         <Building className="h-4 w-4 mr-1" />
                         {booking.property?.name || 'Property'}
@@ -158,7 +176,9 @@ export default function BookingsPage() {
                     <div className="flex items-center text-sm text-neutral-400">
                       <Calendar className="h-4 w-4 mr-2" />
                       <div>
-                        <div className="font-medium text-neutral-300">Check-in</div>
+                        <div className="font-medium text-neutral-300">
+                          Check-in
+                        </div>
                         <div>{formatDate(booking.check_in)}</div>
                       </div>
                     </div>
@@ -166,7 +186,9 @@ export default function BookingsPage() {
                     <div className="flex items-center text-sm text-neutral-400">
                       <Calendar className="h-4 w-4 mr-2" />
                       <div>
-                        <div className="font-medium text-neutral-300">Check-out</div>
+                        <div className="font-medium text-neutral-300">
+                          Check-out
+                        </div>
                         <div>{formatDate(booking.check_out)}</div>
                       </div>
                     </div>
@@ -174,8 +196,13 @@ export default function BookingsPage() {
                     <div className="flex items-center text-sm text-neutral-400">
                       <User className="h-4 w-4 mr-2" />
                       <div>
-                        <div className="font-medium text-neutral-300">Duration</div>
-                        <div>{calculateNights(booking.check_in, booking.check_out)} nights</div>
+                        <div className="font-medium text-neutral-300">
+                          Duration
+                        </div>
+                        <div>
+                          {calculateNights(booking.check_in, booking.check_out)}{' '}
+                          nights
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -191,10 +218,17 @@ export default function BookingsPage() {
                     <div className="mt-2 sm:mt-0 flex gap-2">
                       {booking.status === 'pending' && (
                         <>
-                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                          >
                             Confirm
                           </Button>
-                          <Button size="sm" variant="outline" className="text-red-400 border-red-800 hover:bg-red-900">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-400 border-red-800 hover:bg-red-900"
+                          >
                             Cancel
                           </Button>
                         </>
@@ -211,12 +245,13 @@ export default function BookingsPage() {
         ) : (
           <div className="text-center py-12">
             <Calendar className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">No bookings found</h3>
+            <h3 className="text-lg font-medium text-white mb-2">
+              No bookings found
+            </h3>
             <p className="text-neutral-400">
               {filter === 'all'
                 ? 'No bookings have been made yet.'
-                : `No ${filter} bookings found.`
-              }
+                : `No ${filter} bookings found.`}
             </p>
           </div>
         )}

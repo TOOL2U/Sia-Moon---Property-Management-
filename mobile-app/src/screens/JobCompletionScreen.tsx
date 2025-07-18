@@ -1,43 +1,43 @@
-import React, { useState } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native'
+import * as ImagePicker from 'expo-image-picker'
+import React, { useState } from 'react'
 import {
-  View,
-  StyleSheet,
-  ScrollView,
   Alert,
   Image,
+  ScrollView,
+  StyleSheet,
   TouchableOpacity,
-} from 'react-native';
+  View,
+} from 'react-native'
 import {
-  Text,
-  Card,
-  Title,
-  Paragraph,
-  Button,
-  TextInput,
-  Chip,
   ActivityIndicator,
+  Button,
+  Card,
+  Chip,
   IconButton,
-} from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
-import { JobAssignment } from '../types/job';
-import { useJobs } from '../contexts/JobContext';
-import { PhotoUploadService } from '../services/photoUploadService';
+  Paragraph,
+  Text,
+  TextInput,
+  Title,
+} from 'react-native-paper'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useJobs } from '../contexts/JobContext'
+import { PhotoUploadService } from '../services/photoUploadService'
+import { JobAssignment } from '../types/job'
 
 export default function JobCompletionScreen() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const job = (route.params as any)?.job as JobAssignment;
-  const { completeJob } = useJobs();
+  const route = useRoute()
+  const navigation = useNavigation()
+  const job = (route.params as any)?.job as JobAssignment
+  const { completeJob } = useJobs()
 
-  const [completionNotes, setCompletionNotes] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [completing, setCompleting] = useState(false);
-  const [qualityRating, setQualityRating] = useState<number>(5);
-  const [issuesReported, setIssuesReported] = useState<string[]>([]);
-  const [newIssue, setNewIssue] = useState('');
+  const [completionNotes, setCompletionNotes] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [completing, setCompleting] = useState(false)
+  const [qualityRating, setQualityRating] = useState<number>(5)
+  const [issuesReported, setIssuesReported] = useState<string[]>([])
+  const [newIssue, setNewIssue] = useState('')
 
   if (!job) {
     return (
@@ -46,24 +46,24 @@ export default function JobCompletionScreen() {
           <Text style={styles.errorText}>Job not found</Text>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   const requestCameraPermission = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status } = await ImagePicker.requestCameraPermissionsAsync()
     if (status !== 'granted') {
       Alert.alert(
         'Camera Permission Required',
         'Please grant camera permission to take photos for job completion.'
-      );
-      return false;
+      )
+      return false
     }
-    return true;
-  };
+    return true
+  }
 
   const takePhoto = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
+    const hasPermission = await requestCameraPermission()
+    if (!hasPermission) return
 
     try {
       const result = await ImagePicker.launchCameraAsync({
@@ -71,16 +71,16 @@ export default function JobCompletionScreen() {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-      });
+      })
 
       if (!result.canceled && result.assets[0]) {
-        const photoUri = result.assets[0].uri;
-        setPhotos(prev => [...prev, photoUri]);
+        const photoUri = result.assets[0].uri
+        setPhotos((prev) => [...prev, photoUri])
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      Alert.alert('Error', 'Failed to take photo')
     }
-  };
+  }
 
   const selectFromGallery = async () => {
     try {
@@ -89,31 +89,31 @@ export default function JobCompletionScreen() {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-      });
+      })
 
       if (!result.canceled && result.assets[0]) {
-        const photoUri = result.assets[0].uri;
-        setPhotos(prev => [...prev, photoUri]);
+        const photoUri = result.assets[0].uri
+        setPhotos((prev) => [...prev, photoUri])
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to select photo');
+      Alert.alert('Error', 'Failed to select photo')
     }
-  };
+  }
 
   const removePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
-  };
+    setPhotos((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const addIssue = () => {
     if (newIssue.trim()) {
-      setIssuesReported(prev => [...prev, newIssue.trim()]);
-      setNewIssue('');
+      setIssuesReported((prev) => [...prev, newIssue.trim()])
+      setNewIssue('')
     }
-  };
+  }
 
   const removeIssue = (index: number) => {
-    setIssuesReported(prev => prev.filter((_, i) => i !== index));
-  };
+    setIssuesReported((prev) => prev.filter((_, i) => i !== index))
+  }
 
   const handleCompleteJob = async () => {
     if (photos.length === 0) {
@@ -121,8 +121,8 @@ export default function JobCompletionScreen() {
         'Photos Required',
         'Please take at least one photo to verify job completion.',
         [{ text: 'OK' }]
-      );
-      return;
+      )
+      return
     }
 
     if (!completionNotes.trim()) {
@@ -130,8 +130,8 @@ export default function JobCompletionScreen() {
         'Notes Required',
         'Please add completion notes describing the work performed.',
         [{ text: 'OK' }]
-      );
-      return;
+      )
+      return
     }
 
     Alert.alert(
@@ -139,27 +139,28 @@ export default function JobCompletionScreen() {
       'Are you sure you want to mark this job as completed? This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Complete', onPress: submitCompletion }
+        { text: 'Complete', onPress: submitCompletion },
       ]
-    );
-  };
+    )
+  }
 
   const submitCompletion = async () => {
     try {
-      setCompleting(true);
-      setUploading(true);
+      setCompleting(true)
+      setUploading(true)
 
       // Upload photos to Firebase Storage
-      console.log('📸 Uploading', photos.length, 'photos...');
-      const uploadResults = await PhotoUploadService.uploadMultipleJobCompletionPhotos(
-        job.id,
-        photos
-      );
+      console.log('📸 Uploading', photos.length, 'photos...')
+      const uploadResults =
+        await PhotoUploadService.uploadMultipleJobCompletionPhotos(
+          job.id,
+          photos
+        )
 
-      const photoUrls = uploadResults.map(result => result.url);
-      console.log('📸 Photos uploaded successfully:', photoUrls);
+      const photoUrls = uploadResults.map((result) => result.url)
+      console.log('📸 Photos uploaded successfully:', photoUrls)
 
-      setUploading(false);
+      setUploading(false)
 
       // Complete the job
       await completeJob({
@@ -168,8 +169,8 @@ export default function JobCompletionScreen() {
         completionPhotos: photoUrls,
         qualityRating,
         issuesReported: issuesReported.length > 0 ? issuesReported : undefined,
-        completedAt: new Date().toISOString()
-      });
+        completedAt: new Date().toISOString(),
+      })
 
       Alert.alert(
         'Job Completed',
@@ -177,19 +178,18 @@ export default function JobCompletionScreen() {
         [
           {
             text: 'OK',
-            onPress: () => navigation.goBack()
-          }
+            onPress: () => navigation.goBack(),
+          },
         ]
-      );
-
+      )
     } catch (error: any) {
-      console.error('❌ Error completing job:', error);
-      Alert.alert('Error', 'Failed to complete job: ' + error.message);
+      console.error('❌ Error completing job:', error)
+      Alert.alert('Error', 'Failed to complete job: ' + error.message)
     } finally {
-      setCompleting(false);
-      setUploading(false);
+      setCompleting(false)
+      setUploading(false)
     }
-  };
+  }
 
   const renderStarRating = () => {
     return (
@@ -202,18 +202,20 @@ export default function JobCompletionScreen() {
               onPress={() => setQualityRating(star)}
               style={styles.starButton}
             >
-              <Text style={[
-                styles.star,
-                { color: star <= qualityRating ? '#F59E0B' : '#6B7280' }
-              ]}>
+              <Text
+                style={[
+                  styles.star,
+                  { color: star <= qualityRating ? '#F59E0B' : '#6B7280' },
+                ]}
+              >
                 ★
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
-    );
-  };
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -319,7 +321,7 @@ export default function JobCompletionScreen() {
             <Paragraph style={styles.sectionDescription}>
               Report any issues found during the job (optional)
             </Paragraph>
-            
+
             <View style={styles.issueInputContainer}>
               <TextInput
                 mode="outlined"
@@ -365,7 +367,12 @@ export default function JobCompletionScreen() {
               style={styles.completeButton}
               icon="check"
               loading={completing}
-              disabled={completing || uploading || photos.length === 0 || !completionNotes.trim()}
+              disabled={
+                completing ||
+                uploading ||
+                photos.length === 0 ||
+                !completionNotes.trim()
+              }
             >
               {completing ? 'Completing Job...' : 'Complete Job'}
             </Button>
@@ -373,7 +380,7 @@ export default function JobCompletionScreen() {
         </Card>
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -513,4 +520,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     paddingVertical: 8,
   },
-});
+})

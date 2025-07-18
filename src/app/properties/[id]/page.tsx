@@ -1,17 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import { PropertyService, Property } from '@/lib/services/propertyService'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Edit, Trash2, MapPin, Calendar, User, Building, Image as ImageIcon, Home, Users } from 'lucide-react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { clientToast as toast } from '@/utils/clientToast'
 import { PropertyImagePlaceholder } from '@/components/PropertyImagePlaceholder'
+import { Button } from '@/components/ui/Button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
+import { useAuth } from '@/contexts/AuthContext'
+import { Property, PropertyService } from '@/lib/services/propertyService'
+import { clientToast as toast } from '@/utils/clientToast'
 import { formatLocalDate } from '@/utils/dateUtils'
+import {
+  ArrowLeft,
+  Building,
+  Edit,
+  Home,
+  Image as ImageIcon,
+  MapPin,
+  Trash2,
+  Users,
+} from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function PropertyDetailsPage() {
   const { user, loading: authLoading } = useAuth()
@@ -36,7 +51,10 @@ export default function PropertyDetailsPage() {
       setLoading(true)
 
       // First try to get property from user's subcollection
-      const propertyData = await PropertyService.getPropertyFromUserProfile(user!.id, propertyId)
+      const propertyData = await PropertyService.getPropertyFromUserProfile(
+        user!.id,
+        propertyId
+      )
 
       if (!propertyData) {
         console.log('❌ Property not found in user subcollection')
@@ -48,8 +66,9 @@ export default function PropertyDetailsPage() {
       // Property found in user's subcollection, so user automatically owns it
       setProperty(propertyData)
       console.log('✅ Property details loaded from user subcollection')
-      console.log('📍 Loaded from: /users/' + user!.id + '/properties/' + propertyId)
-
+      console.log(
+        '📍 Loaded from: /users/' + user!.id + '/properties/' + propertyId
+      )
     } catch (error) {
       console.error('❌ Error fetching property details:', error)
       toast.error('Failed to load property details')
@@ -59,7 +78,11 @@ export default function PropertyDetailsPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this property? This action cannot be undone.'
+      )
+    ) {
       return
     }
 
@@ -69,7 +92,7 @@ export default function PropertyDetailsPage() {
 
       // TODO: Replace with real database delete when new database service is implemented
       // Simulate delete delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       console.log('✅ Property deleted successfully (mock)')
       toast.success('Property deleted successfully')
@@ -87,7 +110,9 @@ export default function PropertyDetailsPage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-neutral-400 text-sm">Loading property details...</p>
+          <p className="mt-4 text-neutral-400 text-sm">
+            Loading property details...
+          </p>
         </div>
       </div>
     )
@@ -98,8 +123,12 @@ export default function PropertyDetailsPage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Building className="h-16 w-16 text-neutral-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-white mb-2">Property Not Found</h2>
-          <p className="text-neutral-400 mb-6">The property you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-semibold text-white mb-2">
+            Property Not Found
+          </h2>
+          <p className="text-neutral-400 mb-6">
+            The property you're looking for doesn't exist.
+          </p>
           <Link href="/properties">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -125,7 +154,9 @@ export default function PropertyDetailsPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-semibold text-white sm:text-3xl">{property.name}</h1>
+                <h1 className="text-2xl font-semibold text-white sm:text-3xl">
+                  {property.name}
+                </h1>
                 <p className="text-neutral-400 flex items-center mt-1">
                   <MapPin className="h-4 w-4 mr-1" />
                   {property.address}
@@ -139,8 +170,8 @@ export default function PropertyDetailsPage() {
                   Edit
                 </Button>
               </Link>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleDelete}
                 disabled={deleting}
               >
@@ -155,7 +186,8 @@ export default function PropertyDetailsPage() {
         <div className="mb-8">
           <Card className="bg-neutral-950 border-neutral-800 overflow-hidden">
             <div className="relative h-64 md:h-80 lg:h-96">
-              {(property.coverPhoto || (property.images && property.images.length > 0)) ? (
+              {property.coverPhoto ||
+              (property.images && property.images.length > 0) ? (
                 <>
                   <Image
                     src={property.coverPhoto || property.images![0]}
@@ -175,7 +207,9 @@ export default function PropertyDetailsPage() {
                 />
               )}
               <div className="absolute bottom-6 left-6 right-6">
-                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{property.name}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                  {property.name}
+                </h1>
                 {property.address && (
                   <p className="text-neutral-200 flex items-center">
                     <MapPin className="h-4 w-4 mr-2" />
@@ -235,42 +269,63 @@ export default function PropertyDetailsPage() {
             {/* Basic Info */}
             <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
               <CardHeader>
-                <CardTitle className="text-white">Property Information</CardTitle>
+                <CardTitle className="text-white">
+                  Property Information
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-neutral-400">Property Name</label>
+                    <label className="text-sm font-medium text-neutral-400">
+                      Property Name
+                    </label>
                     <p className="text-white">{property.name}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-400">Status</label>
-                    <p className={`font-medium ${
-                      property.status === 'active' ? 'text-green-400' :
-                      property.status === 'pending_approval' ? 'text-yellow-400' :
-                      'text-neutral-400'
-                    }`}>
-                      {property.status === 'active' ? 'Active' :
-                       property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
+                    <label className="text-sm font-medium text-neutral-400">
+                      Status
+                    </label>
+                    <p
+                      className={`font-medium ${
+                        property.status === 'active'
+                          ? 'text-green-400'
+                          : property.status === 'pending_approval'
+                            ? 'text-yellow-400'
+                            : 'text-neutral-400'
+                      }`}
+                    >
+                      {property.status === 'active'
+                        ? 'Active'
+                        : property.status === 'pending_approval'
+                          ? 'Pending Approval'
+                          : 'Inactive'}
                     </p>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-neutral-400">Address</label>
+                    <label className="text-sm font-medium text-neutral-400">
+                      Address
+                    </label>
                     <p className="text-white">{property.address}</p>
                   </div>
                   {property.description && (
                     <div className="sm:col-span-2">
-                      <label className="text-sm font-medium text-neutral-400">Description</label>
+                      <label className="text-sm font-medium text-neutral-400">
+                        Description
+                      </label>
                       <p className="text-white">{property.description}</p>
                     </div>
                   )}
 
                   {/* Property Details */}
-                  {(property.bedrooms || property.bathrooms || property.maxGuests) && (
+                  {(property.bedrooms ||
+                    property.bathrooms ||
+                    property.maxGuests) && (
                     <>
                       {property.bedrooms && (
                         <div>
-                          <label className="text-sm font-medium text-neutral-400">Bedrooms</label>
+                          <label className="text-sm font-medium text-neutral-400">
+                            Bedrooms
+                          </label>
                           <p className="text-white flex items-center">
                             <Home className="h-4 w-4 mr-1" />
                             {property.bedrooms}
@@ -279,7 +334,9 @@ export default function PropertyDetailsPage() {
                       )}
                       {property.bathrooms && (
                         <div>
-                          <label className="text-sm font-medium text-neutral-400">Bathrooms</label>
+                          <label className="text-sm font-medium text-neutral-400">
+                            Bathrooms
+                          </label>
                           <p className="text-white flex items-center">
                             <Home className="h-4 w-4 mr-1" />
                             {property.bathrooms}
@@ -288,7 +345,9 @@ export default function PropertyDetailsPage() {
                       )}
                       {property.maxGuests && (
                         <div>
-                          <label className="text-sm font-medium text-neutral-400">Max Guests</label>
+                          <label className="text-sm font-medium text-neutral-400">
+                            Max Guests
+                          </label>
                           <p className="text-white flex items-center">
                             <Users className="h-4 w-4 mr-1" />
                             {property.maxGuests}
@@ -299,13 +358,17 @@ export default function PropertyDetailsPage() {
                   )}
 
                   <div>
-                    <label className="text-sm font-medium text-neutral-400">Created</label>
+                    <label className="text-sm font-medium text-neutral-400">
+                      Created
+                    </label>
                     <p className="text-white">
                       {formatLocalDate(property.createdAt)}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-400">Last Updated</label>
+                    <label className="text-sm font-medium text-neutral-400">
+                      Last Updated
+                    </label>
                     <p className="text-white">
                       {formatLocalDate(property.updatedAt)}
                     </p>
@@ -318,7 +381,9 @@ export default function PropertyDetailsPage() {
             <Card className="group hover:shadow-xl transition-all duration-300 card-hover bg-neutral-950 border-neutral-800">
               <CardHeader>
                 <CardTitle className="text-white">Property Status</CardTitle>
-                <CardDescription className="text-neutral-400">Current status and next steps</CardDescription>
+                <CardDescription className="text-neutral-400">
+                  Current status and next steps
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -326,19 +391,28 @@ export default function PropertyDetailsPage() {
                     <div>
                       <p className="font-medium text-white">Current Status</p>
                       <p className="text-sm text-neutral-400">
-                        {property.status === 'pending_approval' ? 'Awaiting admin approval' :
-                         property.status === 'active' ? 'Property is live and accepting bookings' :
-                         'Property is currently inactive'}
+                        {property.status === 'pending_approval'
+                          ? 'Awaiting admin approval'
+                          : property.status === 'active'
+                            ? 'Property is live and accepting bookings'
+                            : 'Property is currently inactive'}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full border ${
-                        property.status === 'active' ? 'bg-emerald-900 text-emerald-300 border-emerald-800' :
-                        property.status === 'pending_approval' ? 'bg-yellow-900 text-yellow-300 border-yellow-800' :
-                        'bg-neutral-900 text-neutral-300 border-neutral-800'
-                      }`}>
-                        {property.status === 'active' ? 'Active' :
-                         property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
+                      <span
+                        className={`inline-flex px-3 py-1 text-sm font-medium rounded-full border ${
+                          property.status === 'active'
+                            ? 'bg-emerald-900 text-emerald-300 border-emerald-800'
+                            : property.status === 'pending_approval'
+                              ? 'bg-yellow-900 text-yellow-300 border-yellow-800'
+                              : 'bg-neutral-900 text-neutral-300 border-neutral-800'
+                        }`}
+                      >
+                        {property.status === 'active'
+                          ? 'Active'
+                          : property.status === 'pending_approval'
+                            ? 'Pending Approval'
+                            : 'Inactive'}
                       </span>
                     </div>
                   </div>
@@ -346,7 +420,9 @@ export default function PropertyDetailsPage() {
                   {property.status === 'pending_approval' && (
                     <div className="p-4 bg-yellow-900/20 border border-yellow-800/30 rounded-lg">
                       <p className="text-yellow-300 text-sm">
-                        Your property is under review by our team. You'll be notified once it's approved and ready to accept bookings.
+                        Your property is under review by our team. You'll be
+                        notified once it's approved and ready to accept
+                        bookings.
                       </p>
                     </div>
                   )}
@@ -365,18 +441,27 @@ export default function PropertyDetailsPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400">Property Status</span>
-                  <span className={`font-medium ${
-                    property.status === 'active' ? 'text-green-400' :
-                    property.status === 'pending_approval' ? 'text-yellow-400' :
-                    'text-neutral-400'
-                  }`}>
-                    {property.status === 'active' ? 'Active' :
-                     property.status === 'pending_approval' ? 'Pending Approval' : 'Inactive'}
+                  <span
+                    className={`font-medium ${
+                      property.status === 'active'
+                        ? 'text-green-400'
+                        : property.status === 'pending_approval'
+                          ? 'text-yellow-400'
+                          : 'text-neutral-400'
+                    }`}
+                  >
+                    {property.status === 'active'
+                      ? 'Active'
+                      : property.status === 'pending_approval'
+                        ? 'Pending Approval'
+                        : 'Inactive'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400">Photos Uploaded</span>
-                  <span className="font-medium text-white">{property.images?.length || 0}</span>
+                  <span className="font-medium text-white">
+                    {property.images?.length || 0}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400">Created Date</span>
@@ -396,7 +481,10 @@ export default function PropertyDetailsPage() {
                 {property.amenities && property.amenities.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {property.amenities.map((amenity, index) => (
-                      <div key={index} className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg"
+                      >
                         <span className="text-sm text-white">{amenity}</span>
                       </div>
                     ))}
@@ -405,7 +493,9 @@ export default function PropertyDetailsPage() {
                   <div className="space-y-2">
                     {property.hasPool && (
                       <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
-                        <span className="text-sm text-white">Swimming Pool</span>
+                        <span className="text-sm text-white">
+                          Swimming Pool
+                        </span>
                       </div>
                     )}
                     {property.hasGarden && (
@@ -415,7 +505,9 @@ export default function PropertyDetailsPage() {
                     )}
                     {property.hasAirConditioning && (
                       <div className="flex items-center p-2 bg-neutral-900 border border-neutral-800 rounded-lg">
-                        <span className="text-sm text-white">Air Conditioning</span>
+                        <span className="text-sm text-white">
+                          Air Conditioning
+                        </span>
                       </div>
                     )}
                     {property.hasParking && (
@@ -428,9 +520,16 @@ export default function PropertyDetailsPage() {
                         <span className="text-sm text-white">Laundry</span>
                       </div>
                     )}
-                    {!property.amenities && !property.hasPool && !property.hasGarden && !property.hasAirConditioning && !property.hasParking && !property.hasLaundry && (
-                      <p className="text-neutral-400 text-center py-4">No amenities listed</p>
-                    )}
+                    {!property.amenities &&
+                      !property.hasPool &&
+                      !property.hasGarden &&
+                      !property.hasAirConditioning &&
+                      !property.hasParking &&
+                      !property.hasLaundry && (
+                        <p className="text-neutral-400 text-center py-4">
+                          No amenities listed
+                        </p>
+                      )}
                   </div>
                 )}
               </CardContent>

@@ -18,7 +18,7 @@ import {
   Timestamp,
   writeBatch
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
 import {
   JobAssignment,
   JobFilters,
@@ -59,7 +59,7 @@ export class EnhancedJobAssignmentService {
     try {
       console.log('🔍 Getting enhanced job assignments with filters:', filters)
       
-      let q = collection(db, this.COLLECTIONS.JOBS)
+      let q = collection(getDb(), this.COLLECTIONS.JOBS)
       
       // Apply filters
       if (filters.status && filters.status.length > 0) {
@@ -156,7 +156,7 @@ export class EnhancedJobAssignmentService {
       const staffNames = await this.getStaffNames(jobData.assignedStaff)
       newJob.assignedStaffNames = staffNames
       
-      const docRef = await addDoc(collection(db, this.COLLECTIONS.JOBS), {
+      const docRef = await addDoc(collection(getDb(), this.COLLECTIONS.JOBS), {
         ...newJob,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -196,7 +196,7 @@ export class EnhancedJobAssignmentService {
     try {
       console.log(`🔄 Updating enhanced job assignment: ${jobId}`)
       
-      const jobRef = doc(db, this.COLLECTIONS.JOBS, jobId)
+      const jobRef = doc(getDb(), this.COLLECTIONS.JOBS, jobId)
       const updateData: any = {
         ...updates,
         updatedAt: Timestamp.now(),
@@ -242,12 +242,12 @@ export class EnhancedJobAssignmentService {
       const batch = writeBatch(db)
       
       // Delete job
-      const jobRef = doc(db, this.COLLECTIONS.JOBS, jobId)
+      const jobRef = doc(getDb(), this.COLLECTIONS.JOBS, jobId)
       batch.delete(jobRef)
       
       // Delete related updates
       const updatesQuery = query(
-        collection(db, this.COLLECTIONS.JOB_UPDATES),
+        collection(getDb(), this.COLLECTIONS.JOB_UPDATES),
         where('jobId', '==', jobId)
       )
       const updatesSnapshot = await getDocs(updatesQuery)
@@ -280,7 +280,7 @@ export class EnhancedJobAssignmentService {
     try {
       console.log('📍 Getting staff locations')
       
-      const snapshot = await getDocs(collection(db, this.COLLECTIONS.STAFF_LOCATIONS))
+      const snapshot = await getDocs(collection(getDb(), this.COLLECTIONS.STAFF_LOCATIONS))
       const locations: StaffLocation[] = []
       
       snapshot.forEach(doc => {
@@ -315,7 +315,7 @@ export class EnhancedJobAssignmentService {
    */
   static async updateStaffLocation(staffId: string, location: StaffLocation): Promise<boolean> {
     try {
-      const locationRef = doc(db, this.COLLECTIONS.STAFF_LOCATIONS, staffId)
+      const locationRef = doc(getDb(), this.COLLECTIONS.STAFF_LOCATIONS, staffId)
       await updateDoc(locationRef, {
         ...location,
         lastUpdated: Timestamp.now(),
@@ -482,7 +482,7 @@ export class EnhancedJobAssignmentService {
   private static async getStaffNames(staffIds: string[]): Promise<string[]> {
     try {
       const staffQuery = query(
-        collection(db, 'staff_accounts'),
+        collection(getDb(), 'staff_accounts'),
         where('__name__', 'in', staffIds)
       )
       const snapshot = await getDocs(staffQuery)
@@ -505,7 +505,7 @@ export class EnhancedJobAssignmentService {
    */
   private static async addJobUpdate(jobId: string, update: Partial<JobUpdate>): Promise<void> {
     try {
-      await addDoc(collection(db, this.COLLECTIONS.JOB_UPDATES), {
+      await addDoc(collection(getDb(), this.COLLECTIONS.JOB_UPDATES), {
         ...update,
         id: crypto.randomUUID(),
         jobId,
@@ -525,7 +525,7 @@ export class EnhancedJobAssignmentService {
   ) {
     // Jobs listener
     const jobsQuery = query(
-      collection(db, this.COLLECTIONS.JOBS),
+      collection(getDb(), this.COLLECTIONS.JOBS),
       orderBy('createdAt', 'desc')
     )
     
@@ -552,7 +552,7 @@ export class EnhancedJobAssignmentService {
     })
     
     // Locations listener
-    onSnapshot(collection(db, this.COLLECTIONS.STAFF_LOCATIONS), (snapshot) => {
+    onSnapshot(collection(getDb(), this.COLLECTIONS.STAFF_LOCATIONS), (snapshot) => {
       const locations: StaffLocation[] = []
       snapshot.forEach(doc => {
         const data = doc.data()

@@ -1,4 +1,4 @@
-import { db } from '@/lib/firebase'
+import { getDb } from '@/lib/firebase'
 import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, updateDoc, deleteDoc, where } from 'firebase/firestore'
 import { EnhancedStaffProfile } from '@/types/staff'
 
@@ -20,7 +20,7 @@ export class ServerStaffService {
     try {
       console.log('🔍 SERVER: Getting all staff from Firebase Client SDK...')
 
-      const staffRef = collection(db, 'staff')
+      const staffRef = collection(getDb(), 'staff')
       const q = query(staffRef, orderBy('createdAt', 'desc'))
       const querySnapshot = await getDocs(q)
 
@@ -65,7 +65,7 @@ export class ServerStaffService {
     try {
       console.log(`🔍 SERVER: Getting staff member ${staffId} from Firebase Client SDK...`)
 
-      const staffRef = doc(db, 'staff', staffId)
+      const staffRef = doc(getDb(), 'staff', staffId)
       const docSnapshot = await getDoc(staffRef)
 
       if (!docSnapshot.exists()) {

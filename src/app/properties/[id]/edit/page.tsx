@@ -1,15 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 // TODO: Replace with new database service when implemented
 // import { createClient } from '@/lib/newDatabase/client'
 import { Button } from '@/components/ui/Button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { ArrowLeft, Save, Building } from 'lucide-react'
-import Link from 'next/link'
 import { clientToast as toast } from '@/utils/clientToast'
+import { ArrowLeft, Building, Save } from 'lucide-react'
+import Link from 'next/link'
 
 interface PropertyFormData {
   name: string
@@ -34,7 +40,7 @@ export default function EditPropertyPage() {
   const router = useRouter()
   const [formData, setFormData] = useState<PropertyFormData>({
     name: '',
-    address: ''
+    address: '',
   })
   const [property, setProperty] = useState<Property | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,7 +59,9 @@ export default function EditPropertyPage() {
 
   const fetchProperty = async () => {
     try {
-      console.log('🔍 Loading property for editing (development mode with mock data)')
+      console.log(
+        '🔍 Loading property for editing (development mode with mock data)'
+      )
 
       // Load property from Firestore for editing
 
@@ -71,13 +79,15 @@ export default function EditPropertyPage() {
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
-    
+
     // Clear error when user starts typing
     if (error) setError('')
   }
@@ -96,9 +106,9 @@ export default function EditPropertyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
-    
+
     setSaving(true)
     setError('')
 
@@ -107,7 +117,7 @@ export default function EditPropertyPage() {
 
       // TODO: Replace with real database update when new database service is implemented
       // Simulate update delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Update local state to reflect changes
       if (property) {
@@ -115,7 +125,7 @@ export default function EditPropertyPage() {
           ...property,
           name: formData.name,
           address: formData.address,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         }
         setProperty(updatedProperty)
       }
@@ -123,10 +133,12 @@ export default function EditPropertyPage() {
       console.log('✅ Property updated successfully (mock):', formData.name)
       toast.success('Property updated successfully!')
       router.push(`/properties/${propertyId}`)
-
     } catch (err: unknown) {
       console.error('❌ Error updating property:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update property. Please try again.'
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to update property. Please try again.'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -150,8 +162,12 @@ export default function EditPropertyPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Property Not Found</h2>
-          <p className="text-gray-600 mb-6">The property you&apos;re trying to edit doesn&apos;t exist.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Property Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            The property you&apos;re trying to edit doesn&apos;t exist.
+          </p>
           <Link href="/properties">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -167,7 +183,7 @@ export default function EditPropertyPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Back to property link */}
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
-        <Link 
+        <Link
           href={`/properties/${propertyId}`}
           className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
         >
@@ -225,7 +241,8 @@ export default function EditPropertyPage() {
                     placeholder="123 Beach Road, Tambon Choeng Thale, Thalang District, Phuket 83110, Thailand"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    Include full address with district, province, and postal code
+                    Include full address with district, province, and postal
+                    code
                   </p>
                 </div>
 
@@ -237,33 +254,35 @@ export default function EditPropertyPage() {
 
                 {/* Property Info */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Property Details</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Property Details
+                  </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
                     <div>
-                      <span className="font-medium">Owner:</span> {property.users?.name || 'Unknown'}
+                      <span className="font-medium">Owner:</span>{' '}
+                      {property.users?.name || 'Unknown'}
                     </div>
                     <div>
-                      <span className="font-medium">Created:</span> {new Date(property.created_at).toLocaleDateString()}
+                      <span className="font-medium">Created:</span>{' '}
+                      {new Date(property.created_at).toLocaleDateString()}
                     </div>
                     <div>
-                      <span className="font-medium">Last Updated:</span> {new Date(property.updated_at).toLocaleDateString()}
+                      <span className="font-medium">Last Updated:</span>{' '}
+                      {new Date(property.updated_at).toLocaleDateString()}
                     </div>
                     <div>
-                      <span className="font-medium">Property ID:</span> {property.id.slice(0, 8)}...
+                      <span className="font-medium">Property ID:</span>{' '}
+                      {property.id.slice(0, 8)}...
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1"
-                  >
+                  <Button type="submit" disabled={saving} className="flex-1">
                     <Save className="h-4 w-4 mr-2" />
                     {saving ? 'Saving Changes...' : 'Save Changes'}
                   </Button>
-                  
+
                   <Link href={`/properties/${propertyId}`} className="flex-1">
                     <Button variant="outline" fullWidth>
                       Cancel

@@ -3,9 +3,9 @@
  * Provides real-time staff availability data for job assignment
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
 import { AdminJobAssignmentService } from '@/lib/services/adminJobAssignmentService'
+import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/admin/staff-availability
@@ -22,13 +22,18 @@ export async function GET(request: NextRequest) {
       const adminResult = await AdminJobAssignmentService.getStaffAvailability()
 
       if (adminResult.success) {
-        console.log('✅ Successfully retrieved staff availability using Admin SDK')
+        console.log(
+          '✅ Successfully retrieved staff availability using Admin SDK'
+        )
         return NextResponse.json({
           success: true,
-          data: adminResult.data || []
+          data: adminResult.data || [],
         })
       } else {
-        console.log('⚠️ Admin SDK failed for staff availability:', adminResult.error)
+        console.log(
+          '⚠️ Admin SDK failed for staff availability:',
+          adminResult.error
+        )
       }
     } else {
       console.log('⚠️ Firebase Admin SDK not available for staff availability')
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
             availability: 'available',
             currentJobs: 0,
             maxJobs: 3,
-            skills: ['cleaning', 'laundry']
+            skills: ['cleaning', 'laundry'],
           },
           {
             id: 'staff-2',
@@ -64,15 +69,15 @@ export async function GET(request: NextRequest) {
             availability: 'busy',
             currentJobs: 2,
             maxJobs: 2,
-            skills: ['maintenance', 'gardening', 'pool']
-          }
-        ]
+            skills: ['maintenance', 'gardening', 'pool'],
+          },
+        ],
       })
     }
 
     return NextResponse.json({
       success: true,
-      data: result.data || []
+      data: result.data || [],
     })
   } catch (error) {
     console.error('❌ Error in GET /api/admin/staff-availability:', error)
