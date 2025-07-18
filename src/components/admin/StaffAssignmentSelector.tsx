@@ -95,7 +95,7 @@ const cardHoverVariants = {
     scale: 1.02,
     transition: {
       duration: 0.2,
-      ease: "easeOut"
+      ease: [0.25, 0.1, 0.25, 1]
     }
   }
 }
@@ -491,12 +491,12 @@ export function StaffAssignmentSelector({
                     <AnimatePresence>
                       {filteredStaff.map((staff, index) => (
                         <motion.div
-                          key={staff.id}
+                          key={`staff-${staff.id || index}-${index}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
-                          whileHover={cardHoverVariants.hover}
+                          whileHover={{ y: -2, scale: 1.02 }}
                           className="group"
                         >
                           <Card
@@ -548,9 +548,9 @@ export function StaffAssignmentSelector({
 
                                   {/* Skills */}
                                   <div className="flex flex-wrap gap-1 mb-3">
-                                    {staff.skills.slice(0, 3).map(skill => (
+                                    {staff.skills.slice(0, 3).map((skill, skillIndex) => (
                                       <Badge
-                                        key={skill}
+                                        key={`${staff.id}-skill-${skill}-${skillIndex}`}
                                         className={`text-xs ${
                                           requiredSkills.includes(skill)
                                             ? 'bg-green-500/20 text-green-400 border-green-500/30'
@@ -699,8 +699,8 @@ export function StaffAssignmentSelector({
                 <div className="flex flex-wrap gap-1 mt-1">
                   {autoAssignSuggestion.skills
                     .filter(skill => requiredSkills.includes(skill))
-                    .map(skill => (
-                      <Badge key={skill} className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                    .map((skill, skillIndex) => (
+                      <Badge key={`auto-assign-skill-${skill}-${skillIndex}`} className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                         {skill.replace('_', ' ')}
                       </Badge>
                     ))}

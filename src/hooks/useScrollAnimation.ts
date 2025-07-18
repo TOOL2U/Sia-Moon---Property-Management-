@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useInView } from 'framer-motion'
 
 // Define MarginType to match Framer Motion's expected type
-type MarginValue = `${number}${"px" | "%"}`;
-type MarginType = MarginValue | `${MarginValue} ${MarginValue}` | `${MarginValue} ${MarginValue} ${MarginValue}` | `${MarginValue} ${MarginValue} ${MarginValue} ${MarginValue}`;
+type MarginValue = `${number}${'px' | '%'}`
+type MarginType =
+  | MarginValue
+  | `${MarginValue} ${MarginValue}`
+  | `${MarginValue} ${MarginValue} ${MarginValue}`
+  | `${MarginValue} ${MarginValue} ${MarginValue} ${MarginValue}`
 
 interface UseScrollAnimationOptions {
   threshold?: number
@@ -18,7 +21,7 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
   const {
     threshold = 0.15,
     rootMargin = '0px 0px -80px 0px',
-    triggerOnce = true
+    triggerOnce = true,
   } = options
 
   const elementRef = useRef<HTMLElement>(null)
@@ -28,7 +31,9 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
     if (!element) return
 
     // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
     if (prefersReducedMotion) {
       element.classList.add('animate-in')
       return
@@ -54,7 +59,7 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
       },
       {
         threshold,
-        rootMargin
+        rootMargin,
       }
     )
 
@@ -69,11 +74,13 @@ export function useScrollAnimation(options: UseScrollAnimationOptions = {}) {
 }
 
 // Original hook for animating multiple elements with stagger
-export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {}) {
+export function useScrollAnimationGroup(
+  options: UseScrollAnimationOptions = {}
+) {
   const {
     threshold = 0.15,
     rootMargin = '0px 0px -80px 0px',
-    triggerOnce = true
+    triggerOnce = true,
   } = options
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -82,9 +89,13 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
     const container = containerRef.current
     if (!container) return
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
 
-    const elements = container.querySelectorAll('.scroll-animate, .scroll-animate-left, .scroll-animate-right, .scroll-animate-scale')
+    const elements = container.querySelectorAll(
+      '.scroll-animate, .scroll-animate-left, .scroll-animate-right, .scroll-animate-scale'
+    )
 
     if (prefersReducedMotion) {
       elements.forEach((element) => {
@@ -119,122 +130,85 @@ export function useScrollAnimationGroup(options: UseScrollAnimationOptions = {})
 }
 
 /**
- * Enhanced scroll animation hook for use with Framer Motion
- * @param options - Animation options
- * @returns An object containing the element ref and whether it's in view
- * 
- * Usage:
- * const { ref, inView } = useFramerAnimation();
- * 
- * <motion.div 
- *   ref={ref}
- *   animate={inView ? "visible" : "hidden"}
- *   variants={animationVariants}
- * >
- *   Content
- * </motion.div>
- */
-export function useFramerAnimation(options: {
-  threshold?: number;
-  triggerOnce?: boolean;
-  rootMargin?: MarginType;
-} = {}) {
-  const {
-    threshold = 0.15,
-    triggerOnce = true,
-    rootMargin = "-100px" as MarginType
-  } = options;
-
-  const ref = useRef(null);
-  const inView = useInView(ref, {
-    once: triggerOnce,
-    margin: rootMargin,
-    amount: threshold
-  });
-
-  return { ref, inView };
-}
-
-/**
  * Hook to provide responsive animation variants based on device type
  * Automatically detects mobile devices and adjusts animation parameters
  */
 export function useResponsiveAnimation() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     // Check if the device is mobile based on screen width
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+      setIsMobile(window.innerWidth < 768)
+    }
 
     // Check on mount
-    checkMobile();
+    checkMobile()
 
     // Add event listener for window resize
-    window.addEventListener('resize', checkMobile);
+    window.addEventListener('resize', checkMobile)
 
     // Clean up
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Standard animation variants
   const fadeIn = {
     hidden: { opacity: 0, y: isMobile ? 10 : 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: {
         duration: isMobile ? 0.3 : 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94]
-      }
-    }
-  };
+        ease: [0.25, 0.46, 0.45, 0.94],
+      },
+    },
+  }
 
   const scaleIn = {
     hidden: { opacity: 0, scale: 0.9 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       scale: 1,
       transition: {
         duration: isMobile ? 0.3 : 0.5,
-        ease: [0.25, 0.46, 0.45, 0.94]
-      }
-    }
-  };
+        ease: [0.25, 0.46, 0.45, 0.94],
+      },
+    },
+  }
 
   const staggerContainer = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: isMobile ? 0.05 : 0.1
-      }
-    }
-  };
+        staggerChildren: isMobile ? 0.05 : 0.1,
+      },
+    },
+  }
 
   // Card hover animations - disabled on mobile
   const cardHover = {
-    rest: { 
-      scale: 1, 
-      y: 0, 
-      transition: { 
-        duration: 0.3, 
-        ease: [0.25, 0.46, 0.45, 0.94]
-      } 
+    rest: {
+      scale: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        ease: [0.25, 0.46, 0.45, 0.94],
+      },
     },
-    hover: isMobile ? 
-      { scale: 1, y: 0 } : 
-      { 
-        scale: 1.03, 
-        y: -5,
-        transition: { 
-          type: "spring", 
-          stiffness: 400, 
-          damping: 17 
-        } 
-      }
-  };
+    hover: isMobile
+      ? { scale: 1, y: 0 }
+      : {
+          scale: 1.03,
+          y: -5,
+          transition: {
+            type: 'spring',
+            stiffness: 400,
+            damping: 17,
+          },
+        },
+  }
 
   return {
     isMobile,
@@ -242,7 +216,7 @@ export function useResponsiveAnimation() {
       fadeIn,
       scaleIn,
       staggerContainer,
-      cardHover
-    }
-  };
+      cardHover,
+    },
+  }
 }
