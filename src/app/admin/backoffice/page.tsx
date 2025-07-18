@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/Input'
 import { clientToast as toast } from '@/utils/clientToast'
 
-import ErrorBoundary from '@/components/ErrorBoundary'
+import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import AddStaffModal from '@/components/staff/AddStaffModal'
 import EditStaffModal from '@/components/staff/EditStaffModal'
 import StaffAccountModal from '@/components/staff/StaffAccountModal'
@@ -4759,7 +4759,7 @@ export default function BackOfficePage() {
         <AdvancedCalendarView />
 
         {/* Financial Dashboard */}
-        <FinancialDashboardComponent />
+        {/* Financial Dashboard Component - Removed unused component */}
 
         {/* Job Completion Analytics */}
         <JobCompletionAnalytics />

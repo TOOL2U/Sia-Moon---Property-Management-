@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   // Image optimization
@@ -36,28 +36,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-
-
   // Webpack configuration to handle chunk loading issues
   webpack: (config, { dev, isServer }) => {
-    // Add polyfill for self on server-side
-    if (isServer) {
-      const originalEntry = config.entry;
-      config.entry = async () => {
-        const entries = await originalEntry();
-        
-        // Add polyfill to all server entries
-        for (const key in entries) {
-          if (Array.isArray(entries[key])) {
-            entries[key].unshift('./polyfills/self-polyfill.js');
-          } else if (typeof entries[key] === 'string') {
-            entries[key] = ['./polyfills/self-polyfill.js', entries[key]];
-          }
-        }
-        
-        return entries;
-      };
-    }
+    // Polyfill handling is now done via src/lib/polyfills.ts
 
     // Fix for chunk loading errors
     if (!isServer) {
@@ -66,12 +47,12 @@ const nextConfig: NextConfig = {
         fs: false,
         net: false,
         tls: false,
-      };
+      }
     }
 
     // Exclude problematic browser-only libraries from server bundle
     if (isServer) {
-      config.externals = config.externals || [];
+      config.externals = config.externals || []
       // Temporarily comment out externals to test
       // config.externals.push({
       //   'lenis': 'lenis',
@@ -106,10 +87,10 @@ const nextConfig: NextConfig = {
             },
           },
         },
-      };
+      }
     }
 
-    return config;
+    return config
   },
 
   // Experimental features for better performance
@@ -121,14 +102,17 @@ const nextConfig: NextConfig = {
 
   // Build-time optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
 
   // Environment-specific redirects
   async redirects() {
-    const redirects = [];
+    const redirects = []
 
     // Redirect test pages in production
     if (process.env.NODE_ENV === 'production') {
@@ -148,10 +132,10 @@ const nextConfig: NextConfig = {
           destination: '/',
           permanent: false,
         }
-      );
+      )
     }
 
-    return redirects;
+    return redirects
   },
 
   // Output configuration
@@ -159,8 +143,6 @@ const nextConfig: NextConfig = {
 
   // Disable static optimization for pages with dynamic imports
   staticPageGenerationTimeout: 1000,
+}
 
-
-};
-
-export default nextConfig;
+export default nextConfig
