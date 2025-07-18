@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/Dialog'
+import { Label } from '@/components/ui/Label'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/contexts/AuthContext'
 import AIAutomationService, {
@@ -83,8 +83,8 @@ export default function AIAutomationToggle() {
       setLoading(true)
       await AIAutomationService.updateSettings(
         newState,
-        user.uid,
-        user.displayName || user.email || 'Admin User'
+        user.id,
+        user.full_name || user.email || 'Admin User'
       )
       setShowConfirmDialog(false)
     } catch (error) {

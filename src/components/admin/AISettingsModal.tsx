@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/Select'
 import { Slider } from '@/components/ui/Slider'
-import { Switch } from '@/components/ui/Switch'
+import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { type AISettings } from '@/services/AISettingsService'
 import {

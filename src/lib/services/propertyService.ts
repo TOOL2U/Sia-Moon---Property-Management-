@@ -1,34 +1,30 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  query,
-  orderBy,
-  where,
-  Timestamp,
-  setDoc,
-  serverTimestamp,
-  limit,
-  startAfter,
-  onSnapshot,
-  writeBatch,
-  DocumentSnapshot
-} from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
-import { getAuth } from 'firebase/auth'
 import {
-  Property as PropertyType,
+  PropertyActivity,
+  PropertyAlert,
+  PropertyBulkOperation,
+  PropertyDashboard,
   PropertyFilters,
   PropertySearchResult,
-  PropertyDashboard,
   PropertyStatus,
-  PropertyAlert,
-  PropertyActivity,
-  PropertyBulkOperation
 } from '@/types/property'
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore'
 
 // Utility function to create URL-friendly slugs
 function slugify(text: string): string {
@@ -47,7 +43,9 @@ function sanitizeForFirestore(obj: any): any {
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => sanitizeForFirestore(item)).filter(item => item !== undefined)
+    return obj
+      .map((item) => sanitizeForFirestore(item))
+      .filter((item) => item !== undefined)
   }
 
   if (typeof obj === 'object') {
@@ -66,14 +64,14 @@ function sanitizeForFirestore(obj: any): any {
 export interface Property {
   id: string
   userId: string // Owner of the property
-  
+
   // Basic Information
   name: string
   description?: string
   address: string
   city?: string
   country?: string
-  
+
   // Property Details
   bedrooms?: number
   bathrooms?: number
@@ -81,7 +79,7 @@ export interface Property {
   landSizeSqm?: number
   villaSizeSqm?: number
   yearBuilt?: number
-  
+
   // Amenities
   amenities?: string[]
   hasPool?: boolean
@@ -90,52 +88,52 @@ export interface Property {
   hasParking?: boolean
   hasLaundry?: boolean
   hasBackupPower?: boolean
-  
+
   // Utilities
   electricityProvider?: string
   waterSource?: string
   internetProvider?: string
   internetPackage?: string
-  
+
   // Access & Staff
   accessDetails?: string
   hasSmartLock?: boolean
   gateRemoteDetails?: string
   onsiteStaff?: string
-  
+
   // Rental Information
   pricePerNight?: number
   currency?: string
   minimumStay?: number
   platformsListed?: string[]
   averageOccupancyRate?: string
-  
+
   // Rules & Preferences
   petsAllowed?: boolean
   partiesAllowed?: boolean
   smokingAllowed?: boolean
-  
+
   // Emergency Contact
   emergencyContactName?: string
   emergencyContactPhone?: string
-  
+
   // Media
   coverPhoto?: string // Primary cover photo URL (first uploaded photo from onboarding)
   images?: string[] // All property photos
   professionalPhotosStatus?: string
   floorPlanImagesAvailable?: boolean
   videoWalkthroughAvailable?: boolean
-  
+
   // Booking Integration
   airbnbIcalUrl?: string
   bookingComIcalUrl?: string
   syncEnabled?: boolean
   lastSync?: Timestamp
-  
+
   // Status
   status: 'active' | 'inactive' | 'pending_approval'
   isActive: boolean
-  
+
   // Metadata
   onboardingSubmissionId?: string // Link to original onboarding submission
   createdAt: Timestamp
@@ -170,21 +168,24 @@ export class PropertyService {
   /**
    * Create a new property
    */
-  static async createProperty(data: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  static async createProperty(
+    data: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<string> {
     try {
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
       const propertyData = {
         ...data,
-        status: data.status || 'pending_approval' as const,
+        status: data.status || ('pending_approval' as const),
         isActive: data.isActive ?? true,
         createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       }
 
-      const docRef = await addDoc(collection(getDb(), this.collection), propertyData)
+      const docRef = await addDoc(collection(db, this.collection), propertyData)
       console.log('✅ Property created:', docRef.id)
       return docRef.id
     } catch (error) {
@@ -197,22 +198,23 @@ export class PropertyService {
    * Create property from onboarding submission
    */
   static async createPropertyFromOnboarding(
-    onboardingData: OnboardingData, 
-    userId: string, 
+    onboardingData: OnboardingData,
+    userId: string,
     submissionId: string
   ): Promise<string> {
     try {
       const propertyData: Omit<Property, 'id' | 'createdAt' | 'updatedAt'> = {
         userId,
         onboardingSubmissionId: submissionId,
-        
+
         // Basic Information
         name: onboardingData.propertyName || '',
-        description: `Property managed by Sia Moon Property Management. ${onboardingData.notes || ''}`.trim(),
+        description:
+          `Property managed by Sia Moon Property Management. ${onboardingData.notes || ''}`.trim(),
         address: onboardingData.propertyAddress || '',
         city: onboardingData.propertyAddress?.split(',')[1]?.trim() || '',
         country: 'Thailand',
-        
+
         // Property Details
         bedrooms: onboardingData.bedrooms,
         bathrooms: onboardingData.bathrooms,
@@ -220,7 +222,7 @@ export class PropertyService {
         landSizeSqm: onboardingData.landSizeSqm,
         villaSizeSqm: onboardingData.villaSizeSqm,
         yearBuilt: onboardingData.yearBuilt,
-        
+
         // Amenities
         amenities: this.extractAmenities(onboardingData),
         hasPool: onboardingData.hasPool,
@@ -229,22 +231,24 @@ export class PropertyService {
         hasParking: onboardingData.hasParking,
         hasLaundry: onboardingData.hasLaundry,
         hasBackupPower: onboardingData.hasBackupPower,
-        
+
         // Utilities
         electricityProvider: onboardingData.electricityProvider,
         waterSource: onboardingData.waterSource,
         internetProvider: onboardingData.internetProvider,
         internetPackage: onboardingData.internetPackage,
-        
+
         // Access & Staff
         accessDetails: String(onboardingData.accessDetails || ''),
         hasSmartLock: Boolean(onboardingData.hasSmartLock),
         gateRemoteDetails: String(onboardingData.gateRemoteDetails || ''),
         onsiteStaff: String(onboardingData.onsiteStaff || ''),
-        
+
         // Rental Information
         currency: 'THB',
-        platformsListed: Array.isArray(onboardingData.platformsListed) ? onboardingData.platformsListed : [],
+        platformsListed: Array.isArray(onboardingData.platformsListed)
+          ? onboardingData.platformsListed
+          : [],
         averageOccupancyRate: String(onboardingData.averageOccupancyRate || ''),
 
         // Rules & Preferences
@@ -254,23 +258,35 @@ export class PropertyService {
 
         // Emergency Contact
         emergencyContactName: String(onboardingData.emergencyContactName || ''),
-        emergencyContactPhone: String(onboardingData.emergencyContactPhone || ''),
-        
+        emergencyContactPhone: String(
+          onboardingData.emergencyContactPhone || ''
+        ),
+
         // Media - Set cover photo as first uploaded image
-        coverPhoto: Array.isArray(onboardingData.uploadedPhotos) && onboardingData.uploadedPhotos.length > 0
-          ? onboardingData.uploadedPhotos[0]
-          : undefined,
-        images: Array.isArray(onboardingData.uploadedPhotos) ? onboardingData.uploadedPhotos : [],
-        professionalPhotosStatus: String(onboardingData.professionalPhotosStatus || ''),
-        floorPlanImagesAvailable: Boolean(onboardingData.floorPlanImagesAvailable),
-        videoWalkthroughAvailable: Boolean(onboardingData.videoWalkthroughAvailable),
-        
+        coverPhoto:
+          Array.isArray(onboardingData.uploadedPhotos) &&
+          onboardingData.uploadedPhotos.length > 0
+            ? onboardingData.uploadedPhotos[0]
+            : undefined,
+        images: Array.isArray(onboardingData.uploadedPhotos)
+          ? onboardingData.uploadedPhotos
+          : [],
+        professionalPhotosStatus: String(
+          onboardingData.professionalPhotosStatus || ''
+        ),
+        floorPlanImagesAvailable: Boolean(
+          onboardingData.floorPlanImagesAvailable
+        ),
+        videoWalkthroughAvailable: Boolean(
+          onboardingData.videoWalkthroughAvailable
+        ),
+
         // Status
         status: 'pending_approval',
         isActive: false, // Will be activated after admin approval
-        
+
         // Booking Integration (to be configured later)
-        syncEnabled: false
+        syncEnabled: false,
       }
 
       return await this.createProperty(propertyData)
@@ -297,24 +313,56 @@ export class PropertyService {
       if (!userId) {
         throw new Error('User ID is required')
       }
-      if (!onboardingData.propertyName || typeof onboardingData.propertyName !== 'string') {
+      if (
+        !onboardingData.propertyName ||
+        typeof onboardingData.propertyName !== 'string'
+      ) {
         throw new Error('Property name is required and must be a string')
       }
-      if (!onboardingData.propertyAddress || typeof onboardingData.propertyAddress !== 'string') {
+      if (
+        !onboardingData.propertyAddress ||
+        typeof onboardingData.propertyAddress !== 'string'
+      ) {
         throw new Error('Property address is required and must be a string')
       }
 
       // Log incoming data for debugging
       console.log('📋 Incoming onboarding data types:')
-      console.log('- propertyName:', typeof onboardingData.propertyName, onboardingData.propertyName)
-      console.log('- propertyAddress:', typeof onboardingData.propertyAddress, onboardingData.propertyAddress)
-      console.log('- bedrooms:', typeof onboardingData.bedrooms, onboardingData.bedrooms)
-      console.log('- bathrooms:', typeof onboardingData.bathrooms, onboardingData.bathrooms)
-      console.log('- landSizeSqm:', typeof onboardingData.landSizeSqm, onboardingData.landSizeSqm)
-      console.log('- villaSizeSqm:', typeof onboardingData.villaSizeSqm, onboardingData.villaSizeSqm)
+      console.log(
+        '- propertyName:',
+        typeof onboardingData.propertyName,
+        onboardingData.propertyName
+      )
+      console.log(
+        '- propertyAddress:',
+        typeof onboardingData.propertyAddress,
+        onboardingData.propertyAddress
+      )
+      console.log(
+        '- bedrooms:',
+        typeof onboardingData.bedrooms,
+        onboardingData.bedrooms
+      )
+      console.log(
+        '- bathrooms:',
+        typeof onboardingData.bathrooms,
+        onboardingData.bathrooms
+      )
+      console.log(
+        '- landSizeSqm:',
+        typeof onboardingData.landSizeSqm,
+        onboardingData.landSizeSqm
+      )
+      console.log(
+        '- villaSizeSqm:',
+        typeof onboardingData.villaSizeSqm,
+        onboardingData.villaSizeSqm
+      )
 
       // Generate property ID using slugify
-      const propertyId = slugify(onboardingData.propertyName + ' ' + onboardingData.propertyAddress)
+      const propertyId = slugify(
+        onboardingData.propertyName + ' ' + onboardingData.propertyAddress
+      )
       console.log('🔑 Generated property ID:', propertyId)
 
       // Prepare property data for user subcollection with safe fallbacks
@@ -322,14 +370,30 @@ export class PropertyService {
         // Basic Information
         name: onboardingData.propertyName,
         address: onboardingData.propertyAddress,
-        bedrooms: typeof onboardingData.bedrooms === 'number' ? onboardingData.bedrooms :
-                 (onboardingData.bedrooms ? parseInt(String(onboardingData.bedrooms)) : 0),
-        bathrooms: typeof onboardingData.bathrooms === 'number' ? onboardingData.bathrooms :
-                  (onboardingData.bathrooms ? parseInt(String(onboardingData.bathrooms)) : 0),
-        landSizeSqm: typeof onboardingData.landSizeSqm === 'number' ? onboardingData.landSizeSqm :
-                    (onboardingData.landSizeSqm ? parseFloat(String(onboardingData.landSizeSqm)) : 0),
-        villaSizeSqm: typeof onboardingData.villaSizeSqm === 'number' ? onboardingData.villaSizeSqm :
-                     (onboardingData.villaSizeSqm ? parseFloat(String(onboardingData.villaSizeSqm)) : 0),
+        bedrooms:
+          typeof onboardingData.bedrooms === 'number'
+            ? onboardingData.bedrooms
+            : onboardingData.bedrooms
+              ? parseInt(String(onboardingData.bedrooms))
+              : 0,
+        bathrooms:
+          typeof onboardingData.bathrooms === 'number'
+            ? onboardingData.bathrooms
+            : onboardingData.bathrooms
+              ? parseInt(String(onboardingData.bathrooms))
+              : 0,
+        landSizeSqm:
+          typeof onboardingData.landSizeSqm === 'number'
+            ? onboardingData.landSizeSqm
+            : onboardingData.landSizeSqm
+              ? parseFloat(String(onboardingData.landSizeSqm))
+              : 0,
+        villaSizeSqm:
+          typeof onboardingData.villaSizeSqm === 'number'
+            ? onboardingData.villaSizeSqm
+            : onboardingData.villaSizeSqm
+              ? parseFloat(String(onboardingData.villaSizeSqm))
+              : 0,
 
         // Amenities (convert to array)
         amenities: this.extractAmenities(onboardingData),
@@ -339,7 +403,7 @@ export class PropertyService {
           electricityProvider: onboardingData.electricityProvider || '',
           waterSource: onboardingData.waterSource || '',
           internetProvider: onboardingData.internetProvider || '',
-          internetPackage: onboardingData.internetPackage || ''
+          internetPackage: onboardingData.internetPackage || '',
         },
 
         // Additional fields (ensure boolean values)
@@ -351,10 +415,14 @@ export class PropertyService {
         hasBackupPower: Boolean(onboardingData.hasBackupPower),
 
         // Media - Set cover photo as first uploaded image
-        coverPhoto: Array.isArray(onboardingData.uploadedPhotos) && onboardingData.uploadedPhotos.length > 0
-          ? onboardingData.uploadedPhotos[0]
-          : null,
-        images: Array.isArray(onboardingData.uploadedPhotos) ? onboardingData.uploadedPhotos : [],
+        coverPhoto:
+          Array.isArray(onboardingData.uploadedPhotos) &&
+          onboardingData.uploadedPhotos.length > 0
+            ? onboardingData.uploadedPhotos[0]
+            : null,
+        images: Array.isArray(onboardingData.uploadedPhotos)
+          ? onboardingData.uploadedPhotos
+          : [],
 
         // Status
         status: 'active',
@@ -362,7 +430,7 @@ export class PropertyService {
 
         // Timestamps
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       }
 
       // Sanitize data to remove any undefined values
@@ -374,16 +442,19 @@ export class PropertyService {
       console.log('💾 Property data to save:', propertyData)
 
       // Validate Firestore connection
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
       // Save to user's properties subcollection
-      const propertyRef = doc(getDb(), 'users', userId, 'properties', propertyId)
+      const propertyRef = doc(db, 'users', userId, 'properties', propertyId)
       await setDoc(propertyRef, propertyData)
 
       console.log('✅ Property saved to user profile:', propertyId)
-      console.log('📍 Firestore path: /users/' + userId + '/properties/' + propertyId)
+      console.log(
+        '📍 Firestore path: /users/' + userId + '/properties/' + propertyId
+      )
 
       return propertyId
     } catch (error) {
@@ -397,27 +468,30 @@ export class PropertyService {
    */
   static async getPropertiesByUserId(userId: string): Promise<Property[]> {
     try {
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
       const q = query(
-        collection(getDb(), this.collection),
+        collection(db, this.collection),
         where('userId', '==', userId),
         orderBy('createdAt', 'desc')
       )
-      
+
       const querySnapshot = await getDocs(q)
       const properties: Property[] = []
 
       querySnapshot.forEach((doc) => {
         properties.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         } as Property)
       })
 
-      console.log(`✅ Retrieved ${properties.length} properties for user ${userId}`)
+      console.log(
+        `✅ Retrieved ${properties.length} properties for user ${userId}`
+      )
       return properties
     } catch (error) {
       console.error('❌ Error fetching user properties:', error)
@@ -439,12 +513,13 @@ export class PropertyService {
       }
 
       // Validate Firestore connection
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
       // Query user's properties subcollection
-      const propertiesRef = collection(getDb(), 'users', userId, 'properties')
+      const propertiesRef = collection(db, 'users', userId, 'properties')
       const q = query(propertiesRef, orderBy('createdAt', 'desc'))
 
       const querySnapshot = await getDocs(q)
@@ -453,11 +528,13 @@ export class PropertyService {
       querySnapshot.forEach((doc) => {
         properties.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         })
       })
 
-      console.log(`✅ Retrieved ${properties.length} properties from user profile`)
+      console.log(
+        `✅ Retrieved ${properties.length} properties from user profile`
+      )
       console.log('📍 Firestore path: /users/' + userId + '/properties')
       return properties
     } catch (error) {
@@ -470,9 +547,14 @@ export class PropertyService {
    * Get a specific property from user's subcollection
    * Reads from /users/{userId}/properties/{propertyId}
    */
-  static async getPropertyFromUserProfile(userId: string, propertyId: string): Promise<any | null> {
+  static async getPropertyFromUserProfile(
+    userId: string,
+    propertyId: string
+  ): Promise<any | null> {
     try {
-      console.log('🏠 Loading specific property from user profile subcollection')
+      console.log(
+        '🏠 Loading specific property from user profile subcollection'
+      )
       console.log('👤 User ID:', userId)
       console.log('🏠 Property ID:', propertyId)
 
@@ -481,21 +563,24 @@ export class PropertyService {
       }
 
       // Validate Firestore connection
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
       // Get specific property document from user's subcollection
-      const propertyRef = doc(getDb(), 'users', userId, 'properties', propertyId)
+      const propertyRef = doc(db, 'users', userId, 'properties', propertyId)
       const propertyDoc = await getDoc(propertyRef)
 
       if (propertyDoc.exists()) {
         const propertyData = {
           id: propertyDoc.id,
-          ...propertyDoc.data()
+          ...propertyDoc.data(),
         }
         console.log('✅ Retrieved property from user profile')
-        console.log('📍 Firestore path: /users/' + userId + '/properties/' + propertyId)
+        console.log(
+          '📍 Firestore path: /users/' + userId + '/properties/' + propertyId
+        )
         return propertyData
       } else {
         console.log('❌ Property not found in user profile subcollection')
@@ -512,22 +597,23 @@ export class PropertyService {
    */
   static async getAllProperties(): Promise<Property[]> {
     try {
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
       const q = query(
-        collection(getDb(), this.collection),
+        collection(db, this.collection),
         orderBy('createdAt', 'desc')
       )
-      
+
       const querySnapshot = await getDocs(q)
       const properties: Property[] = []
 
       querySnapshot.forEach((doc) => {
         properties.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         } as Property)
       })
 
@@ -544,17 +630,18 @@ export class PropertyService {
    */
   static async getPropertyById(id: string): Promise<Property | null> {
     try {
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
-      const docRef = doc(getDb(), this.collection, id)
+      const docRef = doc(db, this.collection, id)
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {
         return {
           id: docSnap.id,
-          ...docSnap.data()
+          ...docSnap.data(),
         } as Property
       }
 
@@ -568,17 +655,21 @@ export class PropertyService {
   /**
    * Update property status
    */
-  static async updatePropertyStatus(id: string, status: Property['status']): Promise<void> {
+  static async updatePropertyStatus(
+    id: string,
+    status: Property['status']
+  ): Promise<void> {
     try {
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
-      const docRef = doc(getDb(), this.collection, id)
+      const docRef = doc(db, this.collection, id)
       await updateDoc(docRef, {
         status,
         isActive: status === 'active',
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       console.log(`✅ Updated property ${id} status to ${status}`)
@@ -591,16 +682,20 @@ export class PropertyService {
   /**
    * Update property cover photo
    */
-  static async updateCoverPhoto(propertyId: string, coverPhotoUrl: string): Promise<void> {
+  static async updateCoverPhoto(
+    propertyId: string,
+    coverPhotoUrl: string
+  ): Promise<void> {
     try {
+      const db = getDb()
       if (!db) {
         throw new Error('Firebase Firestore not initialized')
       }
 
-      const propertyRef = doc(getDb(), this.collection, propertyId)
+      const propertyRef = doc(db, this.collection, propertyId)
       await updateDoc(propertyRef, {
         coverPhoto: coverPhotoUrl,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       })
 
       console.log('✅ Property cover photo updated:', propertyId)
@@ -633,11 +728,17 @@ export class PropertyService {
   /**
    * Get all properties with advanced filtering and pagination
    */
-  static async getAllPropertiesAdvanced(filters?: PropertyFilters): Promise<PropertySearchResult> {
+  static async getAllPropertiesAdvanced(
+    filters?: PropertyFilters
+  ): Promise<PropertySearchResult> {
     try {
-      console.log('🏠 PropertyService: Fetching all properties with advanced filters:', filters)
+      console.log(
+        '🏠 PropertyService: Fetching all properties with advanced filters:',
+        filters
+      )
 
-      let q = collection(getDb(), this.collection)
+      const db = getDb()
+      let q = collection(db, this.collection)
 
       // Apply filters
       if (filters?.status && filters.status.length > 0) {
@@ -651,7 +752,10 @@ export class PropertyService {
       // Apply sorting
       if (filters?.sortBy) {
         const sortOrder = filters.sortOrder || 'desc'
-        q = query(q, orderBy(filters.sortBy === 'name' ? 'name' : 'updatedAt', sortOrder))
+        q = query(
+          q,
+          orderBy(filters.sortBy === 'name' ? 'name' : 'updatedAt', sortOrder)
+        )
       } else {
         q = query(q, orderBy('updatedAt', 'desc'))
       }
@@ -669,8 +773,10 @@ export class PropertyService {
         properties.push({
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+          createdAt:
+            data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+          updatedAt:
+            data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
         } as Property)
       })
 
@@ -679,18 +785,21 @@ export class PropertyService {
 
       if (filters?.search) {
         const searchTerm = filters.search.toLowerCase()
-        filteredProperties = properties.filter(property =>
-          property.name?.toLowerCase().includes(searchTerm) ||
-          property.city?.toLowerCase().includes(searchTerm) ||
-          property.address?.toLowerCase().includes(searchTerm)
+        filteredProperties = properties.filter(
+          (property) =>
+            property.name?.toLowerCase().includes(searchTerm) ||
+            property.city?.toLowerCase().includes(searchTerm) ||
+            property.address?.toLowerCase().includes(searchTerm)
         )
       }
 
       if (filters?.priceRange) {
-        filteredProperties = filteredProperties.filter(property => {
+        filteredProperties = filteredProperties.filter((property) => {
           const price = property.pricePerNight || 0
-          return (!filters.priceRange!.min || price >= filters.priceRange!.min) &&
-                 (!filters.priceRange!.max || price <= filters.priceRange!.max)
+          return (
+            (!filters.priceRange!.min || price >= filters.priceRange!.min) &&
+            (!filters.priceRange!.max || price <= filters.priceRange!.max)
+          )
         })
       }
 
@@ -701,18 +810,22 @@ export class PropertyService {
 
       // Apply pagination to filtered results
       const startIndex = (page - 1) * pageSize
-      const paginatedProperties = filteredProperties.slice(startIndex, startIndex + pageSize)
+      const paginatedProperties = filteredProperties.slice(
+        startIndex,
+        startIndex + pageSize
+      )
 
-      console.log(`✅ PropertyService: Found ${total} properties, returning page ${page}/${totalPages}`)
+      console.log(
+        `✅ PropertyService: Found ${total} properties, returning page ${page}/${totalPages}`
+      )
 
       return {
         properties: paginatedProperties,
         total,
         page,
         totalPages,
-        filters: filters || {}
+        filters: filters || {},
       }
-
     } catch (error) {
       console.error('❌ PropertyService: Error fetching properties:', error)
       throw new Error('Failed to fetch properties')
@@ -722,15 +835,24 @@ export class PropertyService {
   /**
    * Update property status with validation
    */
-  static async updatePropertyStatus(propertyId: string, status: PropertyStatus, reason?: string): Promise<void> {
+  static async updatePropertyStatus(
+    propertyId: string,
+    status: PropertyStatus,
+    reason?: string
+  ): Promise<void> {
     try {
-      console.log('🏠 PropertyService: Updating property status:', propertyId, status)
+      console.log(
+        '🏠 PropertyService: Updating property status:',
+        propertyId,
+        status
+      )
 
-      const docRef = doc(getDb(), this.collection, propertyId)
+      const db = getDb()
+      const docRef = doc(db, this.collection, propertyId)
       const updateData: any = {
         status,
         isActive: status === 'active',
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       }
 
       if (reason) {
@@ -740,9 +862,11 @@ export class PropertyService {
       await updateDoc(docRef, updateData)
 
       console.log('✅ PropertyService: Property status updated successfully')
-
     } catch (error) {
-      console.error('❌ PropertyService: Error updating property status:', error)
+      console.error(
+        '❌ PropertyService: Error updating property status:',
+        error
+      )
       throw new Error('Failed to update property status')
     }
   }
@@ -750,28 +874,34 @@ export class PropertyService {
   /**
    * Perform bulk operations on multiple properties
    */
-  static async performBulkOperation(operation: PropertyBulkOperation): Promise<void> {
+  static async performBulkOperation(
+    operation: PropertyBulkOperation
+  ): Promise<void> {
     try {
-      console.log('🏠 PropertyService: Performing bulk operation:', operation.operation)
+      console.log(
+        '🏠 PropertyService: Performing bulk operation:',
+        operation.operation
+      )
 
+      const db = getDb()
       const batch = writeBatch(db)
 
       for (const propertyId of operation.propertyIds) {
-        const docRef = doc(getDb(), this.collection, propertyId)
+        const docRef = doc(db, this.collection, propertyId)
 
         switch (operation.operation) {
           case 'update_status':
             batch.update(docRef, {
               status: operation.data.status,
               isActive: operation.data.status === 'active',
-              updatedAt: Timestamp.now()
+              updatedAt: Timestamp.now(),
             })
             break
 
           case 'update_pricing':
             batch.update(docRef, {
               pricePerNight: operation.data.pricePerNight,
-              updatedAt: Timestamp.now()
+              updatedAt: Timestamp.now(),
             })
             break
 
@@ -781,10 +911,14 @@ export class PropertyService {
       }
 
       await batch.commit()
-      console.log(`✅ PropertyService: Bulk operation completed for ${operation.propertyIds.length} properties`)
-
+      console.log(
+        `✅ PropertyService: Bulk operation completed for ${operation.propertyIds.length} properties`
+      )
     } catch (error) {
-      console.error('❌ PropertyService: Error performing bulk operation:', error)
+      console.error(
+        '❌ PropertyService: Error performing bulk operation:',
+        error
+      )
       throw new Error('Failed to perform bulk operation')
     }
   }
@@ -800,9 +934,15 @@ export class PropertyService {
 
       // Calculate overview metrics
       const totalProperties = allProperties.length
-      const activeProperties = allProperties.filter(p => p.status === 'active').length
-      const inactiveProperties = allProperties.filter(p => p.status === 'inactive').length
-      const maintenanceProperties = allProperties.filter(p => p.status === 'pending_approval').length
+      const activeProperties = allProperties.filter(
+        (p) => p.status === 'active'
+      ).length
+      const inactiveProperties = allProperties.filter(
+        (p) => p.status === 'inactive'
+      ).length
+      const maintenanceProperties = allProperties.filter(
+        (p) => p.status === 'pending_approval'
+      ).length
 
       // Calculate real performance data from properties
       const performanceData = this.calculateRealPerformanceData(allProperties)
@@ -816,7 +956,7 @@ export class PropertyService {
           averageOccupancy: performanceData.averageOccupancy,
           totalRevenue: performanceData.totalRevenue,
           averageRating: performanceData.averageRating,
-          totalBookings: performanceData.totalBookings
+          totalBookings: performanceData.totalBookings,
         },
         performance: {
           topPerformers: performanceData.topPerformers,
@@ -824,14 +964,14 @@ export class PropertyService {
           averageADR: performanceData.averageADR,
           averageRevPAR: performanceData.averageRevPAR,
           occupancyTrend: 5.2,
-          revenueTrend: 12.8
+          revenueTrend: 12.8,
         },
         maintenance: {
           activeIssues: Math.floor(totalProperties * 0.1),
           urgentIssues: Math.floor(totalProperties * 0.02),
           scheduledMaintenance: Math.floor(totalProperties * 0.05),
           maintenanceCosts: totalProperties * 2500,
-          averageResolutionTime: 3.5
+          averageResolutionTime: 3.5,
         },
         revenue: {
           totalRevenue: performanceData.totalRevenue,
@@ -841,8 +981,8 @@ export class PropertyService {
           revenueByType: {
             villa: performanceData.totalRevenue * 0.6,
             apartment: performanceData.totalRevenue * 0.25,
-            house: performanceData.totalRevenue * 0.15
-          }
+            house: performanceData.totalRevenue * 0.15,
+          },
         },
         occupancy: {
           averageOccupancy: performanceData.averageOccupancy,
@@ -850,19 +990,18 @@ export class PropertyService {
           highestOccupancy: performanceData.topPerformers.slice(0, 3),
           lowestOccupancy: performanceData.underPerformers.slice(0, 3),
           seasonalOccupancy: {
-            'Spring': 75.2,
-            'Summer': 89.1,
-            'Fall': 68.4,
-            'Winter': 52.7
-          }
+            Spring: 75.2,
+            Summer: 89.1,
+            Fall: 68.4,
+            Winter: 52.7,
+          },
         },
         alerts: this.generateRealAlerts(allProperties),
-        recentActivity: this.generateRealActivity(allProperties)
+        recentActivity: this.generateRealActivity(allProperties),
       }
 
       console.log('✅ PropertyService: Dashboard generated successfully')
       return dashboard
-
     } catch (error) {
       console.error('❌ PropertyService: Error generating dashboard:', error)
       throw new Error('Failed to generate property dashboard')
@@ -872,28 +1011,42 @@ export class PropertyService {
   /**
    * Real-time property updates subscription
    */
-  static subscribeToPropertyUpdates(callback: (properties: Property[]) => void): () => void {
+  static subscribeToPropertyUpdates(
+    callback: (properties: Property[]) => void
+  ): () => void {
     console.log('🏠 PropertyService: Setting up real-time property updates')
 
-    const q = query(collection(getDb(), this.collection), orderBy('updatedAt', 'desc'))
+    const db = getDb()
+    const q = query(
+      collection(db, this.collection),
+      orderBy('updatedAt', 'desc')
+    )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const properties: Property[] = []
-      snapshot.forEach((doc) => {
-        const data = doc.data()
-        properties.push({
-          id: doc.id,
-          ...data,
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
-        } as Property)
-      })
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const properties: Property[] = []
+        snapshot.forEach((doc) => {
+          const data = doc.data()
+          properties.push({
+            id: doc.id,
+            ...data,
+            createdAt:
+              data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+            updatedAt:
+              data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
+          } as Property)
+        })
 
-      console.log(`🔄 PropertyService: Real-time update - ${properties.length} properties`)
-      callback(properties)
-    }, (error) => {
-      console.error('❌ PropertyService: Real-time update error:', error)
-    })
+        console.log(
+          `🔄 PropertyService: Real-time update - ${properties.length} properties`
+        )
+        callback(properties)
+      },
+      (error) => {
+        console.error('❌ PropertyService: Real-time update error:', error)
+      }
+    )
 
     return unsubscribe
   }
@@ -909,16 +1062,20 @@ export class PropertyService {
       return sum + (property.pricePerNight || 0) * 365 * 0.7 // Assume 70% occupancy
     }, 0)
 
-    const averagePrice = properties.length > 0
-      ? properties.reduce((sum, p) => sum + (p.pricePerNight || 0), 0) / properties.length
-      : 0
+    const averagePrice =
+      properties.length > 0
+        ? properties.reduce((sum, p) => sum + (p.pricePerNight || 0), 0) /
+          properties.length
+        : 0
 
     const averageOccupancy = 70 // Default occupancy rate
     const averageRating = 4.5 // Default rating
     const totalBookings = Math.floor(totalProperties * 50) // Estimate
 
     // Sort properties by price for top/bottom performers
-    const sortedByPrice = [...properties].sort((a, b) => (b.pricePerNight || 0) - (a.pricePerNight || 0))
+    const sortedByPrice = [...properties].sort(
+      (a, b) => (b.pricePerNight || 0) - (a.pricePerNight || 0)
+    )
     const topPerformers = sortedByPrice.slice(0, 5)
     const underPerformers = sortedByPrice.slice(-5).reverse()
 
@@ -930,7 +1087,7 @@ export class PropertyService {
       averageADR: Math.round(averagePrice),
       averageRevPAR: Math.round(averagePrice * (averageOccupancy / 100)),
       topPerformers,
-      underPerformers
+      underPerformers,
     }
   }
 
@@ -951,7 +1108,7 @@ export class PropertyService {
           message: `Property pending approval - requires admin review`,
           createdAt: new Date().toISOString(),
           acknowledged: false,
-          actionRequired: true
+          actionRequired: true,
         })
       }
 
@@ -965,7 +1122,7 @@ export class PropertyService {
           message: `Property is inactive and not receiving bookings`,
           createdAt: new Date().toISOString(),
           acknowledged: false,
-          actionRequired: false
+          actionRequired: false,
         })
       }
     })
@@ -976,7 +1133,9 @@ export class PropertyService {
   /**
    * Generate real activity based on property updates
    */
-  private static generateRealActivity(properties: Property[]): PropertyActivity[] {
+  private static generateRealActivity(
+    properties: Property[]
+  ): PropertyActivity[] {
     const activities: PropertyActivity[] = []
 
     // Get recent properties (last 10 updated)
@@ -996,7 +1155,9 @@ export class PropertyService {
         type: 'property_updated',
         description: 'Property information updated',
         user: 'admin',
-        timestamp: property.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        timestamp:
+          property.updatedAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
       })
     })
 
@@ -1006,12 +1167,15 @@ export class PropertyService {
   /**
    * Get properties by status
    */
-  static async getPropertiesByStatus(status: PropertyStatus): Promise<Property[]> {
+  static async getPropertiesByStatus(
+    status: PropertyStatus
+  ): Promise<Property[]> {
     try {
       console.log('🏠 PropertyService: Fetching properties by status:', status)
 
+      const db = getDb()
       const q = query(
-        collection(getDb(), this.collection),
+        collection(db, this.collection),
         where('status', '==', status),
         orderBy('updatedAt', 'desc')
       )
@@ -1024,16 +1188,22 @@ export class PropertyService {
         properties.push({
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+          createdAt:
+            data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+          updatedAt:
+            data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
         } as Property)
       })
 
-      console.log(`✅ PropertyService: Found ${properties.length} properties with status ${status}`)
+      console.log(
+        `✅ PropertyService: Found ${properties.length} properties with status ${status}`
+      )
       return properties
-
     } catch (error) {
-      console.error('❌ PropertyService: Error fetching properties by status:', error)
+      console.error(
+        '❌ PropertyService: Error fetching properties by status:',
+        error
+      )
       throw new Error('Failed to fetch properties by status')
     }
   }
@@ -1048,16 +1218,18 @@ export class PropertyService {
       const allProperties = await this.getAllProperties()
       const searchTermLower = searchTerm.toLowerCase()
 
-      const filteredProperties = allProperties.filter(property =>
-        property.name?.toLowerCase().includes(searchTermLower) ||
-        property.city?.toLowerCase().includes(searchTermLower) ||
-        property.address?.toLowerCase().includes(searchTermLower) ||
-        property.country?.toLowerCase().includes(searchTermLower)
+      const filteredProperties = allProperties.filter(
+        (property) =>
+          property.name?.toLowerCase().includes(searchTermLower) ||
+          property.city?.toLowerCase().includes(searchTermLower) ||
+          property.address?.toLowerCase().includes(searchTermLower) ||
+          property.country?.toLowerCase().includes(searchTermLower)
       )
 
-      console.log(`✅ PropertyService: Found ${filteredProperties.length} properties matching search`)
+      console.log(
+        `✅ PropertyService: Found ${filteredProperties.length} properties matching search`
+      )
       return filteredProperties
-
     } catch (error) {
       console.error('❌ PropertyService: Error searching properties:', error)
       throw new Error('Failed to search properties')

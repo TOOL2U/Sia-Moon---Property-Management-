@@ -1,36 +1,26 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { Switch } from '@/components/ui/Switch'
-import { toast } from 'sonner'
+import { Switch } from '@/components/ui/switch'
+import JobAssignmentService from '@/services/JobAssignmentService'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
-  BellOff,
-  Smartphone,
+  Loader2,
   Monitor,
-  Tablet,
-  Send,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Search,
-  Filter,
   RefreshCw,
-  Settings,
+  Search,
+  Send,
+  Smartphone,
+  Tablet,
   Users,
-  MessageSquare,
   Zap,
-  AlertTriangle,
-  Eye,
-  Trash2,
-  Loader2
 } from 'lucide-react'
-import JobAssignmentService from '@/services/JobAssignmentService'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface StaffNotificationManagerProps {
   className?: string
@@ -68,7 +58,7 @@ const defaultTemplates: NotificationTemplate[] = [
     body: 'You have been assigned a new {jobType} job at {propertyName}',
     type: 'job_assigned',
     priority: 'high',
-    enabled: true
+    enabled: true,
   },
   {
     id: 'job_reminder',
@@ -77,7 +67,7 @@ const defaultTemplates: NotificationTemplate[] = [
     body: 'Reminder: {jobTitle} is scheduled to start in 30 minutes',
     type: 'job_reminder',
     priority: 'medium',
-    enabled: true
+    enabled: true,
   },
   {
     id: 'system_alert',
@@ -86,27 +76,32 @@ const defaultTemplates: NotificationTemplate[] = [
     body: 'Important system notification: {message}',
     type: 'system_alert',
     priority: 'urgent',
-    enabled: true
-  }
+    enabled: true,
+  },
 ]
 
-export function StaffNotificationManager({ className }: StaffNotificationManagerProps) {
+export function StaffNotificationManager({
+  className,
+}: StaffNotificationManagerProps) {
   // State management
-  const [staffSettings, setStaffSettings] = useState<StaffNotificationSettings[]>([])
-  const [templates, setTemplates] = useState<NotificationTemplate[]>(defaultTemplates)
+  const [staffSettings, setStaffSettings] = useState<
+    StaffNotificationSettings[]
+  >([])
+  const [templates, setTemplates] =
+    useState<NotificationTemplate[]>(defaultTemplates)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState<string | null>(null)
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [showEnabledOnly, setShowEnabledOnly] = useState(false)
-  
+
   // Test notification state
   const [testNotification, setTestNotification] = useState({
     staffId: '',
     title: 'Test Notification',
     message: 'This is a test notification from Sia Moon admin panel',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent'
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
   })
 
   // Load staff notification settings
@@ -125,7 +120,11 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
 
       // Get notification settings for each staff member
       const settingsPromises = staffData.data.map(async (staff: any) => {
-        const notifications = await JobAssignmentService.getStaffNotifications(staff.id, 10, true)
+        const notifications = await JobAssignmentService.getStaffNotifications(
+          staff.id,
+          10,
+          true
+        )
 
         return {
           staffId: staff.id,
@@ -134,15 +133,16 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
           notificationsEnabled: false, // FCM service removed
           deviceTokens: [], // FCM service removed
           unreadCount: notifications.notifications?.length || 0,
-          lastNotificationAt: null // FCM service removed
+          lastNotificationAt: null, // FCM service removed
         }
       })
 
       const settings = await Promise.all(settingsPromises)
       setStaffSettings(settings)
 
-      console.log(`✅ Loaded notification settings for ${settings.length} staff members`)
-
+      console.log(
+        `✅ Loaded notification settings for ${settings.length} staff members`
+      )
     } catch (error) {
       console.error('❌ Error loading staff settings:', error)
       toast.error('Failed to load staff notification settings')
@@ -152,23 +152,27 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
   }
 
   // Toggle notifications for staff member
-  const toggleStaffNotifications = async (staffId: string, enabled: boolean) => {
+  const toggleStaffNotifications = async (
+    staffId: string,
+    enabled: boolean
+  ) => {
     try {
       setSending(staffId)
-      
+
       await FCMNotificationService.toggleNotifications(staffId, enabled)
-      
+
       // Update local state
-      setStaffSettings(prev => 
-        prev.map(staff => 
-          staff.staffId === staffId 
+      setStaffSettings((prev) =>
+        prev.map((staff) =>
+          staff.staffId === staffId
             ? { ...staff, notificationsEnabled: enabled }
             : staff
         )
       )
 
-      toast.success(`Notifications ${enabled ? 'enabled' : 'disabled'} for staff member`)
-
+      toast.success(
+        `Notifications ${enabled ? 'enabled' : 'disabled'} for staff member`
+      )
     } catch (error) {
       console.error('❌ Error toggling notifications:', error)
       toast.error('Failed to update notification settings')
@@ -183,11 +187,12 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
   }
 
   // Filter staff settings
-  const filteredStaff = staffSettings.filter(staff => {
-    const matchesSearch = staff.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         staff.staffEmail.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStaff = staffSettings.filter((staff) => {
+    const matchesSearch =
+      staff.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staff.staffEmail.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesFilter = !showEnabledOnly || staff.notificationsEnabled
-    
+
     return matchesSearch && matchesFilter
   })
 
@@ -244,7 +249,7 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Button
                 onClick={loadStaffSettings}
@@ -252,7 +257,9 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
                 className="border-indigo-500/50 text-indigo-300 hover:bg-indigo-500/10"
                 disabled={loading}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+                />
                 Refresh
               </Button>
             </div>
@@ -273,7 +280,7 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
                 className="bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400"
               />
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Switch
                 checked={showEnabledOnly}
@@ -297,14 +304,20 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <span className="ml-3 text-gray-400">Loading staff settings...</span>
+              <span className="ml-3 text-gray-400">
+                Loading staff settings...
+              </span>
             </div>
           ) : filteredStaff.length === 0 ? (
             <div className="text-center py-12">
               <Bell className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">No Staff Found</h3>
+              <h3 className="text-lg font-medium text-gray-400 mb-2">
+                No Staff Found
+              </h3>
               <p className="text-gray-500">
-                {searchTerm ? 'Try adjusting your search' : 'No staff members available'}
+                {searchTerm
+                  ? 'Try adjusting your search'
+                  : 'No staff members available'}
               </p>
             </div>
           ) : (
@@ -326,44 +339,59 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
                               <Users className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-white">{staff.staffName}</h4>
-                              <p className="text-sm text-gray-400">{staff.staffEmail}</p>
+                              <h4 className="font-semibold text-white">
+                                {staff.staffName}
+                              </h4>
+                              <p className="text-sm text-gray-400">
+                                {staff.staffEmail}
+                              </p>
                             </div>
                           </div>
-                          
+
                           <Switch
                             checked={staff.notificationsEnabled}
-                            onCheckedChange={(enabled) => toggleStaffNotifications(staff.staffId, enabled)}
+                            onCheckedChange={(enabled) =>
+                              toggleStaffNotifications(staff.staffId, enabled)
+                            }
                             disabled={sending === staff.staffId}
                           />
                         </div>
-                        
+
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="text-gray-400">Status:</span>
-                            <Badge className={staff.notificationsEnabled 
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                              : 'bg-red-500/20 text-red-400 border-red-500/30'
-                            }>
-                              {staff.notificationsEnabled ? 'Enabled' : 'Disabled'}
+                            <Badge
+                              className={
+                                staff.notificationsEnabled
+                                  ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                  : 'bg-red-500/20 text-red-400 border-red-500/30'
+                              }
+                            >
+                              {staff.notificationsEnabled
+                                ? 'Enabled'
+                                : 'Disabled'}
                             </Badge>
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <span className="text-gray-400">Devices:</span>
-                            <span className="text-white">{staff.deviceTokens.length}</span>
+                            <span className="text-white">
+                              {staff.deviceTokens.length}
+                            </span>
                           </div>
-                          
+
                           <div className="flex items-center justify-between">
                             <span className="text-gray-400">Unread:</span>
                             <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                               {staff.unreadCount}
                             </Badge>
                           </div>
-                          
+
                           {staff.lastNotificationAt && (
                             <div className="flex items-center justify-between">
-                              <span className="text-gray-400">Last Active:</span>
+                              <span className="text-gray-400">
+                                Last Active:
+                              </span>
                               <span className="text-xs text-gray-500">
                                 {staff.lastNotificationAt.toLocaleDateString()}
                               </span>
@@ -391,26 +419,40 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Staff Member</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Staff Member
+              </label>
               <select
                 value={testNotification.staffId}
-                onChange={(e) => setTestNotification(prev => ({ ...prev, staffId: e.target.value }))}
+                onChange={(e) =>
+                  setTestNotification((prev) => ({
+                    ...prev,
+                    staffId: e.target.value,
+                  }))
+                }
                 className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white"
               >
                 <option value="">Select staff member</option>
-                {staffSettings.map(staff => (
+                {staffSettings.map((staff) => (
                   <option key={staff.staffId} value={staff.staffId}>
                     {staff.staffName} ({staff.staffEmail})
                   </option>
                 ))}
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Priority</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Priority
+              </label>
               <select
                 value={testNotification.priority}
-                onChange={(e) => setTestNotification(prev => ({ ...prev, priority: e.target.value as any }))}
+                onChange={(e) =>
+                  setTestNotification((prev) => ({
+                    ...prev,
+                    priority: e.target.value as any,
+                  }))
+                }
                 className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white"
               >
                 <option value="low">Low</option>
@@ -420,31 +462,49 @@ export function StaffNotificationManager({ className }: StaffNotificationManager
               </select>
             </div>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Title
+            </label>
             <Input
               value={testNotification.title}
-              onChange={(e) => setTestNotification(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setTestNotification((prev) => ({
+                  ...prev,
+                  title: e.target.value,
+                }))
+              }
               placeholder="Notification title"
               className="bg-gray-800 border-gray-600 text-white"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Message</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Message
+            </label>
             <textarea
               value={testNotification.message}
-              onChange={(e) => setTestNotification(prev => ({ ...prev, message: e.target.value }))}
+              onChange={(e) =>
+                setTestNotification((prev) => ({
+                  ...prev,
+                  message: e.target.value,
+                }))
+              }
               placeholder="Notification message"
               rows={3}
               className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-white resize-none"
             />
           </div>
-          
+
           <Button
             onClick={sendTestNotification}
-            disabled={sending === 'test' || !testNotification.staffId || !testNotification.title}
+            disabled={
+              sending === 'test' ||
+              !testNotification.staffId ||
+              !testNotification.title
+            }
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           >
             {sending === 'test' ? (

@@ -92,33 +92,35 @@ class TestJobService {
       if (!staffDocs.empty) {
         for (const staffDoc of staffDocs.docs) {
           const staffData = staffDoc.data()
-          if (staffData.email === 'staff@siamoon.com' && staffData.userId) {
+          if (staffData.email === 'staff@siamoon.com') {
             staffId = staffDoc.id
             staffName = staffData.name || 'Staff Member'
             staffEmail = staffData.email
-            userId = staffData.userId
+            // Use firebaseUid if available, otherwise fallback to userId
+            userId = staffData.firebaseUid || staffData.userId
             console.log(
-              `✅ Using target staff: ${staffName} (${staffEmail}) with userId: ${userId}`
+              `✅ Using target staff: ${staffName} (${staffEmail}) with Firebase UID: ${userId}`
             )
             break
           }
         }
       }
 
-      // If staff@siamoon.com not found, fallback to first active staff with userId
+      // If staff@siamoon.com not found, fallback to first active staff with Firebase UID
       if (!staffId && !staffDocs.empty) {
         console.log(
-          '⚠️ staff@siamoon.com not found, using first available staff with userId...'
+          '⚠️ staff@siamoon.com not found, using first available staff with Firebase UID...'
         )
         for (const staffDoc of staffDocs.docs) {
           const staffData = staffDoc.data()
-          if (staffData.userId) {
+          const firebaseUid = staffData.firebaseUid || staffData.userId
+          if (firebaseUid) {
             staffId = staffDoc.id
             staffName = staffData.name || 'Staff Member'
             staffEmail = staffData.email || 'staff@example.com'
-            userId = staffData.userId
+            userId = firebaseUid
             console.log(
-              `✅ Using fallback staff: ${staffName} (${staffEmail}) with userId: ${userId}`
+              `✅ Using fallback staff: ${staffName} (${staffEmail}) with Firebase UID: ${userId}`
             )
             break
           }
@@ -184,11 +186,13 @@ class TestJobService {
         estimatedDuration: 120, // 2 hours
         deadline: tomorrowFormatted,
 
-        // Staff Assignment - add userId field required by database policy
-        assignedStaffId: staffId,
-        userId: userId,
+        // Staff Assignment - CRITICAL: Use Firebase UID for mobile app compatibility
+        assignedStaffId: userId, // Firebase UID for mobile app queries
+        assignedStaffDocId: staffId, // Staff document ID for web app reference
+        userId: userId, // Legacy field for backward compatibility
         assignedStaffRef: {
-          id: staffId,
+          id: staffId, // Staff document ID
+          firebaseUid: userId, // Firebase UID
           name: staffName,
           role: 'Maintenance',
           skills: ['cleaning', 'attention_to_detail'],
@@ -196,6 +200,7 @@ class TestJobService {
         // Add user reference in a separate property that won't cause type issues
         userRef: {
           userId: userId,
+          staffDocId: staffId,
         },
 
         // Assignment Details
@@ -367,12 +372,14 @@ class TestJobService {
         skills: ['cleaning', 'maintenance'],
       }
 
-      // Update the job with staff details
+      // Update the job with staff details - CRITICAL: Use Firebase UID for mobile compatibility
       await updateDoc(doc(db, 'jobs', jobId), {
-        assignedStaffId: staffId,
-        userId: userId || 'user001', // Add required userId field
+        assignedStaffId: userId || 'user001', // Firebase UID for mobile app queries
+        assignedStaffDocId: staffId, // Staff document ID for web app reference
+        userId: userId || 'user001', // Legacy field
         assignedStaffRef: {
-          id: staffId,
+          id: staffId, // Staff document ID
+          firebaseUid: userId, // Firebase UID
           name: staffDetails.name,
           role: staffDetails.role || 'staff',
           skills: staffDetails.skills || [],
@@ -801,11 +808,13 @@ class TestJobService {
         estimatedDuration: 120, // 2 hours
         deadline: tomorrowFormatted,
 
-        // Staff Assignment - add userId field required by database policy
-        assignedStaffId: staffId,
-        userId: userId,
+        // Staff Assignment - CRITICAL: Use Firebase UID for mobile app compatibility
+        assignedStaffId: userId, // Firebase UID for mobile app queries
+        assignedStaffDocId: staffId, // Staff document ID for web app reference
+        userId: userId, // Legacy field for backward compatibility
         assignedStaffRef: {
-          id: staffId,
+          id: staffId, // Staff document ID
+          firebaseUid: userId, // Firebase UID
           name: staffName,
           role: 'Maintenance',
           skills: ['cleaning', 'attention_to_detail'],
@@ -934,6 +943,34 @@ class TestJobService {
 
       // Store the notification ID for reference
       this.lastNotificationId = notificationRef.id
+
+      // Create mobile notification for the mobile app
+      console.log('📱 Creating mobile notification for mobile app...')
+      try {
+        // Import MobileNotificationService dynamically to avoid import issues
+        const { MobileNotificationService } = await import(
+          './MobileNotificationService'
+        )
+
+        const mobileNotificationResult =
+          await MobileNotificationService.createTestJobNotification(
+            userId, // Firebase UID for mobile app queries
+            jobRef.id,
+            testJob
+          )
+
+        if (mobileNotificationResult.success) {
+          console.log(
+            `✅ Mobile notification created: ${mobileNotificationResult.notificationId}`
+          )
+        } else {
+          console.warn(
+            `⚠️ Mobile notification failed: ${mobileNotificationResult.message}`
+          )
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to create mobile notification:', error)
+      }
 
       return {
         success: true,

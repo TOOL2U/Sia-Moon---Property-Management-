@@ -2403,6 +2403,33 @@ export default function BackOfficePage() {
                   </>
                 )}
               </Button>
+
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/admin/fix-staff-uid', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'fix_staff_siamoon' }),
+                    })
+                    const result = await response.json()
+                    console.log('Staff UID fix result:', result)
+                    toast.success(
+                      result.success
+                        ? 'Staff UID mapping fixed!'
+                        : `Error: ${result.message}`
+                    )
+                  } catch (error) {
+                    console.error('Error fixing staff UID:', error)
+                    toast.error('Error fixing staff UID mapping')
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white mt-2"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Fix Staff UID Mapping
+              </Button>
+
               <p className="text-sm text-purple-300">
                 This will create a test job in Firebase and allow you to assign
                 it to a staff member for mobile app testing.
