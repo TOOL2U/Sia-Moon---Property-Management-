@@ -148,6 +148,11 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
+# Firebase service account credentials
+service-account.json
+firebase-service-account.json
+*-service-account.json
+
 # database dumps
 *.sql.backup
 *.dump

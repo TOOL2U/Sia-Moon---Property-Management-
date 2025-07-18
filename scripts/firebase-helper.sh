@@ -3,7 +3,7 @@
 # Set your Firebase project ID
 PROJECT_ID="operty-b54dc"
 
-# The Firebase token from login:ci
+# The Firebase token from login:ci - REPLACE WITH YOUR ACTUAL TOKEN
 FIREBASE_TOKEN="YOUR_FIREBASE_TOKEN_HERE"
 
 echo "Getting Firebase database collections..."
