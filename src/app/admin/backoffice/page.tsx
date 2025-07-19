@@ -1617,6 +1617,301 @@ export default function BackOfficePage() {
           </div>
         )}
 
+        {/* Onboarding Submission Detail Modal */}
+        {showSubmissionModal && selectedSubmission && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">
+                    {selectedSubmission.propertyName || 'Property Submission'}
+                  </h3>
+                  <p className="text-sm text-neutral-400">
+                    Submitted by {selectedSubmission.ownerFullName}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge className={getStatusColor(selectedSubmission.status)}>
+                    {selectedSubmission.status}
+                  </Badge>
+                  <Button
+                    onClick={() => {
+                      setShowSubmissionModal(false)
+                      setSelectedSubmission(null)
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="text-neutral-400 hover:text-white"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Owner Information */}
+                  <Card className="bg-neutral-800 border-neutral-700">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Owner Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <label className="text-sm text-neutral-400">Full Name</label>
+                        <p className="text-white">{selectedSubmission.ownerFullName}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-neutral-400">Email</label>
+                        <p className="text-white">{selectedSubmission.ownerEmail}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-neutral-400">Phone</label>
+                        <p className="text-white">{selectedSubmission.ownerContactNumber}</p>
+                      </div>
+                      {selectedSubmission.ownerNationality && (
+                        <div>
+                          <label className="text-sm text-neutral-400">Nationality</label>
+                          <p className="text-white">{selectedSubmission.ownerNationality}</p>
+                        </div>
+                      )}
+                      {selectedSubmission.preferredContactMethod && (
+                        <div>
+                          <label className="text-sm text-neutral-400">Preferred Contact</label>
+                          <p className="text-white">{selectedSubmission.preferredContactMethod}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Property Details */}
+                  <Card className="bg-neutral-800 border-neutral-700">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <Building2 className="h-5 w-5" />
+                        Property Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <label className="text-sm text-neutral-400">Property Name</label>
+                        <p className="text-white">{selectedSubmission.propertyName}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-neutral-400">Address</label>
+                        <p className="text-white">{selectedSubmission.propertyAddress || 'Not provided'}</p>
+                      </div>
+                      {selectedSubmission.googleMapsUrl && (
+                        <div>
+                          <label className="text-sm text-neutral-400">Google Maps</label>
+                          <a 
+                            href={selectedSubmission.googleMapsUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline"
+                          >
+                            View on Maps
+                          </a>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm text-neutral-400">Bedrooms</label>
+                          <p className="text-white">{selectedSubmission.bedrooms || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm text-neutral-400">Bathrooms</label>
+                          <p className="text-white">{selectedSubmission.bathrooms || 'Not specified'}</p>
+                        </div>
+                      </div>
+                      {selectedSubmission.yearBuilt && (
+                        <div>
+                          <label className="text-sm text-neutral-400">Year Built</label>
+                          <p className="text-white">{selectedSubmission.yearBuilt}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Amenities */}
+                  <Card className="bg-neutral-800 border-neutral-700">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <Star className="h-5 w-5" />
+                        Amenities & Features
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className={selectedSubmission.hasPool ? 'text-green-400' : 'text-neutral-500'}>
+                            {selectedSubmission.hasPool ? '✓' : '✗'}
+                          </span>
+                          Pool
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={selectedSubmission.hasGarden ? 'text-green-400' : 'text-neutral-500'}>
+                            {selectedSubmission.hasGarden ? '✓' : '✗'}
+                          </span>
+                          Garden
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={selectedSubmission.hasAirConditioning ? 'text-green-400' : 'text-neutral-500'}>
+                            {selectedSubmission.hasAirConditioning ? '✓' : '✗'}
+                          </span>
+                          Air Conditioning
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={selectedSubmission.hasParking ? 'text-green-400' : 'text-neutral-500'}>
+                            {selectedSubmission.hasParking ? '✓' : '✗'}
+                          </span>
+                          Parking
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={selectedSubmission.hasLaundry ? 'text-green-400' : 'text-neutral-500'}>
+                            {selectedSubmission.hasLaundry ? '✓' : '✗'}
+                          </span>
+                          Laundry
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={selectedSubmission.hasBackupPower ? 'text-green-400' : 'text-neutral-500'}>
+                            {selectedSubmission.hasBackupPower ? '✓' : '✗'}
+                          </span>
+                          Backup Power
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Smart System */}
+                  {selectedSubmission.hasSmartElectricSystem && (
+                    <Card className="bg-neutral-800 border-neutral-700">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Zap className="h-5 w-5" />
+                          Smart Electric System
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {selectedSubmission.smartSystemBrand && (
+                          <div>
+                            <label className="text-sm text-neutral-400">Brand</label>
+                            <p className="text-white">{selectedSubmission.smartSystemBrand}</p>
+                          </div>
+                        )}
+                        {selectedSubmission.smartDevicesControlled && (
+                          <div>
+                            <label className="text-sm text-neutral-400">Controlled Devices</label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {selectedSubmission.smartDevicesControlled.map((device, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {device}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {selectedSubmission.smartSystemSpecialInstructions && (
+                          <div>
+                            <label className="text-sm text-neutral-400">Special Instructions</label>
+                            <p className="text-white">{selectedSubmission.smartSystemSpecialInstructions}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Emergency Contact */}
+                  {(selectedSubmission.emergencyContactName || selectedSubmission.emergencyContactPhone) && (
+                    <Card className="bg-neutral-800 border-neutral-700">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Phone className="h-5 w-5" />
+                          Emergency Contact
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {selectedSubmission.emergencyContactName && (
+                          <div>
+                            <label className="text-sm text-neutral-400">Name</label>
+                            <p className="text-white">{selectedSubmission.emergencyContactName}</p>
+                          </div>
+                        )}
+                        {selectedSubmission.emergencyContactPhone && (
+                          <div>
+                            <label className="text-sm text-neutral-400">Phone</label>
+                            <p className="text-white">{selectedSubmission.emergencyContactPhone}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Additional Notes */}
+                  {selectedSubmission.notes && (
+                    <Card className="bg-neutral-800 border-neutral-700 lg:col-span-2">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Additional Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-white whitespace-pre-wrap">{selectedSubmission.notes}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-neutral-800">
+                  {selectedSubmission.status === 'pending' && (
+                    <>
+                      <Button
+                        onClick={() => {
+                          handleUpdateStatus(selectedSubmission.id, 'approved')
+                          setShowSubmissionModal(false)
+                          setSelectedSubmission(null)
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={loading}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve Submission
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          handleUpdateStatus(selectedSubmission.id, 'rejected')
+                          setShowSubmissionModal(false)
+                          setSelectedSubmission(null)
+                        }}
+                        variant="outline"
+                        className="border-red-500 text-red-400 hover:bg-red-500/10"
+                        disabled={loading}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject Submission
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    onClick={() => {
+                      setShowSubmissionModal(false)
+                      setSelectedSubmission(null)
+                    }}
+                    variant="outline"
+                    className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Enhanced Booking Approval Modal */}
         {bookingApprovalModal && (
           <BookingApprovalModal
