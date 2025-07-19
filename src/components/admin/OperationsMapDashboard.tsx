@@ -613,7 +613,7 @@ export default function OperationsMapDashboard() {
   // Interactive Map Component (placeholder for real map implementation)
   const InteractiveMap = () => {
     return (
-    <div
+      <div
       ref={mapRef}
       className={`relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-lg overflow-hidden ${
         isFullScreen ? 'h-screen' : 'h-96 lg:h-[600px]'
@@ -756,7 +756,7 @@ export default function OperationsMapDashboard() {
       <div className="absolute bottom-4 left-4 text-white text-xs bg-black/50 px-3 py-2 rounded">
         Last updated: {lastUpdate.toLocaleTimeString()}
       </div>
-    </div>
+      </div>
     )
   }
 
