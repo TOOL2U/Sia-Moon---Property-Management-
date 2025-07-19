@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase'
 import { clientToast as toast } from '@/utils/clientToast'
 import {
   collection,
+  deleteField,
   doc,
   getDocs,
   limit,
@@ -40,7 +41,7 @@ export interface Notification {
   propertyId?: string
   propertyName?: string
   scheduledFor?: Timestamp
-  deliveryChannels: ('push' | 'email' | 'sms' | 'in_app')[]
+  deliveryChannels: ('push' | 'expo_push' | 'email' | 'sms' | 'in_app')[]
   deliveryStatus: 'pending' | 'sent' | 'delivered' | 'failed'
   read: boolean
   readAt?: Timestamp
@@ -67,6 +68,7 @@ export interface NotificationPreferences {
   staffId: string
   channels: {
     push: boolean
+    expoPush: boolean
     email: boolean
     sms: boolean
     inApp: boolean
@@ -82,9 +84,9 @@ export interface NotificationPreferences {
     end?: string
   }
   priorities: {
-    high: ('push' | 'email' | 'sms' | 'in_app')[]
-    medium: ('push' | 'email' | 'sms' | 'in_app')[]
-    low: ('push' | 'email' | 'sms' | 'in_app')[]
+    high: ('push' | 'expo_push' | 'email' | 'sms' | 'in_app')[]
+    medium: ('push' | 'expo_push' | 'email' | 'sms' | 'in_app')[]
+    low: ('push' | 'expo_push' | 'email' | 'sms' | 'in_app')[]
   }
 }
 
@@ -92,6 +94,7 @@ export interface NotificationPreferences {
 export interface NotificationMetrics {
   totalSent: number
   deliverySuccessRate: number
+  expoPushSuccessRate: number
   averageDeliveryTime: number
   responseRate: number
   unacceptedJobs: number
@@ -115,6 +118,7 @@ class NotificationService {
   private metrics: NotificationMetrics = {
     totalSent: 0,
     deliverySuccessRate: 0,
+    expoPushSuccessRate: 0,
     averageDeliveryTime: 0,
     responseRate: 0,
     unacceptedJobs: 0,
@@ -330,6 +334,7 @@ class NotificationService {
         staffId,
         channels: {
           push: true,
+          expoPush: true,
           email: true,
           sms: false,
           inApp: true,
@@ -343,8 +348,8 @@ class NotificationService {
           enabled: false,
         },
         priorities: {
-          high: ['push', 'in_app'],
-          medium: ['push', 'in_app'],
+          high: ['expo_push', 'push', 'in_app'],
+          medium: ['expo_push', 'push', 'in_app'],
           low: ['in_app'],
         },
       }
@@ -353,7 +358,13 @@ class NotificationService {
       // Return safe defaults
       return {
         staffId,
-        channels: { push: true, email: false, sms: false, inApp: true },
+        channels: {
+          push: true,
+          expoPush: true,
+          email: false,
+          sms: false,
+          inApp: true,
+        },
         workingHours: {
           start: '08:00',
           end: '18:00',
@@ -361,8 +372,8 @@ class NotificationService {
         },
         doNotDisturb: { enabled: false },
         priorities: {
-          high: ['push', 'in_app'],
-          medium: ['in_app'],
+          high: ['expo_push', 'push', 'in_app'],
+          medium: ['expo_push', 'in_app'],
           low: ['in_app'],
         },
       }
@@ -375,7 +386,7 @@ class NotificationService {
   private determineDeliveryChannels(
     priority: 'low' | 'medium' | 'high',
     preferences: NotificationPreferences
-  ): ('push' | 'email' | 'sms' | 'in_app')[] {
+  ): ('push' | 'expo_push' | 'email' | 'sms' | 'in_app')[] {
     const priorityChannels = preferences.priorities[priority] || ['in_app']
 
     // Filter by enabled channels
@@ -383,6 +394,8 @@ class NotificationService {
       switch (channel) {
         case 'push':
           return preferences.channels.push
+        case 'expo_push':
+          return preferences.channels.expoPush
         case 'email':
           return preferences.channels.email
         case 'sms':
@@ -410,6 +423,9 @@ class NotificationService {
         switch (channel) {
           case 'push':
             deliveryPromises.push(this.sendPushNotification(notification))
+            break
+          case 'expo_push':
+            deliveryPromises.push(this.sendExpoPushNotification(notification))
             break
           case 'email':
             deliveryPromises.push(this.sendEmailNotification(notification))
@@ -461,6 +477,174 @@ class NotificationService {
     // Placeholder for Firebase Cloud Messaging integration
     console.log(
       `📱 Push notification sent to ${notification.recipientId}: ${notification.title}`
+    )
+  }
+
+  /**
+   * Send Expo push notification with enhanced error handling
+   */
+  private async sendExpoPushNotification(
+    notification: Notification
+  ): Promise<void> {
+    try {
+      console.log(
+        `📱 Sending Expo push notification to ${notification.recipientId}: ${notification.title}`
+      )
+
+      // Prepare notification data for Expo
+      const expoPushData = {
+        title: notification.title,
+        message: ExpoPushService.truncateMessage(notification.message),
+        jobId: notification.jobId,
+        propertyName: notification.propertyName,
+        priority: notification.priority,
+        actionButtons: notification.actionButtons,
+      }
+
+      // Send to staff member
+      const result = await ExpoPushService.sendToStaff(
+        [notification.recipientId],
+        expoPushData.title,
+        expoPushData.message,
+        {
+          jobId: expoPushData.jobId,
+          propertyName: expoPushData.propertyName,
+          priority: expoPushData.priority,
+          actionButtons: expoPushData.actionButtons,
+          screen: expoPushData.jobId ? 'JobDetails' : 'Notifications',
+          timestamp: new Date().toISOString(),
+        }
+      )
+
+      if (result.success) {
+        console.log(
+          `✅ Expo push notification sent successfully to ${notification.recipientId}`
+        )
+
+        // Update metrics
+        this.metrics.expoPushSuccessRate =
+          (this.metrics.expoPushSuccessRate * this.metrics.totalSent + 1) /
+          (this.metrics.totalSent + 1)
+
+        // Check for any failed deliveries that need token cleanup
+        if (result.results && result.results.length > 0) {
+          await this.handleExpoPushResults(
+            result.results,
+            notification.recipientId
+          )
+        }
+      } else {
+        console.error(
+          `❌ Failed to send Expo push notification to ${notification.recipientId}:`,
+          result.error
+        )
+
+        // Handle specific Expo errors
+        await this.handleExpoPushError(result.error, notification.recipientId)
+        throw new Error(result.error || 'Failed to send Expo push notification')
+      }
+    } catch (error) {
+      console.error('❌ Error sending Expo push notification:', error)
+
+      // Check if this is a retryable error
+      if (this.isRetryableExpoPushError(error)) {
+        throw error // Will be caught by retry mechanism
+      } else {
+        // Non-retryable error, don't retry
+        console.log(
+          `❌ Non-retryable Expo push error for ${notification.recipientId}`
+        )
+        // Don't throw to prevent retry
+      }
+    }
+  }
+
+  /**
+   * Handle Expo push notification results and clean up invalid tokens
+   */
+  private async handleExpoPushResults(
+    results: any[],
+    staffId: string
+  ): Promise<void> {
+    try {
+      for (const result of results) {
+        if (!result.success && result.errorType) {
+          switch (result.errorType) {
+            case 'DeviceNotRegistered':
+              console.log(
+                `📱 Cleaning up invalid Expo token for staff ${staffId}`
+              )
+              await ExpoPushService.markTokenAsInvalid(staffId)
+              break
+            case 'InvalidCredentials':
+              console.error(`❌ Invalid Expo credentials for staff ${staffId}`)
+              break
+            case 'MessageTooBig':
+              console.warn(`⚠️ Expo message too big for staff ${staffId}`)
+              break
+            case 'MessageRateExceeded':
+              console.warn(`⚠️ Expo rate limit exceeded for staff ${staffId}`)
+              break
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error handling Expo push results:', error)
+    }
+  }
+
+  /**
+   * Handle specific Expo push errors
+   */
+  private async handleExpoPushError(
+    error: string | undefined,
+    staffId: string
+  ): Promise<void> {
+    try {
+      if (!error) return
+
+      // Check for device not registered errors
+      if (
+        error.includes('DeviceNotRegistered') ||
+        error.includes('not registered')
+      ) {
+        console.log(`📱 Marking Expo token as invalid for staff ${staffId}`)
+        await ExpoPushService.markTokenAsInvalid(staffId)
+      }
+
+      // Check for invalid credentials
+      if (
+        error.includes('InvalidCredentials') ||
+        error.includes('credentials')
+      ) {
+        console.error(`❌ Invalid Expo credentials detected`)
+      }
+    } catch (cleanupError) {
+      console.error('❌ Error during Expo push error handling:', cleanupError)
+    }
+  }
+
+  /**
+   * Determine if an Expo push error is retryable
+   */
+  private isRetryableExpoPushError(error: any): boolean {
+    if (!error || typeof error.message !== 'string') {
+      return true // Default to retryable for unknown errors
+    }
+
+    const errorMessage = error.message.toLowerCase()
+
+    // Non-retryable errors
+    const nonRetryableErrors = [
+      'devicenotregistered',
+      'invalidcredentials',
+      'messagetoobig',
+      'not registered',
+      'invalid token format',
+    ]
+
+    return !nonRetryableErrors.some((nonRetryable) =>
+      errorMessage.includes(nonRetryable)
     )
   }
 
@@ -784,7 +968,7 @@ class NotificationService {
           propertyId: job.propertyId,
           propertyName: job.propertyName,
           scheduledFor: job.scheduledDate,
-          deliveryChannels: ['push', 'email', 'in_app'],
+          deliveryChannels: ['expo_push', 'push', 'email', 'in_app'],
           deliveryStatus: 'pending',
           read: false,
           actionButtons: [
@@ -988,6 +1172,65 @@ class NotificationService {
    */
   getMetrics(): NotificationMetrics {
     return { ...this.metrics }
+  }
+
+  /**
+   * Clean up invalid Expo push tokens
+   * Should be called periodically to maintain token hygiene
+   */
+  async cleanupInvalidExpoPushTokens(): Promise<{
+    cleaned: number
+    errors: number
+  }> {
+    try {
+      console.log('🧹 Starting Expo push token cleanup...')
+
+      const db = getDb()
+      let cleaned = 0
+      let errors = 0
+
+      // Query staff accounts with invalid Expo tokens
+      const staffQuery = query(
+        collection(db, 'staff_accounts'),
+        where('expoPushTokenIsValid', '==', false)
+      )
+
+      const staffSnapshot = await getDocs(staffQuery)
+
+      for (const staffDoc of staffSnapshot.docs) {
+        try {
+          const staffData = staffDoc.data()
+
+          // Remove invalid token fields
+          await updateDoc(staffDoc.ref, {
+            expoPushToken: deleteField(),
+            expoPushTokenPlatform: deleteField(),
+            expoPushTokenAppVersion: deleteField(),
+            expoPushTokenUpdatedAt: deleteField(),
+            expoPushTokenIsValid: deleteField(),
+          })
+
+          console.log(
+            `🧹 Cleaned up invalid Expo token for staff ${staffDoc.id}`
+          )
+          cleaned++
+        } catch (error) {
+          console.error(
+            `❌ Error cleaning up token for staff ${staffDoc.id}:`,
+            error
+          )
+          errors++
+        }
+      }
+
+      console.log(
+        `✅ Expo token cleanup completed: ${cleaned} cleaned, ${errors} errors`
+      )
+      return { cleaned, errors }
+    } catch (error) {
+      console.error('❌ Error during Expo token cleanup:', error)
+      return { cleaned: 0, errors: 1 }
+    }
   }
 
   /**

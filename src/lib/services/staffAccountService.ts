@@ -1,6 +1,18 @@
 import { db } from '@/lib/firebase'
-import { collection, doc, setDoc, getDocs, query, orderBy, serverTimestamp, deleteDoc, updateDoc, getDoc, where } from 'firebase/firestore'
 import bcrypt from 'bcryptjs'
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+} from 'firebase/firestore'
 
 /**
  * Staff Account Service
@@ -11,28 +23,33 @@ import bcrypt from 'bcryptjs'
 
 // User roles and permissions
 export const USER_ROLES = {
-  ADMIN: 'admin',        // Full system access
-  MANAGER: 'manager',    // Property management access
-  CLEANER: 'cleaner',    // Housekeeping tasks
+  ADMIN: 'admin', // Full system access
+  MANAGER: 'manager', // Property management access
+  CLEANER: 'cleaner', // Housekeeping tasks
   MAINTENANCE: 'maintenance', // Maintenance tasks
-  STAFF: 'staff'         // General staff access
+  STAFF: 'staff', // General staff access
 } as const
 
 // Role hierarchy for permission checking
 const ROLE_HIERARCHY = {
-  'admin': 5,
-  'manager': 4,
-  'maintenance': 3,
-  'cleaner': 2,
-  'staff': 1
+  admin: 5,
+  manager: 4,
+  maintenance: 3,
+  cleaner: 2,
+  staff: 1,
 } as const
 
 /**
  * Check if user has required permission level
  */
-export const hasPermission = (userRole: string, requiredRole: string): boolean => {
-  return (ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] || 0) >=
-         (ROLE_HIERARCHY[requiredRole as keyof typeof ROLE_HIERARCHY] || 0)
+export const hasPermission = (
+  userRole: string,
+  requiredRole: string
+): boolean => {
+  return (
+    (ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] || 0) >=
+    (ROLE_HIERARCHY[requiredRole as keyof typeof ROLE_HIERARCHY] || 0)
+  )
 }
 
 export interface StaffAccountData {
@@ -112,6 +129,12 @@ export interface StaffAccount {
   hasCredentials?: boolean
   createdBy?: string
   lastModifiedBy?: string
+  // Expo Push Notification fields
+  expoPushToken?: string
+  expoPushTokenPlatform?: 'ios' | 'android'
+  expoPushTokenAppVersion?: string
+  expoPushTokenUpdatedAt?: any
+  expoPushTokenIsValid?: boolean
 }
 
 export interface StaffAccountCreationResult {
@@ -137,22 +160,31 @@ export class StaffAccountService {
   /**
    * Create a new staff account with bcrypt password hashing
    */
-  static async createStaffAccount(staffData: StaffAccountData): Promise<StaffAccountCreationResult> {
+  static async createStaffAccount(
+    staffData: StaffAccountData
+  ): Promise<StaffAccountCreationResult> {
     try {
       console.log('🏗️ Creating staff account:', staffData.name)
-      console.log('📋 Staff data (password hidden):', { ...staffData, password: '[HIDDEN]' })
+      console.log('📋 Staff data (password hidden):', {
+        ...staffData,
+        password: '[HIDDEN]',
+      })
 
       // Validate required fields
       if (!staffData.email || !staffData.password || !staffData.name) {
         return {
           success: false,
-          message: 'Missing required fields: email, password, and name are required',
-          error: 'Missing required fields'
+          message:
+            'Missing required fields: email, password, and name are required',
+          error: 'Missing required fields',
         }
       }
 
       // Check if user already exists
-      console.log('🔍 Checking if user already exists with email:', staffData.email)
+      console.log(
+        '🔍 Checking if user already exists with email:',
+        staffData.email
+      )
       const existingUserQuery = query(
         collection(StaffAccountService.db, 'staff_accounts'),
         where('email', '==', staffData.email.toLowerCase().trim())
@@ -164,7 +196,7 @@ export class StaffAccountService {
         return {
           success: false,
           message: 'Staff account already exists',
-          error: 'A staff account with this email already exists'
+          error: 'A staff account with this email already exists',
         }
       }
 
@@ -179,7 +211,7 @@ export class StaffAccountService {
         return {
           success: false,
           message: 'Password is required',
-          error: 'No password provided'
+          error: 'No password provided',
         }
       }
 
@@ -190,7 +222,12 @@ export class StaffAccountService {
         name: staffData.name,
         phone: staffData.phone || '',
         address: staffData.address || '',
-        role: staffData.role as 'admin' | 'manager' | 'cleaner' | 'maintenance' | 'staff',
+        role: staffData.role as
+          | 'admin'
+          | 'manager'
+          | 'cleaner'
+          | 'maintenance'
+          | 'staff',
         department: staffData.department || '',
         isActive: true,
         createdAt: serverTimestamp(),
@@ -201,7 +238,7 @@ export class StaffAccountService {
         assignedProperties: staffData.assignedProperties || [],
         skills: staffData.skills || [],
         createdBy: 'admin', // TODO: Get from current user context
-        lastModifiedBy: 'admin'
+        lastModifiedBy: 'admin',
       }
 
       // Only add optional fields if they have values (Firebase doesn't allow undefined)
@@ -213,39 +250,48 @@ export class StaffAccountService {
         staffAccount.employment = staffData.employment
       }
 
-      if (staffData.personalDetails && (staffData.personalDetails.dateOfBirth || staffData.personalDetails.nationalId)) {
+      if (
+        staffData.personalDetails &&
+        (staffData.personalDetails.dateOfBirth ||
+          staffData.personalDetails.nationalId)
+      ) {
         staffAccount.personalDetails = staffData.personalDetails
       }
 
       // Save to staff_accounts collection
-      const staffAccountRef = doc(collection(StaffAccountService.db, 'staff_accounts'))
+      const staffAccountRef = doc(
+        collection(StaffAccountService.db, 'staff_accounts')
+      )
       await setDoc(staffAccountRef, staffAccount)
-      console.log('✅ Staff account created in staff_accounts collection with ID:', staffAccountRef.id)
+      console.log(
+        '✅ Staff account created in staff_accounts collection with ID:',
+        staffAccountRef.id
+      )
 
       const finalStaffAccount: StaffAccount = {
         id: staffAccountRef.id,
         ...staffAccount,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
 
       return {
         success: true,
-        message: 'Staff account created successfully with secure password hashing',
+        message:
+          'Staff account created successfully with secure password hashing',
         staffAccount: finalStaffAccount,
         userCredentials: {
           email: staffData.email,
           temporaryPassword: '[HIDDEN FOR SECURITY]', // Never return plain text passwords
-          firebaseUid: staffAccountRef.id // Use firebaseUid instead of id
-        }
+          firebaseUid: staffAccountRef.id, // Use firebaseUid instead of id
+        },
       }
-
     } catch (error) {
       console.error('❌ Error creating staff account:', error)
       return {
         success: false,
         message: 'Failed to create staff account',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -253,7 +299,10 @@ export class StaffAccountService {
   /**
    * Verify staff login credentials
    */
-  static async verifyStaffLogin(email: string, password: string): Promise<{
+  static async verifyStaffLogin(
+    email: string,
+    password: string
+  ): Promise<{
     success: boolean
     error?: string
     user?: Omit<StaffAccount, 'passwordHash'>
@@ -280,7 +329,10 @@ export class StaffAccountService {
 
       // 2. Verify password using bcrypt
       console.log('🔐 Verifying password hash...')
-      const passwordMatch = await bcrypt.compare(password, userData.passwordHash)
+      const passwordMatch = await bcrypt.compare(
+        password,
+        userData.passwordHash
+      )
 
       if (!passwordMatch) {
         console.log('❌ Password verification failed')
@@ -291,23 +343,25 @@ export class StaffAccountService {
 
       // 3. Update last login timestamp
       const lastLogin = new Date()
-      await updateDoc(doc(StaffAccountService.db, 'staff_accounts', userDoc.id), {
-        lastLogin: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      })
+      await updateDoc(
+        doc(StaffAccountService.db, 'staff_accounts', userDoc.id),
+        {
+          lastLogin: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      )
 
       // 4. Return user data (excluding password hash)
       const { passwordHash, ...userWithoutPassword } = {
         ...userData,
         id: userDoc.id,
-        lastLogin
+        lastLogin,
       }
 
       return {
         success: true,
-        user: userWithoutPassword as Omit<StaffAccount, 'passwordHash'>
+        user: userWithoutPassword as Omit<StaffAccount, 'passwordHash'>,
       }
-
     } catch (error) {
       console.error('❌ Authentication error:', error)
       return { success: false, error: 'Authentication failed' }
@@ -325,8 +379,11 @@ export class StaffAccountService {
   }> {
     try {
       console.log('🔍 Getting all staff accounts...')
-      
-      const staffAccountsRef = collection(StaffAccountService.db, 'staff_accounts')
+
+      const staffAccountsRef = collection(
+        StaffAccountService.db,
+        'staff_accounts'
+      )
       const q = query(staffAccountsRef, orderBy('createdAt', 'desc'))
       const querySnapshot = await getDocs(q)
 
@@ -341,23 +398,23 @@ export class StaffAccountService {
           // Convert Firestore timestamps to proper format
           createdAt: data.createdAt?.toDate?.() || new Date(),
           updatedAt: data.updatedAt?.toDate?.() || new Date(),
-          lastLogin: data.lastLogin?.toDate?.() || null
+          lastLogin: data.lastLogin?.toDate?.() || null,
         } as StaffAccount)
       })
 
       console.log(`✅ Found ${staffAccounts.length} staff accounts`)
-      
+
       return {
         success: true,
         message: `Found ${staffAccounts.length} staff accounts`,
-        staffAccounts
+        staffAccounts,
       }
     } catch (error) {
       console.error('❌ Error getting staff accounts:', error)
       return {
         success: false,
         message: 'Failed to retrieve staff accounts',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -373,46 +430,51 @@ export class StaffAccountService {
   }> {
     try {
       console.log(`🔍 Getting staff account ${staffId}...`)
-      
-      const staffAccountRef = doc(StaffAccountService.db, 'staff_accounts', staffId)
+
+      const staffAccountRef = doc(
+        StaffAccountService.db,
+        'staff_accounts',
+        staffId
+      )
       const docSnapshot = await getDoc(staffAccountRef)
 
       if (!docSnapshot.exists()) {
         return {
           success: false,
           message: 'Staff account not found',
-          error: 'Staff account not found'
+          error: 'Staff account not found',
         }
-      }        const data = docSnapshot.data()
-        if (!data) {
-          return {
-            success: false,
-            message: 'Staff account not found',
-            error: 'Staff account data is null'
-          }
+      }
+      const data = docSnapshot.data()
+      if (!data) {
+        return {
+          success: false,
+          message: 'Staff account not found',
+          error: 'Staff account data is null',
         }
-        
-        const staffAccount: StaffAccount = {
-          id: docSnapshot.id,
-          ...data,
-          createdAt: data.createdAt?.toDate?.() || new Date(),
-          updatedAt: data.updatedAt?.toDate?.() || new Date(),
-          lastLogin: data.lastLogin?.toDate?.() || null
-        } as StaffAccount
+      }
+
+      const staffAccount: StaffAccount = {
+        id: docSnapshot.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || new Date(),
+        updatedAt: data.updatedAt?.toDate?.() || new Date(),
+        lastLogin: data.lastLogin?.toDate?.() || null,
+      } as StaffAccount
 
       console.log(`✅ Found staff account: ${staffAccount.name}`)
-      
+
       return {
         success: true,
         message: 'Staff account found',
-        staffAccount
+        staffAccount,
       }
     } catch (error) {
       console.error(`❌ Error getting staff account ${staffId}:`, error)
       return {
         success: false,
         message: 'Failed to retrieve staff account',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -420,36 +482,43 @@ export class StaffAccountService {
   /**
    * Update a staff account
    */
-  static async updateStaffAccount(staffId: string, updates: Partial<StaffAccountData>): Promise<{
+  static async updateStaffAccount(
+    staffId: string,
+    updates: Partial<StaffAccountData>
+  ): Promise<{
     success: boolean
     message: string
     error?: string
   }> {
     try {
       console.log(`🔍 Updating staff account ${staffId}...`)
-      
-      const staffAccountRef = doc(StaffAccountService.db, 'staff_accounts', staffId)
-      
+
+      const staffAccountRef = doc(
+        StaffAccountService.db,
+        'staff_accounts',
+        staffId
+      )
+
       const updateData = {
         ...updates,
         updatedAt: serverTimestamp(),
-        lastModifiedBy: 'admin' // TODO: Get from current user context
+        lastModifiedBy: 'admin', // TODO: Get from current user context
       }
 
       await updateDoc(staffAccountRef, updateData)
-      
+
       console.log(`✅ Updated staff account ${staffId}`)
-      
+
       return {
         success: true,
-        message: 'Staff account updated successfully'
+        message: 'Staff account updated successfully',
       }
     } catch (error) {
       console.error(`❌ Error updating staff account ${staffId}:`, error)
       return {
         success: false,
         message: 'Failed to update staff account',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -464,25 +533,29 @@ export class StaffAccountService {
   }> {
     try {
       console.log(`🔍 Deleting staff account ${staffId}...`)
-      
+
       // TODO: Also delete the Firebase Auth user
       // This would require Firebase Admin SDK
-      
-      const staffAccountRef = doc(StaffAccountService.db, 'staff_accounts', staffId)
+
+      const staffAccountRef = doc(
+        StaffAccountService.db,
+        'staff_accounts',
+        staffId
+      )
       await deleteDoc(staffAccountRef)
-      
+
       console.log(`✅ Deleted staff account ${staffId}`)
-      
+
       return {
         success: true,
-        message: 'Staff account deleted successfully'
+        message: 'Staff account deleted successfully',
       }
     } catch (error) {
       console.error(`❌ Error deleting staff account ${staffId}:`, error)
       return {
         success: false,
         message: 'Failed to delete staff account',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }

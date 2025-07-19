@@ -5,6 +5,7 @@
  */
 
 import { db } from '@/lib/firebase'
+import { clientToast as toast } from '@/utils/clientToast'
 import {
   Timestamp,
   collection,
@@ -201,6 +202,35 @@ class CalendarEventService {
   }
 
   /**
+   * Clean event data to remove undefined values before saving to Firebase
+   */
+  private cleanEventData(eventData: any): any {
+    const cleaned: any = {}
+
+    for (const [key, value] of Object.entries(eventData)) {
+      if (value !== undefined && value !== null) {
+        cleaned[key] = value
+      }
+    }
+
+    // Ensure required fields have default values
+    if (!cleaned.propertyName) {
+      cleaned.propertyName = 'Unknown Property'
+    }
+    if (!cleaned.assignedStaff) {
+      cleaned.assignedStaff = 'Unassigned'
+    }
+    if (!cleaned.description) {
+      cleaned.description = 'No description available'
+    }
+    if (!cleaned.title) {
+      cleaned.title = 'Untitled Event'
+    }
+
+    return cleaned
+  }
+
+  /**
    * Check if data is test/mock data
    */
   private isTestData(data: any): boolean {
@@ -303,13 +333,20 @@ class CalendarEventService {
       // Validate required booking data with flexible field names
       const checkInDate = booking.checkIn || booking.checkInDate
       const checkOutDate = booking.checkOut || booking.checkOutDate
-      const propertyName = booking.propertyName || booking.property
+      const propertyName =
+        booking.propertyName ||
+        booking.property ||
+        booking.propertyId ||
+        'Unknown Property'
 
-      if (!checkInDate || !checkOutDate || !propertyName) {
+      if (!checkInDate || !checkOutDate) {
         throw new Error(
-          'Booking missing required data: checkIn/checkInDate, checkOut/checkOutDate, or propertyName/property'
+          'Booking missing required data: checkIn/checkInDate or checkOut/checkOutDate'
         )
       }
+
+      // Ensure propertyName is never undefined
+      const safePropertyName = propertyName || 'Unknown Property'
 
       const eventIds: string[] = []
 
@@ -322,7 +359,7 @@ class CalendarEventService {
 
       const checkInEvent: CalendarEventData = {
         id: checkInEventId,
-        title: `Check-in: ${propertyName}`,
+        title: `Check-in: ${safePropertyName}`,
         propertyId: booking.propertyId || null,
         staffId: booking.assignedStaffId || null,
         status: 'pending',
@@ -332,7 +369,7 @@ class CalendarEventService {
         color: this.EVENT_COLORS['check-in'],
         sourceId: bookingId,
         sourceType: 'booking',
-        propertyName: propertyName,
+        propertyName: safePropertyName,
         assignedStaff: booking.assignedStaffName || 'Unassigned',
         description: `Guest check-in for ${booking.guestName || 'Guest'} • ${booking.guests || 1} guests • Total: ${booking.price ? `$${booking.price}` : 'N/A'}`,
         createdAt: serverTimestamp(),
@@ -348,7 +385,7 @@ class CalendarEventService {
 
       const checkOutEvent: CalendarEventData = {
         id: checkOutEventId,
-        title: `Check-out: ${propertyName}`,
+        title: `Check-out: ${safePropertyName}`,
         propertyId: booking.propertyId || null,
         staffId: booking.assignedStaffId || null,
         status: 'pending',
@@ -358,21 +395,25 @@ class CalendarEventService {
         color: this.EVENT_COLORS['check-out'],
         sourceId: bookingId,
         sourceType: 'booking',
-        propertyName: propertyName,
+        propertyName: safePropertyName,
         assignedStaff: booking.assignedStaffName || 'Unassigned',
         description: `Guest check-out for ${booking.guestName || 'Guest'} • ${booking.guests || 1} guests • Total: ${booking.price ? `$${booking.price}` : 'N/A'}`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       }
 
+      // Validate and clean data before saving to Firebase
+      const cleanCheckInEvent = this.cleanEventData(checkInEvent)
+      const cleanCheckOutEvent = this.cleanEventData(checkOutEvent)
+
       // Save events to Firebase
       await setDoc(
         doc(db, this.CALENDAR_EVENTS_COLLECTION, checkInEventId),
-        checkInEvent
+        cleanCheckInEvent
       )
       await setDoc(
         doc(db, this.CALENDAR_EVENTS_COLLECTION, checkOutEventId),
-        checkOutEvent
+        cleanCheckOutEvent
       )
 
       eventIds.push(checkInEventId, checkOutEventId)
@@ -480,6 +521,10 @@ class CalendarEventService {
         job.property ||
         (job.propertyRef && job.propertyRef.name) ||
         'Unknown Property'
+
+      // Ensure propertyName is never undefined
+      const safePropertyName = propertyName || 'Unknown Property'
+
       const assignedStaff =
         job.assignedStaffName ||
         job.assignedStaff ||
@@ -593,17 +638,20 @@ class CalendarEventService {
         color,
         sourceId: jobId,
         sourceType: 'job',
-        propertyName: propertyName,
+        propertyName: safePropertyName,
         assignedStaff: assignedStaff,
         description: `${description} • Priority: ${job.priority || 'Normal'} • Duration: ${job.estimatedDuration || 120} min`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       }
 
+      // Validate and clean data before saving to Firebase
+      const cleanCalendarEvent = this.cleanEventData(calendarEvent)
+
       // Save event to Firebase
       await setDoc(
         doc(db, this.CALENDAR_EVENTS_COLLECTION, eventId),
-        calendarEvent
+        cleanCalendarEvent
       )
 
       console.log(`✅ Created calendar event ${eventId} for job ${jobId}`)
@@ -814,9 +862,12 @@ class CalendarEventService {
     updates: Partial<CalendarEventData>
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      // Clean the updates to remove undefined values
+      const cleanUpdates = this.cleanEventData(updates)
+
       const eventRef = doc(db, this.CALENDAR_EVENTS_COLLECTION, eventId)
       await updateDoc(eventRef, {
-        ...updates,
+        ...cleanUpdates,
         updatedAt: serverTimestamp(),
       })
 
@@ -1141,9 +1192,12 @@ class CalendarEventService {
           updateData.color = '#EF4444' // Red
         }
 
+        // Clean the update data to remove undefined values
+        const cleanUpdateData = this.cleanEventData(updateData)
+
         await updateDoc(
           doc(db, this.CALENDAR_EVENTS_COLLECTION, eventDoc.id),
-          updateData
+          cleanUpdateData
         )
       })
 
@@ -1307,14 +1361,21 @@ class CalendarEventService {
           ? booking.checkOutDate
           : Timestamp.fromDate(new Date(booking.checkOutDate))
 
+      // Ensure propertyName is never undefined
+      const safePropertyName =
+        booking.propertyName ||
+        booking.property ||
+        booking.propertyId ||
+        'Unknown Property'
+
       const calendarEvent: Partial<EnhancedCalendarEvent> = {
         eventType: 'booking',
         propertyId: booking.propertyId,
-        propertyName: booking.propertyName,
+        propertyName: safePropertyName,
         startDate,
         endDate,
         title: `Booking: ${booking.guestName}`,
-        description: `Guest: ${booking.guestName}\nProperty: ${booking.propertyName}\nGuests: ${booking.numberOfGuests || 'N/A'}`,
+        description: `Guest: ${booking.guestName}\nProperty: ${safePropertyName}\nGuests: ${booking.numberOfGuests || 'N/A'}`,
         status: 'confirmed',
         bookingId: booking.id,
         guestName: booking.guestName,
@@ -1344,8 +1405,11 @@ class CalendarEventService {
         calendarEvent.description += '\n⚠️ CONFLICT DETECTED'
       }
 
+      // Validate and clean data before saving to Firebase
+      const cleanCalendarEvent = this.cleanEventData(calendarEvent)
+
       const eventRef = doc(collection(db, this.CALENDAR_EVENTS_COLLECTION))
-      await setDoc(eventRef, calendarEvent)
+      await setDoc(eventRef, cleanCalendarEvent)
 
       this.syncMetrics.eventsCreated++
       this.updateAverageSyncTime(Date.now() - startTime)
@@ -1396,10 +1460,14 @@ class CalendarEventService {
       )
       const endDate = Timestamp.fromDate(endTime)
 
+      // Ensure propertyName is never undefined
+      const safePropertyName =
+        job.propertyName || job.property || job.propertyId || 'Unknown Property'
+
       const calendarEvent: Partial<EnhancedCalendarEvent> = {
         eventType,
         propertyId: job.propertyId,
-        propertyName: job.propertyName,
+        propertyName: safePropertyName,
         staffId: job.assignedStaff,
         staffName: job.assignedStaffName,
         startDate,
@@ -1430,15 +1498,17 @@ class CalendarEventService {
 
       if (existingEvents.empty) {
         // Create new event
+        const cleanCalendarEvent = this.cleanEventData(calendarEvent)
         const eventRef = doc(collection(db, this.CALENDAR_EVENTS_COLLECTION))
-        await setDoc(eventRef, calendarEvent)
+        await setDoc(eventRef, cleanCalendarEvent)
         this.syncMetrics.eventsCreated++
         console.log(`📅 Created job calendar event: ${job.title}`)
       } else {
         // Update existing event
+        const cleanCalendarEvent = this.cleanEventData(calendarEvent)
         const existingEvent = existingEvents.docs[0]
         await updateDoc(existingEvent.ref, {
-          ...calendarEvent,
+          ...cleanCalendarEvent,
           lastModified: serverTimestamp(),
           modifiedBy: 'CALENDAR_AUTO_SYNC',
         })

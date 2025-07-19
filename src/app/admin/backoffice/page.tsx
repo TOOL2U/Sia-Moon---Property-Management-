@@ -51,9 +51,7 @@ import AIAuditLogViewer from '@/components/admin/AIAuditLogViewer'
 import AIAutomationToggle from '@/components/admin/AIAutomationToggle'
 import AIBookingTestPanel from '@/components/admin/AIBookingTestPanel'
 import AIDisabledWarning from '@/components/admin/AIDisabledWarning'
-import AIJobCreationPanel from '@/components/admin/AIJobCreationPanel'
 import AIPerformanceDashboard from '@/components/admin/AIPerformanceDashboard'
-import AIWizardJobPanel from '@/components/admin/AIWizardJobPanel'
 import CalendarSyncDashboard from '@/components/admin/CalendarSyncDashboard'
 import { CalendarView } from '@/components/admin/CalendarView'
 import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
@@ -63,7 +61,6 @@ import JobAcceptancePanel from '@/components/admin/JobAcceptancePanel'
 import JobCompletionAnalytics from '@/components/admin/JobCompletionAnalytics'
 import KPIDashboard from '@/components/admin/KPIDashboard'
 import { MobileIntegrationStatus } from '@/components/admin/MobileIntegrationStatus'
-import MobileStaffSetupPanel from '@/components/admin/MobileStaffSetupPanel'
 import NotificationDashboard from '@/components/admin/NotificationDashboard'
 import SmartJobAnalyticsDashboard from '@/components/admin/SmartJobAnalyticsDashboard'
 import SmartJobTestPanel from '@/components/admin/SmartJobTestPanel'
@@ -2341,21 +2338,6 @@ export default function BackOfficePage() {
 
         {/* Mobile Integration Status */}
         <MobileIntegrationStatus />
-
-        {/* Mobile Staff Setup Panel */}
-        <div className="mt-6">
-          <MobileStaffSetupPanel />
-        </div>
-
-        {/* AI Job Creation Panel */}
-        <div className="mt-6">
-          <AIJobCreationPanel />
-        </div>
-
-        {/* AI Wizard Job Panel */}
-        <div className="mt-6">
-          <AIWizardJobPanel />
-        </div>
 
         {/* Enhanced Job Management Dashboard */}
         <EnhancedJobManagementDashboard />
@@ -4803,8 +4785,7 @@ export default function BackOfficePage() {
         {/* Advanced Calendar View */}
         <AdvancedCalendarView />
 
-        {/* Financial Dashboard */}
-        <FinancialDashboardComponent />
+        {/* Financial Dashboard - Rendered in Financial section */}
 
         {/* Job Completion Analytics */}
         <JobCompletionAnalytics />
