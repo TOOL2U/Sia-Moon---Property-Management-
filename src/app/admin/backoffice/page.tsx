@@ -51,10 +51,10 @@ import AIAuditLogViewer from '@/components/admin/AIAuditLogViewer'
 import AIAutomationToggle from '@/components/admin/AIAutomationToggle'
 import AIBookingTestPanel from '@/components/admin/AIBookingTestPanel'
 import AIDisabledWarning from '@/components/admin/AIDisabledWarning'
-import AIPerformanceDashboard from '@/components/admin/AIPerformanceDashboard'
 import CalendarSyncDashboard from '@/components/admin/CalendarSyncDashboard'
 import { CalendarView } from '@/components/admin/CalendarView'
 import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
+import ComprehensiveAIDashboard from '@/components/admin/ComprehensiveAIDashboard'
 import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
 import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
 import JobAcceptancePanel from '@/components/admin/JobAcceptancePanel'
@@ -62,6 +62,7 @@ import JobCompletionAnalytics from '@/components/admin/JobCompletionAnalytics'
 import KPIDashboard from '@/components/admin/KPIDashboard'
 import { MobileIntegrationStatus } from '@/components/admin/MobileIntegrationStatus'
 import NotificationDashboard from '@/components/admin/NotificationDashboard'
+import OperationsMapDashboard from '@/components/admin/OperationsMapDashboard'
 import SmartJobAnalyticsDashboard from '@/components/admin/SmartJobAnalyticsDashboard'
 import SmartJobTestPanel from '@/components/admin/SmartJobTestPanel'
 import CalendarEventService from '@/services/CalendarEventService'
@@ -1717,11 +1718,11 @@ export default function BackOfficePage() {
       case 'properties':
         return renderProperties()
       case 'operations':
-        return renderOperations()
+        return <OperationsMapDashboard />
       case 'reports':
         return renderReports()
       case 'ai-dashboard':
-        return <AIPerformanceDashboard />
+        return <ComprehensiveAIDashboard />
       case 'settings':
         return renderSettings()
       default:
