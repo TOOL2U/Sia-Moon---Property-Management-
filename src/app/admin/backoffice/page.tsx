@@ -202,6 +202,61 @@ export default function BackOfficePage() {
     toast.success(`Viewing details for ${property.name}`)
   }
 
+  // Utility functions to safely convert timestamps to dates
+  const formatTimestamp = (timestamp: any): string => {
+    if (!timestamp) return 'N/A'
+    
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleString()
+      }
+      
+      // Handle Firestore Timestamp-like objects with seconds/nanoseconds
+      if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
+        return new Date(timestamp.seconds * 1000).toLocaleString()
+      }
+      
+      // Handle regular date strings/numbers
+      const date = new Date(timestamp)
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date'
+      }
+      
+      return date.toLocaleString()
+    } catch (error) {
+      console.error('Error formatting timestamp:', error, timestamp)
+      return 'Invalid Date'
+    }
+  }
+
+  const formatDate = (timestamp: any): string => {
+    if (!timestamp) return 'Unknown date'
+    
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString()
+      }
+      
+      // Handle Firestore Timestamp-like objects with seconds/nanoseconds
+      if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
+        return new Date(timestamp.seconds * 1000).toLocaleDateString()
+      }
+      
+      // Handle regular date strings/numbers
+      const date = new Date(timestamp)
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date'
+      }
+      
+      return date.toLocaleDateString()
+    } catch (error) {
+      console.error('Error formatting date:', error, timestamp)
+      return 'Invalid Date'
+    }
+  }
+
   const handleEditProperty = (property: any) => {
     // TODO: Implement property editing
     toast.success(`Editing ${property.name}`)
@@ -3354,11 +3409,7 @@ export default function BackOfficePage() {
                                                 history.action.slice(1)}
                                             </span>
                                             <span className="text-neutral-400">
-                                              {history.timestamp
-                                                ? new Date(
-                                                    history.timestamp
-                                                  ).toLocaleString()
-                                                : 'N/A'}
+                                              {formatTimestamp(history.timestamp)}
                                             </span>
                                           </div>
                                           <p className="text-neutral-300">
@@ -3398,11 +3449,7 @@ export default function BackOfficePage() {
                                               {note.by}
                                             </span>
                                             <span className="text-neutral-400">
-                                              {note.timestamp
-                                                ? new Date(
-                                                    note.timestamp
-                                                  ).toLocaleString()
-                                                : 'N/A'}
+                                              {formatTimestamp(note.timestamp)}
                                             </span>
                                           </div>
                                           <p className="text-white mt-1">
@@ -3717,7 +3764,7 @@ export default function BackOfficePage() {
                             <div>
                               <p className="text-neutral-400">Submitted</p>
                               <p className="text-white">
-                                {submission.createdAt?.toDate().toLocaleDateString() || 'Unknown'}
+                                {formatDate(submission.createdAt)}
                               </p>
                             </div>
                           </div>
@@ -4024,11 +4071,7 @@ export default function BackOfficePage() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-white">
-                              {staff.created_at
-                                ? new Date(
-                                    staff.created_at
-                                  ).toLocaleDateString()
-                                : 'Unknown date'}
+                              {formatDate(staff.created_at)}
                             </p>
                             <Badge
                               className={`text-xs ${

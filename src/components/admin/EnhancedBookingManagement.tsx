@@ -61,12 +61,33 @@ const toDate = (timestamp: any): Date => {
   if (timestamp instanceof Date) return timestamp
 
   // If it's a Firebase Timestamp with seconds and nanoseconds
-  if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
-    return new Date(timestamp.seconds * 1000)
+  if (timestamp && typeof timestamp === 'object') {
+    if ('seconds' in timestamp && 'nanoseconds' in timestamp) {
+      return new Date(timestamp.seconds * 1000)
+    }
+    
+    // If it's a Firebase Timestamp with toDate method
+    if (typeof timestamp.toDate === 'function') {
+      return timestamp.toDate()
+    }
+    
+    // If it's a timestamp object with type field (Firestore format)
+    if (timestamp.type && timestamp.seconds) {
+      return new Date(timestamp.seconds * 1000)
+    }
   }
 
   // If it's a string or number
-  return new Date(timestamp)
+  try {
+    const date = new Date(timestamp)
+    if (isNaN(date.getTime())) {
+      return new Date()
+    }
+    return date
+  } catch (error) {
+    console.error('Error converting timestamp:', error, timestamp)
+    return new Date()
+  }
 }
 
 interface EnhancedBookingManagementProps {
@@ -1116,7 +1137,7 @@ export function EnhancedBookingManagement({
                                       <span className="text-red-300 font-medium">Booking Rejected</span>
                                       {booking.rejectedAt && (
                                         <span className="text-red-400/70 text-xs">
-                                          {new Date(booking.rejectedAt).toLocaleDateString()}
+                                          {toDate(booking.rejectedAt).toLocaleDateString()}
                                         </span>
                                       )}
                                     </div>
