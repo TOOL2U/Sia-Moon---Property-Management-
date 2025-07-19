@@ -895,9 +895,9 @@ export default function OperationsMapDashboard() {
         </div>
       )}
 
-      {/* Main Map Interface */}
+      {/* Main Operations Interface */}
       <div
-        className={`grid gap-6 ${isFullScreen ? 'grid-cols-4 h-full' : 'grid-cols-1 lg:grid-cols-4'}`}
+        className={`grid gap-6 ${isFullScreen ? 'grid-cols-6 h-full' : 'grid-cols-1 lg:grid-cols-6'}`}
       >
         {/* Interactive Map */}
         <div className={`${isFullScreen ? 'col-span-3' : 'lg:col-span-3'}`}>
@@ -908,10 +908,15 @@ export default function OperationsMapDashboard() {
           </Card>
         </div>
 
-        {/* Enhanced Side Panel with Analytics */}
+        {/* Live Activity Feed */}
+        <div className={`${isFullScreen ? 'col-span-2' : 'lg:col-span-2'}`}>
+          <LiveActivityFeed isFullScreen={isFullScreen} />
+        </div>
+
+        {/* Enhanced Control Panel */}
         <div className="space-y-4">
           <Tabs defaultValue="status" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-800">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-800">
               <TabsTrigger
                 value="status"
                 className="text-gray-300 data-[state=active]:text-white text-xs"
@@ -929,6 +934,12 @@ export default function OperationsMapDashboard() {
                 className="text-gray-300 data-[state=active]:text-white text-xs"
               >
                 Alerts
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                className="text-gray-300 data-[state=active]:text-white text-xs"
+              >
+                Activity
               </TabsTrigger>
             </TabsList>
 
@@ -1087,6 +1098,77 @@ export default function OperationsMapDashboard() {
                         </div>
                       ))
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="activity" className="space-y-4">
+              {/* Activity Controls */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-green-400" />
+                    Activity Controls
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Quick Actions */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-gray-300">
+                      Quick Actions
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                        onClick={() => console.log('Create task')}
+                      >
+                        <Zap className="w-3 h-3 mr-1" />
+                        New Task
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs"
+                        onClick={() => console.log('Emergency alert')}
+                      >
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Alert
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Activity Stats */}
+                  <div className="space-y-2 pt-2 border-t border-gray-700">
+                    <h4 className="text-xs font-medium text-gray-300">
+                      Today's Activity
+                    </h4>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          Staff Check-ins
+                        </span>
+                        <Badge className="bg-green-600 text-white text-xs">
+                          12
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          Tasks Completed
+                        </span>
+                        <Badge className="bg-blue-600 text-white text-xs">
+                          8
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          Guest Arrivals
+                        </span>
+                        <Badge className="bg-purple-600 text-white text-xs">
+                          3
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
