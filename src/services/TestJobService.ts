@@ -153,30 +153,30 @@ class TestJobService {
         bookingId: `test_booking_${nanoid(6)}`,
         bookingRef: {
           id: `test_booking_${nanoid(6)}`,
-          guestName: 'Test Guest',
-          propertyName: 'Test Villa',
+          guestName: 'Michael Thompson',
+          propertyName: 'Ante cliffe Villa',
           checkInDate: todayFormatted,
           checkOutDate: tomorrowFormatted,
-          guestCount: 4,
+          guestCount: 6,
         },
 
         // Property Reference
-        propertyId: `test_property_${nanoid(6)}`,
+        propertyId: `ante_cliffe_villa_id`,
         propertyRef: {
-          id: `test_property_${nanoid(6)}`,
-          name: 'Test Villa',
-          address: '123 Test Street, Test City',
+          id: `ante_cliffe_villa_id`,
+          name: 'Ante cliffe Villa',
+          address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
           coordinates: {
-            latitude: 7.9519, // Phuket coordinates
-            longitude: 98.3381,
+            latitude: 7.9985, // Kamala Beach coordinates
+            longitude: 98.2965,
           },
         },
 
         // Job Details
         jobType: 'cleaning',
-        title: '⚠️ TEST JOB: Villa Cleaning',
+        title: '⚠️ TEST JOB: Villa Cleaning - Ante cliffe Villa',
         description:
-          'This is a test job for mobile app integration. Please accept this job to test the mobile app functionality.',
+          'This is a test job for Ante cliffe Villa. Please accept this job to test the mobile app functionality with real property data.',
         priority: 'medium',
 
         // Scheduling
@@ -245,10 +245,13 @@ class TestJobService {
         syncVersion: 1,
         mobileOptimized: {
           essentialData: {
-            title: '⚠️ TEST JOB: Villa Cleaning',
-            address: '123 Test Street, Test City',
+            title: '⚠️ TEST JOB: Villa Cleaning - Ante cliffe Villa',
+            address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
             scheduledTime: '14:00',
             priority: 'medium',
+            emergencyContact: 'Khun Somchai: +66 85 123 4567',
+            accessCode: '9876 (gate) / 2468 (door)',
+            specialNotes: '4BR/3BA villa with pool. Check pool equipment.',
           },
         },
 
@@ -767,38 +770,82 @@ class TestJobService {
       // Generate a unique job ID with test prefix
       const jobId = `test_job_${nanoid(6)}`
 
-      // Create test job data
+      // Create test job data with comprehensive Ante cliffe Villa information
       // Note: Using 'any' to bypass TypeScript errors for custom fields
       const testJob: any = {
         // Booking Reference
         bookingId: `test_booking_${nanoid(6)}`,
         bookingRef: {
           id: `test_booking_${nanoid(6)}`,
-          guestName: 'Test Guest',
-          propertyName: 'Test Villa',
+          guestName: 'Test Guest - Mobile App Integration',
+          propertyName: 'Ante cliffe Villa',
           checkInDate: todayFormatted,
           checkOutDate: tomorrowFormatted,
-          guestCount: 4,
+          guestCount: 6,
         },
 
-        // Property Reference
-        propertyId: `test_property_${nanoid(6)}`,
+        // Property Reference - Ante cliffe Villa with comprehensive details
+        propertyId: `ante_cliffe_villa_001`,
         propertyRef: {
-          id: `test_property_${nanoid(6)}`,
-          name: 'Test Villa',
-          address: '123 Test Street, Test City',
+          id: `ante_cliffe_villa_001`,
+          name: 'Ante cliffe Villa',
+          address: '456/78 Moo 3, Choeng Thale, Thalang District, Phuket 83110, Thailand',
           coordinates: {
-            latitude: 7.9519, // Phuket coordinates
-            longitude: 98.3381,
+            latitude: 7.9985, // Choeng Thale, Phuket coordinates
+            longitude: 98.2965,
           },
+          // Comprehensive property details
+          bedrooms: 4,
+          bathrooms: 3,
+          maxGuests: 8,
+          landSizeSqm: 800,
+          villaSizeSqm: 320,
+          yearBuilt: 2018,
+          // Amenities
+          amenities: [
+            'Private Pool',
+            'Ocean View',
+            'Garden',
+            'Air Conditioning',
+            'WiFi',
+            'Parking',
+            'Kitchen',
+            'Laundry',
+            'BBQ Area',
+            'Security System'
+          ],
+          hasPool: true,
+          hasGarden: true,
+          hasAirConditioning: true,
+          hasParking: true,
+          hasLaundry: true,
+          hasBackupPower: true,
+          // Utilities
+          electricityProvider: 'PEA (Provincial Electricity Authority)',
+          waterSource: 'Municipal Water Supply',
+          internetProvider: 'True Online',
+          internetPackage: 'Fiber 200/100 Mbps',
+          // Access & Security
+          hasSmartLock: true,
+          hasSecuritySystem: true,
+          gateRemoteDetails: 'Automatic gate with remote control',
+          // Contact & Emergency
+          emergencyContactName: 'Khun Somchai (Property Manager)',
+          emergencyContactPhone: '+66 85 123 4567',
+          // Location details
+          distanceToBeach: 0.8, // km
+          distanceToAirport: 12.5, // km  
+          distanceToCenter: 2.1, // km to Bang Tao center
+          neighborhood: 'Bang Tao Beach Area',
+          landmarks: ['Bang Tao Beach', 'Lotus Tesco', 'Blue Tree Phuket', 'Boat Avenue']
         },
 
         // Job Details
         jobType: options.jobType || 'cleaning',
-        title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'}`,
+        title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'} - Ante cliffe Villa`,
         description:
           options.notificationMessage ||
-          'This is a test job for mobile app integration. Please accept this job to test the mobile app functionality.',
+          'This is a test job for mobile app integration at Ante cliffe Villa. Complete villa cleaning and maintenance check. Please accept this job to test the mobile app functionality with full property information.',
         priority: options.priority || 'medium',
 
         // Scheduling
@@ -866,10 +913,14 @@ class TestJobService {
         syncVersion: 1,
         mobileOptimized: {
           essentialData: {
-            title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'}`,
-            address: '123 Test Street, Test City',
+            title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'} - Ante cliffe Villa`,
+            address: '456/78 Moo 3, Choeng Thale, Thalang District, Phuket 83110, Thailand',
             scheduledTime: '14:00',
             priority: options.priority || 'medium',
+            propertyName: 'Ante cliffe Villa',
+            emergencyContact: 'Khun Somchai: +66 85 123 4567',
+            accessCode: '8745',
+            specialNotes: 'Pool area maintenance, security system check',
           },
         },
 
