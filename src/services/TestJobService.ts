@@ -224,17 +224,17 @@ class TestJobService {
         // Requirements
         requiredSkills: ['cleaning', 'attention_to_detail'],
         specialInstructions:
-          'This is a test job. Please accept and test the mobile workflow.',
+          'Ante cliffe Villa test cleaning job. Property has 4 bedrooms, 3 bathrooms. Please check pool maintenance equipment. Emergency contact: Khun Somchai +66 85 123 4567.',
 
         // Location & Access
         location: {
-          address: '123 Test Street, Test City',
+          address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
           coordinates: {
-            latitude: 7.9519,
-            longitude: 98.3381,
+            latitude: 7.9985,
+            longitude: 98.2965,
           },
-          accessInstructions: 'Test villa access code: 1234',
-          parkingInstructions: 'Parking available in front of villa',
+          accessInstructions: 'Main gate access code: 9876. Villa door access code: 2468. Wi-Fi: AnteCliffeVilla / Pass: Beach2024!',
+          parkingInstructions: 'Covered parking available for 2 cars. Additional street parking on Kamala Beach Road.',
         },
 
         // Timestamps
@@ -414,15 +414,15 @@ class TestJobService {
         userId: userId || 'user001', // Add the userId
         staffName: staffName,
         staffEmail: 'test@example.com',
-        jobTitle: 'Test Job',
+        jobTitle: '⚠️ TEST JOB: Villa Cleaning - Ante cliffe Villa',
         jobType: 'cleaning',
         priority: 'medium',
-        propertyName: 'Test Villa',
-        propertyAddress: '123 Test Street, Test City',
+        propertyName: 'Ante cliffe Villa',
+        propertyAddress: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
         scheduledDate: new Date().toISOString().split('T')[0],
         scheduledStartTime: '14:00',
         estimatedDuration: 120,
-        specialInstructions: 'This is a test job.',
+        specialInstructions: 'Ante cliffe Villa test cleaning job. Property has 4 bedrooms, 3 bathrooms. Emergency contact: Khun Somchai +66 85 123 4567.',
         type: 'job_assigned',
         status: 'pending',
         readAt: null,
@@ -892,17 +892,17 @@ class TestJobService {
         // Requirements
         requiredSkills: ['cleaning', 'attention_to_detail'],
         specialInstructions:
-          'This is a test job. Please accept and test the mobile workflow.',
+          'Ante cliffe Villa test cleaning job. Property has 4 bedrooms, 3 bathrooms. Please check pool maintenance equipment. Emergency contact: Khun Somchai +66 85 123 4567.',
 
         // Location & Access
         location: {
-          address: '123 Test Street, Test City',
+          address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
           coordinates: {
-            latitude: 7.9519,
-            longitude: 98.3381,
+            latitude: 7.9985,
+            longitude: 98.2965,
           },
-          accessInstructions: 'Test villa access code: 1234',
-          parkingInstructions: 'Parking available in front of villa',
+          accessInstructions: 'Main gate access code: 9876. Villa door access code: 2468. Wi-Fi: AnteCliffeVilla / Pass: Beach2024!',
+          parkingInstructions: 'Covered parking available for 2 cars. Additional street parking on Kamala Beach Road.',
         },
 
         // Timestamps
@@ -914,7 +914,7 @@ class TestJobService {
         mobileOptimized: {
           essentialData: {
             title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'} - Ante cliffe Villa`,
-            address: '456/78 Moo 3, Choeng Thale, Thalang District, Phuket 83110, Thailand',
+            address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
             scheduledTime: '14:00',
             priority: options.priority || 'medium',
             propertyName: 'Ante cliffe Villa',

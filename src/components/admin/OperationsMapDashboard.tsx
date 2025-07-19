@@ -200,7 +200,7 @@ export default function OperationsMapDashboard() {
       name: 'Routes',
       visible: false,
       color: '#8B5CF6',
-      icon: Route,
+      icon: Navigation,
       count: 0,
     },
   ])
