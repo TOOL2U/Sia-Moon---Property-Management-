@@ -748,9 +748,6 @@ export default function OperationsMapDashboard() {
     }
   }
 
-
-
-
   return (
     <div
       className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-50 bg-gray-900 p-4' : ''}`}
