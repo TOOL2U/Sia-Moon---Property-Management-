@@ -30,6 +30,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import CommandCenterControls from './CommandCenterControls'
+import IntegrationAutomationPanel from './IntegrationAutomationPanel'
 import LiveActivityFeed from './LiveActivityFeed'
 
 interface PropertyLocation {
@@ -609,7 +611,8 @@ export default function OperationsMapDashboard() {
   }
 
   // Interactive Map Component (placeholder for real map implementation)
-  const InteractiveMap = () => (
+  const InteractiveMap = () => {
+    return (
     <div
       ref={mapRef}
       className={`relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-lg overflow-hidden ${
@@ -754,7 +757,8 @@ export default function OperationsMapDashboard() {
         Last updated: {lastUpdate.toLocaleTimeString()}
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <div
@@ -898,25 +902,37 @@ export default function OperationsMapDashboard() {
       )}
 
       {/* Main Operations Interface */}
-      <div
-        className={`grid gap-6 ${isFullScreen ? 'grid-cols-6 h-full' : 'grid-cols-1 lg:grid-cols-6'}`}
-      >
-        {/* Interactive Map */}
-        <div className={`${isFullScreen ? 'col-span-3' : 'lg:col-span-3'}`}>
-          <Card className="bg-gray-800 border-gray-700 h-full">
-            <CardContent className="p-0">
-              <InteractiveMap />
-            </CardContent>
-          </Card>
+      <div className="space-y-6">
+        {/* Top Row - Map and Activity Feed */}
+        <div
+          className={`grid gap-6 ${isFullScreen ? 'grid-cols-3 h-96' : 'grid-cols-1 lg:grid-cols-3'}`}
+        >
+          {/* Interactive Map */}
+          <div className={`${isFullScreen ? 'col-span-2' : 'lg:col-span-2'}`}>
+            <Card className="bg-gray-800 border-gray-700 h-full">
+              <CardContent className="p-0">
+                <InteractiveMap />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Live Activity Feed */}
+          <div className="col-span-1">
+            <LiveActivityFeed isFullScreen={isFullScreen} />
+          </div>
         </div>
 
-        {/* Live Activity Feed */}
-        <div className={`${isFullScreen ? 'col-span-2' : 'lg:col-span-2'}`}>
-          <LiveActivityFeed isFullScreen={isFullScreen} />
-        </div>
+        {/* Bottom Row - Control Panels */}
+        <div
+          className={`grid gap-6 ${isFullScreen ? 'grid-cols-2 h-96' : 'grid-cols-1 lg:grid-cols-2'}`}
+        >
+          {/* Command Center Controls */}
+          <CommandCenterControls isFullScreen={isFullScreen} />
 
-        {/* Command Center Controls */}
-        <CommandCenterControls isFullScreen={isFullScreen} />
+          {/* Integration & Automation Panel */}
+          <IntegrationAutomationPanel isFullScreen={isFullScreen} />
+        </div>
+      </div>
 
 
 

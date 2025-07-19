@@ -3540,56 +3540,56 @@ export default function BackOfficePage() {
       <div className="space-y-6">
         {/* Header with Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-neutral-900 border-neutral-800">
+          <Card className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-blue-500/30">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-400">Total Submissions</p>
+                  <p className="text-sm font-medium text-blue-300">Total Submissions</p>
                   <p className="text-2xl font-bold text-white">{onboardingSubmissions.length}</p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-500" />
+                <FileText className="h-8 w-8 text-blue-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-800">
+          <Card className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 border-yellow-500/30">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-400">Pending Review</p>
-                  <p className="text-2xl font-bold text-yellow-400">
+                  <p className="text-sm font-medium text-yellow-300">Pending Review</p>
+                  <p className="text-2xl font-bold text-white">
                     {onboardingSubmissions.filter(s => s.status === 'pending').length}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-yellow-500" />
+                <Clock className="h-8 w-8 text-yellow-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-800">
+          <Card className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-400">Approved</p>
-                  <p className="text-2xl font-bold text-green-400">
+                  <p className="text-sm font-medium text-green-300">Approved</p>
+                  <p className="text-2xl font-bold text-white">
                     {onboardingSubmissions.filter(s => s.status === 'approved').length}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-8 w-8 text-green-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-800">
+          <Card className="bg-gradient-to-br from-red-600/20 to-pink-600/20 border-red-500/30">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-400">Rejected</p>
-                  <p className="text-2xl font-bold text-red-400">
+                  <p className="text-sm font-medium text-red-300">Rejected</p>
+                  <p className="text-2xl font-bold text-white">
                     {onboardingSubmissions.filter(s => s.status === 'rejected').length}
                   </p>
                 </div>
-                <XCircle className="h-8 w-8 text-red-500" />
+                <XCircle className="h-8 w-8 text-red-400" />
               </div>
             </CardContent>
           </Card>
@@ -3597,6 +3597,15 @@ export default function BackOfficePage() {
 
         {/* Filters and Search */}
         <Card className="bg-neutral-900 border-neutral-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Search className="h-5 w-5 text-blue-500" />
+              Search & Filter
+            </CardTitle>
+            <CardDescription>
+              Find and filter onboarding submissions
+            </CardDescription>
+          </CardHeader>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
