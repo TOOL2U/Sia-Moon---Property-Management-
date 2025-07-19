@@ -165,18 +165,17 @@ class TestJobService {
         propertyRef: {
           id: `ante_cliffe_villa_id`,
           name: 'Ante cliffe Villa',
-          address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
           coordinates: {
-            latitude: 7.9985, // Kamala Beach coordinates
+            latitude: 7.9985,
             longitude: 98.2965,
           },
+          googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
         },
 
         // Job Details
         jobType: 'cleaning',
-        title: '⚠️ TEST JOB: Villa Cleaning - Ante cliffe Villa',
-        description:
-          'This is a test job for Ante cliffe Villa. Please accept this job to test the mobile app functionality with real property data.',
+        title: 'Villa Cleaning - Ante cliffe',
+        description: 'Villa cleaning job for Ante cliffe property.',
         priority: 'medium',
 
         // Scheduling
@@ -245,13 +244,11 @@ class TestJobService {
         syncVersion: 1,
         mobileOptimized: {
           essentialData: {
-            title: '⚠️ TEST JOB: Villa Cleaning - Ante cliffe Villa',
-            address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
+            title: 'Villa Cleaning - Ante cliffe',
+            googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
+            accessCode: '9876 / 2468',
+            emergencyContact: '+66 85 123 4567',
             scheduledTime: '14:00',
-            priority: 'medium',
-            emergencyContact: 'Khun Somchai: +66 85 123 4567',
-            accessCode: '9876 (gate) / 2468 (door)',
-            specialNotes: '4BR/3BA villa with pool. Check pool equipment.',
           },
         },
 
@@ -414,15 +411,13 @@ class TestJobService {
         userId: userId || 'user001', // Add the userId
         staffName: staffName,
         staffEmail: 'test@example.com',
-        jobTitle: '⚠️ TEST JOB: Villa Cleaning - Ante cliffe Villa',
+        jobTitle: 'Villa Cleaning - Ante cliffe',
         jobType: 'cleaning',
-        priority: 'medium',
         propertyName: 'Ante cliffe Villa',
-        propertyAddress: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
-        scheduledDate: new Date().toISOString().split('T')[0],
+        googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
         scheduledStartTime: '14:00',
-        estimatedDuration: 120,
-        specialInstructions: 'Ante cliffe Villa test cleaning job. Property has 4 bedrooms, 3 bathrooms. Emergency contact: Khun Somchai +66 85 123 4567.',
+        accessCode: '9876 / 2468',
+        emergencyContact: '+66 85 123 4567',
         type: 'job_assigned',
         status: 'pending',
         readAt: null,
@@ -842,10 +837,8 @@ class TestJobService {
 
         // Job Details
         jobType: options.jobType || 'cleaning',
-        title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'} - Ante cliffe Villa`,
-        description:
-          options.notificationMessage ||
-          'This is a test job for mobile app integration at Ante cliffe Villa. Complete villa cleaning and maintenance check. Please accept this job to test the mobile app functionality with full property information.',
+        title: `Villa Cleaning - Ante cliffe`,
+        description: 'Villa cleaning job for Ante cliffe property.',
         priority: options.priority || 'medium',
 
         // Scheduling
@@ -913,14 +906,11 @@ class TestJobService {
         syncVersion: 1,
         mobileOptimized: {
           essentialData: {
-            title: `⚠️ TEST JOB: ${options.jobType || 'Villa Cleaning'} - Ante cliffe Villa`,
-            address: '89/12 Moo 6, Kamala Beach, Kathu District, Phuket 83150, Thailand',
+            title: `Villa Cleaning - Ante cliffe`,
+            googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
+            accessCode: '9876 / 2468',
+            emergencyContact: '+66 85 123 4567',
             scheduledTime: '14:00',
-            priority: options.priority || 'medium',
-            propertyName: 'Ante cliffe Villa',
-            emergencyContact: 'Khun Somchai: +66 85 123 4567',
-            accessCode: '8745',
-            specialNotes: 'Pool area maintenance, security system check',
           },
         },
 

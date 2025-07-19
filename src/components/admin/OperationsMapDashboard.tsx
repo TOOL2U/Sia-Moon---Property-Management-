@@ -907,34 +907,189 @@ export default function OperationsMapDashboard() {
           </Card>
         </div>
 
-        {/* Side Panel */}
+        {/* Enhanced Side Panel with Analytics */}
         <div className="space-y-4">
-          {/* Quick Stats */}
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white text-sm">Live Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Properties</span>
-                <Badge className="bg-blue-600 text-white">
-                  {properties.length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Active Staff</span>
-                <Badge className="bg-green-600 text-white">
-                  {staff.filter((s) => s.status !== 'offline').length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">Urgent Tasks</span>
-                <Badge className="bg-red-600 text-white">
-                  {properties.reduce((sum, p) => sum + (p.urgentTasks || 0), 0)}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs defaultValue="status" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3 bg-gray-800">
+              <TabsTrigger
+                value="status"
+                className="text-gray-300 data-[state=active]:text-white text-xs"
+              >
+                Status
+              </TabsTrigger>
+              <TabsTrigger
+                value="analytics"
+                className="text-gray-300 data-[state=active]:text-white text-xs"
+              >
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger
+                value="alerts"
+                className="text-gray-300 data-[state=active]:text-white text-xs"
+              >
+                Alerts
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="status" className="space-y-4">
+              {/* Quick Stats */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm">
+                    Live Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Properties</span>
+                    <Badge className="bg-blue-600 text-white">
+                      {properties.length}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Active Staff</span>
+                    <Badge className="bg-green-600 text-white">
+                      {staff.filter((s) => s.status !== 'offline').length}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">Active Tasks</span>
+                    <Badge className="bg-yellow-600 text-white">
+                      {activeTasks.length}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400 text-sm">
+                      Pending Alerts
+                    </span>
+                    <Badge className="bg-red-600 text-white">
+                      {alerts.filter((a) => !a.acknowledged).length}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-4">
+              {/* Analytics Panel */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-purple-400" />
+                    Analytics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Revenue Metrics */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-xs">
+                        Daily Revenue
+                      </span>
+                      <span className="text-white font-bold">
+                        ${liveMetrics.dailyRevenue}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-xs">
+                        Occupancy Rate
+                      </span>
+                      <span className="text-white font-bold">
+                        {liveMetrics.occupancyRate}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-xs">
+                        Guest Satisfaction
+                      </span>
+                      <span className="text-white font-bold">
+                        {liveMetrics.averageGuestSatisfaction}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Performance Indicators */}
+                  <div className="space-y-2 pt-2 border-t border-gray-700">
+                    <h4 className="text-xs font-medium text-gray-300">
+                      Performance
+                    </h4>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          Staff Efficiency
+                        </span>
+                        <Badge className="bg-green-600 text-white text-xs">
+                          92%
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400 text-xs">
+                          Task Completion
+                        </span>
+                        <Badge className="bg-blue-600 text-white text-xs">
+                          88%
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="alerts" className="space-y-4">
+              {/* Alerts Panel */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-400" />
+                    Active Alerts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {alerts.filter((a) => !a.acknowledged).length === 0 ? (
+                    <p className="text-gray-400 text-xs">No active alerts</p>
+                  ) : (
+                    alerts
+                      .filter((a) => !a.acknowledged)
+                      .map((alert) => (
+                        <div
+                          key={alert.id}
+                          className="p-2 bg-gray-700 rounded border-l-2 border-red-500"
+                        >
+                          <p className="text-white text-xs font-medium">
+                            {alert.title}
+                          </p>
+                          <p className="text-gray-400 text-xs">
+                            {alert.message}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge
+                              className={`text-xs ${
+                                alert.severity === 'critical'
+                                  ? 'bg-red-600'
+                                  : alert.severity === 'high'
+                                    ? 'bg-orange-600'
+                                    : alert.severity === 'medium'
+                                      ? 'bg-yellow-600'
+                                      : 'bg-gray-600'
+                              } text-white`}
+                            >
+                              {alert.severity}
+                            </Badge>
+                            <span className="text-gray-400 text-xs">
+                              {Math.round(
+                                (Date.now() - alert.createdAt.getTime()) / 60000
+                              )}
+                              m ago
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
           {/* Selected Item Details */}
           <AnimatePresence>
