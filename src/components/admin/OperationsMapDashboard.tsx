@@ -16,6 +16,7 @@ import {
   EyeOff,
   Home,
   Layers,
+  Loader2,
   MapPin,
   Maximize2,
   MessageSquare,
@@ -34,12 +35,24 @@ interface PropertyLocation {
   address: string
   latitude: number
   longitude: number
-  status: 'available' | 'occupied' | 'maintenance' | 'cleaning'
+  status: 'available' | 'occupied' | 'maintenance' | 'cleaning' | 'emergency'
   currentGuests?: number
   maxGuests: number
   checkInToday?: boolean
   checkOutToday?: boolean
   urgentTasks?: number
+  revenue?: {
+    daily: number
+    weekly: number
+    monthly: number
+  }
+  occupancyRate?: number
+  lastCleaned?: Date
+  nextMaintenance?: Date
+  guestSatisfaction?: number
+  emergencyContacts?: string[]
+  amenities?: string[]
+  pricePerNight?: number
 }
 
 interface StaffLocation {
@@ -48,11 +61,37 @@ interface StaffLocation {
   role: string
   latitude: number
   longitude: number
-  status: 'available' | 'on_job' | 'traveling' | 'break' | 'offline'
+  status:
+    | 'available'
+    | 'on_job'
+    | 'traveling'
+    | 'break'
+    | 'offline'
+    | 'emergency'
   currentTask?: string
   batteryLevel: number
   lastUpdate: Date
   isOnline: boolean
+  accuracy?: number
+  speed?: number
+  heading?: number
+  assignedProperties?: string[]
+  skills?: string[]
+  performance?: {
+    tasksCompleted: number
+    averageRating: number
+    onTimeRate: number
+  }
+  emergencyContact?: string
+  shift?: {
+    start: string
+    end: string
+  }
+  route?: {
+    destination: string
+    eta: number
+    distance: number
+  }
 }
 
 interface MapLayer {
@@ -61,6 +100,56 @@ interface MapLayer {
   visible: boolean
   color: string
   icon: any
+  count?: number
+}
+
+interface ActiveTask {
+  id: string
+  title: string
+  description: string
+  propertyId: string
+  staffId?: string
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  estimatedDuration: number
+  actualDuration?: number
+  location: {
+    latitude: number
+    longitude: number
+  }
+  createdAt: Date
+  dueDate: Date
+  completedAt?: Date
+}
+
+interface OperationalAlert {
+  id: string
+  type: 'emergency' | 'maintenance' | 'guest' | 'staff' | 'system'
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  title: string
+  message: string
+  propertyId?: string
+  staffId?: string
+  location?: {
+    latitude: number
+    longitude: number
+  }
+  createdAt: Date
+  acknowledged: boolean
+  resolvedAt?: Date
+}
+
+interface LiveMetrics {
+  totalProperties: number
+  occupiedProperties: number
+  availableProperties: number
+  maintenanceProperties: number
+  activeStaff: number
+  activeTasks: number
+  pendingAlerts: number
+  dailyRevenue: number
+  occupancyRate: number
+  averageGuestSatisfaction: number
 }
 
 export default function OperationsMapDashboard() {
@@ -68,7 +157,11 @@ export default function OperationsMapDashboard() {
   const [selectedProperty, setSelectedProperty] =
     useState<PropertyLocation | null>(null)
   const [selectedStaff, setSelectedStaff] = useState<StaffLocation | null>(null)
+  const [selectedTask, setSelectedTask] = useState<ActiveTask | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterType, setFilterType] = useState<
+    'all' | 'properties' | 'staff' | 'tasks' | 'alerts'
+  >('all')
   const [mapLayers, setMapLayers] = useState<MapLayer[]>([
     {
       id: 'properties',
@@ -76,6 +169,7 @@ export default function OperationsMapDashboard() {
       visible: true,
       color: '#3B82F6',
       icon: Home,
+      count: 0,
     },
     {
       id: 'staff',
@@ -83,6 +177,7 @@ export default function OperationsMapDashboard() {
       visible: true,
       color: '#10B981',
       icon: Users,
+      count: 0,
     },
     {
       id: 'tasks',
@@ -90,6 +185,7 @@ export default function OperationsMapDashboard() {
       visible: true,
       color: '#F59E0B',
       icon: Activity,
+      count: 0,
     },
     {
       id: 'alerts',
@@ -97,100 +193,362 @@ export default function OperationsMapDashboard() {
       visible: true,
       color: '#EF4444',
       icon: AlertTriangle,
+      count: 0,
+    },
+    {
+      id: 'routes',
+      name: 'Routes',
+      visible: false,
+      color: '#8B5CF6',
+      icon: Route,
+      count: 0,
     },
   ])
   const [properties, setProperties] = useState<PropertyLocation[]>([])
   const [staff, setStaff] = useState<StaffLocation[]>([])
+  const [activeTasks, setActiveTasks] = useState<ActiveTask[]>([])
+  const [alerts, setAlerts] = useState<OperationalAlert[]>([])
+  const [liveMetrics, setLiveMetrics] = useState<LiveMetrics>({
+    totalProperties: 0,
+    occupiedProperties: 0,
+    availableProperties: 0,
+    maintenanceProperties: 0,
+    activeStaff: 0,
+    activeTasks: 0,
+    pendingAlerts: 0,
+    dailyRevenue: 0,
+    occupancyRate: 0,
+    averageGuestSatisfaction: 0,
+  })
   const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [isLoading, setIsLoading] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(true)
   const mapRef = useRef<HTMLDivElement>(null)
 
-  // Mock data - replace with real data from Firebase
+  // Enhanced data loading with auto-refresh
   useEffect(() => {
     loadOperationalData()
-    const interval = setInterval(loadOperationalData, 30000) // Update every 30 seconds
-    return () => clearInterval(interval)
-  }, [])
+    if (autoRefresh) {
+      const interval = setInterval(loadOperationalData, 30000) // Update every 30 seconds
+      return () => clearInterval(interval)
+    }
+  }, [autoRefresh])
 
   const loadOperationalData = async () => {
-    // Mock properties data
-    const mockProperties: PropertyLocation[] = [
-      {
-        id: '1',
-        name: 'Villa Sunset Paradise',
-        address: '123 Beach Road, Phuket',
-        latitude: 7.8804,
-        longitude: 98.3923,
-        status: 'occupied',
-        currentGuests: 4,
-        maxGuests: 6,
-        checkOutToday: true,
-      },
-      {
-        id: '2',
-        name: 'Ocean View Villa',
-        address: '456 Cliff Drive, Phuket',
-        latitude: 7.8854,
-        longitude: 98.3973,
-        status: 'cleaning',
-        currentGuests: 0,
-        maxGuests: 8,
-        checkInToday: true,
-        urgentTasks: 2,
-      },
-      {
-        id: '3',
-        name: 'Mountain Retreat',
-        address: '789 Hill Top, Phuket',
-        latitude: 7.8754,
-        longitude: 98.3873,
-        status: 'available',
-        currentGuests: 0,
-        maxGuests: 4,
-      },
-    ]
+    setIsLoading(true)
+    try {
+      // Enhanced mock properties data with comprehensive information
+      const mockProperties: PropertyLocation[] = [
+        {
+          id: '1',
+          name: 'Villa Sunset Paradise',
+          address: '123 Beach Road, Phuket',
+          latitude: 7.8804,
+          longitude: 98.3923,
+          status: 'occupied',
+          currentGuests: 4,
+          maxGuests: 6,
+          checkOutToday: true,
+          urgentTasks: 0,
+          revenue: { daily: 850, weekly: 5950, monthly: 25500 },
+          occupancyRate: 85,
+          lastCleaned: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+          nextMaintenance: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          guestSatisfaction: 4.8,
+          amenities: ['Pool', 'WiFi', 'Kitchen', 'Beach Access'],
+          pricePerNight: 850,
+        },
+        {
+          id: '2',
+          name: 'Ocean View Villa',
+          address: '456 Cliff Drive, Phuket',
+          latitude: 7.8854,
+          longitude: 98.3973,
+          status: 'cleaning',
+          currentGuests: 0,
+          maxGuests: 8,
+          checkInToday: true,
+          urgentTasks: 2,
+          revenue: { daily: 0, weekly: 7200, monthly: 28800 },
+          occupancyRate: 72,
+          lastCleaned: new Date(),
+          nextMaintenance: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          guestSatisfaction: 4.6,
+          amenities: ['Pool', 'WiFi', 'Kitchen', 'Ocean View', 'Gym'],
+          pricePerNight: 1200,
+        },
+        {
+          id: '3',
+          name: 'Mountain Retreat',
+          address: '789 Hill Top, Phuket',
+          latitude: 7.8754,
+          longitude: 98.3873,
+          status: 'available',
+          currentGuests: 0,
+          maxGuests: 4,
+          urgentTasks: 0,
+          revenue: { daily: 0, weekly: 3500, monthly: 14000 },
+          occupancyRate: 58,
+          lastCleaned: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          nextMaintenance: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+          guestSatisfaction: 4.9,
+          amenities: ['WiFi', 'Kitchen', 'Mountain View', 'Fireplace'],
+          pricePerNight: 650,
+        },
+        {
+          id: '4',
+          name: 'Beachfront Luxury',
+          address: '321 Coastal Drive, Phuket',
+          latitude: 7.8904,
+          longitude: 98.4023,
+          status: 'maintenance',
+          currentGuests: 0,
+          maxGuests: 10,
+          urgentTasks: 1,
+          revenue: { daily: 0, weekly: 0, monthly: 35000 },
+          occupancyRate: 0,
+          lastCleaned: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+          nextMaintenance: new Date(),
+          guestSatisfaction: 4.7,
+          amenities: [
+            'Pool',
+            'WiFi',
+            'Kitchen',
+            'Beach Access',
+            'Spa',
+            'Butler',
+          ],
+          pricePerNight: 2500,
+        },
+      ]
 
-    // Mock staff data
-    const mockStaff: StaffLocation[] = [
-      {
-        id: '1',
-        name: 'Maria Santos',
-        role: 'Housekeeper',
-        latitude: 7.8824,
-        longitude: 98.3943,
-        status: 'on_job',
-        currentTask: 'Cleaning Villa Sunset Paradise',
-        batteryLevel: 85,
-        lastUpdate: new Date(),
-        isOnline: true,
-      },
-      {
-        id: '2',
-        name: 'Carlos Rodriguez',
-        role: 'Maintenance',
-        latitude: 7.8774,
-        longitude: 98.3893,
-        status: 'traveling',
-        currentTask: 'En route to Ocean View Villa',
-        batteryLevel: 62,
-        lastUpdate: new Date(),
-        isOnline: true,
-      },
-      {
-        id: '3',
-        name: 'Ana Silva',
-        role: 'Guest Relations',
-        latitude: 7.8804,
-        longitude: 98.3923,
-        status: 'available',
-        batteryLevel: 95,
-        lastUpdate: new Date(),
-        isOnline: true,
-      },
-    ]
+      // Enhanced mock staff data with comprehensive tracking
+      const mockStaff: StaffLocation[] = [
+        {
+          id: '1',
+          name: 'Maria Santos',
+          role: 'Housekeeper',
+          latitude: 7.8824,
+          longitude: 98.3943,
+          status: 'on_job',
+          currentTask: 'Deep cleaning Ocean View Villa',
+          batteryLevel: 85,
+          lastUpdate: new Date(),
+          isOnline: true,
+          accuracy: 5,
+          speed: 0,
+          heading: 180,
+          assignedProperties: ['1', '2'],
+          skills: ['Deep Cleaning', 'Laundry', 'Inventory Management'],
+          performance: {
+            tasksCompleted: 156,
+            averageRating: 4.8,
+            onTimeRate: 95,
+          },
+          emergencyContact: '+66-123-456-789',
+          shift: { start: '08:00', end: '16:00' },
+        },
+        {
+          id: '2',
+          name: 'Carlos Rodriguez',
+          role: 'Maintenance',
+          latitude: 7.8774,
+          longitude: 98.3893,
+          status: 'traveling',
+          currentTask: 'Pool maintenance at Beachfront Luxury',
+          batteryLevel: 62,
+          lastUpdate: new Date(),
+          isOnline: true,
+          accuracy: 8,
+          speed: 25,
+          heading: 45,
+          assignedProperties: ['3', '4'],
+          skills: ['Plumbing', 'Electrical', 'Pool Maintenance', 'HVAC'],
+          performance: {
+            tasksCompleted: 89,
+            averageRating: 4.9,
+            onTimeRate: 98,
+          },
+          emergencyContact: '+66-987-654-321',
+          shift: { start: '07:00', end: '15:00' },
+          route: { destination: 'Beachfront Luxury', eta: 12, distance: 2.3 },
+        },
+        {
+          id: '3',
+          name: 'Ana Silva',
+          role: 'Guest Relations',
+          latitude: 7.8804,
+          longitude: 98.3923,
+          status: 'available',
+          batteryLevel: 95,
+          lastUpdate: new Date(),
+          isOnline: true,
+          accuracy: 3,
+          speed: 0,
+          heading: 0,
+          assignedProperties: ['1', '2', '3', '4'],
+          skills: [
+            'Guest Communication',
+            'Problem Resolution',
+            'Concierge Services',
+          ],
+          performance: {
+            tasksCompleted: 234,
+            averageRating: 4.9,
+            onTimeRate: 99,
+          },
+          emergencyContact: '+66-555-123-456',
+          shift: { start: '09:00', end: '17:00' },
+        },
+        {
+          id: '4',
+          name: 'James Wilson',
+          role: 'Security',
+          latitude: 7.8854,
+          longitude: 98.3973,
+          status: 'on_job',
+          currentTask: 'Night patrol - All properties',
+          batteryLevel: 78,
+          lastUpdate: new Date(),
+          isOnline: true,
+          accuracy: 4,
+          speed: 5,
+          heading: 270,
+          assignedProperties: ['1', '2', '3', '4'],
+          skills: ['Security Patrol', 'Emergency Response', 'First Aid'],
+          performance: {
+            tasksCompleted: 67,
+            averageRating: 4.7,
+            onTimeRate: 96,
+          },
+          emergencyContact: '+66-777-888-999',
+          shift: { start: '22:00', end: '06:00' },
+        },
+      ]
 
-    setProperties(mockProperties)
-    setStaff(mockStaff)
-    setLastUpdate(new Date())
+      // Mock active tasks
+      const mockTasks: ActiveTask[] = [
+        {
+          id: '1',
+          title: 'Deep Clean Ocean View Villa',
+          description:
+            'Complete deep cleaning including all bathrooms, kitchen, and bedrooms',
+          propertyId: '2',
+          staffId: '1',
+          priority: 'high',
+          status: 'in_progress',
+          estimatedDuration: 180,
+          actualDuration: 120,
+          location: { latitude: 7.8854, longitude: 98.3973 },
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          dueDate: new Date(Date.now() + 1 * 60 * 60 * 1000),
+        },
+        {
+          id: '2',
+          title: 'Pool Maintenance',
+          description:
+            'Check chemical levels, clean filters, and test equipment',
+          propertyId: '4',
+          staffId: '2',
+          priority: 'medium',
+          status: 'pending',
+          estimatedDuration: 90,
+          location: { latitude: 7.8904, longitude: 98.4023 },
+          createdAt: new Date(Date.now() - 30 * 60 * 1000),
+          dueDate: new Date(Date.now() + 2 * 60 * 60 * 1000),
+        },
+      ]
+
+      // Mock alerts
+      const mockAlerts: OperationalAlert[] = [
+        {
+          id: '1',
+          type: 'maintenance',
+          severity: 'high',
+          title: 'HVAC System Issue',
+          message: 'Air conditioning unit not responding at Beachfront Luxury',
+          propertyId: '4',
+          location: { latitude: 7.8904, longitude: 98.4023 },
+          createdAt: new Date(Date.now() - 45 * 60 * 1000),
+          acknowledged: false,
+        },
+        {
+          id: '2',
+          type: 'guest',
+          severity: 'medium',
+          title: 'Late Check-out Request',
+          message: 'Guest at Villa Sunset Paradise requesting 2-hour extension',
+          propertyId: '1',
+          location: { latitude: 7.8804, longitude: 98.3923 },
+          createdAt: new Date(Date.now() - 15 * 60 * 1000),
+          acknowledged: true,
+        },
+      ]
+
+      // Calculate live metrics
+      const metrics: LiveMetrics = {
+        totalProperties: mockProperties.length,
+        occupiedProperties: mockProperties.filter(
+          (p) => p.status === 'occupied'
+        ).length,
+        availableProperties: mockProperties.filter(
+          (p) => p.status === 'available'
+        ).length,
+        maintenanceProperties: mockProperties.filter(
+          (p) => p.status === 'maintenance'
+        ).length,
+        activeStaff: mockStaff.filter((s) => s.isOnline).length,
+        activeTasks: mockTasks.filter((t) => t.status !== 'completed').length,
+        pendingAlerts: mockAlerts.filter((a) => !a.acknowledged).length,
+        dailyRevenue: mockProperties.reduce(
+          (sum, p) => sum + (p.revenue?.daily || 0),
+          0
+        ),
+        occupancyRate: Math.round(
+          mockProperties.reduce((sum, p) => sum + (p.occupancyRate || 0), 0) /
+            mockProperties.length
+        ),
+        averageGuestSatisfaction:
+          Math.round(
+            (mockProperties.reduce(
+              (sum, p) => sum + (p.guestSatisfaction || 0),
+              0
+            ) /
+              mockProperties.length) *
+              10
+          ) / 10,
+      }
+
+      // Update layer counts
+      setMapLayers((prev) =>
+        prev.map((layer) => ({
+          ...layer,
+          count:
+            layer.id === 'properties'
+              ? mockProperties.length
+              : layer.id === 'staff'
+                ? mockStaff.length
+                : layer.id === 'tasks'
+                  ? mockTasks.length
+                  : layer.id === 'alerts'
+                    ? mockAlerts.length
+                    : layer.id === 'routes'
+                      ? mockStaff.filter((s) => s.route).length
+                      : 0,
+        }))
+      )
+
+      setProperties(mockProperties)
+      setStaff(mockStaff)
+      setActiveTasks(mockTasks)
+      setAlerts(mockAlerts)
+      setLiveMetrics(metrics)
+      setLastUpdate(new Date())
+    } catch (error) {
+      console.error('Error loading operational data:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const toggleLayer = (layerId: string) => {
@@ -399,36 +757,139 @@ export default function OperationsMapDashboard() {
     <div
       className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-50 bg-gray-900 p-4' : ''}`}
     >
-      {/* Header */}
+      {/* Enhanced Header with Live Metrics */}
       {!isFullScreen && (
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <MapPin className="w-8 h-8 text-blue-400" />
-              Operations Command Center
-            </h2>
-            <p className="text-gray-400 mt-1">
-              Real-time operational overview with interactive mapping
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Search properties, staff..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-800 border-gray-700 text-white w-64"
-              />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <MapPin className="w-8 h-8 text-blue-400" />
+                Operations Command Center
+                {isLoading && (
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                )}
+              </h2>
+              <p className="text-gray-400 mt-1">
+                Real-time operational overview with interactive mapping
+              </p>
             </div>
-            <Button
-              onClick={loadOperationalData}
-              variant="outline"
-              className="border-gray-700 text-gray-300 hover:bg-gray-800"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search properties, staff..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-gray-800 border-gray-700 text-white w-64"
+                />
+              </div>
+              <Button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                variant="outline"
+                className={`border-gray-700 ${autoRefresh ? 'text-green-400 border-green-600' : 'text-gray-300'} hover:bg-gray-800`}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Auto
+              </Button>
+              <Button
+                onClick={loadOperationalData}
+                variant="outline"
+                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+                />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* Live Metrics Dashboard */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Home className="w-4 h-4 text-blue-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Properties</p>
+                    <p className="text-lg font-bold text-white">
+                      {liveMetrics.totalProperties}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-green-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Active Staff</p>
+                    <p className="text-lg font-bold text-white">
+                      {liveMetrics.activeStaff}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-yellow-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Active Tasks</p>
+                    <p className="text-lg font-bold text-white">
+                      {liveMetrics.activeTasks}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Alerts</p>
+                    <p className="text-lg font-bold text-white">
+                      {liveMetrics.pendingAlerts}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Daily Revenue</p>
+                    <p className="text-lg font-bold text-white">
+                      ${liveMetrics.dailyRevenue}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-purple-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Occupancy</p>
+                    <p className="text-lg font-bold text-white">
+                      {liveMetrics.occupancyRate}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
