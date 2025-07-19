@@ -26,6 +26,7 @@ import {
   Search,
   Target,
   Users,
+  Zap,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
