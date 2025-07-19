@@ -157,6 +157,144 @@ interface LiveMetrics {
   averageGuestSatisfaction: number
 }
 
+// Interactive Map Component (placeholder for real map implementation)
+interface InteractiveMapProps {
+  mapRef: React.RefObject<HTMLDivElement>
+  isFullScreen: boolean
+  properties: PropertyLocation[]
+  staff: StaffLocation[]
+  activeTasks: ActiveTask[]
+  alerts: OperationalAlert[]
+  selectedProperty: PropertyLocation | null
+  setSelectedProperty: (property: PropertyLocation | null) => void
+  lastUpdate: Date
+  getStatusColor: (status: string) => string
+}
+
+const InteractiveMap = ({
+  mapRef,
+  isFullScreen,
+  properties,
+  staff,
+  activeTasks,
+  alerts,
+  selectedProperty,
+  setSelectedProperty,
+  lastUpdate,
+  getStatusColor,
+}: InteractiveMapProps) => (
+  <div
+    ref={mapRef}
+    className={`relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-lg overflow-hidden ${
+      isFullScreen ? 'h-screen' : 'h-96 lg:h-[600px]'
+    }`}
+  >
+    {/* Map Background */}
+    <div
+      className="absolute inset-0 opacity-20"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      }}
+    />
+
+    {/* Property Markers */}
+    {properties.map((property, index) => (
+      <motion.div
+        key={property.id}
+        className="absolute cursor-pointer"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: index * 0.1 }}
+        style={{
+          left: `${20 + index * 25}%`,
+          top: `${30 + index * 15}%`,
+        }}
+        onClick={() => setSelectedProperty(property)}
+      >
+        <div
+          className={`w-8 h-8 rounded-full ${getStatusColor(property.status)} flex items-center justify-center shadow-lg border-2 border-white`}
+        >
+          <Home className="w-4 h-4 text-white" />
+        </div>
+        {property.urgentTasks && (
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+            <span className="text-xs text-white font-bold">
+              {property.urgentTasks}
+            </span>
+          </div>
+        )}
+      </motion.div>
+    ))}
+
+    {/* Staff Markers */}
+    {staff.map((member, index) => (
+      <motion.div
+        key={member.id}
+        className="absolute cursor-pointer"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.5 + index * 0.1 }}
+        style={{
+          left: `${60 + index * 15}%`,
+          top: `${20 + index * 20}%`,
+        }}
+      >
+        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shadow-lg border-2 border-white">
+          <Users className="w-3 h-3 text-white" />
+        </div>
+      </motion.div>
+    ))}
+
+    {/* Task Markers */}
+    {activeTasks.map((task, index) => (
+      <motion.div
+        key={task.id}
+        className="absolute cursor-pointer"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 1 + index * 0.1 }}
+        style={{
+          left: `${30 + index * 20}%`,
+          top: `${60 + index * 10}%`,
+        }}
+      >
+        <div className="w-5 h-5 rounded bg-yellow-500 flex items-center justify-center shadow-lg border border-white">
+          <Clock className="w-3 h-3 text-white" />
+        </div>
+      </motion.div>
+    ))}
+
+    {/* Alert Markers */}
+    {alerts.map((alert, index) => (
+      <motion.div
+        key={alert.id}
+        className="absolute cursor-pointer animate-pulse"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 1.5 + index * 0.1 }}
+        style={{
+          left: `${70 + index * 10}%`,
+          top: `${40 + index * 15}%`,
+        }}
+      >
+        <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shadow-lg border-2 border-white">
+          <AlertTriangle className="w-3 h-3 text-white" />
+        </div>
+      </motion.div>
+    ))}
+
+    {/* Map Center Indicator */}
+    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      <div className="w-2 h-2 bg-white rounded-full opacity-50" />
+    </div>
+
+    {/* Map Info */}
+    <div className="absolute bottom-4 left-4 text-white text-xs bg-black/50 px-3 py-2 rounded">
+      Last updated: {lastUpdate.toLocaleTimeString()}
+    </div>
+  </div>
+)
+
 export default function OperationsMapDashboard() {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [selectedProperty, setSelectedProperty] =
@@ -610,153 +748,8 @@ export default function OperationsMapDashboard() {
     }
   }
 
-  // Interactive Map Component (placeholder for real map implementation)
-  const InteractiveMap = () => (
-    <div
-      ref={mapRef}
-      className={`relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-lg overflow-hidden ${
-        isFullScreen ? 'h-screen' : 'h-96 lg:h-[600px]'
-      }`}
-    >
-      {/* Map Background */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
 
-      {/* Map Controls */}
-      <div className="absolute top-4 left-4 z-10 space-y-2">
-        <Button
-          onClick={() => setIsFullScreen(!isFullScreen)}
-          size="sm"
-          className="bg-black/50 hover:bg-black/70 text-white border-white/20"
-        >
-          {isFullScreen ? (
-            <Minimize2 className="w-4 h-4" />
-          ) : (
-            <Maximize2 className="w-4 h-4" />
-          )}
-        </Button>
-        <Button
-          onClick={loadOperationalData}
-          size="sm"
-          className="bg-black/50 hover:bg-black/70 text-white border-white/20"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </Button>
-      </div>
 
-      {/* Layer Controls */}
-      <div className="absolute top-4 right-4 z-10">
-        <Card className="bg-black/50 backdrop-blur-sm border-white/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-white text-sm flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              Map Layers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {mapLayers.map((layer) => {
-              const IconComponent = layer.icon
-              return (
-                <div key={layer.id} className="flex items-center gap-2">
-                  <Button
-                    onClick={() => toggleLayer(layer.id)}
-                    size="sm"
-                    variant="ghost"
-                    className={`p-1 ${layer.visible ? 'text-white' : 'text-gray-500'}`}
-                  >
-                    {layer.visible ? (
-                      <Eye className="w-3 h-3" />
-                    ) : (
-                      <EyeOff className="w-3 h-3" />
-                    )}
-                  </Button>
-                  <div
-                    className={`w-3 h-3 rounded-full ${layer.visible ? '' : 'opacity-50'}`}
-                    style={{ backgroundColor: layer.color }}
-                  />
-                  <span
-                    className={`text-xs ${layer.visible ? 'text-white' : 'text-gray-500'}`}
-                  >
-                    {layer.name}
-                  </span>
-                </div>
-              )
-            })}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Properties on Map */}
-      {mapLayers.find((l) => l.id === 'properties')?.visible &&
-        properties.map((property, index) => (
-          <motion.div
-            key={property.id}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: index * 0.1 }}
-            className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${20 + index * 25}%`,
-              top: `${30 + index * 15}%`,
-            }}
-            onClick={() => setSelectedProperty(property)}
-          >
-            <div
-              className={`w-8 h-8 rounded-full ${getStatusColor(property.status)} flex items-center justify-center shadow-lg border-2 border-white`}
-            >
-              <Home className="w-4 h-4 text-white" />
-            </div>
-            {property.urgentTasks && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-xs text-white font-bold">
-                  {property.urgentTasks}
-                </span>
-              </div>
-            )}
-          </motion.div>
-        ))}
-
-      {/* Staff on Map */}
-      {mapLayers.find((l) => l.id === 'staff')?.visible &&
-        staff.map((member, index) => (
-          <motion.div
-            key={member.id}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${40 + index * 20}%`,
-              top: `${50 + index * 10}%`,
-            }}
-            onClick={() => setSelectedStaff(member)}
-          >
-            <div
-              className={`w-6 h-6 rounded-full ${getStatusColor(member.status)} flex items-center justify-center shadow-lg border-2 border-white`}
-            >
-              <Users className="w-3 h-3 text-white" />
-            </div>
-            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-white bg-black/70 px-2 py-1 rounded whitespace-nowrap">
-              {member.name}
-            </div>
-          </motion.div>
-        ))}
-
-      {/* Map Center Indicator */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-        <div className="w-2 h-2 bg-white rounded-full opacity-50" />
-      </div>
-
-      {/* Map Info */}
-      <div className="absolute bottom-4 left-4 text-white text-xs bg-black/50 px-3 py-2 rounded">
-        Last updated: {lastUpdate.toLocaleTimeString()}
-      </div>
-    </div>
-  )
 
   return (
     <div
@@ -909,7 +902,18 @@ export default function OperationsMapDashboard() {
           <div className={`${isFullScreen ? 'col-span-2' : 'lg:col-span-2'}`}>
             <Card className="bg-gray-800 border-gray-700 h-full">
               <CardContent className="p-0">
-                <InteractiveMap />
+                <InteractiveMap
+                  mapRef={mapRef}
+                  isFullScreen={isFullScreen}
+                  properties={properties}
+                  staff={staff}
+                  activeTasks={activeTasks}
+                  alerts={alerts}
+                  selectedProperty={selectedProperty}
+                  setSelectedProperty={setSelectedProperty}
+                  lastUpdate={lastUpdate}
+                  getStatusColor={getStatusColor}
+                />
               </CardContent>
             </Card>
           </div>
