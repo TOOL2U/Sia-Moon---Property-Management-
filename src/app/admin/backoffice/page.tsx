@@ -68,6 +68,7 @@ import SmartJobTestPanel from '@/components/admin/SmartJobTestPanel'
 import CalendarEventService from '@/services/CalendarEventService'
 import CalendarIntegrationService from '@/services/CalendarIntegrationService'
 import TestJobService from '@/services/TestJobService'
+import { OnboardingService } from '@/lib/services/onboardingService'
 import { testCalendarIntegration } from '@/utils/calendarTestUtils'
 import { Send } from 'lucide-react'
 // Firebase imports for calendar cleanup
@@ -177,6 +178,13 @@ export default function BackOfficePage() {
     useState<StaffProfile | null>(null)
   const [showImportExportModal, setShowImportExportModal] = useState(false)
 
+  // Onboarding submissions state
+  const [onboardingSubmissions, setOnboardingSubmissions] = useState<any[]>([])
+  const [onboardingLoading, setOnboardingLoading] = useState(false)
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null)
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false)
+  const [submissionFilter, setSubmissionFilter] = useState('all')
+
   // Financial management state
   const [financialDashboard, setFinancialDashboard] =
     useState<FinancialDashboard | null>(null)
@@ -272,6 +280,7 @@ export default function BackOfficePage() {
     if (user && user.role === 'admin') {
       loadAllBookingData()
       loadStaffData()
+      loadOnboardingSubmissions()
 
       // Initialize calendar integration workflows
       CalendarIntegrationService.initialize()
@@ -400,6 +409,24 @@ export default function BackOfficePage() {
       })
     } finally {
       setStaffLoading(false)
+    }
+  }
+
+  // Load onboarding submissions data
+  const loadOnboardingSubmissions = async () => {
+    try {
+      setOnboardingLoading(true)
+      console.log('🔄 Loading onboarding submissions...')
+
+      const submissions = await OnboardingService.getAllSubmissions()
+      setOnboardingSubmissions(submissions)
+      console.log(`✅ Loaded ${submissions.length} onboarding submissions`)
+    } catch (error) {
+      console.error('❌ Error loading onboarding submissions:', error)
+      toast.error('Failed to load onboarding submissions')
+      setOnboardingSubmissions([])
+    } finally {
+      setOnboardingLoading(false)
     }
   }
 
@@ -757,6 +784,7 @@ export default function BackOfficePage() {
     { id: 'kpi-dashboard', label: 'KPI Dashboard', icon: BarChart3 },
     { id: 'job-assignments', label: 'Job Assignments', icon: ClipboardList },
     { id: 'staff', label: 'Staff', icon: Users },
+    { id: 'onboarding', label: 'Onboarding Submissions', icon: FileText },
     { id: 'financial', label: 'Financial', icon: DollarSign },
     { id: 'properties', label: 'Properties', icon: Building2 },
     { id: 'operations', label: 'Operations', icon: ClipboardList },
@@ -1399,6 +1427,8 @@ export default function BackOfficePage() {
                       'Assign and track staff job assignments'}
                     {activeSection === 'staff' &&
                       'Staff management and assignments'}
+                    {activeSection === 'onboarding' &&
+                      'View, edit, and manage property onboarding submissions'}
                     {activeSection === 'financial' &&
                       'Financial overview and reporting'}
                     {activeSection === 'properties' &&
@@ -1713,6 +1743,8 @@ export default function BackOfficePage() {
         return renderJobAssignments()
       case 'staff':
         return renderStaff()
+      case 'onboarding':
+        return renderOnboardingSubmissions()
       case 'financial':
         return renderFinancial()
       case 'properties':
@@ -3151,6 +3183,295 @@ export default function BackOfficePage() {
                 })
               )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Onboarding Submissions Section
+  function renderOnboardingSubmissions() {
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'pending':
+          return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+        case 'reviewed':
+          return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+        case 'approved':
+          return 'bg-green-500/20 text-green-400 border-green-500/30'
+        case 'rejected':
+          return 'bg-red-500/20 text-red-400 border-red-500/30'
+        default:
+          return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+      }
+    }
+
+    const filteredSubmissions = onboardingSubmissions.filter((submission) => {
+      if (submissionFilter === 'all') return true
+      return submission.status === submissionFilter
+    })
+
+    const handleUpdateStatus = async (id: string, status: string) => {
+      try {
+        setLoading(true)
+        await OnboardingService.updateSubmissionStatus(id, status as any)
+        toast.success(`Submission status updated to ${status}`)
+        loadOnboardingSubmissions() // Reload data
+      } catch (error) {
+        console.error('Error updating status:', error)
+        toast.error('Failed to update submission status')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const handleDeleteSubmission = async (id: string) => {
+      if (!confirm('Are you sure you want to delete this submission?')) return
+      
+      try {
+        setLoading(true)
+        await OnboardingService.deleteSubmission(id)
+        toast.success('Submission deleted successfully')
+        loadOnboardingSubmissions() // Reload data
+      } catch (error) {
+        console.error('Error deleting submission:', error)
+        toast.error('Failed to delete submission')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Header with Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-400">Total Submissions</p>
+                  <p className="text-2xl font-bold text-white">{onboardingSubmissions.length}</p>
+                </div>
+                <FileText className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-400">Pending Review</p>
+                  <p className="text-2xl font-bold text-yellow-400">
+                    {onboardingSubmissions.filter(s => s.status === 'pending').length}
+                  </p>
+                </div>
+                <Clock className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-400">Approved</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {onboardingSubmissions.filter(s => s.status === 'approved').length}
+                  </p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-neutral-900 border-neutral-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-neutral-400">Rejected</p>
+                  <p className="text-2xl font-bold text-red-400">
+                    {onboardingSubmissions.filter(s => s.status === 'rejected').length}
+                  </p>
+                </div>
+                <XCircle className="h-8 w-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters and Search */}
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <Input
+                  placeholder="Search submissions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-neutral-800 border-neutral-700 text-white w-full sm:w-64"
+                />
+                <select
+                  value={submissionFilter}
+                  onChange={(e) => setSubmissionFilter(e.target.value)}
+                  className="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-white text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              <Button
+                onClick={loadOnboardingSubmissions}
+                disabled={onboardingLoading}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {onboardingLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Refresh
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submissions List */}
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardHeader>
+            <CardTitle className="text-white">Onboarding Submissions</CardTitle>
+            <CardDescription>
+              View and manage property onboarding submissions from clients
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {onboardingLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <span className="ml-2 text-neutral-400">Loading submissions...</span>
+              </div>
+            ) : filteredSubmissions.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-neutral-600 mx-auto mb-3" />
+                <p className="text-neutral-400 text-lg">No submissions found</p>
+                <p className="text-neutral-500 text-sm">
+                  {submissionFilter === 'all' 
+                    ? 'No onboarding submissions have been received yet.'
+                    : `No submissions with status "${submissionFilter}" found.`
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredSubmissions
+                  .filter((submission) =>
+                    submission.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    submission.ownerFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    submission.ownerEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((submission) => (
+                    <div
+                      key={submission.id}
+                      className="border border-neutral-700 rounded-lg p-6 hover:border-neutral-600 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-white">
+                              {submission.propertyName || 'Unnamed Property'}
+                            </h3>
+                            <Badge className={getStatusColor(submission.status)}>
+                              {submission.status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-neutral-400">Owner</p>
+                              <p className="text-white">{submission.ownerFullName}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Email</p>
+                              <p className="text-white">{submission.ownerEmail}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Phone</p>
+                              <p className="text-white">{submission.ownerContactNumber}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Address</p>
+                              <p className="text-white">{submission.propertyAddress || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Bedrooms</p>
+                              <p className="text-white">{submission.bedrooms || 'Not specified'}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Submitted</p>
+                              <p className="text-white">
+                                {submission.createdAt?.toDate().toLocaleDateString() || 'Unknown'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            onClick={() => {
+                              setSelectedSubmission(submission)
+                              setShowSubmissionModal(true)
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                          
+                          {submission.status === 'pending' && (
+                            <>
+                              <Button
+                                onClick={() => handleUpdateStatus(submission.id, 'approved')}
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                disabled={loading}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button
+                                onClick={() => handleUpdateStatus(submission.id, 'rejected')}
+                                size="sm"
+                                variant="outline"
+                                className="border-red-500 text-red-400 hover:bg-red-500/10"
+                                disabled={loading}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          
+                          <Button
+                            onClick={() => handleDeleteSubmission(submission.id)}
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-400 hover:bg-red-500/10"
+                            disabled={loading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
