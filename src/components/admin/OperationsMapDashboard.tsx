@@ -12,6 +12,7 @@ import {
   Car,
   CheckCircle,
   Clock,
+  DollarSign,
   Eye,
   EyeOff,
   Home,

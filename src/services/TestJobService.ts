@@ -240,16 +240,50 @@ class TestJobService {
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
 
-        // Mobile Sync Optimization
+        // Mobile Sync Optimization - Enhanced Structure
         syncVersion: 1,
         mobileOptimized: {
-          essentialData: {
+          // CRITICAL DATA - Always send first, highest priority
+          critical: {
             title: 'Villa Cleaning - Ante cliffe',
             googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
-            accessCode: '9876 / 2468',
+            accessCodes: '9876 / 2468',
             emergencyContact: '+66 85 123 4567',
             scheduledTime: '14:00',
+            jobType: 'cleaning'
           },
+          
+          // JOB-SPECIFIC DATA - Send after job acceptance
+          jobDetails: {
+            type: 'cleaning',
+            estimatedDuration: '2 hours',
+            suppliesRequired: ['All-purpose cleaner', 'Vacuum', 'Mop', 'Pool cleaning kit'],
+            checklist: [
+              'Clean all 4 bedrooms',
+              'Clean 3 bathrooms', 
+              'Kitchen deep clean',
+              'Pool maintenance check',
+              'Garden area tidy'
+            ],
+            specialInstructions: 'Focus on pool area - check equipment'
+          },
+          
+          // PROPERTY CONTEXT - Load on-demand
+          propertyContext: {
+            layout: '4BR/3BA villa with pool',
+            guestStatus: 'checked-out',
+            lastCleaning: '3 days ago',
+            previousIssues: ['Pool pump needed attention last visit'],
+            specialNotes: ['Automatic gate - closes after 30 seconds', 'Pool equipment shed behind villa']
+          },
+          
+          // COMPLETION TRACKING - For job finish
+          completion: {
+            photoRequired: true,
+            photoRequirements: ['Before/after pool area', 'Completed bedrooms', 'Kitchen final state'],
+            reportFields: ['cleaning_completed', 'issues_found', 'supplies_used'],
+            nextSteps: ['Report any equipment issues', 'Lock all doors', 'Set security system']
+          }
         },
 
         // Required for mobile notification system
@@ -404,20 +438,25 @@ class TestJobService {
         mobileNotificationPending: true,
       })
 
-      // Create notification for the mobile app
+      // Create enhanced notification for the mobile app
       const notificationData = {
         jobId: jobId,
         staffId: staffId,
-        userId: userId || 'user001', // Add the userId
+        userId: userId || 'user001',
         staffName: staffName,
         staffEmail: 'test@example.com',
+        
+        // CRITICAL INFO - Immediate display
         jobTitle: 'Villa Cleaning - Ante cliffe',
         jobType: 'cleaning',
         propertyName: 'Ante cliffe Villa',
         googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
         scheduledStartTime: '14:00',
-        accessCode: '9876 / 2468',
+        accessCodes: '9876 / 2468',
         emergencyContact: '+66 85 123 4567',
+        estimatedDuration: '2 hours',
+        
+        // METADATA
         type: 'job_assigned',
         status: 'pending',
         readAt: null,
@@ -902,16 +941,61 @@ class TestJobService {
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
 
-        // Mobile Sync Optimization
+        // Mobile Sync Optimization - Enhanced Structure
         syncVersion: 1,
         mobileOptimized: {
-          essentialData: {
-            title: `Villa Cleaning - Ante cliffe`,
+          // CRITICAL DATA - Always send first, highest priority
+          critical: {
+            title: 'Villa Cleaning - Ante cliffe',
             googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
-            accessCode: '9876 / 2468',
+            accessCodes: '9876 / 2468',
             emergencyContact: '+66 85 123 4567',
             scheduledTime: '14:00',
+            jobType: options.jobType || 'cleaning'
           },
+          
+          // JOB-SPECIFIC DATA - Send after job acceptance
+          jobDetails: {
+            type: options.jobType || 'cleaning',
+            estimatedDuration: '2 hours',
+            suppliesRequired: ['All-purpose cleaner', 'Vacuum', 'Mop', 'Pool cleaning kit'],
+            checklist: [
+              'Clean all 4 bedrooms',
+              'Clean 3 bathrooms', 
+              'Kitchen deep clean',
+              'Pool maintenance check',
+              'Garden area tidy'
+            ],
+            specialInstructions: 'Focus on pool area - check equipment',
+            priority: options.priority || 'medium'
+          },
+          
+          // PROPERTY CONTEXT - Load on-demand
+          propertyContext: {
+            layout: '4BR/3BA villa with pool',
+            guestStatus: 'checked-out',
+            lastCleaning: '3 days ago',
+            previousIssues: ['Pool pump needed attention last visit'],
+            specialNotes: ['Automatic gate - closes after 30 seconds', 'Pool equipment shed behind villa'],
+            safetyNotes: ['Steep driveway when wet', 'Pool area can be slippery']
+          },
+          
+          // NAVIGATION & LOCATION - Enhanced location data
+          locationData: {
+            googleMapsLink: 'https://maps.google.com/?q=7.9985,98.2965',
+            landmarks: 'Blue Tree Phuket shopping center nearby',
+            parkingInstructions: 'Covered parking for 2 cars, gate remote in villa',
+            accessInstructions: 'Main gate: 9876, Villa door: 2468'
+          },
+          
+          // COMPLETION TRACKING - For job finish
+          completion: {
+            photoRequired: true,
+            photoRequirements: ['Before/after pool area', 'Completed bedrooms', 'Kitchen final state'],
+            reportFields: ['cleaning_completed', 'issues_found', 'supplies_used', 'time_spent'],
+            nextSteps: ['Report any equipment issues', 'Lock all doors', 'Set security system'],
+            completionConfirmation: 'photo'
+          }
         },
 
         // Required for mobile notification system
