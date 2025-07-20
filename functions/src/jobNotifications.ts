@@ -49,6 +49,7 @@ interface StaffDeviceToken {
 /**
  * Cloud Function: Trigger on job assignment
  * Listens for new jobs or status changes to 'assigned'
+ * FIXED: Added deduplication and better trigger logic
  */
 export const onJobAssigned = functions.firestore
   .document('jobs/{jobId}')
@@ -57,6 +58,12 @@ export const onJobAssigned = functions.firestore
       const jobId = context.params.jobId
       const beforeData = change.before.exists ? change.before.data() : null
       const afterData = change.after.exists ? change.after.data() : null
+
+      // IMPORTANT: Check if notification was already sent to prevent duplicates
+      if (afterData?.notificationSent === true) {
+        console.log(`⏭️ Notification already sent for job ${jobId} - skipping`)
+        return null
+      }
 
       // Check if this is a job assignment (new job or status changed to assigned)
       const isNewAssignment =
@@ -73,6 +80,20 @@ export const onJobAssigned = functions.firestore
         console.log(
           `⏭️ Skipping notification for job ${jobId} - not a new assignment`
         )
+        return null
+      }
+
+      // DEDUPLICATION: Check if notification already exists for this job/staff combination
+      const existingNotifications = await db
+        .collection('staff_notifications')
+        .where('jobId', '==', jobId)
+        .where('staffId', '==', afterData.assignedStaffId)
+        .where('type', '==', 'job_assigned')
+        .limit(1)
+        .get()
+
+      if (!existingNotifications.empty) {
+        console.log(`⏭️ Notification already exists for job ${jobId} - skipping duplicate`)
         return null
       }
 

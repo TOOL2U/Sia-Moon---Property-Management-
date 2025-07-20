@@ -8,11 +8,11 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { clientToast as toast } from '@/utils/clientToast'
@@ -25,11 +25,11 @@ import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
 import WizardStaffModal from '@/components/staff/WizardStaffModal'
 import { FinancialDashboard, FinancialFilters } from '@/types/financial'
 import {
-    STAFF_ROLES,
-    STAFF_STATUSES,
-    StaffFilters,
-    StaffProfile,
-    StaffStats,
+  STAFF_ROLES,
+  STAFF_STATUSES,
+  StaffFilters,
+  StaffProfile,
+  StaffStats,
 } from '@/types/staff'
 
 import BookingApprovalModal from '@/components/booking/BookingApprovalModal'
@@ -76,58 +76,57 @@ import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
 // BookingSyncService removed - unused
 // Real-time sync services removed - handled by individual components
 import {
-    Activity,
-    AlertCircle,
-    AlertTriangle,
-    ArrowDown,
-    // Removed unused icons
-    ArrowUp,
-    ArrowUpDown,
-    BarChart3,
-    Bell,
-    Brain,
-    Building2,
-    Calendar,
-    Calendar as CalendarDays,
-    Calendar as CalendarIcon,
-    CheckCircle,
-    ChevronRight,
-    ClipboardList,
-    Clock,
-    CreditCard,
-    DollarSign,
-    Download,
-    Edit,
-    ExternalLink,
-    Eye,
-    FileText,
-    Filter,
-    Home,
-    Key,
-    Loader2,
-    LogIn,
-    LogOut,
-    Mail,
-    Percent,
-    Phone,
-    PieChart,
-    Plus,
-    RefreshCw,
-    Search,
-    Settings,
-    Star,
-    Target,
-    Trash2,
-    TrendingDown,
-    TrendingUp,
-    User,
-    UserCheck,
-    Users,
-    Wrench,
-    // MoreHorizontal removed - unused
-    X,
-    XCircle,
-    Zap,
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  ArrowDown,
+  // Removed unused icons
+  ArrowUp,
+  ArrowUpDown,
+  BarChart3,
+  Bell,
+  Building2,
+  Calendar,
+  Calendar as CalendarDays,
+  Calendar as CalendarIcon,
+  CheckCircle,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Edit,
+  ExternalLink,
+  Eye,
+  FileText,
+  Filter,
+  Home,
+  Key,
+  Loader2,
+  LogIn,
+  LogOut,
+  Mail,
+  Percent,
+  Phone,
+  PieChart,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings,
+  Star,
+  Target,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  User,
+  UserCheck,
+  Users,
+  Wrench,
+  // MoreHorizontal removed - unused
+  X,
+  XCircle,
+  Zap
 } from 'lucide-react'
 
 // Note: Mock data removed - now using real Firebase data from API endpoints
@@ -843,7 +842,6 @@ export default function BackOfficePage() {
     { id: 'properties', label: 'Properties', icon: Building2 },
     { id: 'operations', label: 'Operations', icon: ClipboardList },
     { id: 'reports', label: 'Reports', icon: FileText },
-    { id: 'ai-dashboard', label: 'AI Dashboard', icon: Brain },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
@@ -1490,8 +1488,6 @@ export default function BackOfficePage() {
                     {activeSection === 'operations' &&
                       'Daily operations and tasks'}
                     {activeSection === 'reports' && 'Generate and view reports'}
-                    {activeSection === 'ai-dashboard' &&
-                      'AI performance monitoring and admin feedback'}
                     {activeSection === 'settings' &&
                       'System settings and configuration'}
                   </p>
@@ -2209,15 +2205,6 @@ export default function BackOfficePage() {
         return <OperationsMapDashboard />
       case 'reports':
         return renderReports()
-      case 'ai-dashboard':
-        return (
-          <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 text-center">
-            <h3 className="text-white text-lg font-medium mb-2">AI Dashboard</h3>
-            <p className="text-neutral-400">
-              Legacy AI dashboard has been removed. New AI system dashboard will be implemented here.
-            </p>
-          </div>
-        )
       case 'settings':
         return renderSettings()
       default:

@@ -194,3 +194,13 @@ setup-*.js
 # Netlify
 .netlify/
 netlify-debug.log
+
+# AI Development Tools (exclude from production)
+src/ai-system/aiDevHelper.ts
+ai-system/aiDevHelper.ts
+**/aiDevHelper.ts
+
+# AI test artifacts
+ai-test-*.json
+ai-simulation-*.log
+dev-ai-*.js

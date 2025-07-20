@@ -1,0 +1,64 @@
+{
+  "settings": {
+    "temperature": 0.6,
+    "escalationThreshold": 0.8,
+    "simulationMode": true,
+    "fallbackMessage": "I apologize, but I'm unable to process this request at the moment. Please contact our support team for assistance.",
+    "maxTokens": 2000,
+    "timeoutMs": 30000,
+    "retryAttempts": 3,
+    "confidenceBoost": 0,
+    "debugMode": true,
+    "modelVersion": "gpt-4",
+    "customPromptSuffix": "",
+    "rateLimit": {
+      "requestsPerMinute": 60,
+      "enabled": true
+    },
+    "security": {
+      "requireAuth": true,
+      "allowedIPs": [],
+      "logAllRequests": true
+    }
+  },
+  "lastUpdated": "2025-07-20T08:56:34.602Z",
+  "version": 2,
+  "updatedBy": "admin",
+  "changelog": [
+    {
+      "timestamp": "2025-07-20T08:56:34.602Z",
+      "changes": {
+        "temperature": 0.6,
+        "escalationThreshold": 0.8
+      },
+      "updatedBy": "admin",
+      "reason": "Testing settings update"
+    },
+    {
+      "timestamp": "2025-07-20T08:56:25.760Z",
+      "changes": {
+        "temperature": 0.4,
+        "escalationThreshold": 0.75,
+        "simulationMode": true,
+        "fallbackMessage": "I apologize, but I'm unable to process this request at the moment. Please contact our support team for assistance.",
+        "maxTokens": 2000,
+        "timeoutMs": 30000,
+        "retryAttempts": 3,
+        "confidenceBoost": 0,
+        "debugMode": true,
+        "modelVersion": "gpt-4",
+        "customPromptSuffix": "",
+        "rateLimit": {
+          "requestsPerMinute": 60,
+          "enabled": true
+        },
+        "security": {
+          "requireAuth": true,
+          "allowedIPs": [],
+          "logAllRequests": true
+        }
+      },
+      "reason": "Initial settings creation"
+    }
+  ]
+}

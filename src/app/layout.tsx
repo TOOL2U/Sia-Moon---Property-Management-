@@ -1,11 +1,12 @@
-import { Navbar } from '@/components/layout/Navbar'
-import { ToastProvider } from '@/components/ui/SimpleToast'
-import { AuthProvider } from '@/contexts/AuthContext'
-import '@/lib/polyfills' // Import polyfills for server-side compatibility
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals' // Import global polyfills first
-import './globals.css'
+import { Navbar } from '@/components/layout/Navbar';
+import FloatingAIIcon from '@/components/ui/FloatingAIIcon';
+import { ToastProvider } from '@/components/ui/SimpleToast';
+import { AuthProvider } from '@/contexts/AuthContext';
+import '@/lib/polyfills'; // Import polyfills for server-side compatibility
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals'; // Import global polyfills first
+import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,6 +40,7 @@ export default function RootLayout({
           <ToastProvider>
             <Navbar />
             <main className="page-transition">{children}</main>
+            <FloatingAIIcon />
           </ToastProvider>
         </AuthProvider>
       </body>

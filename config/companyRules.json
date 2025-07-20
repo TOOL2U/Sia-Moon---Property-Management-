@@ -1,0 +1,17 @@
+{
+  "rules": [
+    "All jobs over ฿5,000 must be escalated for human review",
+    "Do not assign staff more than 5km away unless marked as remote-capable",
+    "Reject incomplete booking data (missing address or job type)",
+    "Prioritize staff with highest ratings for VIP customers",
+    "Ensure minimum 2-hour gap between staff assignments",
+    "Flag recurring expenses that exceed 10% variance from budget",
+    "Auto-approve expenses under ฿1,000 with 90%+ confidence",
+    "Require human approval for expenses over ฿10,000",
+    "Monitor cash flow to maintain minimum 30-day operating reserve",
+    "Reject expenses without proper documentation or receipts",
+    "Test integration rule - All bookings during holidays require double confirmation"
+  ],
+  "lastUpdated": "2025-07-20T08:08:45.777Z",
+  "version": 5
+}
