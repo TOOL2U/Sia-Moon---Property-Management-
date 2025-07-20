@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import '@/styles/calendar.css'
+import './enhanced-calendar.css'
 import { clientToast as toast } from '@/utils/clientToast'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -39,8 +40,8 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
-// FullCalendar wrapper - handles SSR issues
-import FullCalendarWrapper from './FullCalendarWrapper'
+// Enhanced FullCalendar component
+import ClientOnlyCalendar from './ClientOnlyCalendar'
 
 // Firebase imports
 import { db } from '@/lib/firebase'
@@ -690,15 +691,9 @@ export function CalendarView({ className }: CalendarViewProps) {
               </span>
             </div>
           ) : (
-            <div className="calendar-container">
-              <FullCalendarWrapper
-                events={getFullCalendarEvents()}
-                onEventClick={handleEventClick}
-                onEventDrop={handleEventDrop}
-                onEventResize={handleEventResize}
-                view={currentView}
-                resources={[]}
-              />
+            <div className="space-y-6">
+              {/* Enhanced FullCalendar Component - Now Enabled! */}
+              <ClientOnlyCalendar />
             </div>
           )}
         </CardContent>

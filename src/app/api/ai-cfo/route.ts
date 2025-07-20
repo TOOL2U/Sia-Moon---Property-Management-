@@ -239,8 +239,8 @@ Return summary, anomalies, insights, and any recommendations.`
 
     console.log(`✅ AI CFO: Request processed successfully in ${Date.now() - startTime}ms`)
 
-    // Check if simulation mode is enabled
-    const SIMULATION_MODE = process.env.NODE_ENV !== 'production' || process.env.AI_SIMULATION_MODE === 'true'
+    // Check if simulation mode is enabled - 🟢 LIVE MODE ACTIVE
+    const SIMULATION_MODE = false // Live mode enabled - real actions will be triggered
 
     if (SIMULATION_MODE) {
       console.log("🧪 SIMULATION MODE ON: No real financial actions performed.")

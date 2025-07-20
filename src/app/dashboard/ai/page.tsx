@@ -7,6 +7,7 @@ import {
     AlertTriangle,
     BarChart3,
     Brain,
+    DollarSign,
     FileText,
     GraduationCap,
     MapPin,
@@ -15,6 +16,7 @@ import {
     Settings,
     Shield,
     TestTube,
+    Users,
     X
 } from 'lucide-react'
 import Link from 'next/link'
@@ -198,21 +200,76 @@ export default function AIDashboardPage() {
   }
 
   // Handle escalation approval
-  const handleApproveEscalation = (log: AILogEntry, notes?: string) => {
-    console.log('Approving escalation:', log.decision, 'Notes:', notes)
-    // Update the log status
-    setAiLogs(logs => logs.map(l =>
-      l.timestamp === log.timestamp ? { ...l, escalation: false } : l
-    ))
+  const handleApproveEscalation = async (log: AILogEntry, notes?: string) => {
+    try {
+      console.log('✅ Approving escalation:', log.decision, 'Notes:', notes)
+
+      const response = await fetch('/api/ai-escalation/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logId: `${log.agent}_${new Date(log.timestamp).getTime()}`,
+          decision: log.decision,
+          agent: log.agent,
+          confidence: log.confidence,
+          notes: notes,
+          adminId: 'admin' // In production, get from auth context
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update the log status
+        setAiLogs(logs => logs.map(l =>
+          l.timestamp === log.timestamp ? { ...l, escalation: false, status: 'approved' } : l
+        ))
+        console.log('✅ Escalation approved successfully')
+      } else {
+        console.error('❌ Failed to approve escalation:', result.error)
+        alert(`Failed to approve escalation: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Error approving escalation:', error)
+      alert('Error approving escalation. Please try again.')
+    }
   }
 
   // Handle escalation rejection
-  const handleRejectEscalation = (log: AILogEntry, notes?: string) => {
-    console.log('Rejecting escalation:', log.decision, 'Notes:', notes)
-    // Update the log status
-    setAiLogs(logs => logs.map(l =>
-      l.timestamp === log.timestamp ? { ...l, escalation: false } : l
-    ))
+  const handleRejectEscalation = async (log: AILogEntry, notes?: string) => {
+    try {
+      console.log('❌ Rejecting escalation:', log.decision, 'Notes:', notes)
+
+      const response = await fetch('/api/ai-escalation/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logId: `${log.agent}_${new Date(log.timestamp).getTime()}`,
+          decision: log.decision,
+          agent: log.agent,
+          confidence: log.confidence,
+          notes: notes,
+          reason: notes || 'Decision rejected by admin',
+          adminId: 'admin' // In production, get from auth context
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update the log status
+        setAiLogs(logs => logs.map(l =>
+          l.timestamp === log.timestamp ? { ...l, escalation: false, status: 'rejected' } : l
+        ))
+        console.log('❌ Escalation rejected successfully')
+      } else {
+        console.error('❌ Failed to reject escalation:', result.error)
+        alert(`Failed to reject escalation: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Error rejecting escalation:', error)
+      alert('Error rejecting escalation. Please try again.')
+    }
   }
 
   // Handle override submission
@@ -286,7 +343,7 @@ export default function AIDashboardPage() {
     }))
   }
 
-  // Sidebar navigation items - Complete feature parity with original dashboard
+  // Sidebar navigation items - Enhanced with COO, CFO, and Escalations tabs
   const sidebarItems = React.useMemo(() => [
     {
       id: 'overview',
@@ -308,6 +365,276 @@ export default function AIDashboardPage() {
             onApprove={handleApproveEscalation}
             onReject={handleRejectEscalation}
           />
+        </div>
+      )
+    },
+    {
+      id: 'live-actions',
+      label: '🟢 Live Actions',
+      icon: Activity,
+      component: (
+        <div className="space-y-6">
+          <div className="bg-green-900/20 border border-green-700 rounded-lg p-4">
+            <h2 className="text-lg font-semibold text-green-300 mb-2">Live AI Actions Monitor</h2>
+            <p className="text-green-200 text-sm">Real-time monitoring of AI decisions with live actions enabled</p>
+          </div>
+          <div>
+            {/* LiveAILogsChecker component would go here */}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+              <div className="text-center">
+                <Activity className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Live Actions Monitor</h3>
+                <p className="text-slate-400 mb-4">Monitor real-time AI decisions and actions</p>
+                <div className="bg-black p-4 rounded font-mono text-sm text-left">
+                  <div className="text-green-400 mb-2">// Check logs from live AI actions</div>
+                  <div className="text-blue-400 mb-2">const logs = await getAILogs(&#123; filter: "LIVE", limit: 10 &#125;);</div>
+                  <div className="text-gray-400 mb-4">
+                    logs.forEach((log) =&gt; &#123;<br />
+                    &nbsp;&nbsp;console.log("📌 AI Decision:", log.agent, log.decision, "🧠 Confidence:", log.confidence);<br />
+                    &#125;);
+                  </div>
+                  <div className="text-yellow-400">Run a live booking test to see results here.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'coo',
+      label: '🤖 AI COO',
+      icon: Users,
+      component: (
+        <div className="space-y-6">
+          <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
+            <h2 className="text-lg font-semibold text-blue-300 mb-2">AI COO - Booking Decisions</h2>
+            <p className="text-blue-200 text-sm">Live display of AI COO booking decisions, staff assignments, and confidence scores</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-white font-semibold mb-4">Recent COO Decisions</h3>
+              <div className="space-y-3">
+                {aiLogs.filter(log => log.agent === 'COO').slice(0, 5).map((log, index) => (
+                  <div key={index} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-blue-600 text-white">COO</Badge>
+                        <span className={`font-medium ${log.decision.includes('approved') ? 'text-green-400' : log.decision.includes('rejected') ? 'text-red-400' : 'text-yellow-400'}`}>
+                          {log.decision}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Brain className="w-4 h-4 text-slate-400" />
+                        <span className={`font-medium ${log.confidence >= 0.9 ? 'text-green-400' : log.confidence >= 0.7 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          {(log.confidence * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-400 mb-2">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </div>
+                    {log.rationale && (
+                      <div className="text-sm text-slate-300">{log.rationale}</div>
+                    )}
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm" variant="outline" className="border-green-600 text-green-400 hover:bg-green-600/20">
+                        ✅ Approve Override
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/20">
+                        ❌ Reject Override
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-4">COO Performance Metrics</h3>
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {aiLogs.filter(log => log.agent === 'COO').length}
+                    </div>
+                    <div className="text-sm text-slate-400">Total Decisions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-400">
+                      {(aiLogs.filter(log => log.agent === 'COO').reduce((sum, log) => sum + log.confidence, 0) / Math.max(aiLogs.filter(log => log.agent === 'COO').length, 1) * 100).toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-slate-400">Avg Confidence</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'cfo',
+      label: '💰 AI CFO',
+      icon: DollarSign,
+      component: (
+        <div className="space-y-6">
+          <div className="bg-purple-900/20 border border-purple-700 rounded-lg p-4">
+            <h2 className="text-lg font-semibold text-purple-300 mb-2">AI CFO - Financial Decisions</h2>
+            <p className="text-purple-200 text-sm">Live display of AI CFO financial analysis, expense approvals, and fraud detection</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-white font-semibold mb-4">Recent CFO Decisions</h3>
+              <div className="space-y-3">
+                {aiLogs.filter(log => log.agent === 'CFO').slice(0, 5).map((log, index) => (
+                  <div key={index} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-600 text-white">CFO</Badge>
+                        <span className={`font-medium ${log.decision.includes('approved') ? 'text-green-400' : log.decision.includes('rejected') ? 'text-red-400' : 'text-yellow-400'}`}>
+                          {log.decision}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Brain className="w-4 h-4 text-slate-400" />
+                        <span className={`font-medium ${log.confidence >= 0.9 ? 'text-green-400' : log.confidence >= 0.7 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          {(log.confidence * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-400 mb-2">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </div>
+                    {log.rationale && (
+                      <div className="text-sm text-slate-300">{log.rationale}</div>
+                    )}
+                    <div className="mt-3 flex gap-2">
+                      <Button size="sm" variant="outline" className="border-green-600 text-green-400 hover:bg-green-600/20">
+                        ✅ Approve Override
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/20">
+                        ❌ Reject Override
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-4">CFO Performance Metrics</h3>
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-400">
+                      {aiLogs.filter(log => log.agent === 'CFO').length}
+                    </div>
+                    <div className="text-sm text-slate-400">Total Decisions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-400">
+                      {(aiLogs.filter(log => log.agent === 'CFO').reduce((sum, log) => sum + log.confidence, 0) / Math.max(aiLogs.filter(log => log.agent === 'CFO').length, 1) * 100).toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-slate-400">Avg Confidence</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'escalations',
+      label: '🚨 Escalations',
+      icon: AlertTriangle,
+      component: (
+        <div className="space-y-6">
+          <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
+            <h2 className="text-lg font-semibold text-red-300 mb-2">Escalation Management</h2>
+            <p className="text-red-200 text-sm">Manual review and override of escalated AI decisions requiring human intervention</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-white font-semibold mb-4">Pending Escalations</h3>
+              <div className="space-y-3">
+                {aiLogs.filter(log => log.escalation).slice(0, 5).map((log, index) => (
+                  <div key={index} className="bg-slate-800/50 border border-red-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-red-600 text-white">ESCALATED</Badge>
+                        <Badge className={`${log.agent === 'COO' ? 'bg-blue-600' : 'bg-purple-600'} text-white`}>
+                          {log.agent}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Brain className="w-4 h-4 text-slate-400" />
+                        <span className="font-medium text-yellow-400">
+                          {(log.confidence * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-400 mb-2">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </div>
+                    <div className="text-sm text-slate-300 mb-3">
+                      {log.rationale || 'Requires manual review due to high value or complexity'}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleApproveEscalation(log)}
+                      >
+                        ✅ Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => handleRejectEscalation(log)}
+                      >
+                        ❌ Reject
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/20"
+                        onClick={() => handleEscalationClick({
+                          id: `esc-${log.timestamp}-${index}`,
+                          agent: log.agent,
+                          decision: log.decision,
+                          rule: log.notes || 'Requires manual review',
+                          confidence: log.confidence,
+                          timestamp: log.timestamp,
+                          context: {}
+                        })}
+                      >
+                        📋 Review Details
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-4">Escalation Statistics</h3>
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-400">
+                      {aiLogs.filter(log => log.escalation).length}
+                    </div>
+                    <div className="text-sm text-slate-400">Total Escalations</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {((aiLogs.filter(log => log.escalation).length / Math.max(aiLogs.length, 1)) * 100).toFixed(1)}%
+                    </div>
+                    <div className="text-sm text-slate-400">Escalation Rate</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )
     },

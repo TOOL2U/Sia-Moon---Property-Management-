@@ -59,7 +59,7 @@ export async function logAIAction(entry: Omit<AILogEntry, 'id' | 'timestamp'>): 
 
   } catch (error) {
     console.error("❌ AI Log: Error logging action:", error)
-    
+
     // Fallback to local storage
     try {
       const logEntry: AILogEntry = {
@@ -76,27 +76,46 @@ export async function logAIAction(entry: Omit<AILogEntry, 'id' | 'timestamp'>): 
 }
 
 /**
- * Retrieve AI logs from the API
+ * Retrieve AI logs from the API with enhanced filtering
  */
 export async function getAILogs(filters?: {
   agent?: "COO" | "CFO"
   source?: string
+  filter?: string  // New: filter for "LIVE" mode logs
   limit?: number
   offset?: number
+  status?: string
+  confidence?: number
 }): Promise<AILogEntry[]> {
   try {
     const params = new URLSearchParams()
-    
+
     if (filters?.agent) params.append('agent', filters.agent)
     if (filters?.source) params.append('source', filters.source)
+    if (filters?.filter) params.append('filter', filters.filter)
     if (filters?.limit) params.append('limit', filters.limit.toString())
     if (filters?.offset) params.append('offset', filters.offset.toString())
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.confidence) params.append('confidence', filters.confidence.toString())
 
     const response = await fetch(`${AI_LOG_API_ENDPOINT}?${params}`)
-    
+
     if (response.ok) {
       const data = await response.json()
-      return data.logs || []
+      let logs = data.logs || []
+
+      // Apply client-side filtering for LIVE mode
+      if (filters?.filter === "LIVE") {
+        logs = logs.filter((log: AILogEntry) =>
+          log.metadata?.liveMode === true ||
+          log.metadata?.simulationMode === false ||
+          log.source === "live_booking" ||
+          log.notes?.includes("LIVE MODE") ||
+          log.notes?.includes("Real actions")
+        )
+      }
+
+      return logs
     } else {
       console.warn("⚠️ AI Log: API failed, falling back to local storage")
       return getFromLocalStorage()
@@ -114,7 +133,7 @@ export async function getAILogs(filters?: {
 export async function getAILogSummary(): Promise<AILogSummary> {
   try {
     const response = await fetch(`${AI_LOG_API_ENDPOINT}/summary`)
-    
+
     if (response.ok) {
       const summary = await response.json()
       return summary
@@ -140,7 +159,7 @@ export async function logAIDecision(params: {
   source: AILogEntry['source']
   metadata?: Record<string, any>
 }): Promise<boolean> {
-  const shouldEscalate = params.confidence < 0.7 || 
+  const shouldEscalate = params.confidence < 0.7 ||
                         params.decision.toLowerCase().includes('high-value') ||
                         params.decision.toLowerCase().includes('emergency')
 
@@ -197,7 +216,7 @@ async function logToLocalStorage(entry: AILogEntry): Promise<boolean> {
   try {
     const existingLogs = getFromLocalStorage()
     const updatedLogs = [entry, ...existingLogs].slice(0, 1000) // Keep last 1000 entries
-    
+
     localStorage.setItem(AILOG_STORAGE_KEY, JSON.stringify(updatedLogs))
     console.log("✅ AI Log: Stored to local storage")
     return true
@@ -231,11 +250,11 @@ function calculateSummaryFromLocal(): AILogSummary {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
-    const cooDecisionsToday = logs.filter(log => 
+    const cooDecisionsToday = logs.filter(log =>
       log.agent === 'COO' && new Date(log.timestamp) >= today
     ).length
 
-    const cfoUpdatesThisWeek = logs.filter(log => 
+    const cfoUpdatesThisWeek = logs.filter(log =>
       log.agent === 'CFO' && new Date(log.timestamp) >= weekAgo
     ).length
 
@@ -243,8 +262,8 @@ function calculateSummaryFromLocal(): AILogSummary {
     const overrides = logs.filter(log => log.source === 'override').length
     const totalDecisions = logs.length
 
-    const averageConfidence = logs.length > 0 
-      ? logs.reduce((sum, log) => sum + log.confidence, 0) / logs.length 
+    const averageConfidence = logs.length > 0
+      ? logs.reduce((sum, log) => sum + log.confidence, 0) / logs.length
       : 0
 
     const lastActivity = logs.length > 0 ? logs[0].timestamp : new Date().toISOString()
@@ -280,12 +299,12 @@ export async function clearOldLogs(olderThanDays: number = 30): Promise<number> 
   try {
     const logs = getFromLocalStorage()
     const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000)
-    
+
     const filteredLogs = logs.filter(log => new Date(log.timestamp) > cutoffDate)
     const removedCount = logs.length - filteredLogs.length
-    
+
     localStorage.setItem(AILOG_STORAGE_KEY, JSON.stringify(filteredLogs))
-    
+
     console.log(`🧹 AI Log: Cleared ${removedCount} old log entries`)
     return removedCount
 
@@ -301,7 +320,7 @@ export async function clearOldLogs(olderThanDays: number = 30): Promise<number> 
 export async function exportLogs(format: 'json' | 'csv' = 'json'): Promise<string> {
   try {
     const logs = await getAILogs()
-    
+
     if (format === 'csv') {
       const headers = ['timestamp', 'agent', 'decision', 'confidence', 'rationale', 'escalate', 'source', 'status']
       const csvRows = [
@@ -310,7 +329,7 @@ export async function exportLogs(format: 'json' | 'csv' = 'json'): Promise<strin
       ]
       return csvRows.join('\n')
     }
-    
+
     return JSON.stringify(logs, null, 2)
 
   } catch (error) {

@@ -2,11 +2,11 @@
 
 import { Button } from '@/components/ui/Button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/Card'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
@@ -17,16 +17,16 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 // TODO: Replace with new database service when implemented
 // import { createClient } from '@/lib/newDatabase/client'
 import {
-  validateField,
-  validateVillaOnboarding,
+    validateField,
+    validateVillaOnboarding,
 } from '@/lib/validations/villa-onboarding'
 // import DatabaseService from '@/lib/newDatabaseService'
 import { VillaPhotoUploadCloudinary } from '@/components/VillaPhotoUploadCloudinary'
 import { Label } from '@/components/ui/Label'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  OnboardingSubmissionData,
-  useOnboardingSubmit,
+    OnboardingSubmissionData,
+    useOnboardingSubmit,
 } from '@/hooks/useOnboardingSubmit'
 import { useUserSync } from '@/hooks/useUserSync'
 import { OnboardingService } from '@/lib/services/onboardingService'

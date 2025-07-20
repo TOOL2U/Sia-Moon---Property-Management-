@@ -2,7 +2,7 @@
   "settings": {
     "temperature": 0.6,
     "escalationThreshold": 0.8,
-    "simulationMode": true,
+    "simulationMode": false,
     "fallbackMessage": "I apologize, but I'm unable to process this request at the moment. Please contact our support team for assistance.",
     "maxTokens": 2000,
     "timeoutMs": 30000,

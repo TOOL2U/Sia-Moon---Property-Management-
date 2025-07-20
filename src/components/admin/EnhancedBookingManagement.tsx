@@ -1067,11 +1067,13 @@ export function EnhancedBookingManagement({
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div className="flex items-center gap-2 text-gray-300">
                                 <Calendar className="w-4 h-4 text-green-400" />
-                                <span>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in || 'Not set'}</span>
+                                <span>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ? 
+                                  toDate(booking.checkInDate || booking.checkIn || booking.check_in).toLocaleDateString() : 'Not set'}</span>
                               </div>
                               <div className="flex items-center gap-2 text-gray-300">
                                 <Calendar className="w-4 h-4 text-red-400" />
-                                <span>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out || 'Not set'}</span>
+                                <span>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ? 
+                                  toDate(booking.checkOutDate || booking.checkOut || booking.check_out).toLocaleDateString() : 'Not set'}</span>
                               </div>
                             </div>
                           </div>
@@ -1284,8 +1286,10 @@ export function EnhancedBookingManagement({
                                       {booking.approvedAt && (
                                         <div>Approved: {toDate(booking.approvedAt).toLocaleString()}</div>
                                       )}
-                                      <div>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in || 'Not set'}</div>
-                                      <div>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out || 'Not set'}</div>
+                                      <div>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ? 
+                                        toDate(booking.checkInDate || booking.checkIn || booking.check_in).toLocaleDateString() : 'Not set'}</div>
+                                      <div>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ? 
+                                        toDate(booking.checkOutDate || booking.checkOut || booking.check_out).toLocaleDateString() : 'Not set'}</div>
                                     </div>
                                   </div>
 
@@ -1396,7 +1400,8 @@ export function EnhancedBookingManagement({
                 </div>
               </div>
               <div className="text-sm text-gray-300">
-                <div>Check-in: {rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in}</div>
+                <div>Check-in: {rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in ? 
+                  toDate(rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in).toLocaleDateString() : 'Not set'}</div>
                 <div>Total: ${rejectionDialog.booking.price || rejectionDialog.booking.amount || rejectionDialog.booking.total || 0}</div>
               </div>
             </div>

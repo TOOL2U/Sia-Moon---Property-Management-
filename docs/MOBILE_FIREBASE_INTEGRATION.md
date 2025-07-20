@@ -230,12 +230,100 @@ The backend automatically creates test jobs for `staff@siamoon.com`. These will 
 
 ---
 
-## 🚀 Next Steps for Mobile Team
+## � URGENT: Duplicate Notification Issue - Coordination Required
 
+### **Critical Issue Identified:**
+We've discovered **19 duplicate notifications for a single job assignment** due to both webapp and mobile app sending notifications for the same events.
+
+### **Root Cause:**
+- **Mobile app** sends notifications when jobs are assigned/updated
+- **Webapp** ALSO sends notifications for the same events
+- **Webhook syncing** between systems triggers both to send notifications
+- **No coordination** between notification systems
+
+### **Immediate Actions Taken (Webapp Side):**
+1. ✅ **Disabled webapp notification listeners** to prevent duplicates
+2. ✅ **Enhanced Cloud Function deduplication** logic
+3. ✅ **Added notification state management**
+4. ✅ **Created comprehensive test suite** for verification
+
+### **Mobile Team Coordination Required:**
+
+#### **Phase 1: Verify Mobile Notification Handling**
+Ensure your mobile app properly handles notifications:
+
+```javascript
+// Mobile app should implement deduplication
+const processedNotifications = new Set<string>()
+
+function handleNotification(notification) {
+  // Prevent duplicate processing
+  if (processedNotifications.has(notification.id)) {
+    console.log('Notification already processed - ignoring')
+    return
+  }
+
+  processedNotifications.add(notification.id)
+
+  // Show exactly: 1 banner + 1 push notification
+  showInAppBanner({
+    title: '🎯 New Job Assignment',
+    message: notification.jobTitle,
+    duration: 5000
+  })
+
+  // Acknowledge to prevent re-delivery
+  await acknowledgeNotification(notification.id)
+}
+```
+
+#### **Phase 2: Test Coordination**
+Test with these scenarios:
+1. **Single Assignment**: Create 1 job → Should see exactly 1 banner + 1 push
+2. **Rapid Assignments**: Create 3 jobs quickly → Should see 3 separate notifications (not 9+)
+3. **Timing**: Notifications should arrive within 2-3 seconds
+4. **Acknowledgment**: Mark as read → No duplicates should appear
+
+#### **Phase 3: Notification Ownership Decision**
+Choose the notification strategy:
+- **Option A**: Mobile app handles ALL notifications ✅ (Recommended)
+- **Option B**: Webapp handles ALL notifications
+- **Option C**: Centralized notification service
+
+### **Current Status:**
+- **Webapp**: Notifications disabled, Cloud Functions enhanced
+- **Mobile**: Needs verification and testing
+- **Expected Result**: 1 notification per job assignment (down from 19)
+
+### **Communication Protocol:**
+When testing, confirm:
+1. ✅ Only 1 notification received per job
+2. ✅ Notification timing is under 3 seconds
+3. ✅ No duplicate processing in mobile app
+4. ✅ Proper acknowledgment to backend
+
+---
+
+## �🚀 Next Steps for Mobile Team
+
+### **Immediate (Today):**
+1. **Verify notification deduplication** in mobile app code
+2. **Test job assignment notifications** with webapp team
+3. **Confirm only 1 notification** per job assignment
+4. **Report any remaining duplicates** immediately
+
+### **Standard Integration:**
 1. **Setup Firebase SDK** in your mobile app with project ID: `operty-b54dc`
 2. **Implement Authentication** using Firebase Auth
 3. **Query staff_accounts** to get user's Firebase UID
 4. **Listen to staff_notifications** filtered by userId
 5. **Test with staff@siamoon.com** account for development
 
+### **Testing Coordination:**
+- **Backend test suite**: Available for notification verification
+- **Test account**: `staff@siamoon.com` prioritized for testing
+- **Monitoring**: Cloud Function logs show deduplication working
+
 For additional support or questions, refer to the test job creation system which automatically generates properly formatted data for testing.
+
+**🔴 Priority**: Fix duplicate notifications before continuing other development.

@@ -117,7 +117,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const addToast = (toast: Omit<Toast, 'id'>): string => {
     const id = Math.random().toString(36).substr(2, 9)
     const newToast = { ...toast, id }
-    
+
     setToasts((prev) => [...prev, newToast])
     return id
   }
@@ -176,9 +176,9 @@ export const simpleToast = {
         </svg>
         <span class="text-white text-sm flex-1">${message}</span>
       `
-      
+
       document.body.appendChild(toastEl)
-      
+
       setTimeout(() => {
         if (toastEl.parentNode) {
           toastEl.parentNode.removeChild(toastEl)
@@ -203,9 +203,9 @@ export const simpleToast = {
         </svg>
         <span class="text-white text-sm flex-1">${message}</span>
       `
-      
+
       document.body.appendChild(toastEl)
-      
+
       setTimeout(() => {
         if (toastEl.parentNode) {
           toastEl.parentNode.removeChild(toastEl)
@@ -231,7 +231,7 @@ export const simpleToast = {
         </svg>
         <span class="text-white text-sm flex-1">${message}</span>
       `
-      
+
       document.body.appendChild(toastEl)
       return toastEl
     } else {

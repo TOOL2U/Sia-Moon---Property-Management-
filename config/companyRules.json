@@ -12,6 +12,6 @@
     "Reject expenses without proper documentation or receipts",
     "Test integration rule - All bookings during holidays require double confirmation"
   ],
-  "lastUpdated": "2025-07-20T08:08:45.777Z",
-  "version": 5
+  "lastUpdated": "2025-07-20T14:34:19.258Z",
+  "version": 6
 }

@@ -6,12 +6,13 @@ import { useState } from 'react'
 // import DatabaseService from '@/lib/newDatabaseService'
 import { Button } from '@/components/ui/Button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/Card'
+import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete'
 import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { clientToast as toast } from '@/utils/clientToast'
@@ -207,24 +208,23 @@ export default function AddPropertyPage() {
                   helperText="Choose a memorable name for your property"
                 />
 
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Property Address <span className="text-red-400">*</span>
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="flex w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white placeholder:text-neutral-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-neutral-600"
-                    placeholder="123 Beach Road, Tambon Choeng Thale, Thalang District, Phuket 83110, Thailand"
-                  />
-                  <p className="text-sm text-neutral-400 mt-1">
-                    Include full address with district, province, and postal
-                    code
-                  </p>
-                </div>
+                <GooglePlacesAutocomplete
+                  label="Property Address"
+                  value={formData.address}
+                  onChange={(value, placeResult) => {
+                    setFormData(prev => ({ ...prev, address: value }))
+                    if (error) setError('')
+                  }}
+                  onPlaceSelect={(placeResult) => {
+                    console.log('Selected place:', placeResult)
+                    // You can store additional place data here if needed
+                  }}
+                  placeholder="123 Beach Road, Tambon Choeng Thale, Thalang District, Phuket 83110, Thailand"
+                  required
+                  helperText="Start typing to see address suggestions. Include full address with district, province, and postal code"
+                  countryRestriction={['th']}
+                  types={['address']}
+                />
 
                 {error && (
                   <div className="flex items-center space-x-2 p-3 bg-red-950/20 border border-red-800/30 rounded-lg">

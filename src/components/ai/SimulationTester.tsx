@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { runAIBookingTest, runAICFOTest } from '@/lib/ai/simulateAIActions'
 import {
     AlertCircle,
+    BookOpen,
     CheckCircle,
     Copy,
     DollarSign,
@@ -301,6 +303,50 @@ export default function SimulationTester() {
     }
   }
 
+  // New AI Booking Test Handler using simulateAIActions
+  const runAIBookingTestHandler = async (testCaseId: string) => {
+    setLoading(true)
+    setError(null)
+    setResponse(null)
+
+    try {
+      console.log(`🧪 Running AI Booking Test: ${testCaseId}`)
+      const result = await runAIBookingTest(testCaseId)
+
+      console.log(`✅ AI Booking Test ${testCaseId} completed:`, result)
+      setResponse(result.response)
+      setSelectedScenario(null)
+
+    } catch (err) {
+      console.error(`❌ AI Booking Test ${testCaseId} failed:`, err)
+      setError(err instanceof Error ? err.message : 'Test failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // New AI CFO Test Handler using simulateAIActions
+  const runAICFOTestHandler = async () => {
+    setLoading(true)
+    setError(null)
+    setResponse(null)
+
+    try {
+      console.log('🧪 Running AI CFO Test')
+      const result = await runAICFOTest()
+
+      console.log('✅ AI CFO Test completed:', result)
+      setResponse(result.response)
+      setSelectedScenario(null)
+
+    } catch (err) {
+      console.error('❌ AI CFO Test failed:', err)
+      setError(err instanceof Error ? err.message : 'Test failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Card className="w-full bg-neutral-900 border-neutral-700">
       <CardHeader>
@@ -373,17 +419,67 @@ export default function SimulationTester() {
               Run CFO Test
             </Button>
           </div>
-          <p className="text-xs text-neutral-400 mt-2">
-            Quick tests run predefined scenarios. Check console for detailed results.
-            <br />
-            <a
-              href="/docs/ai-test-scenarios.md"
-              target="_blank"
-              className="underline hover:text-neutral-300"
-            >
-              📖 View Test Scenarios Documentation
-            </a>
-          </p>
+
+          {/* Enhanced Simulation Tests */}
+          <div className="mt-3 pt-3 border-t border-neutral-700">
+            <h4 className="text-sm font-medium text-neutral-300 mb-2">Enhanced Simulation Tests</h4>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => runAIBookingTestHandler('booking1')}
+                disabled={loading}
+                size="sm"
+                variant="outline"
+                className="bg-blue-700 hover:bg-blue-600 text-white border-blue-600"
+              >
+                <TestTube className="h-3 w-3 mr-1" />
+                Sim Booking 1
+              </Button>
+              <Button
+                onClick={() => runAIBookingTestHandler('booking2')}
+                disabled={loading}
+                size="sm"
+                variant="outline"
+                className="bg-blue-700 hover:bg-blue-600 text-white border-blue-600"
+              >
+                <TestTube className="h-3 w-3 mr-1" />
+                Sim Booking 2
+              </Button>
+              <Button
+                onClick={() => runAIBookingTestHandler('booking3')}
+                disabled={loading}
+                size="sm"
+                variant="outline"
+                className="bg-blue-700 hover:bg-blue-600 text-white border-blue-600"
+              >
+                <TestTube className="h-3 w-3 mr-1" />
+                Sim Booking 3
+              </Button>
+              <Button
+                onClick={() => runAICFOTestHandler()}
+                disabled={loading}
+                size="sm"
+                variant="outline"
+                className="bg-green-700 hover:bg-green-600 text-white border-green-600"
+              >
+                <DollarSign className="h-3 w-3 mr-1" />
+                Sim CFO Test
+              </Button>
+            </div>
+          </div>
+          <div className="mt-3 p-2 bg-neutral-900 rounded border border-neutral-700">
+            <p className="text-xs text-neutral-400 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              Tests run in simulation mode and won't affect real data.
+              <a
+                href="/docs/ai-test-scenarios.md"
+                target="_blank"
+                className="underline hover:text-neutral-300 ml-1 flex items-center gap-1"
+              >
+                <BookOpen className="h-3 w-3" />
+                View test scenarios
+              </a>
+            </p>
+          </div>
         </div>
 
         {/* Test Tabs */}

@@ -5,11 +5,11 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  Bell, 
-  BellRing, 
-  Check, 
-  CheckCheck, 
+import {
+  Bell,
+  BellRing,
+  Check,
+  CheckCheck,
   X,
   Settings,
   FileText,
@@ -37,9 +37,9 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     markAsRead,
     markAllAsRead
   } = useNotifications()
-  
+
   const [showSettings, setShowSettings] = useState(false)
-  
+
   const getNotificationIcon = (category: string) => {
     switch (category) {
       case 'report_generated': return FileText
@@ -52,10 +52,10 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
       default: return Bell
     }
   }
-  
+
   const getNotificationColor = (category: string, priority: string) => {
     if (priority === 'urgent') return 'text-red-400'
-    
+
     switch (category) {
       case 'report_generated': return 'text-blue-400'
       case 'task_assigned': return 'text-green-400'
@@ -67,7 +67,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
       default: return 'text-neutral-400'
     }
   }
-  
+
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'urgent':
@@ -82,12 +82,12 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
         return null
     }
   }
-  
+
   const handleNotificationClick = async (notification: Notification) => {
     if (notification.status !== 'read') {
       await markAsRead(notification.id)
     }
-    
+
     // Handle navigation based on notification data
     if (notification.data?.report_url) {
       window.open(notification.data.report_url, '_blank')
@@ -95,9 +95,9 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
       window.open(notification.data.task_url, '_blank')
     }
   }
-  
+
   if (!isOpen) return null
-  
+
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
       <div className="fixed right-4 top-16 w-96 max-h-[80vh] bg-neutral-950 border border-neutral-800 rounded-lg shadow-xl overflow-hidden">
@@ -112,7 +112,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -122,7 +122,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             >
               <Settings className="h-4 w-4" />
             </Button>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -133,7 +133,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             </Button>
           </div>
         </div>
-        
+
         {/* Actions */}
         {unreadCount > 0 && (
           <div className="p-3 border-b border-neutral-800">
@@ -148,7 +148,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             </Button>
           </div>
         )}
-        
+
         {/* Notifications List */}
         <div className="overflow-y-auto max-h-96">
           {loading ? (
@@ -168,7 +168,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                 const IconComponent = getNotificationIcon(notification.category)
                 const iconColor = getNotificationColor(notification.category, notification.priority)
                 const isUnread = notification.status !== 'read'
-                
+
                 return (
                   <div
                     key={notification.id}
@@ -181,13 +181,13 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                       <div className={`flex-shrink-0 ${iconColor}`}>
                         <IconComponent className="h-5 w-5" />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className={`font-medium ${isUnread ? 'text-white' : 'text-neutral-300'}`}>
                             {notification.title}
                           </h4>
-                          
+
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {getPriorityBadge(notification.priority)}
                             {isUnread && (
@@ -195,16 +195,16 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                             )}
                           </div>
                         </div>
-                        
+
                         <p className={`text-sm mt-1 ${isUnread ? 'text-neutral-300' : 'text-neutral-400'}`}>
                           {notification.message}
                         </p>
-                        
+
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs text-neutral-500">
                             {format(toDate(notification.created_at), 'MMM d, h:mm a')}
                           </span>
-                          
+
                           {isUnread && (
                             <Button
                               variant="ghost"
@@ -228,7 +228,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             </div>
           )}
         </div>
-        
+
         {/* Settings Panel */}
         {showSettings && (
           <div className="border-t border-neutral-800 p-4">
@@ -242,7 +242,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
 
 function NotificationSettings({ onClose }: { onClose: () => void }) {
   const { preferences, updatePreferences, registerForPush, unregisterFromPush } = useNotifications()
-  
+
   if (!preferences) {
     return (
       <div className="text-center py-4">
@@ -250,7 +250,7 @@ function NotificationSettings({ onClose }: { onClose: () => void }) {
       </div>
     )
   }
-  
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -259,7 +259,7 @@ function NotificationSettings({ onClose }: { onClose: () => void }) {
           <X className="h-3 w-3" />
         </Button>
       </div>
-      
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm text-neutral-300">Email notifications</span>
@@ -272,7 +272,7 @@ function NotificationSettings({ onClose }: { onClose: () => void }) {
             {preferences.email_enabled ? 'Enabled' : 'Disabled'}
           </Button>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-sm text-neutral-300">Push notifications</span>
           <Button
@@ -284,7 +284,7 @@ function NotificationSettings({ onClose }: { onClose: () => void }) {
             {preferences.push_enabled ? 'Enabled' : 'Disabled'}
           </Button>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-sm text-neutral-300">Report notifications</span>
           <Button
@@ -296,7 +296,7 @@ function NotificationSettings({ onClose }: { onClose: () => void }) {
             {preferences.email_reports ? 'On' : 'Off'}
           </Button>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-sm text-neutral-300">Task notifications</span>
           <Button

@@ -1,22 +1,13 @@
 'use client'
 
-import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Card, CardContent } from '@/components/ui/Card'
+import { motion } from 'framer-motion'
 import {
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Home,
-  MapPin,
-  Users,
-  Activity,
-  Target,
-  Car,
-  Eye,
-  EyeOff,
-  Loader2,
+    AlertTriangle,
+    Home,
+    Loader2,
+    MapPin,
+    Users
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import CommandCenterControls from './CommandCenterControls'
@@ -85,6 +76,7 @@ export default function OperationsMapDashboard() {
   const [staff, setStaff] = useState<StaffLocation[]>([])
   const [activeTasks, setActiveTasks] = useState<ActiveTask[]>([])
   const [alerts, setAlerts] = useState<OperationalAlert[]>([])
+  const [realMapData, setRealMapData] = useState<{ properties: any[], staff: any[] }>({ properties: [], staff: [] })
   const [liveMetrics, setLiveMetrics] = useState<LiveMetrics>({
     totalProperties: 0,
     occupiedProperties: 0,
@@ -104,9 +96,32 @@ export default function OperationsMapDashboard() {
   // Load operational data
   useEffect(() => {
     loadOperationalData()
-    const interval = setInterval(loadOperationalData, 30000)
+    loadRealMapData()
+    const interval = setInterval(() => {
+      loadOperationalData()
+      loadRealMapData()
+    }, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Load real property and staff data for operations map
+  const loadRealMapData = async () => {
+    try {
+      // Import the service dynamically to avoid SSR issues
+      const { default: mapDataService } = await import('@/lib/services/mapDataService')
+
+      // Load real properties and staff data
+      const [properties, staff] = await Promise.all([
+        mapDataService.getPropertiesForMap(),
+        mapDataService.getStaffForMap()
+      ])
+
+      setRealMapData({ properties, staff })
+      console.log(`🗺️ Operations: Loaded ${properties.length} properties and ${staff.length} staff`)
+    } catch (error) {
+      console.error('Error loading real operations map data:', error)
+    }
+  }
 
   const loadOperationalData = async () => {
     setIsLoading(true)
@@ -230,8 +245,50 @@ export default function OperationsMapDashboard() {
     }
   }
 
-  // Simple Interactive Map Component
-  const InteractiveMap = () => (
+  // Import Google Maps config
+  const { googleMapsConfig } = require('@/lib/env')
+
+  // Check if Google Maps is available
+  const isGoogleMapsAvailable = googleMapsConfig?.enabled && googleMapsConfig?.apiKey !== 'YOUR_API_KEY'
+
+  // Generate Google Maps embed URL for operations center
+  const generateOperationsMapUrl = () => {
+    if (!isGoogleMapsAvailable) {
+      return null
+    }
+
+    const apiKey = googleMapsConfig.apiKey
+    // Center on Koh Phangan, Thailand (operations area)
+    const center = '9.7349,100.0269'
+
+    return `https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${center}&zoom=13`
+  }
+
+  // Generate Static Maps API URL with property and staff markers
+  const generateOperationsStaticMapUrl = () => {
+    if (!isGoogleMapsAvailable) {
+      return null
+    }
+
+    const apiKey = googleMapsConfig.apiKey
+    const center = '9.7349,100.0269'
+    const size = '800x600'
+
+    // Add markers for properties
+    const propertyMarkers = properties.map((property, index) =>
+      `&markers=color:blue%7Clabel:P${index + 1}%7C${property.coordinates.lat},${property.coordinates.lng}`
+    ).join('')
+
+    // Add markers for staff
+    const staffMarkers = staff.map((member, index) =>
+      `&markers=color:green%7Clabel:S${index + 1}%7C${member.coordinates.lat},${member.coordinates.lng}`
+    ).join('')
+
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${center}&zoom=13&size=${size}&key=${apiKey}${propertyMarkers}${staffMarkers}`
+  }
+
+  // Fallback Map Component
+  const FallbackMap = () => (
     <div
       ref={mapRef}
       className={`relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-lg overflow-hidden ${
@@ -240,6 +297,16 @@ export default function OperationsMapDashboard() {
     >
       {/* Map Background */}
       <div className="absolute inset-0 opacity-20" />
+
+      {/* Google Maps unavailable notice */}
+      {!isGoogleMapsAvailable && (
+        <div className="absolute top-4 left-4 bg-yellow-900/80 border border-yellow-600/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-yellow-200 text-sm">
+            <AlertTriangle className="w-4 h-4" />
+            <span>Google Maps API not configured - Using fallback view</span>
+          </div>
+        </div>
+      )}
 
       {/* Property Markers */}
       {properties.map((property, index) => (
@@ -295,6 +362,63 @@ export default function OperationsMapDashboard() {
       </div>
     </div>
   )
+
+  // Main Interactive Map Component
+  const InteractiveMap = () => {
+    if (!isGoogleMapsAvailable) {
+      return <FallbackMap />
+    }
+
+    return (
+      <div className={`relative rounded-lg overflow-hidden ${
+        isFullScreen ? 'h-screen' : 'h-96 lg:h-[600px]'
+      }`}>
+        {/* Google Maps Embed */}
+        <iframe
+          src={generateOperationsMapUrl() || ''}
+          className="w-full h-full"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="Operations Map"
+          onError={() => {
+            console.warn('Google Maps failed to load, using fallback')
+          }}
+        />
+
+        {/* Operations Overlay */}
+        <div className="absolute top-4 right-4 bg-black/80 rounded-lg p-3 max-w-xs">
+          <div className="text-xs text-white space-y-2">
+            <div className="font-semibold flex items-center gap-2">
+              <MapPin className="w-3 h-3 text-blue-400" />
+              Operations Overview
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-blue-300">Properties:</span>
+                <span>{properties.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-green-300">Active Staff:</span>
+                <span>{staff.filter(s => s.status !== 'offline').length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-yellow-300">Active Tasks:</span>
+                <span>{activeTasks.filter(t => t.status !== 'completed').length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status indicator */}
+        <div className="absolute bottom-4 left-4 bg-green-900/80 border border-green-600/50 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2 text-green-200 text-xs">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Google Maps Active</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-50 bg-gray-900 p-4' : ''}`}>

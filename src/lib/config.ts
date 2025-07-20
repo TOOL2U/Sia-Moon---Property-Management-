@@ -4,16 +4,19 @@
  * SIMULATION MODE - Controls whether AI actions are simulated or real
  * Set to false in production to enable real actions
  * Set to true in development/staging for safe testing
+ *
+ * 🟢 LIVE MODE ENABLED - Real actions will be triggered
  */
-export const SIMULATION_MODE = process.env.NODE_ENV !== 'production' || process.env.AI_SIMULATION_MODE === 'true'
+export const SIMULATION_MODE = false
 
 /**
  * Simulation Mode Configuration
+ * 🟢 LIVE MODE - Real actions enabled
  */
 export const SIMULATION_CONFIG = {
   enabled: SIMULATION_MODE,
-  logPrefix: '🧪 SIMULATION MODE',
-  responseNote: 'This was a simulation run - no real actions were performed.',
+  logPrefix: '🟢 LIVE MODE',
+  responseNote: 'Real actions were performed - emails sent, calendar events created, staff assigned.',
   allowRealActions: !SIMULATION_MODE,
   testDataEnabled: SIMULATION_MODE
 }

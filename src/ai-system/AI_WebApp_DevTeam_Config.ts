@@ -135,8 +135,43 @@ export const API_ROUTES = [
   { route: "/api/ai-policy", method: "GET/POST", purpose: "Retrieve and update policies" }
 ];
 
-// 🔄 Simulation Mode
-export const SIMULATION_MODE = true;
+// 🟢 Live Mode - Real actions enabled
+export const SIMULATION_MODE = false;
+
+// 📧 Notification Configuration
+export const NOTIFICATION_CONFIG = {
+  bookingConfirmation: false,
+  jobAssignment: false,
+  escalationAlert: false,
+  financialUploadAlert: false,
+  emailEnabled: true,
+  smsEnabled: true,
+  calendarEnabled: true,
+  auditLogging: true
+}
+
+/**
+ * Enable notification triggers for live mode operation
+ * @param triggers Object specifying which notifications to enable
+ */
+export function enableNotificationTriggers(triggers: {
+  bookingConfirmation?: boolean
+  jobAssignment?: boolean
+  escalationAlert?: boolean
+  financialUploadAlert?: boolean
+}) {
+  Object.assign(NOTIFICATION_CONFIG, triggers)
+  console.log('🔔 Notification triggers updated:', NOTIFICATION_CONFIG)
+  return NOTIFICATION_CONFIG
+}
+
+// 🔔 Enable all notification triggers for live mode
+enableNotificationTriggers({
+  bookingConfirmation: true,
+  jobAssignment: true,
+  escalationAlert: true,
+  financialUploadAlert: true
+})
 
 // 🎯 Confidence Threshold Control
 export const CONFIDENCE_THRESHOLD = 85; // AI must be at least 85% confident for auto-approval

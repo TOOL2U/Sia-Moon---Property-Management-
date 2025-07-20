@@ -23,20 +23,20 @@ export const firebaseConfig = {
 export const validateFirebaseConfig = () => {
   const requiredFields = [
     'apiKey',
-    'authDomain', 
+    'authDomain',
     'projectId',
     'storageBucket',
     'messagingSenderId',
     'appId'
   ]
-  
+
   const missing = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig])
-  
+
   if (missing.length > 0) {
     console.error('❌ Missing Firebase configuration:', missing)
     return false
   }
-  
+
   return true
 }
 
@@ -62,6 +62,17 @@ export const cloudinaryConfig = {
   cloudName: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   apiKey: CLOUDINARY_API_KEY,
   apiSecret: CLOUDINARY_API_SECRET,
+}
+
+// Google Maps configuration
+export const NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+
+export const googleMapsConfig = {
+  apiKey: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+  enabled: !!NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+  libraries: ['places', 'geometry'],
+  region: 'TH', // Thailand
+  language: 'en',
 }
 
 // Application URLs
@@ -93,6 +104,7 @@ export const envInfo = {
   hasFirebaseConfig: validateFirebaseConfig(),
   hasOpenAIConfig: !!openaiConfig.apiKey,
   hasCloudinaryConfig: !!cloudinaryConfig.cloudName,
+  hasGoogleMapsConfig: googleMapsConfig.enabled,
   baseUrl: appConfig.baseUrl,
   timestamp: new Date().toISOString(),
 }
