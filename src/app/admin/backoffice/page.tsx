@@ -8,11 +8,11 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { clientToast as toast } from '@/utils/clientToast'
@@ -25,11 +25,11 @@ import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
 import WizardStaffModal from '@/components/staff/WizardStaffModal'
 import { FinancialDashboard, FinancialFilters } from '@/types/financial'
 import {
-  STAFF_ROLES,
-  STAFF_STATUSES,
-  StaffFilters,
-  StaffProfile,
-  StaffStats,
+    STAFF_ROLES,
+    STAFF_STATUSES,
+    StaffFilters,
+    StaffProfile,
+    StaffStats,
 } from '@/types/staff'
 
 import BookingApprovalModal from '@/components/booking/BookingApprovalModal'
@@ -49,12 +49,12 @@ import StaffImportExportModal from '@/components/staff/StaffImportExportModal'
 import AdvancedCalendarView from '@/components/admin/AdvancedCalendarView'
 import AIAuditLogViewer from '@/components/admin/AIAuditLogViewer'
 import AIAutomationToggle from '@/components/admin/AIAutomationToggle'
-import AIBookingTestPanel from '@/components/admin/AIBookingTestPanel'
+
 import AIDisabledWarning from '@/components/admin/AIDisabledWarning'
 import CalendarSyncDashboard from '@/components/admin/CalendarSyncDashboard'
 import { CalendarView } from '@/components/admin/CalendarView'
 import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
-import ComprehensiveAIDashboard from '@/components/admin/ComprehensiveAIDashboard'
+
 import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
 import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
 import JobAcceptancePanel from '@/components/admin/JobAcceptancePanel'
@@ -63,12 +63,11 @@ import KPIDashboard from '@/components/admin/KPIDashboard'
 import { MobileIntegrationStatus } from '@/components/admin/MobileIntegrationStatus'
 import NotificationDashboard from '@/components/admin/NotificationDashboard'
 import OperationsMapDashboard from '@/components/admin/OperationsMapDashboard'
-import SmartJobAnalyticsDashboard from '@/components/admin/SmartJobAnalyticsDashboard'
-import SmartJobTestPanel from '@/components/admin/SmartJobTestPanel'
+
+import { OnboardingService } from '@/lib/services/onboardingService'
 import CalendarEventService from '@/services/CalendarEventService'
 import CalendarIntegrationService from '@/services/CalendarIntegrationService'
 import TestJobService from '@/services/TestJobService'
-import { OnboardingService } from '@/lib/services/onboardingService'
 import { testCalendarIntegration } from '@/utils/calendarTestUtils'
 import { Send } from 'lucide-react'
 // Firebase imports for calendar cleanup
@@ -77,58 +76,58 @@ import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
 // BookingSyncService removed - unused
 // Real-time sync services removed - handled by individual components
 import {
-  Activity,
-  AlertCircle,
-  AlertTriangle,
-  ArrowDown,
-  // Removed unused icons
-  ArrowUp,
-  ArrowUpDown,
-  BarChart3,
-  Bell,
-  Brain,
-  Building2,
-  Calendar,
-  Calendar as CalendarDays,
-  Calendar as CalendarIcon,
-  CheckCircle,
-  ChevronRight,
-  ClipboardList,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Edit,
-  ExternalLink,
-  Eye,
-  FileText,
-  Filter,
-  Home,
-  Key,
-  Loader2,
-  LogIn,
-  LogOut,
-  Mail,
-  Percent,
-  Phone,
-  PieChart,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings,
-  Star,
-  Target,
-  Trash2,
-  TrendingDown,
-  TrendingUp,
-  User,
-  UserCheck,
-  Users,
-  Wrench,
-  // MoreHorizontal removed - unused
-  X,
-  XCircle,
-  Zap,
+    Activity,
+    AlertCircle,
+    AlertTriangle,
+    ArrowDown,
+    // Removed unused icons
+    ArrowUp,
+    ArrowUpDown,
+    BarChart3,
+    Bell,
+    Brain,
+    Building2,
+    Calendar,
+    Calendar as CalendarDays,
+    Calendar as CalendarIcon,
+    CheckCircle,
+    ChevronRight,
+    ClipboardList,
+    Clock,
+    CreditCard,
+    DollarSign,
+    Download,
+    Edit,
+    ExternalLink,
+    Eye,
+    FileText,
+    Filter,
+    Home,
+    Key,
+    Loader2,
+    LogIn,
+    LogOut,
+    Mail,
+    Percent,
+    Phone,
+    PieChart,
+    Plus,
+    RefreshCw,
+    Search,
+    Settings,
+    Star,
+    Target,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
+    User,
+    UserCheck,
+    Users,
+    Wrench,
+    // MoreHorizontal removed - unused
+    X,
+    XCircle,
+    Zap,
 } from 'lucide-react'
 
 // Note: Mock data removed - now using real Firebase data from API endpoints
@@ -205,24 +204,24 @@ export default function BackOfficePage() {
   // Utility functions to safely convert timestamps to dates
   const formatTimestamp = (timestamp: any): string => {
     if (!timestamp) return 'N/A'
-    
+
     try {
       // Handle Firestore Timestamp objects
       if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
         return timestamp.toDate().toLocaleString()
       }
-      
+
       // Handle Firestore Timestamp-like objects with seconds/nanoseconds
       if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
         return new Date(timestamp.seconds * 1000).toLocaleString()
       }
-      
+
       // Handle regular date strings/numbers
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) {
         return 'Invalid Date'
       }
-      
+
       return date.toLocaleString()
     } catch (error) {
       console.error('Error formatting timestamp:', error, timestamp)
@@ -232,24 +231,24 @@ export default function BackOfficePage() {
 
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return 'Unknown date'
-    
+
     try {
       // Handle Firestore Timestamp objects
       if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
         return timestamp.toDate().toLocaleDateString()
       }
-      
+
       // Handle Firestore Timestamp-like objects with seconds/nanoseconds
       if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
         return new Date(timestamp.seconds * 1000).toLocaleDateString()
       }
-      
+
       // Handle regular date strings/numbers
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) {
         return 'Invalid Date'
       }
-      
+
       return date.toLocaleDateString()
     } catch (error) {
       console.error('Error formatting date:', error, timestamp)
@@ -1715,27 +1714,47 @@ export default function BackOfficePage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <label className="text-sm text-neutral-400">Full Name</label>
-                        <p className="text-white">{selectedSubmission.ownerFullName}</p>
+                        <label className="text-sm text-neutral-400">
+                          Full Name
+                        </label>
+                        <p className="text-white">
+                          {selectedSubmission.ownerFullName}
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm text-neutral-400">Email</label>
-                        <p className="text-white">{selectedSubmission.ownerEmail}</p>
+                        <label className="text-sm text-neutral-400">
+                          Email
+                        </label>
+                        <p className="text-white">
+                          {selectedSubmission.ownerEmail}
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm text-neutral-400">Phone</label>
-                        <p className="text-white">{selectedSubmission.ownerContactNumber}</p>
+                        <label className="text-sm text-neutral-400">
+                          Phone
+                        </label>
+                        <p className="text-white">
+                          {selectedSubmission.ownerContactNumber}
+                        </p>
                       </div>
                       {selectedSubmission.ownerNationality && (
                         <div>
-                          <label className="text-sm text-neutral-400">Nationality</label>
-                          <p className="text-white">{selectedSubmission.ownerNationality}</p>
+                          <label className="text-sm text-neutral-400">
+                            Nationality
+                          </label>
+                          <p className="text-white">
+                            {selectedSubmission.ownerNationality}
+                          </p>
                         </div>
                       )}
                       {selectedSubmission.preferredContactMethod && (
                         <div>
-                          <label className="text-sm text-neutral-400">Preferred Contact</label>
-                          <p className="text-white">{selectedSubmission.preferredContactMethod}</p>
+                          <label className="text-sm text-neutral-400">
+                            Preferred Contact
+                          </label>
+                          <p className="text-white">
+                            {selectedSubmission.preferredContactMethod}
+                          </p>
                         </div>
                       )}
                     </CardContent>
@@ -1751,19 +1770,29 @@ export default function BackOfficePage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <label className="text-sm text-neutral-400">Property Name</label>
-                        <p className="text-white">{selectedSubmission.propertyName}</p>
+                        <label className="text-sm text-neutral-400">
+                          Property Name
+                        </label>
+                        <p className="text-white">
+                          {selectedSubmission.propertyName}
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm text-neutral-400">Address</label>
-                        <p className="text-white">{selectedSubmission.propertyAddress || 'Not provided'}</p>
+                        <label className="text-sm text-neutral-400">
+                          Address
+                        </label>
+                        <p className="text-white">
+                          {selectedSubmission.propertyAddress || 'Not provided'}
+                        </p>
                       </div>
                       {selectedSubmission.googleMapsUrl && (
                         <div>
-                          <label className="text-sm text-neutral-400">Google Maps</label>
-                          <a 
-                            href={selectedSubmission.googleMapsUrl} 
-                            target="_blank" 
+                          <label className="text-sm text-neutral-400">
+                            Google Maps
+                          </label>
+                          <a
+                            href={selectedSubmission.googleMapsUrl}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-400 hover:text-blue-300 underline"
                           >
@@ -1773,18 +1802,30 @@ export default function BackOfficePage() {
                       )}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-sm text-neutral-400">Bedrooms</label>
-                          <p className="text-white">{selectedSubmission.bedrooms || 'Not specified'}</p>
+                          <label className="text-sm text-neutral-400">
+                            Bedrooms
+                          </label>
+                          <p className="text-white">
+                            {selectedSubmission.bedrooms || 'Not specified'}
+                          </p>
                         </div>
                         <div>
-                          <label className="text-sm text-neutral-400">Bathrooms</label>
-                          <p className="text-white">{selectedSubmission.bathrooms || 'Not specified'}</p>
+                          <label className="text-sm text-neutral-400">
+                            Bathrooms
+                          </label>
+                          <p className="text-white">
+                            {selectedSubmission.bathrooms || 'Not specified'}
+                          </p>
                         </div>
                       </div>
                       {selectedSubmission.yearBuilt && (
                         <div>
-                          <label className="text-sm text-neutral-400">Year Built</label>
-                          <p className="text-white">{selectedSubmission.yearBuilt}</p>
+                          <label className="text-sm text-neutral-400">
+                            Year Built
+                          </label>
+                          <p className="text-white">
+                            {selectedSubmission.yearBuilt}
+                          </p>
                         </div>
                       )}
                     </CardContent>
@@ -1801,37 +1842,73 @@ export default function BackOfficePage() {
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <span className={selectedSubmission.hasPool ? 'text-green-400' : 'text-neutral-500'}>
+                          <span
+                            className={
+                              selectedSubmission.hasPool
+                                ? 'text-green-400'
+                                : 'text-neutral-500'
+                            }
+                          >
                             {selectedSubmission.hasPool ? '✓' : '✗'}
                           </span>
                           Pool
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={selectedSubmission.hasGarden ? 'text-green-400' : 'text-neutral-500'}>
+                          <span
+                            className={
+                              selectedSubmission.hasGarden
+                                ? 'text-green-400'
+                                : 'text-neutral-500'
+                            }
+                          >
                             {selectedSubmission.hasGarden ? '✓' : '✗'}
                           </span>
                           Garden
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={selectedSubmission.hasAirConditioning ? 'text-green-400' : 'text-neutral-500'}>
+                          <span
+                            className={
+                              selectedSubmission.hasAirConditioning
+                                ? 'text-green-400'
+                                : 'text-neutral-500'
+                            }
+                          >
                             {selectedSubmission.hasAirConditioning ? '✓' : '✗'}
                           </span>
                           Air Conditioning
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={selectedSubmission.hasParking ? 'text-green-400' : 'text-neutral-500'}>
+                          <span
+                            className={
+                              selectedSubmission.hasParking
+                                ? 'text-green-400'
+                                : 'text-neutral-500'
+                            }
+                          >
                             {selectedSubmission.hasParking ? '✓' : '✗'}
                           </span>
                           Parking
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={selectedSubmission.hasLaundry ? 'text-green-400' : 'text-neutral-500'}>
+                          <span
+                            className={
+                              selectedSubmission.hasLaundry
+                                ? 'text-green-400'
+                                : 'text-neutral-500'
+                            }
+                          >
                             {selectedSubmission.hasLaundry ? '✓' : '✗'}
                           </span>
                           Laundry
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={selectedSubmission.hasBackupPower ? 'text-green-400' : 'text-neutral-500'}>
+                          <span
+                            className={
+                              selectedSubmission.hasBackupPower
+                                ? 'text-green-400'
+                                : 'text-neutral-500'
+                            }
+                          >
                             {selectedSubmission.hasBackupPower ? '✓' : '✗'}
                           </span>
                           Backup Power
@@ -1852,26 +1929,44 @@ export default function BackOfficePage() {
                       <CardContent className="space-y-3">
                         {selectedSubmission.smartSystemBrand && (
                           <div>
-                            <label className="text-sm text-neutral-400">Brand</label>
-                            <p className="text-white">{selectedSubmission.smartSystemBrand}</p>
+                            <label className="text-sm text-neutral-400">
+                              Brand
+                            </label>
+                            <p className="text-white">
+                              {selectedSubmission.smartSystemBrand}
+                            </p>
                           </div>
                         )}
                         {selectedSubmission.smartDevicesControlled && (
                           <div>
-                            <label className="text-sm text-neutral-400">Controlled Devices</label>
+                            <label className="text-sm text-neutral-400">
+                              Controlled Devices
+                            </label>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {selectedSubmission.smartDevicesControlled.map((device, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {device}
-                                </Badge>
-                              ))}
+                              {selectedSubmission.smartDevicesControlled.map(
+                                (device, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {device}
+                                  </Badge>
+                                )
+                              )}
                             </div>
                           </div>
                         )}
                         {selectedSubmission.smartSystemSpecialInstructions && (
                           <div>
-                            <label className="text-sm text-neutral-400">Special Instructions</label>
-                            <p className="text-white">{selectedSubmission.smartSystemSpecialInstructions}</p>
+                            <label className="text-sm text-neutral-400">
+                              Special Instructions
+                            </label>
+                            <p className="text-white">
+                              {
+                                selectedSubmission.smartSystemSpecialInstructions
+                              }
+                            </p>
                           </div>
                         )}
                       </CardContent>
@@ -1879,7 +1974,8 @@ export default function BackOfficePage() {
                   )}
 
                   {/* Emergency Contact */}
-                  {(selectedSubmission.emergencyContactName || selectedSubmission.emergencyContactPhone) && (
+                  {(selectedSubmission.emergencyContactName ||
+                    selectedSubmission.emergencyContactPhone) && (
                     <Card className="bg-neutral-800 border-neutral-700">
                       <CardHeader>
                         <CardTitle className="text-white flex items-center gap-2">
@@ -1890,14 +1986,22 @@ export default function BackOfficePage() {
                       <CardContent className="space-y-3">
                         {selectedSubmission.emergencyContactName && (
                           <div>
-                            <label className="text-sm text-neutral-400">Name</label>
-                            <p className="text-white">{selectedSubmission.emergencyContactName}</p>
+                            <label className="text-sm text-neutral-400">
+                              Name
+                            </label>
+                            <p className="text-white">
+                              {selectedSubmission.emergencyContactName}
+                            </p>
                           </div>
                         )}
                         {selectedSubmission.emergencyContactPhone && (
                           <div>
-                            <label className="text-sm text-neutral-400">Phone</label>
-                            <p className="text-white">{selectedSubmission.emergencyContactPhone}</p>
+                            <label className="text-sm text-neutral-400">
+                              Phone
+                            </label>
+                            <p className="text-white">
+                              {selectedSubmission.emergencyContactPhone}
+                            </p>
                           </div>
                         )}
                       </CardContent>
@@ -1914,7 +2018,9 @@ export default function BackOfficePage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-white whitespace-pre-wrap">{selectedSubmission.notes}</p>
+                        <p className="text-white whitespace-pre-wrap">
+                          {selectedSubmission.notes}
+                        </p>
                       </CardContent>
                     </Card>
                   )}
@@ -2104,7 +2210,14 @@ export default function BackOfficePage() {
       case 'reports':
         return renderReports()
       case 'ai-dashboard':
-        return <ComprehensiveAIDashboard />
+        return (
+          <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 text-center">
+            <h3 className="text-white text-lg font-medium mb-2">AI Dashboard</h3>
+            <p className="text-neutral-400">
+              Legacy AI dashboard has been removed. New AI system dashboard will be implemented here.
+            </p>
+          </div>
+        )
       case 'settings':
         return renderSettings()
       default:
@@ -3409,7 +3522,9 @@ export default function BackOfficePage() {
                                                 history.action.slice(1)}
                                             </span>
                                             <span className="text-neutral-400">
-                                              {formatTimestamp(history.timestamp)}
+                                              {formatTimestamp(
+                                                history.timestamp
+                                              )}
                                             </span>
                                           </div>
                                           <p className="text-neutral-300">
@@ -3531,20 +3646,36 @@ export default function BackOfficePage() {
     )
   }
 
-  // Onboarding Submissions Section
+  // Enhanced Onboarding Submissions Section - Standardized Design
   function renderOnboardingSubmissions() {
     const getStatusColor = (status: string) => {
       switch (status) {
         case 'pending':
-          return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+          return 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30'
         case 'reviewed':
-          return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+          return 'bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30'
         case 'approved':
-          return 'bg-green-500/20 text-green-400 border-green-500/30'
+          return 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30'
         case 'rejected':
-          return 'bg-red-500/20 text-red-400 border-red-500/30'
+          return 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border-red-500/30'
         default:
-          return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+          return 'bg-gradient-to-r from-gray-500/20 to-slate-500/20 text-gray-400 border-gray-500/30'
+      }
+    }
+
+    const getStatusBadge = (status: string) => {
+      const baseClasses = 'px-3 py-1 rounded-full text-xs font-medium border'
+      switch (status) {
+        case 'pending':
+          return `${baseClasses} bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30`
+        case 'reviewed':
+          return `${baseClasses} bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30`
+        case 'approved':
+          return `${baseClasses} bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30`
+        case 'rejected':
+          return `${baseClasses} bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border-red-500/30`
+        default:
+          return `${baseClasses} bg-gradient-to-r from-gray-500/20 to-slate-500/20 text-gray-400 border-gray-500/30`
       }
     }
 
@@ -3569,7 +3700,7 @@ export default function BackOfficePage() {
 
     const handleDeleteSubmission = async (id: string) => {
       if (!confirm('Are you sure you want to delete this submission?')) return
-      
+
       try {
         setLoading(true)
         await OnboardingService.deleteSubmission(id)
@@ -3583,6 +3714,19 @@ export default function BackOfficePage() {
       }
     }
 
+    // Calculate enhanced statistics
+    const stats = {
+      total: onboardingSubmissions.length,
+      pending: onboardingSubmissions.filter((s) => s.status === 'pending')
+        .length,
+      reviewed: onboardingSubmissions.filter((s) => s.status === 'reviewed')
+        .length,
+      approved: onboardingSubmissions.filter((s) => s.status === 'approved')
+        .length,
+      rejected: onboardingSubmissions.filter((s) => s.status === 'rejected')
+        .length,
+    }
+
     return (
       <div className="space-y-6">
         {/* Header with Statistics */}
@@ -3591,8 +3735,12 @@ export default function BackOfficePage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-300">Total Submissions</p>
-                  <p className="text-2xl font-bold text-white">{onboardingSubmissions.length}</p>
+                  <p className="text-sm font-medium text-blue-300">
+                    Total Submissions
+                  </p>
+                  <p className="text-2xl font-bold text-white">
+                    {onboardingSubmissions.length}
+                  </p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-400" />
               </div>
@@ -3603,9 +3751,15 @@ export default function BackOfficePage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-yellow-300">Pending Review</p>
+                  <p className="text-sm font-medium text-yellow-300">
+                    Pending Review
+                  </p>
                   <p className="text-2xl font-bold text-white">
-                    {onboardingSubmissions.filter(s => s.status === 'pending').length}
+                    {
+                      onboardingSubmissions.filter(
+                        (s) => s.status === 'pending'
+                      ).length
+                    }
                   </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-400" />
@@ -3619,7 +3773,11 @@ export default function BackOfficePage() {
                 <div>
                   <p className="text-sm font-medium text-green-300">Approved</p>
                   <p className="text-2xl font-bold text-white">
-                    {onboardingSubmissions.filter(s => s.status === 'approved').length}
+                    {
+                      onboardingSubmissions.filter(
+                        (s) => s.status === 'approved'
+                      ).length
+                    }
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-400" />
@@ -3633,7 +3791,11 @@ export default function BackOfficePage() {
                 <div>
                   <p className="text-sm font-medium text-red-300">Rejected</p>
                   <p className="text-2xl font-bold text-white">
-                    {onboardingSubmissions.filter(s => s.status === 'rejected').length}
+                    {
+                      onboardingSubmissions.filter(
+                        (s) => s.status === 'rejected'
+                      ).length
+                    }
                   </p>
                 </div>
                 <XCircle className="h-8 w-8 text-red-400" />
@@ -3703,26 +3865,34 @@ export default function BackOfficePage() {
             {onboardingLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                <span className="ml-2 text-neutral-400">Loading submissions...</span>
+                <span className="ml-2 text-neutral-400">
+                  Loading submissions...
+                </span>
               </div>
             ) : filteredSubmissions.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-neutral-600 mx-auto mb-3" />
                 <p className="text-neutral-400 text-lg">No submissions found</p>
                 <p className="text-neutral-500 text-sm">
-                  {submissionFilter === 'all' 
+                  {submissionFilter === 'all'
                     ? 'No onboarding submissions have been received yet.'
-                    : `No submissions with status "${submissionFilter}" found.`
-                  }
+                    : `No submissions with status "${submissionFilter}" found.`}
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {filteredSubmissions
-                  .filter((submission) =>
-                    submission.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    submission.ownerFullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    submission.ownerEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+                  .filter(
+                    (submission) =>
+                      submission.propertyName
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      submission.ownerFullName
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      submission.ownerEmail
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase())
                   )
                   .map((submission) => (
                     <div
@@ -3735,31 +3905,43 @@ export default function BackOfficePage() {
                             <h3 className="text-lg font-semibold text-white">
                               {submission.propertyName || 'Unnamed Property'}
                             </h3>
-                            <Badge className={getStatusColor(submission.status)}>
+                            <Badge
+                              className={getStatusColor(submission.status)}
+                            >
                               {submission.status}
                             </Badge>
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                             <div>
                               <p className="text-neutral-400">Owner</p>
-                              <p className="text-white">{submission.ownerFullName}</p>
+                              <p className="text-white">
+                                {submission.ownerFullName}
+                              </p>
                             </div>
                             <div>
                               <p className="text-neutral-400">Email</p>
-                              <p className="text-white">{submission.ownerEmail}</p>
+                              <p className="text-white">
+                                {submission.ownerEmail}
+                              </p>
                             </div>
                             <div>
                               <p className="text-neutral-400">Phone</p>
-                              <p className="text-white">{submission.ownerContactNumber}</p>
+                              <p className="text-white">
+                                {submission.ownerContactNumber}
+                              </p>
                             </div>
                             <div>
                               <p className="text-neutral-400">Address</p>
-                              <p className="text-white">{submission.propertyAddress || 'Not provided'}</p>
+                              <p className="text-white">
+                                {submission.propertyAddress || 'Not provided'}
+                              </p>
                             </div>
                             <div>
                               <p className="text-neutral-400">Bedrooms</p>
-                              <p className="text-white">{submission.bedrooms || 'Not specified'}</p>
+                              <p className="text-white">
+                                {submission.bedrooms || 'Not specified'}
+                              </p>
                             </div>
                             <div>
                               <p className="text-neutral-400">Submitted</p>
@@ -3769,7 +3951,7 @@ export default function BackOfficePage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 ml-4">
                           <Button
                             onClick={() => {
@@ -3783,11 +3965,13 @@ export default function BackOfficePage() {
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </Button>
-                          
+
                           {submission.status === 'pending' && (
                             <>
                               <Button
-                                onClick={() => handleUpdateStatus(submission.id, 'approved')}
+                                onClick={() =>
+                                  handleUpdateStatus(submission.id, 'approved')
+                                }
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700"
                                 disabled={loading}
@@ -3796,7 +3980,9 @@ export default function BackOfficePage() {
                                 Approve
                               </Button>
                               <Button
-                                onClick={() => handleUpdateStatus(submission.id, 'rejected')}
+                                onClick={() =>
+                                  handleUpdateStatus(submission.id, 'rejected')
+                                }
                                 size="sm"
                                 variant="outline"
                                 className="border-red-500 text-red-400 hover:bg-red-500/10"
@@ -3807,9 +3993,11 @@ export default function BackOfficePage() {
                               </Button>
                             </>
                           )}
-                          
+
                           <Button
-                            onClick={() => handleDeleteSubmission(submission.id)}
+                            onClick={() =>
+                              handleDeleteSubmission(submission.id)
+                            }
                             size="sm"
                             variant="outline"
                             className="border-red-500 text-red-400 hover:bg-red-500/10"
@@ -5439,14 +5627,17 @@ export default function BackOfficePage() {
           </CardContent>
         </Card>
 
-        {/* AI Booking Test Panel */}
-        <AIBookingTestPanel />
-
-        {/* Smart Job Assignment Test Panel */}
-        <SmartJobTestPanel />
-
-        {/* Smart Job Analytics Dashboard */}
-        <SmartJobAnalyticsDashboard />
+        {/* Legacy AI Testing Panels Removed */}
+        <Card className="bg-neutral-900 border-neutral-700">
+          <CardHeader>
+            <CardTitle className="text-white">AI Testing Panels</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-neutral-400">
+              Legacy AI testing panels have been removed. New AI system testing will be implemented here.
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Calendar Synchronization Dashboard */}
         <CalendarSyncDashboard />

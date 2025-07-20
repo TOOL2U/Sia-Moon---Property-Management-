@@ -6,17 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { motion } from 'framer-motion'
 import {
-  Bot,
-  Calendar,
-  CheckCircle,
-  Database,
-  Globe,
-  Smartphone,
-  Sync,
-  TrendingUp,
-  Wifi,
-  WifiOff,
-  Zap,
+    Bot,
+    Calendar,
+    CheckCircle,
+    Database,
+    Globe,
+    RefreshCw,
+    Smartphone,
+    TrendingUp,
+    Wifi,
+    WifiOff,
+    Zap
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -210,7 +210,7 @@ export default function IntegrationAutomationPanel({
       case 'connected':
         return <CheckCircle className="w-4 h-4 text-green-400" />
       case 'syncing':
-        return <Sync className="w-4 h-4 text-blue-400 animate-spin" />
+        return <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
       case 'error':
         return <WifiOff className="w-4 h-4 text-red-400" />
       default:
