@@ -5,16 +5,16 @@
 
 import { db } from '@/lib/firebase'
 import {
-  Timestamp,
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where,
+    Timestamp,
+    collection,
+    doc,
+    getDoc,
+    onSnapshot,
+    query,
+    serverTimestamp,
+    setDoc,
+    updateDoc,
+    where,
 } from 'firebase/firestore'
 import AIAutomationService from './AIAutomationService'
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { googleMapsConfig } from '@/lib/env'
 import db from '@/lib/db'
+import { googleMapsConfig } from '@/lib/env'
 
 export interface PropertyMapData {
   id: string
@@ -71,13 +71,13 @@ class MapDataService {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsConfig.apiKey}`
       )
-      
+
       const data = await response.json()
-      
+
       if (data.status === 'OK' && data.results.length > 0) {
         const location = data.results[0].geometry.location
         const coordinates = { lat: location.lat, lng: location.lng }
-        
+
         // Cache the result
         this.geocodeCache.set(address, coordinates)
         return coordinates
@@ -98,7 +98,7 @@ class MapDataService {
     // Default to Koh Phangan center with some random offset
     const baseLatitude = 9.7349
     const baseLongitude = 100.0269
-    
+
     return {
       lat: baseLatitude + (Math.random() - 0.5) * 0.02, // ±0.01 degree variation
       lng: baseLongitude + (Math.random() - 0.5) * 0.02
@@ -111,7 +111,7 @@ class MapDataService {
   async getPropertiesForMap(): Promise<PropertyMapData[]> {
     try {
       const response = await db.getAllProperties()
-      
+
       if (response.error || !response.data) {
         console.error('Failed to fetch properties:', response.error)
         return []
@@ -121,7 +121,7 @@ class MapDataService {
         response.data.map(async (property) => {
           // Try to geocode the address
           const coordinates = await this.geocodeAddress(property.location || property.name)
-          
+
           return {
             id: property.id,
             name: property.name,
@@ -158,7 +158,7 @@ class MapDataService {
         assignedProperty: 'prop_001'
       },
       {
-        id: 'staff_002', 
+        id: 'staff_002',
         name: 'Niran Thanakit',
         role: 'Maintenance',
         status: 'traveling',
@@ -207,7 +207,7 @@ class MapDataService {
         .map((task: any) => {
           // Find the property for this task
           const property = properties.find(p => p.id === task.property_id)
-          
+
           return {
             id: task.id,
             title: task.title,
@@ -248,7 +248,7 @@ class MapDataService {
   startLocationTracking(callback: (staff: StaffMapData[]) => void): () => void {
     const interval = setInterval(async () => {
       const staff = await this.getStaffForMap()
-      
+
       // Simulate small movements for active staff
       const updatedStaff = staff.map(member => {
         if (member.status === 'on_job' || member.status === 'traveling') {
@@ -262,7 +262,7 @@ class MapDataService {
         }
         return member
       })
-      
+
       callback(updatedStaff)
     }, 30000) // Update every 30 seconds
 

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { AlertTriangle, XCircle, CheckCircle, AlertCircle } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { useState } from 'react'
 
 export default function ValidationSimulationPage() {
   const [isRunning, setIsRunning] = useState(false)
@@ -32,7 +32,7 @@ export default function ValidationSimulationPage() {
 
       // Import the simulation function dynamically
       const { simulateCOOBooking } = await import('@/lib/ai/simulateAIActions')
-      
+
       const simulationResult = await simulateCOOBooking(badBooking)
       console.log('🤖 AI COO Validation Result:', simulationResult)
 
@@ -48,10 +48,10 @@ export default function ValidationSimulationPage() {
 
   const getValidationStatus = () => {
     if (!result?.response) return null
-    
+
     const isRejected = result.response.decision === 'rejected'
     const hasValidationErrors = result.response.validationErrors?.length > 0
-    
+
     return {
       rejected: isRejected,
       hasErrors: hasValidationErrors,
@@ -87,13 +87,13 @@ export default function ValidationSimulationPage() {
               <div>
                 <div><strong>Booking ID:</strong> bad-booking-004</div>
                 <div className="flex items-center gap-2">
-                  <strong>Property ID:</strong> 
+                  <strong>Property ID:</strong>
                   <Badge className="bg-red-600 text-white text-xs">
                     EMPTY STRING
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <strong>Location:</strong> 
+                  <strong>Location:</strong>
                   <Badge className="bg-red-600 text-white text-xs">
                     NULL
                   </Badge>
@@ -103,14 +103,14 @@ export default function ValidationSimulationPage() {
                 <div><strong>Date/Time:</strong> August 5, 2025 at 11:00 AM</div>
                 <div><strong>Value:</strong> ฿4,200</div>
                 <div className="flex items-center gap-2">
-                  <strong>Notes:</strong> 
+                  <strong>Notes:</strong>
                   <Badge className="bg-yellow-600 text-white text-xs">
                     EMPTY
                   </Badge>
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded">
               <h4 className="text-red-300 font-semibold mb-2 flex items-center gap-2">
                 <XCircle className="w-4 h-4" />
@@ -178,17 +178,17 @@ export default function ValidationSimulationPage() {
                   <h3 className="text-white font-semibold mb-3">Validation Results</h3>
                   <div className="space-y-2">
                     <div>
-                      <strong>Decision:</strong> 
+                      <strong>Decision:</strong>
                       <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                        result.response?.decision === 'rejected' 
-                          ? 'bg-green-600 text-white' 
+                        result.response?.decision === 'rejected'
+                          ? 'bg-green-600 text-white'
                           : 'bg-red-600 text-white'
                       }`}>
                         {result.response?.decision?.toUpperCase() || 'UNKNOWN'}
                       </span>
                     </div>
                     <div>
-                      <strong>Confidence:</strong> 
+                      <strong>Confidence:</strong>
                       <span className={`ml-2 ${
                         (result.response?.confidence || 0) >= 0.9 ? 'text-green-400' : 'text-red-400'
                       }`}>
@@ -232,8 +232,8 @@ export default function ValidationSimulationPage() {
                 <div className="mt-6">
                   <h3 className="text-white font-semibold mb-3">AI Reasoning</h3>
                   <div className={`p-4 rounded ${
-                    result.response.decision === 'rejected' 
-                      ? 'bg-green-900/30 border border-green-700' 
+                    result.response.decision === 'rejected'
+                      ? 'bg-green-900/30 border border-green-700'
                       : 'bg-red-900/30 border border-red-700'
                   }`}>
                     <p className="text-slate-300">{result.response.reason}</p>
@@ -274,8 +274,8 @@ export default function ValidationSimulationPage() {
                     </ul>
                   </div>
                   <div className={`p-4 rounded border ${
-                    result.response?.decision === 'rejected' 
-                      ? 'bg-green-900/30 border-green-700' 
+                    result.response?.decision === 'rejected'
+                      ? 'bg-green-900/30 border-green-700'
                       : 'bg-red-900/30 border-red-700'
                   }`}>
                     <h4 className={`font-medium mb-2 flex items-center gap-2 ${

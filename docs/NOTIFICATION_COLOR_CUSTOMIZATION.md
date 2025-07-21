@@ -228,7 +228,7 @@ const getNotificationColor = (category: string, priority: string) => {
       default: return 'text-purple-400'
     }
   }
-  
+
   // Regular colors for other notifications
   switch (category) {
     case 'report_generated': return 'text-blue-400'
@@ -252,7 +252,7 @@ const getBgColor = () => {
 }
 ```
 
-### Step 3: Update Push Notifications  
+### Step 3: Update Push Notifications
 Edit `functions/src/jobNotifications.ts`:
 ```typescript
 // Replace the color value in the android notification object
@@ -276,7 +276,7 @@ firebase deploy --only functions
 
 ### Popular Color Options:
 - **Purple**: `#8b5cf6` - Modern, professional
-- **Cyan**: `#06b6d4` - Fresh, tech-forward  
+- **Cyan**: `#06b6d4` - Fresh, tech-forward
 - **Orange**: `#f97316` - Warm, attention-grabbing
 - **Emerald**: `#10b981` - Success, growth
 - **Indigo**: `#6366f1` - Current default

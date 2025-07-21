@@ -267,17 +267,17 @@
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .fc-toolbar-chunk {
     display: flex;
     justify-content: center;
   }
-  
+
   .fc-button-group .fc-button {
     padding: 0.375rem 0.75rem !important;
     font-size: 0.875rem !important;
   }
-  
+
   .fc-event {
     font-size: 0.75rem !important;
     padding: 0.125rem 0.25rem !important;
@@ -355,7 +355,7 @@
     background: white !important;
     color: black !important;
   }
-  
+
   .fc-event {
     background: #6366f1 !important;
     color: white !important;

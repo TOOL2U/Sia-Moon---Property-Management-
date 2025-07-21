@@ -1,26 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  Bell,
-  Send,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Users,
-  TrendingUp,
-  MessageSquare,
-  Smartphone,
-  Mail
-} from 'lucide-react'
-import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { db } from '@/lib/firebase'
 import NotificationService, { type Notification, type NotificationMetrics } from '@/services/NotificationService'
+import { collection, getDocs, orderBy, query, Timestamp, where } from 'firebase/firestore'
+import {
+    AlertTriangle,
+    Bell,
+    CheckCircle,
+    Clock,
+    Mail,
+    MessageSquare,
+    RefreshCw,
+    Send,
+    Smartphone,
+    TrendingUp,
+    Users,
+    XCircle
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface NotificationStats {
   totalNotifications: number
@@ -40,7 +40,7 @@ export default function NotificationDashboard() {
     escalatedJobs: 0,
     lastNotificationSent: null
   })
-  
+
   const [stats, setStats] = useState<NotificationStats>({
     totalNotifications: 0,
     unreadNotifications: 0,
@@ -48,16 +48,16 @@ export default function NotificationDashboard() {
     failedNotifications: 0,
     recentNotifications: []
   })
-  
+
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     // Initial load
     refreshData()
-    
+
     // Set up periodic refresh every 30 seconds
     const interval = setInterval(refreshData, 30000)
-    
+
     return () => clearInterval(interval)
   }, [])
 
@@ -66,7 +66,7 @@ export default function NotificationDashboard() {
       // Get service metrics
       const serviceMetrics = NotificationService.getMetrics()
       setMetrics(serviceMetrics)
-      
+
       // Get notification statistics
       await loadNotificationStats()
     } catch (error) {
@@ -77,32 +77,32 @@ export default function NotificationDashboard() {
   const loadNotificationStats = async () => {
     try {
       if (!db) throw new Error("Firebase not initialized")
-      
+
       // Get total notifications from last 24 hours
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
-      
+
       const notificationsQuery = query(
         collection(db, 'notifications'),
         where('createdAt', '>=', Timestamp.fromDate(yesterday)),
         orderBy('createdAt', 'desc')
       )
-      
+
       const notificationsSnapshot = await getDocs(notificationsQuery)
       const notifications: Notification[] = []
-      
+
       let unreadCount = 0
       let deliveredCount = 0
       let failedCount = 0
-      
+
       notificationsSnapshot.forEach((doc) => {
         const notification = { id: doc.id, ...doc.data() } as Notification
         notifications.push(notification)
-        
+
         if (!notification.read) unreadCount++
         if (notification.deliveryStatus === 'delivered') deliveredCount++
         if (notification.deliveryStatus === 'failed') failedCount++
       })
-      
+
       setStats({
         totalNotifications: notifications.length,
         unreadNotifications: unreadCount,
@@ -214,7 +214,7 @@ export default function NotificationDashboard() {
           Real-time notification system monitoring and management
         </p>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -279,7 +279,7 @@ export default function NotificationDashboard() {
             <MessageSquare className="h-4 w-4 text-blue-400" />
             24-Hour Notification Statistics
           </h3>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">
@@ -287,21 +287,21 @@ export default function NotificationDashboard() {
               </div>
               <div className="text-sm text-neutral-400">Total Sent</div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">
                 {stats.unreadNotifications}
               </div>
               <div className="text-sm text-neutral-400">Unread</div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">
                 {stats.deliveredNotifications}
               </div>
               <div className="text-sm text-neutral-400">Delivered</div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">
                 {stats.failedNotifications}
@@ -317,7 +317,7 @@ export default function NotificationDashboard() {
             <Bell className="h-4 w-4 text-purple-400" />
             Recent Notifications
           </h3>
-          
+
           {stats.recentNotifications.length === 0 ? (
             <div className="text-center py-4 text-neutral-400">
               No recent notifications

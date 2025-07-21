@@ -1,24 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  CheckCircle,
-  Clock,
-  MapPin,
-  User,
-  Calendar,
-  AlertTriangle,
-  RefreshCw,
-  Phone,
-  Navigation,
-  FileText
-} from 'lucide-react'
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { db } from '@/lib/firebase'
 import NotificationService from '@/services/NotificationService'
+import { collection, getDocs, orderBy, query, Timestamp, where } from 'firebase/firestore'
+import {
+    AlertTriangle,
+    Calendar,
+    CheckCircle,
+    Clock,
+    FileText,
+    MapPin,
+    Navigation,
+    Phone,
+    RefreshCw,
+    User
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface PendingJob {
   id: string
@@ -47,10 +47,10 @@ export default function JobAcceptancePanel() {
 
   useEffect(() => {
     loadJobs()
-    
+
     // Refresh every 30 seconds
     const interval = setInterval(loadJobs, 30000)
-    
+
     return () => clearInterval(interval)
   }, [])
 
@@ -58,7 +58,7 @@ export default function JobAcceptancePanel() {
     setIsLoading(true)
     try {
       if (!db) throw new Error("Firebase not initialized")
-      
+
       // Get jobs assigned but not yet accepted
       const pendingQuery = query(
         collection(db, 'jobs'),
@@ -66,10 +66,10 @@ export default function JobAcceptancePanel() {
         where('jobAccepted', '!=', true),
         orderBy('scheduledDate', 'asc')
       )
-      
+
       const pendingSnapshot = await getDocs(pendingQuery)
       const pending: PendingJob[] = []
-      
+
       pendingSnapshot.forEach((doc) => {
         const data = doc.data()
         pending.push({
@@ -79,7 +79,7 @@ export default function JobAcceptancePanel() {
           createdAt: data.createdAt
         } as PendingJob)
       })
-      
+
       // Get recently accepted jobs
       const acceptedQuery = query(
         collection(db, 'jobs'),
@@ -87,10 +87,10 @@ export default function JobAcceptancePanel() {
         where('jobAccepted', '==', true),
         orderBy('acceptedAt', 'desc')
       )
-      
+
       const acceptedSnapshot = await getDocs(acceptedQuery)
       const accepted: PendingJob[] = []
-      
+
       acceptedSnapshot.forEach((doc) => {
         const data = doc.data()
         accepted.push({
@@ -100,7 +100,7 @@ export default function JobAcceptancePanel() {
           createdAt: data.createdAt
         } as PendingJob)
       })
-      
+
       setPendingJobs(pending)
       setAcceptedJobs(accepted.slice(0, 5)) // Show last 5 accepted jobs
     } catch (error) {
@@ -114,7 +114,7 @@ export default function JobAcceptancePanel() {
     setAcceptingJobId(jobId)
     try {
       await NotificationService.handleJobAcceptance(jobId, staffId, 'web_dashboard')
-      
+
       // Refresh jobs list
       await loadJobs()
     } catch (error) {
@@ -187,7 +187,7 @@ export default function JobAcceptancePanel() {
 
   const renderJobCard = (job: PendingJob, isPending: boolean = true) => {
     const isOverdue = isJobOverdue(job.scheduledDate)
-    
+
     return (
       <div
         key={job.id}
@@ -221,17 +221,17 @@ export default function JobAcceptancePanel() {
             <MapPin className="h-4 w-4" />
             <span>{job.propertyName}</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <span>{formatDateTime(job.scheduledDate)}</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span>{formatDuration(job.estimatedDuration)} estimated</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>{job.assignedStaffName}</span>
@@ -275,7 +275,7 @@ export default function JobAcceptancePanel() {
               )}
               Accept Job
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -283,7 +283,7 @@ export default function JobAcceptancePanel() {
             >
               <Navigation className="h-4 w-4" />
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -321,7 +321,7 @@ export default function JobAcceptancePanel() {
           Manage job assignments and staff acceptance workflow
         </p>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Pending Jobs */}
         <div>
@@ -331,7 +331,7 @@ export default function JobAcceptancePanel() {
               Pending Acceptance ({pendingJobs.length})
             </h3>
           </div>
-          
+
           {pendingJobs.length === 0 ? (
             <div className="text-center py-8 text-neutral-400">
               <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-400" />
@@ -351,7 +351,7 @@ export default function JobAcceptancePanel() {
               <CheckCircle className="h-4 w-4 text-green-400" />
               Recently Accepted
             </h3>
-            
+
             <div className="space-y-3">
               {acceptedJobs.map((job) => renderJobCard(job, false))}
             </div>

@@ -4,7 +4,7 @@
  */
 
 import { getDb } from '@/lib/firebase'
-import { deleteDoc, doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -233,27 +233,27 @@ export async function DELETE(
         where('sourceId', '==', jobId)
       )
       const calendarEventsSnapshot = await getDocs(calendarEventsQuery)
-      
+
       // Also check for legacy events with jobId field
       const legacyEventsQuery = query(
         calendarEventsRef,
         where('jobId', '==', jobId)
       )
       const legacyEventsSnapshot = await getDocs(legacyEventsQuery)
-      
+
       const deleteBatch = writeBatch(db)
       let eventCount = 0
-      
+
       calendarEventsSnapshot.forEach((doc) => {
         deleteBatch.delete(doc.ref)
         eventCount++
       })
-      
+
       legacyEventsSnapshot.forEach((doc) => {
         deleteBatch.delete(doc.ref)
         eventCount++
       })
-      
+
       if (eventCount > 0) {
         await deleteBatch.commit()
         console.log(`✅ Removed ${eventCount} calendar events for job ${jobId}`)

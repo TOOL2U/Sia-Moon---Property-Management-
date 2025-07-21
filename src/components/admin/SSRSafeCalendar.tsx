@@ -1,8 +1,8 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { ComponentProps, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
 
 // Types for the calendar component
 interface CalendarEvent {
@@ -48,14 +48,14 @@ const DynamicEnhancedCalendar = dynamic(
 )
 
 // SSR-Safe Calendar wrapper
-const SSRSafeCalendar: React.FC<{ 
+const SSRSafeCalendar: React.FC<{
   className?: string
   currentView?: string
 }> = ({ className, currentView }) => {
   return (
     <Suspense fallback={<CalendarLoading />}>
-      <DynamicEnhancedCalendar 
-        className={className} 
+      <DynamicEnhancedCalendar
+        className={className}
         currentView={currentView}
       />
     </Suspense>

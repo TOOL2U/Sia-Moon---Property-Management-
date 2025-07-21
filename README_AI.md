@@ -17,5 +17,5 @@ This project integrates autonomous AI agents into the Sia Moon property manageme
 - Logs every action with rationale and confidence
 - Can be overridden or monitored via dashboard
 
-Simulation Mode: ✅ ON  
+Simulation Mode: ✅ ON
 Next Phase: Integrate logs with dashboard and job flow

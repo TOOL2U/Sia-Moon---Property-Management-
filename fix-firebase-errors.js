@@ -50,7 +50,7 @@ function fixFirebaseNullChecking(filePath) {
     // Find the first occurrence of db usage and add a null check before it
     const lines = content.split('\n')
     let insertIndex = -1
-    
+
     for (let i = 0; i < lines.length; i++) {
       if (needsNullCheck.test(lines[i])) {
         // Find the start of the function
@@ -63,7 +63,7 @@ function fixFirebaseNullChecking(filePath) {
         break
       }
     }
-    
+
     if (insertIndex > 0) {
       lines.splice(insertIndex, 0, '    if (!db) throw new Error("Firebase not initialized")')
       content = lines.join('\n')
@@ -83,23 +83,23 @@ function fixFirebaseNullChecking(filePath) {
 // Main execution
 async function main() {
   console.log('🔧 Fixing Firebase null checking issues...\n')
-  
+
   const files = getFilesWithFirebaseErrors()
   console.log(`Found ${files.length} files with Firebase errors`)
-  
+
   let fixedCount = 0
-  
+
   for (const file of files) {
     const fullPath = path.resolve(file)
     if (fixFirebaseNullChecking(fullPath)) {
       fixedCount++
     }
   }
-  
+
   console.log(`\n📊 Results:`)
   console.log(`✅ Fixed ${fixedCount} files`)
   console.log(`📁 Total files processed: ${files.length}`)
-  
+
   // Check current error count
   try {
     const errorCount = execSync('npx tsc --noEmit 2>&1 | grep -c "error TS"', { encoding: 'utf8' }).trim()

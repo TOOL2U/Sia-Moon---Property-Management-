@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { AlertTriangle, DollarSign, Shield, Users } from 'lucide-react'
+import { AlertTriangle, DollarSign, Shield } from 'lucide-react'
+import { useState } from 'react'
 
 export default function EscalationSimulationPage() {
   const [isRunning, setIsRunning] = useState(false)
@@ -32,7 +32,7 @@ export default function EscalationSimulationPage() {
 
       // Import the simulation function dynamically
       const { simulateCOOBooking } = await import('@/lib/ai/simulateAIActions')
-      
+
       const simulationResult = await simulateCOOBooking(highValueBooking)
       console.log('🤖 AI COO Escalation Result:', simulationResult)
 
@@ -48,7 +48,7 @@ export default function EscalationSimulationPage() {
 
   const getEscalationStatus = () => {
     if (!result?.response) return null
-    
+
     const isEscalated = result.response.escalate || result.response.confidence < 0.7
     return {
       escalated: isEscalated,
@@ -89,7 +89,7 @@ export default function EscalationSimulationPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <strong>Value:</strong> 
+                  <strong>Value:</strong>
                   <Badge className="bg-red-600 text-white">
                     ฿6,500 (HIGH VALUE)
                   </Badge>
@@ -98,7 +98,7 @@ export default function EscalationSimulationPage() {
                 <div><strong>Risk Level:</strong> <span className="text-red-400">HIGH</span></div>
               </div>
             </div>
-            
+
             <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded">
               <h4 className="text-red-300 font-semibold mb-2 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
@@ -165,10 +165,10 @@ export default function EscalationSimulationPage() {
                   <h3 className="text-white font-semibold mb-3">Decision Summary</h3>
                   <div className="space-y-2">
                     <div>
-                      <strong>Decision:</strong> 
+                      <strong>Decision:</strong>
                       <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                        result.response?.decision === 'approved' 
-                          ? 'bg-green-600 text-white' 
+                        result.response?.decision === 'approved'
+                          ? 'bg-green-600 text-white'
                           : result.response?.decision === 'rejected'
                           ? 'bg-red-600 text-white'
                           : 'bg-yellow-600 text-white'
@@ -177,7 +177,7 @@ export default function EscalationSimulationPage() {
                       </span>
                     </div>
                     <div>
-                      <strong>Confidence:</strong> 
+                      <strong>Confidence:</strong>
                       <span className={`ml-2 ${
                         (result.response?.confidence || 0) >= 0.8 ? 'text-green-400' :
                         (result.response?.confidence || 0) >= 0.6 ? 'text-yellow-400' : 'text-red-400'

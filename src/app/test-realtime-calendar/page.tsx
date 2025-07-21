@@ -1,18 +1,18 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import RealTimeCalendar from '@/components/calendar/RealTimeCalendar'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import RealTimeCalendar from '@/components/calendar/RealTimeCalendar'
-import { Calendar, Play, Zap, Users, Home } from 'lucide-react'
+import { Calendar, Home, Play, Users, Zap } from 'lucide-react'
+import { useState } from 'react'
 
 /**
  * 🧪 Real-Time Calendar Test Page
- * 
+ *
  * Demonstrates Phase 2 real-time calendar features:
  * - Live calendar updates
  * - Real-time conflict detection
@@ -52,7 +52,7 @@ export default function TestRealTimeCalendarPage() {
 
       const result = await response.json()
       console.log('Test workflow result:', result)
-      
+
       if (result.success) {
         alert(`✅ ${testType} test completed successfully! Check the calendar for real-time updates.`)
       } else {
@@ -132,8 +132,8 @@ export default function TestRealTimeCalendarPage() {
                   <Input
                     type="date"
                     value={testConfig.dateRange.start}
-                    onChange={(e) => setTestConfig(prev => ({ 
-                      ...prev, 
+                    onChange={(e) => setTestConfig(prev => ({
+                      ...prev,
                       dateRange: { ...prev.dateRange, start: e.target.value }
                     }))}
                     className="bg-neutral-800 border-neutral-700 text-white"
@@ -141,8 +141,8 @@ export default function TestRealTimeCalendarPage() {
                   <Input
                     type="date"
                     value={testConfig.dateRange.end}
-                    onChange={(e) => setTestConfig(prev => ({ 
-                      ...prev, 
+                    onChange={(e) => setTestConfig(prev => ({
+                      ...prev,
                       dateRange: { ...prev.dateRange, end: e.target.value }
                     }))}
                     className="bg-neutral-800 border-neutral-700 text-white"
@@ -152,7 +152,7 @@ export default function TestRealTimeCalendarPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button 
+              <Button
                 onClick={() => runTestWorkflow('booking-confirmation')}
                 disabled={isRunningTest}
                 className="bg-blue-600 hover:bg-blue-700"
@@ -160,7 +160,7 @@ export default function TestRealTimeCalendarPage() {
                 <Home className="w-4 h-4 mr-2" />
                 Test Booking Workflow
               </Button>
-              <Button 
+              <Button
                 onClick={() => runTestWorkflow('job-lifecycle')}
                 disabled={isRunningTest}
                 className="bg-green-600 hover:bg-green-700"
@@ -168,7 +168,7 @@ export default function TestRealTimeCalendarPage() {
                 <Users className="w-4 h-4 mr-2" />
                 Test Job Workflow
               </Button>
-              <Button 
+              <Button
                 onClick={() => runTestWorkflow('full-workflow')}
                 disabled={isRunningTest}
                 className="bg-purple-600 hover:bg-purple-700"
@@ -179,7 +179,7 @@ export default function TestRealTimeCalendarPage() {
             </div>
 
             <div className="text-sm text-neutral-400">
-              💡 <strong>How to test:</strong> Click any test button above to create calendar events. 
+              💡 <strong>How to test:</strong> Click any test button above to create calendar events.
               Watch the calendar below update in real-time without page refresh!
             </div>
           </CardContent>

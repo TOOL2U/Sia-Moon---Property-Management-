@@ -1,27 +1,26 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Calendar, 
-  Clock, 
-  AlertTriangle, 
-  Wifi, 
-  WifiOff, 
-  RefreshCw,
-  Bell,
-  Users,
-  Home
-} from 'lucide-react'
 import useRealTimeCalendar from '@/hooks/useRealTimeCalendar'
 import { CalendarEvent, ConflictAlert } from '@/services/RealTimeCalendarService'
+import {
+    AlertTriangle,
+    Calendar,
+    Clock,
+    Home,
+    RefreshCw,
+    Users,
+    Wifi,
+    WifiOff
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 /**
  * 🔄 Real-Time Calendar Component
- * 
+ *
  * Live calendar with real-time updates, conflict alerts, and multi-user sync
  */
 
@@ -61,7 +60,7 @@ export default function RealTimeCalendar({
   // Group events by date
   const eventsByDate = useMemo(() => {
     const grouped: Record<string, CalendarEvent[]> = {}
-    
+
     events.forEach(event => {
       const date = new Date(event.startDate).toDateString()
       if (!grouped[date]) {
@@ -72,7 +71,7 @@ export default function RealTimeCalendar({
 
     // Sort events within each date
     Object.keys(grouped).forEach(date => {
-      grouped[date].sort((a, b) => 
+      grouped[date].sort((a, b) =>
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
       )
     })
@@ -160,9 +159,9 @@ export default function RealTimeCalendar({
               )}
             </div>
             {connectionError && (
-              <Button 
-                onClick={reconnect} 
-                size="sm" 
+              <Button
+                onClick={reconnect}
+                size="sm"
                 variant="outline"
                 className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
               >
@@ -204,8 +203,8 @@ export default function RealTimeCalendar({
               </Alert>
             ))}
             {conflicts.length > 3 && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setShowConflictDetails(!showConflictDetails)}
                 className="w-full border-neutral-700 text-neutral-300 hover:bg-neutral-800"
@@ -267,8 +266,8 @@ export default function RealTimeCalendar({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className="text-xs"
                               style={{ color: event.color, borderColor: event.color }}
                             >
@@ -297,8 +296,8 @@ export default function RealTimeCalendar({
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-white">
               <span>Event Details</span>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setSelectedEvent(null)}
                 className="text-neutral-400 hover:text-white"

@@ -486,18 +486,18 @@ class CalendarIntegrationService {
           if (change.type === 'modified') {
             // Handle job status changes
             const previousData = change.doc.metadata.fromCache ? null : change.doc.data()
-            
+
             // Check if job was completed or cancelled
             if (job.status === 'completed' || job.status === 'verified' || job.status === 'cancelled') {
               console.log(`✅ Job status changed to ${job.status}, removing calendar event: ${job.id}`)
-              
+
               await CalendarEventService.removeEventByJobId(job.id)
               toast.success(`📅 Calendar updated - ${job.status} job removed`)
             }
           } else if (change.type === 'removed') {
             // Handle job deletion
             console.log(`🗑️ Job deleted, removing calendar event: ${change.doc.id}`)
-            
+
             await CalendarEventService.removeEventByJobId(change.doc.id)
             toast.success('📅 Calendar updated - deleted job removed')
           }
@@ -538,7 +538,7 @@ class CalendarIntegrationService {
             // Check if job was completed or cancelled
             if (job.status === 'completed' || job.status === 'verified' || job.status === 'cancelled') {
               console.log(`✅ Job status changed to ${job.status}, removing calendar event: ${job.id}`)
-              
+
               try {
                 await CalendarEventService.removeEventByJobId(job.id)
                 toast.success(`📅 Calendar updated - ${job.status} job removed`)
@@ -549,7 +549,7 @@ class CalendarIntegrationService {
           } else if (change.type === 'removed') {
             // Handle job deletion
             console.log(`�️ Job deleted, removing calendar event: ${change.doc.id}`)
-            
+
             try {
               await CalendarEventService.removeEventByJobId(change.doc.id)
               toast.success('📅 Calendar updated - deleted job removed')
@@ -563,7 +563,7 @@ class CalendarIntegrationService {
         console.error('❌ Error in job status listener:', error)
       }
     )
-    
+
     return unsubscribe
   }
 

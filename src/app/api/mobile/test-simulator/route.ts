@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * 📱 Mobile App Test Simulator
- * 
+ *
  * Simulates mobile app sending live test data including:
  * - Job completions
  * - Audit reports
@@ -35,10 +35,10 @@ const generateJobCompletion = (staffId: string) => {
   const property = SAMPLE_PROPERTIES[Math.floor(Math.random() * SAMPLE_PROPERTIES.length)]
   const jobTypes = ['cleaning', 'maintenance', 'inspection', 'setup']
   const jobType = jobTypes[Math.floor(Math.random() * jobTypes.length)]
-  
+
   const startTime = new Date(Date.now() - Math.random() * 4 * 60 * 60 * 1000) // Up to 4 hours ago
   const endTime = new Date(startTime.getTime() + (30 + Math.random() * 90) * 60 * 1000) // 30-120 minutes later
-  
+
   return {
     staffId,
     jobId: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -80,17 +80,17 @@ const generateAuditReport = (staffId: string) => {
   const weekStart = new Date(now)
   weekStart.setDate(now.getDate() - now.getDay() + 1) // Monday
   weekStart.setHours(0, 0, 0, 0)
-  
+
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekStart.getDate() + 6) // Sunday
   weekEnd.setHours(23, 59, 59, 999)
-  
+
   const trustScore = Math.floor(Math.random() * 40) + 60 // 60-100
   const qualityScore = Math.floor(Math.random() * 40) + 60 // 60-100
-  
+
   const jobsCompleted = Math.floor(Math.random() * 15) + 5
   const jobsAccepted = jobsCompleted + Math.floor(Math.random() * 3)
-  
+
   const strengths = [
     'Consistently completes tasks ahead of schedule',
     'Excellent attention to detail',
@@ -98,30 +98,30 @@ const generateAuditReport = (staffId: string) => {
     'High guest satisfaction ratings',
     'Efficient use of resources'
   ]
-  
+
   const concerns = [
     'Occasional delays in task completion',
     'Inconsistent photo documentation',
     'GPS location accuracy issues',
     'Late responses to urgent requests'
   ]
-  
+
   const recommendations = [
     'Schedule additional training on mobile app features',
     'Review cleaning checklist procedures',
     'Implement daily check-in confirmation',
     'Provide feedback on photo documentation quality'
   ]
-  
+
   const patterns = [
     'Performs best on morning assignments',
     'More efficient with cleaning than maintenance tasks',
     'Responds quickly to direct messages',
     'Most productive on weekdays'
   ]
-  
+
   const trends = ['improving', 'declining', 'stable']
-  
+
   return {
     staffId,
     weekStart: weekStart.toISOString().split('T')[0],
@@ -193,14 +193,14 @@ export async function POST(request: NextRequest) {
 
     // Run simulation
     const endTime = Date.now() + (config.duration * 60 * 1000)
-    
+
     while (Date.now() < endTime) {
       for (const staffId of config.staffIds) {
         try {
           // Send job completion
           if (config.simulationType === 'job_completion' || config.simulationType === 'both') {
             const jobData = generateJobCompletion(staffId)
-            
+
             const jobResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/mobile/job-completion`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
           // Send audit report (less frequently)
           if ((config.simulationType === 'audit_report' || config.simulationType === 'both') && Math.random() > 0.7) {
             const auditData = generateAuditReport(staffId)
-            
+
             const auditResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/mobile/audit-report`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

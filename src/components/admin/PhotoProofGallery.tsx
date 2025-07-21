@@ -1,41 +1,31 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
-import { toast } from 'sonner'
-import {
-  Camera,
-  Image,
-  Download,
-  Eye,
-  X,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
-  Share2,
-  Calendar,
-  Clock,
-  User,
-  MapPin,
-  CheckCircle,
-  AlertTriangle,
-  FileText,
-  ExternalLink,
-  Maximize2,
-  Minimize2,
-  ChevronLeft,
-  ChevronRight,
-  Grid3X3,
-  List,
-  Filter,
-  Search,
-  Loader2
-} from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { JobData } from '@/services/JobAssignmentService'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+    AlertTriangle,
+    Calendar,
+    Camera,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    Download,
+    Eye,
+    Grid3X3,
+    List,
+    Loader2,
+    RotateCw,
+    User,
+    X,
+    ZoomIn,
+    ZoomOut
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface PhotoProofGalleryProps {
   isOpen: boolean
@@ -131,7 +121,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
 
     try {
       setLoading(true)
-      
+
       // Transform job completion photos to PhotoProof format
       const photoProofs: PhotoProof[] = job.completionPhotos.map((photo, index) => ({
         id: (photo as any).id || `photo_${index}`,
@@ -191,14 +181,14 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
       const response = await fetch(photo.url)
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
-      
+
       const link = document.createElement('a')
       link.href = url
       link.download = photo.filename
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      
+
       window.URL.revokeObjectURL(url)
       toast.success('Photo downloaded successfully')
 
@@ -220,7 +210,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
       }
 
       setPhotos(prev => prev.map(p => p.id === photo.id ? updatedPhoto : p))
-      
+
       if (selectedPhoto?.id === photo.id) {
         setSelectedPhoto(updatedPhoto)
       }
@@ -405,7 +395,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                           <Card className="bg-gray-800/50 border-gray-700/50 hover:border-purple-500/50 transition-all duration-300">
                             <CardContent className="p-4">
                               <div className="flex items-center gap-4">
-                                <div 
+                                <div
                                   className="w-16 h-16 bg-gray-700 rounded-lg overflow-hidden cursor-pointer flex-shrink-0"
                                   onClick={() => handlePhotoSelect(photo, index)}
                                 >
@@ -415,7 +405,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                                     className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                                   />
                                 </div>
-                                
+
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-2">
                                     <h4 className="font-medium text-white truncate">{photo.filename}</h4>
@@ -431,7 +421,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                                       </Badge>
                                     )}
                                   </div>
-                                  
+
                                   <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
                                     <div className="flex items-center gap-1">
                                       <Calendar className="w-3 h-3" />
@@ -447,7 +437,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                                     )}
                                   </div>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   <Button
                                     size="sm"
@@ -499,14 +489,14 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <h3 className="text-lg font-semibold">{selectedPhoto.filename}</h3>
-                    <Badge className={selectedPhoto.verified 
+                    <Badge className={selectedPhoto.verified
                       ? "bg-green-500/20 text-green-400 border-green-500/30"
                       : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
                     }>
                       {selectedPhoto.verified ? 'Verified' : 'Pending'}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">
                       {currentIndex + 1} of {photos.length}
@@ -590,7 +580,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                       <RotateCw className="w-4 h-4" />
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -613,7 +603,7 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
                     )}
                   </div>
                 </div>
-                
+
                 {/* Photo Info */}
                 <div className="mt-3 text-sm text-gray-400 grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>Uploaded: {formatDate(selectedPhoto.uploadedAt)}</div>

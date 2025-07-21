@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
 import { AILogEntry } from '@/lib/ai/aiLogger'
+import { NextRequest, NextResponse } from "next/server"
 
 // Dynamic rule loading function
 async function loadCompanyRules(): Promise<string[]> {
@@ -272,7 +272,7 @@ export async function POST(req: NextRequest) {
 
         if (response.decision === 'approved' && response.assignedStaff) {
           const staff = response.assignedStaff
-          
+
           // Send booking confirmation to customer
           await sendBookingConfirmation({
             bookingId: booking.testBookingId || `BOOKING-${Date.now()}`,

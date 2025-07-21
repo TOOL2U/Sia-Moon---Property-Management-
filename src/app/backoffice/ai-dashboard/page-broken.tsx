@@ -1,31 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Textarea } from '@/components/ui/Textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import {
-  Brain,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Filter,
-  RefreshCw,
-  Settings,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Activity,
-  Shield
-} from 'lucide-react'
-import { AILogEntry } from '@/types/ai'
-import AIDecisionsTable from '@/components/admin/AIDecisionsTable'
 import AIAnalyticsSidebar from '@/components/admin/AIAnalyticsSidebar'
+import AIDecisionsTable from '@/components/admin/AIDecisionsTable'
 import AIEscalationQueue from '@/components/admin/AIEscalationQueue'
 import OverridePanel from '@/components/admin/OverridePanel'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
+import { AILogEntry } from '@/types/ai'
+import {
+    Activity,
+    AlertTriangle,
+    Brain,
+    DollarSign,
+    RefreshCw,
+    Settings,
+    Shield,
+    TrendingUp,
+    Users
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface DashboardFilters {
   agent: 'all' | 'COO' | 'CFO'

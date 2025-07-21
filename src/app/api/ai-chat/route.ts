@@ -339,7 +339,7 @@ export async function POST(request: NextRequest) {
       //     aiResponse.response,
       //     aiResponse.model || 'unknown'
       //   )
-      //   
+      //
       //   // Store commands in memory if any were detected
       //   if (hasAnyCommands) {
       //     for (const command of allCommands) {

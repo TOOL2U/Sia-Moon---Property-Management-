@@ -23,9 +23,9 @@
 
 #### **After (Fixed):**
 ```tsx
-<span>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ? 
+<span>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ?
   toDate(booking.checkInDate || booking.checkIn || booking.check_in).toLocaleDateString() : 'Not set'}</span>
-<span>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ? 
+<span>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ?
   toDate(booking.checkOutDate || booking.checkOut || booking.check_out).toLocaleDateString() : 'Not set'}</span>
 ```
 
@@ -33,7 +33,7 @@
 
 **✅ Fixed Locations:**
 - Check-in date displays in booking cards
-- Check-out date displays in booking cards  
+- Check-out date displays in booking cards
 - Check-in/out dates in detailed booking modals
 - Rejection dialog booking information
 
@@ -41,22 +41,22 @@
 ```typescript
 const toDate = (timestamp: any): Date => {
   if (!timestamp) return new Date()
-  
+
   // Handle different timestamp formats
   if (timestamp instanceof Date) return timestamp
-  
+
   // Firebase Timestamp with seconds and nanoseconds
   if (timestamp && typeof timestamp === 'object') {
     if ('seconds' in timestamp && 'nanoseconds' in timestamp) {
       return new Date(timestamp.seconds * 1000)
     }
-    
+
     // Firebase Timestamp with toDate method
     if (typeof timestamp.toDate === 'function') {
       return timestamp.toDate()
     }
   }
-  
+
   // String or number timestamp
   return new Date(timestamp)
 }

@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
 import dynamic from 'next/dynamic';
+import React from 'react';
 
 // Dynamically import FullCalendar with no SSR
 const EnhancedFullCalendar = dynamic(
   () => import('./EnhancedFullCalendar'),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="p-8 bg-white rounded-lg shadow-lg">

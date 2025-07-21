@@ -1,25 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  RefreshCw,
-  Users,
-  Home,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Settings
-} from 'lucide-react'
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { db } from '@/lib/firebase'
-import { CALENDAR_EVENT_TYPES, type EnhancedCalendarEvent, type CalendarViewType } from '@/services/CalendarEventService'
+import { CALENDAR_EVENT_TYPES, type CalendarViewType, type EnhancedCalendarEvent } from '@/services/CalendarEventService'
+import { collection, getDocs, orderBy, query, Timestamp, where } from 'firebase/firestore'
+import {
+    AlertTriangle,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Filter,
+    Home,
+    RefreshCw,
+    Users
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface CalendarViewProps {
   initialView?: CalendarViewType
@@ -27,7 +25,7 @@ interface CalendarViewProps {
   staffFilter?: string[]
 }
 
-export default function AdvancedCalendarView({ 
+export default function AdvancedCalendarView({
   initialView = 'week',
   propertyFilter = [],
   staffFilter = []
@@ -52,9 +50,9 @@ export default function AdvancedCalendarView({
     setIsLoading(true)
     try {
       if (!db) throw new Error("Firebase not initialized")
-      
+
       const { startDate, endDate } = getDateRange()
-      
+
       let eventsQuery = query(
         collection(db, 'calendarEvents'),
         where('startDate', '>=', Timestamp.fromDate(startDate)),
@@ -77,7 +75,7 @@ export default function AdvancedCalendarView({
 
       // Apply filters
       calendarEvents = applyFilters(calendarEvents)
-      
+
       setEvents(calendarEvents)
     } catch (error) {
       console.error('Error loading calendar events:', error)
@@ -147,7 +145,7 @@ export default function AdvancedCalendarView({
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate)
-    
+
     switch (currentView) {
       case 'day':
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
@@ -161,7 +159,7 @@ export default function AdvancedCalendarView({
         newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1))
         break
     }
-    
+
     setCurrentDate(newDate)
   }
 
@@ -184,23 +182,23 @@ export default function AdvancedCalendarView({
 
   const formatDateRange = () => {
     const { startDate, endDate } = getDateRange()
-    
+
     switch (currentView) {
       case 'day':
-        return currentDate.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        return currentDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         })
       case 'week':
         return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
       case 'month':
       case 'property':
       case 'staff':
-        return currentDate.toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long' 
+        return currentDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long'
         })
     }
   }
@@ -222,12 +220,12 @@ export default function AdvancedCalendarView({
 
   const renderEventCard = (event: EnhancedCalendarEvent) => {
     const config = getEventTypeConfig(event.eventType)
-    
+
     return (
       <div
         key={event.id}
         className="p-3 rounded-lg border border-neutral-700 mb-2"
-        style={{ 
+        style={{
           backgroundColor: config.backgroundColor + '20',
           borderColor: config.color
         }}
@@ -238,33 +236,33 @@ export default function AdvancedCalendarView({
             {event.status}
           </Badge>
         </div>
-        
+
         <div className="text-xs text-neutral-400 space-y-1">
           <div className="flex items-center gap-2">
             <Clock className="h-3 w-3" />
             <span>
-              {event.startDate.toDate().toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit' 
+              {event.startDate.toDate().toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
               })}
               {event.estimatedDuration && ` (${event.estimatedDuration}m)`}
             </span>
           </div>
-          
+
           {event.propertyName && (
             <div className="flex items-center gap-2">
               <Home className="h-3 w-3" />
               <span>{event.propertyName}</span>
             </div>
           )}
-          
+
           {event.staffName && (
             <div className="flex items-center gap-2">
               <Users className="h-3 w-3" />
               <span>{event.staffName}</span>
             </div>
           )}
-          
+
           {event.guestName && (
             <div className="flex items-center gap-2">
               <Users className="h-3 w-3" />
@@ -272,7 +270,7 @@ export default function AdvancedCalendarView({
             </div>
           )}
         </div>
-        
+
         {event.conflictResolved === false && (
           <div className="flex items-center gap-1 mt-2 text-red-400 text-xs">
             <AlertTriangle className="h-3 w-3" />
@@ -311,7 +309,7 @@ export default function AdvancedCalendarView({
             </Button>
           </div>
         </div>
-        
+
         {/* View Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -327,7 +325,7 @@ export default function AdvancedCalendarView({
               </Button>
             ))}
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -351,7 +349,7 @@ export default function AdvancedCalendarView({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Event Summary */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -359,7 +357,7 @@ export default function AdvancedCalendarView({
             const count = events.filter(e => e.eventType === config.type).length
             return (
               <div key={key} className="text-center">
-                <div 
+                <div
                   className="w-4 h-4 rounded mx-auto mb-1"
                   style={{ backgroundColor: config.color }}
                 ></div>
@@ -375,7 +373,7 @@ export default function AdvancedCalendarView({
           <h3 className="text-white font-medium">
             Events ({events.length})
           </h3>
-          
+
           {isLoading ? (
             <div className="text-center py-8 text-neutral-400">
               <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />

@@ -1,11 +1,11 @@
 import { db } from '@/lib/firebase'
 import { clientToast as toast } from '@/utils/clientToast'
 import {
-  doc,
-  getDoc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
+    doc,
+    getDoc,
+    onSnapshot,
+    serverTimestamp,
+    setDoc,
 } from 'firebase/firestore'
 
 export interface AIAutomationSettings {
@@ -50,7 +50,7 @@ class AIAutomationService {
 
       // Fallback to legacy settings
       if (!db) throw new Error("Firebase not initialized")
-      
+
       const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
       const docSnap = await getDoc(docRef)
 
@@ -100,7 +100,7 @@ class AIAutomationService {
 
       // Also update legacy settings for backward compatibility
       if (!db) throw new Error("Firebase not initialized")
-      
+
       const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
 
       const settings: AIAutomationSettings = {
@@ -137,7 +137,7 @@ class AIAutomationService {
     onError?: (error: Error) => void
   ): () => void {
     if (!db) throw new Error("Firebase not initialized")
-    
+
     const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
 
     const unsubscribe = onSnapshot(
@@ -187,7 +187,7 @@ class AIAutomationService {
   async initializeSettings(): Promise<void> {
     try {
       if (!db) throw new Error("Firebase not initialized")
-      
+
       const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
       const docSnap = await getDoc(docRef)
 

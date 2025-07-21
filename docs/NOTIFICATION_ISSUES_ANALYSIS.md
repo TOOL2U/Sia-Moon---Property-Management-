@@ -3,7 +3,7 @@
 ## Issues Identified
 
 ### 1. Multiple Notification Triggers
-- **Firebase Cloud Function** (`functions/src/jobNotifications.ts`): 
+- **Firebase Cloud Function** (`functions/src/jobNotifications.ts`):
   - `onJobAssigned` triggers on `onWrite` for any job document change
   - Sends FCM push notifications
 - **Frontend NotificationService** (`src/services/NotificationService.ts`):
@@ -43,7 +43,7 @@
 **Add**: Centralized notification state tracking with atomic updates
 
 ### Fix 4: Coordinate Frontend and Backend Notifications
-**Approach**: 
+**Approach**:
 - Let Cloud Functions handle all FCM push notifications
 - Frontend services handle only in-app notifications
 - Use notification flags to prevent duplicates

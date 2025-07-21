@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 
 interface ConflictAnalysisInput {
   bookingId: string
@@ -43,16 +43,16 @@ export class AIConflictResolver {
     try {
       // Analyze conflict severity
       const conflictSeverity = this.assessConflictSeverity(input.conflicts)
-      
+
       // Determine if conflicts can be auto-resolved
       const canAutoResolve = this.canAutoResolveConflicts(input.conflicts, conflictSeverity)
-      
+
       // Generate AI reasoning and recommendations
       const aiAnalysis = await this.generateAIAnalysis(input, conflictSeverity, canAutoResolve)
-      
+
       // Generate specific recommendations
       const recommendations = this.generateRecommendations(input, aiAnalysis)
-      
+
       // Generate action tokens for automated resolution
       const actionsToken = canAutoResolve ? this.generateActionTokens(input, aiAnalysis) : []
 
@@ -76,7 +76,7 @@ export class AIConflictResolver {
 
     } catch (error) {
       console.error('❌ AI conflict resolution failed:', error)
-      
+
       // Return safe fallback resolution
       return {
         aiAnalysis: {
@@ -103,7 +103,7 @@ export class AIConflictResolver {
 
     for (const conflict of conflicts) {
       const severity = conflict.severity || 'medium'
-      
+
       if (severity === 'critical') return 'critical'
       if (severity === 'high' && maxSeverity !== 'critical') maxSeverity = 'high'
       if (severity === 'medium' && !['high', 'critical'].includes(maxSeverity)) maxSeverity = 'medium'
@@ -115,19 +115,19 @@ export class AIConflictResolver {
   private canAutoResolveConflicts(conflicts: any[], severity: string): boolean {
     // Never auto-resolve critical conflicts
     if (severity === 'critical') return false
-    
+
     // Check if all conflicts are resolvable types
     const resolvableTypes = ['meeting', 'inspection', 'other']
-    
+
     return conflicts.every(conflict => {
       // Booking overlaps are critical and need manual intervention
       if (conflict.type === 'booking_overlap') return false
-      
+
       // Calendar events with low severity can be auto-resolved
       if (conflict.type === 'calendar_event_overlap') {
         return resolvableTypes.includes(conflict.conflictingEventType)
       }
-      
+
       return false
     })
   }
@@ -153,44 +153,44 @@ export class AIConflictResolver {
     const conflictCount = input.conflicts.length
     const property = input.bookingData.propertyName
     const guest = input.bookingData.guestName
-    
+
     if (conflictCount === 0) {
       return `No conflicts detected for ${guest}'s booking at ${property}. Proceeding with automatic approval.`
     }
 
     let reasoning = `Detected ${conflictCount} conflict(s) for ${guest}'s booking at ${property}. `
-    
+
     // Analyze conflict types
     const bookingConflicts = input.conflicts.filter(c => c.type === 'booking_overlap').length
     const calendarConflicts = input.conflicts.filter(c => c.type === 'calendar_event_overlap').length
-    
+
     if (bookingConflicts > 0) {
       reasoning += `${bookingConflicts} booking overlap(s) detected - these require immediate manual intervention. `
     }
-    
+
     if (calendarConflicts > 0) {
       reasoning += `${calendarConflicts} calendar event conflict(s) detected. `
-      
-      const lowPriorityEvents = input.conflicts.filter(c => 
-        c.type === 'calendar_event_overlap' && 
+
+      const lowPriorityEvents = input.conflicts.filter(c =>
+        c.type === 'calendar_event_overlap' &&
         ['meeting', 'inspection', 'other'].includes(c.conflictingEventType)
       ).length
-      
+
       if (lowPriorityEvents > 0) {
         reasoning += `${lowPriorityEvents} of these are low-priority events that can potentially be rescheduled. `
       }
     }
-    
-    reasoning += canAutoResolve 
+
+    reasoning += canAutoResolve
       ? 'AI assessment: Conflicts can be automatically resolved.'
       : 'AI assessment: Manual intervention required due to conflict severity.'
-    
+
     return reasoning
   }
 
   private generateSuggestedActions(input: ConflictAnalysisInput, severity: string, canAutoResolve: boolean): string[] {
     const actions: string[] = []
-    
+
     if (canAutoResolve) {
       actions.push('Automatically reschedule conflicting low-priority events')
       actions.push('Send notifications to affected staff about event changes')
@@ -201,19 +201,19 @@ export class AIConflictResolver {
       actions.push('Contact guest to discuss alternative dates or solutions')
       actions.push('Review conflicting bookings/events for potential resolution')
       actions.push('Hold booking approval until conflicts are manually resolved')
-      
+
       if (severity === 'critical') {
         actions.push('Escalate to senior management due to critical conflict severity')
         actions.push('Consider offering alternative properties or compensation')
       }
     }
-    
+
     return actions
   }
 
   private generateRecommendations(input: ConflictAnalysisInput, aiAnalysis: any): string[] {
     const recommendations: string[] = []
-    
+
     // Base recommendations based on conflict analysis
     if (aiAnalysis.canAutoResolve) {
       recommendations.push(`✅ AI can automatically resolve ${input.conflicts.length} conflict(s)`)
@@ -224,15 +224,15 @@ export class AIConflictResolver {
       recommendations.push(`⚠️ Manual intervention required for ${input.conflicts.length} conflict(s)`)
       recommendations.push('🚫 Automatic booking approval blocked')
       recommendations.push('👥 Property manager notification sent')
-      
+
       // Specific recommendations based on conflict types
       const bookingConflicts = input.conflicts.filter(c => c.type === 'booking_overlap')
       if (bookingConflicts.length > 0) {
         recommendations.push('🏠 Booking overlap detected - check for double-booking')
         recommendations.push('📞 Contact guest immediately to discuss alternatives')
       }
-      
-      const maintenanceConflicts = input.conflicts.filter(c => 
+
+      const maintenanceConflicts = input.conflicts.filter(c =>
         c.type === 'calendar_event_overlap' && c.conflictingEventType === 'maintenance'
       )
       if (maintenanceConflicts.length > 0) {
@@ -240,40 +240,40 @@ export class AIConflictResolver {
         recommendations.push('⏰ Consider rescheduling maintenance or booking')
       }
     }
-    
+
     // Add timeline recommendations
     const checkInDate = new Date(input.bookingData.checkInDate)
     const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    
+
     if (daysUntilCheckIn <= 7) {
       recommendations.push(`⏰ Urgent: Check-in in ${daysUntilCheckIn} day(s) - prioritize resolution`)
     } else if (daysUntilCheckIn <= 30) {
       recommendations.push(`📅 Moderate urgency: ${daysUntilCheckIn} days until check-in`)
     }
-    
+
     return recommendations
   }
 
   private generateActionTokens(input: ConflictAnalysisInput, aiAnalysis: any): string[] {
     const actions: string[] = []
-    
+
     if (!aiAnalysis.canAutoResolve) return actions
-    
+
     // Generate specific action tokens for automated resolution
-    const resolvableConflicts = input.conflicts.filter(conflict => 
-      conflict.type === 'calendar_event_overlap' && 
+    const resolvableConflicts = input.conflicts.filter(conflict =>
+      conflict.type === 'calendar_event_overlap' &&
       ['meeting', 'inspection', 'other'].includes(conflict.conflictingEventType)
     )
-    
+
     for (const conflict of resolvableConflicts) {
       actions.push(`reschedule_event:${conflict.conflictingEventId}`)
       actions.push(`notify_staff:${conflict.conflictingEventId}`)
     }
-    
+
     actions.push(`approve_booking:${input.bookingId}`)
     actions.push(`create_calendar_events:${input.bookingId}`)
     actions.push(`notify_guest:${input.bookingId}`)
-    
+
     return actions
   }
 
@@ -304,9 +304,9 @@ export class AIConflictResolver {
           suggestedActions: aiAnalysis.suggestedActions
         }
       })
-      
+
       console.log('📝 AI conflict resolution decision logged')
-      
+
     } catch (error) {
       console.error('❌ Failed to log AI decision:', error)
     }

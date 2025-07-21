@@ -1,21 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { 
-  FileText, 
-  RefreshCw, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  Clock,
-  User,
-  Calendar
-} from 'lucide-react'
-import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { db } from '@/lib/firebase'
+import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore'
+import {
+    AlertTriangle,
+    Calendar,
+    CheckCircle,
+    Clock,
+    FileText,
+    RefreshCw,
+    User,
+    XCircle
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface AuditLogEntry {
   id: string
@@ -41,7 +41,7 @@ export default function AIAuditLogViewer() {
       setLoading(false)
       return
     }
-    
+
     // Set up real-time listener for audit logs
     const auditLogsRef = collection(db, 'auditLogs')
     let auditQuery = query(
@@ -75,7 +75,7 @@ export default function AIAuditLogViewer() {
 
   const getFilteredLogs = () => {
     if (filter === 'all') return auditLogs
-    
+
     return auditLogs.filter(log => {
       switch (filter) {
         case 'approved':
@@ -118,7 +118,7 @@ export default function AIAuditLogViewer() {
 
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return 'Unknown'
-    
+
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
       return date.toLocaleString()
@@ -160,7 +160,7 @@ export default function AIAuditLogViewer() {
           Real-time log of AI booking approval decisions and actions
         </p>
       </CardHeader>
-      
+
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
@@ -193,24 +193,24 @@ export default function AIAuditLogViewer() {
                     {formatTimestamp(log.timestamp)}
                   </div>
                 </div>
-                
+
                 <div className="space-y-1 text-sm">
                   {log.bookingId && (
                     <p className="text-neutral-400">
                       <span className="text-neutral-500">Booking ID:</span> {log.bookingId}
                     </p>
                   )}
-                  
+
                   {log.propertyId && (
                     <p className="text-neutral-400">
                       <span className="text-neutral-500">Property:</span> {log.propertyId}
                     </p>
                   )}
-                  
+
                   <p className="text-neutral-300">
                     <span className="text-neutral-500">Reason:</span> {log.reason}
                   </p>
-                  
+
                   {log.details && (
                     <details className="mt-2">
                       <summary className="text-neutral-500 cursor-pointer text-xs">
@@ -222,7 +222,7 @@ export default function AIAuditLogViewer() {
                     </details>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-neutral-700">
                   <div className="flex items-center gap-1 text-xs text-neutral-500">
                     <User className="h-3 w-3" />

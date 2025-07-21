@@ -1,24 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { 
-  BarChart3,
-  Clock,
-  Users,
-  TrendingUp,
-  Star,
-  RefreshCw,
-  CheckCircle,
-  DollarSign,
-  Target,
-  Award
-} from 'lucide-react'
-import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { db } from '@/lib/firebase'
 import { type JobCompletionRecord } from '@/services/FinancialReportingService'
+import { collection, getDocs, orderBy, query, Timestamp, where } from 'firebase/firestore'
+import {
+    Award,
+    BarChart3,
+    CheckCircle,
+    Clock,
+    DollarSign,
+    RefreshCw,
+    Star,
+    Target
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface JobAnalytics {
   totalCompletions: number
@@ -52,7 +50,7 @@ export default function JobCompletionAnalytics() {
     topPerformers: [],
     jobTypeBreakdown: []
   })
-  
+
   const [isLoading, setIsLoading] = useState(false)
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week')
 
@@ -64,9 +62,9 @@ export default function JobCompletionAnalytics() {
     setIsLoading(true)
     try {
       if (!db) throw new Error("Firebase not initialized")
-      
+
       const { startDate, endDate } = getDateRange()
-      
+
       // Query job completions for the selected time range
       const completionsQuery = query(
         collection(db, 'jobCompletions'),
@@ -136,16 +134,16 @@ export default function JobCompletionAnalytics() {
     const totalCompletions = completions.length
     const totalRevenue = completions.reduce((sum, job) => sum + job.jobRevenue, 0)
     const averageDuration = completions.reduce((sum, job) => sum + job.actualDuration, 0) / totalCompletions
-    
+
     // Calculate efficiency (actual vs estimated duration)
-    const efficiencies = completions.map(job => 
+    const efficiencies = completions.map(job =>
       job.estimatedDuration > 0 ? (job.estimatedDuration / job.actualDuration) * 100 : 100
     )
     const averageEfficiency = efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length
 
     // Calculate average rating
     const ratingsJobs = completions.filter(job => job.qualityRating && job.qualityRating > 0)
-    const averageRating = ratingsJobs.length > 0 
+    const averageRating = ratingsJobs.length > 0
       ? ratingsJobs.reduce((sum, job) => sum + (job.qualityRating || 0), 0) / ratingsJobs.length
       : 0
 
@@ -180,8 +178,8 @@ export default function JobCompletionAnalytics() {
     const topPerformers = Array.from(staffPerformance.values())
       .map(staff => ({
         ...staff,
-        efficiency: staff.estimatedDuration > 0 
-          ? (staff.estimatedDuration / staff.totalDuration) * 100 
+        efficiency: staff.estimatedDuration > 0
+          ? (staff.estimatedDuration / staff.totalDuration) * 100
           : 100
       }))
       .sort((a, b) => b.revenue - a.revenue)
@@ -292,7 +290,7 @@ export default function JobCompletionAnalytics() {
           Comprehensive analytics for job completion performance and efficiency
         </p>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -362,7 +360,7 @@ export default function JobCompletionAnalytics() {
             <Award className="h-4 w-4 text-yellow-400" />
             Top Performing Staff
           </h3>
-          
+
           {analytics.topPerformers.length === 0 ? (
             <div className="text-center py-4 text-neutral-400">
               No performance data available for the selected period
@@ -398,7 +396,7 @@ export default function JobCompletionAnalytics() {
             <BarChart3 className="h-4 w-4 text-purple-400" />
             Job Type Performance
           </h3>
-          
+
           {analytics.jobTypeBreakdown.length === 0 ? (
             <div className="text-center py-4 text-neutral-400">
               No job type data available for the selected period

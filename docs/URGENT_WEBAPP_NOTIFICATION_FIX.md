@@ -5,7 +5,7 @@ We're experiencing **19 duplicate notifications for a single job assignment**. A
 
 ## **Root Cause Identified:**
 - **Mobile app** sends notifications when jobs are assigned/updated
-- **Webapp** ALSO sends notifications for the same events  
+- **Webapp** ALSO sends notifications for the same events
 - **Webhook syncing** between systems triggers both to send notifications
 - **No coordination** between notification systems
 
@@ -23,7 +23,7 @@ mobileReceiveEndpoint: 'https://sia-moon-property-management.vercel.app/api/mobi
 1. **Disable ALL job-related notifications** in your webapp codebase
 2. **Search for and disable these notification triggers:**
    - Job assignment notifications
-   - Job status update notifications  
+   - Job status update notifications
    - Job completion notifications
    - Any push notification services (FCM, OneSignal, etc.)
    - Any email notification services for job events
@@ -32,7 +32,7 @@ mobileReceiveEndpoint: 'https://sia-moon-property-management.vercel.app/api/mobi
 ```javascript
 // Find and DISABLE/COMMENT OUT code like this:
 // await sendPushNotification(staffId, jobData);
-// await sendJobAssignmentEmail(staffId, jobData);  
+// await sendJobAssignmentEmail(staffId, jobData);
 // await notificationService.sendJobUpdate(jobData);
 // await fcm.send(notificationPayload);
 
@@ -48,7 +48,7 @@ console.log('🔕 Webapp notifications disabled - mobile app handles notificatio
 ### **Phase 3: Long-term Solution (This Week)**
 1. **Choose notification ownership:**
    - Option A: Mobile app handles ALL notifications ✅ (Recommended)
-   - Option B: Webapp handles ALL notifications  
+   - Option B: Webapp handles ALL notifications
    - Option C: Centralized notification service
 
 2. **Implement proper coordination:**
@@ -59,7 +59,7 @@ console.log('🔕 Webapp notifications disabled - mobile app handles notificatio
 ## **Files to Check in Your Webapp:**
 Look for notification code in these areas:
 - `/api/jobs/` endpoints
-- `/api/assignments/` endpoints  
+- `/api/assignments/` endpoints
 - `/api/notifications/` services
 - Job assignment handlers
 - Job status update handlers
@@ -90,7 +90,7 @@ grep -r "sendEmail.*job" .
 
 ## **Webapp Team Checklist:**
 - [ ] **Search codebase** for notification sending code
-- [ ] **Disable job assignment notifications** 
+- [ ] **Disable job assignment notifications**
 - [ ] **Disable job status notifications**
 - [ ] **Disable push notification services** for jobs
 - [ ] **Disable email notifications** for jobs
@@ -100,7 +100,7 @@ grep -r "sendEmail.*job" .
 ## **Communication:**
 Please confirm when you've:
 1. ✅ Disabled webapp notifications
-2. ✅ Tested with a job assignment  
+2. ✅ Tested with a job assignment
 3. ✅ Verified only 1 notification is sent
 
 ## **Questions for Webapp Team:**
@@ -111,7 +111,7 @@ Please confirm when you've:
 
 ## **Timeline:**
 - **Phase 1 (Emergency):** Complete within 2 hours ⏰
-- **Phase 2 (Verification):** Complete today  
+- **Phase 2 (Verification):** Complete today
 - **Phase 3 (Long-term):** Complete this week
 
 ## **Testing Coordination:**
@@ -132,9 +132,9 @@ Once immediate issue is fixed, we'll design:
 
 **This is causing a CRITICAL USER EXPERIENCE ISSUE** where staff are getting bombarded with duplicate notifications. Please prioritize this fix.
 
-**Status**: 🔴 **URGENT** - Immediate action required  
-**Backend**: ✅ Fixed and waiting for webapp coordination  
-**Mobile**: 🔄 Testing and verification in progress  
+**Status**: 🔴 **URGENT** - Immediate action required
+**Backend**: ✅ Fixed and waiting for webapp coordination
+**Mobile**: 🔄 Testing and verification in progress
 **Webapp**: ⏳ **ACTION REQUIRED**
 
 **Reply with your progress and any questions. We're standing by to coordinate the long-term solution once the immediate issue is resolved.**

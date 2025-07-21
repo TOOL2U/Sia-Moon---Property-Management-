@@ -1,57 +1,48 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { JobStatusTracker } from '@/components/admin/JobStatusTracker'
+import { StaffAssignmentSelector } from '@/components/admin/StaffAssignmentSelector'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
 import { Textarea } from '@/components/ui/Textarea'
-import { toast } from 'sonner'
+import { JobPriority, JobType } from '@/services/JobAssignmentService'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Calendar,
-  Clock,
-  User,
-  Home,
-  DollarSign,
-  Users,
-  MapPin,
-  Bot,
-  Brain,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  AlertCircle,
-  Filter,
-  Search,
-  Eye,
-  UserCheck,
-  Briefcase,
-  Loader2,
-  ExternalLink,
-  Mail,
-  Phone,
-  CreditCard,
-  TrendingUp,
-  BarChart3,
-  Download,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  Star,
-  MessageSquare,
-  ChevronDown,
-  ChevronRight,
-  Sparkles,
-  Zap
+    AlertCircle,
+    AlertTriangle,
+    BarChart3,
+    Bot,
+    Brain,
+    Briefcase,
+    Calendar,
+    CheckCircle,
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    DollarSign,
+    Download,
+    Home,
+    Loader2,
+    Mail,
+    MapPin,
+    MessageSquare,
+    Phone,
+    RefreshCw,
+    Search,
+    Sparkles,
+    TrendingUp,
+    User,
+    UserCheck,
+    Users,
+    XCircle,
+    Zap
 } from 'lucide-react'
-import CreateJobModal from '@/components/job-assignment/CreateJobModal'
-import { StaffAssignmentSelector } from '@/components/admin/StaffAssignmentSelector'
-import { JobStatusTracker } from '@/components/admin/JobStatusTracker'
-import JobAssignmentService, { JobType, JobPriority } from '@/services/JobAssignmentService'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 // Utility function to safely convert Firebase Timestamp to Date
 const toDate = (timestamp: any): Date => {
@@ -65,12 +56,12 @@ const toDate = (timestamp: any): Date => {
     if ('seconds' in timestamp && 'nanoseconds' in timestamp) {
       return new Date(timestamp.seconds * 1000)
     }
-    
+
     // If it's a Firebase Timestamp with toDate method
     if (typeof timestamp.toDate === 'function') {
       return timestamp.toDate()
     }
-    
+
     // If it's a timestamp object with type field (Firestore format)
     if (timestamp.type && timestamp.seconds) {
       return new Date(timestamp.seconds * 1000)
@@ -184,10 +175,10 @@ export function EnhancedBookingManagement({
       console.log('📋 Loading enhanced booking data...')
 
       const response = await fetch('/api/admin/bookings/integrated?limit=100&enhanced=true')
-      
+
       if (response.ok) {
         const data = await response.json()
-        
+
         if (data.success) {
           const bookings = data.data.bookings || []
           setAllBookings(bookings)
@@ -223,7 +214,7 @@ export function EnhancedBookingManagement({
     const avgBookingValue = bookings.length > 0 ? totalRevenue / bookings.length : 0
 
     const summary = `📊 Portfolio Overview: ${pendingCount} bookings require immediate attention, ${approvedCount} confirmed reservations generating $${totalRevenue.toLocaleString()} in total revenue. ${todayCheckIns} guests arriving today. Average booking value: $${avgBookingValue.toFixed(0)}. ${automationEnabled ? '🤖 AI automation optimizing workflow efficiency.' : '⚠️ Manual review mode - consider enabling automation.'}`
-    
+
     setAiSummary(summary)
   }
 
@@ -548,7 +539,7 @@ export function EnhancedBookingManagement({
       }
 
       // Exclude test bookings (identified by various patterns)
-      const isTestBooking = 
+      const isTestBooking =
         booking.isTestBooking === true ||
         booking.id?.includes('test') ||
         booking.id?.includes('ai_test') ||
@@ -591,7 +582,7 @@ export function EnhancedBookingManagement({
     .sort((a, b) => {
       const aValue = a[sortBy] || ''
       const bValue = b[sortBy] || ''
-      
+
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1
       } else {
@@ -646,14 +637,14 @@ export function EnhancedBookingManagement({
   }, [statusFilter])
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-8"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Enhanced Header with Gradient Background */}
-      <motion.div 
+      <motion.div
         className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900/20 via-blue-900/20 to-indigo-900/20 border border-purple-500/20 p-8"
         variants={itemVariants}
       >
@@ -673,7 +664,7 @@ export function EnhancedBookingManagement({
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -682,8 +673,8 @@ export function EnhancedBookingManagement({
                 <Button
                   onClick={() => setAutomationEnabled(!automationEnabled)}
                   variant={automationEnabled ? "default" : "outline"}
-                  className={`${automationEnabled 
-                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/25' 
+                  className={`${automationEnabled
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/25'
                     : 'border-green-500/50 text-green-400 hover:bg-green-500/10'
                   } transition-all duration-300`}
                 >
@@ -691,7 +682,7 @@ export function EnhancedBookingManagement({
                   {automationEnabled ? 'AI Enabled' : 'AI Disabled'}
                 </Button>
               </motion.div>
-              
+
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -710,7 +701,7 @@ export function EnhancedBookingManagement({
 
           {/* AI Summary with Enhanced Styling */}
           {aiSummary && (
-            <motion.div 
+            <motion.div
               className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-xl p-6 backdrop-blur-sm"
               variants={itemVariants}
             >
@@ -1088,12 +1079,12 @@ export function EnhancedBookingManagement({
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div className="flex items-center gap-2 text-gray-300">
                                 <Calendar className="w-4 h-4 text-green-400" />
-                                <span>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ? 
+                                <span>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ?
                                   toDate(booking.checkInDate || booking.checkIn || booking.check_in).toLocaleDateString() : 'Not set'}</span>
                               </div>
                               <div className="flex items-center gap-2 text-gray-300">
                                 <Calendar className="w-4 h-4 text-red-400" />
-                                <span>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ? 
+                                <span>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ?
                                   toDate(booking.checkOutDate || booking.checkOut || booking.check_out).toLocaleDateString() : 'Not set'}</span>
                               </div>
                             </div>
@@ -1307,9 +1298,9 @@ export function EnhancedBookingManagement({
                                       {booking.approvedAt && (
                                         <div>Approved: {toDate(booking.approvedAt).toLocaleString()}</div>
                                       )}
-                                      <div>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ? 
+                                      <div>Check-in: {booking.checkInDate || booking.checkIn || booking.check_in ?
                                         toDate(booking.checkInDate || booking.checkIn || booking.check_in).toLocaleDateString() : 'Not set'}</div>
-                                      <div>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ? 
+                                      <div>Check-out: {booking.checkOutDate || booking.checkOut || booking.check_out ?
                                         toDate(booking.checkOutDate || booking.checkOut || booking.check_out).toLocaleDateString() : 'Not set'}</div>
                                     </div>
                                   </div>
@@ -1421,7 +1412,7 @@ export function EnhancedBookingManagement({
                 </div>
               </div>
               <div className="text-sm text-gray-300">
-                <div>Check-in: {rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in ? 
+                <div>Check-in: {rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in ?
                   toDate(rejectionDialog.booking.checkInDate || rejectionDialog.booking.checkIn || rejectionDialog.booking.check_in).toLocaleDateString() : 'Not set'}</div>
                 <div>Total: ${rejectionDialog.booking.price || rejectionDialog.booking.amount || rejectionDialog.booking.total || 0}</div>
               </div>

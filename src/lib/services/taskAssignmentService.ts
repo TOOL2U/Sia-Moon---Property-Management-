@@ -1,36 +1,32 @@
 /**
  * Task Assignment Service
- * 
+ *
  * Manages task assignments, staff coordination, and cross-platform synchronization
  * for booking-related tasks between web and mobile applications.
  */
 
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  addDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-  onSnapshot,
-  Unsubscribe,
-  Timestamp
-} from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
 import {
-  TaskAssignment,
-  TaskStatus,
-  TaskPriority,
-  StaffProfile,
-  TaskAssignmentFilters,
-  SyncEvent
+    SyncEvent,
+    TaskAssignment,
+    TaskAssignmentFilters,
+    TaskStatus
 } from '@/types/booking-sync'
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
+    Unsubscribe,
+    updateDoc,
+    where
+} from 'firebase/firestore'
 
 export class TaskAssignmentService {
   private static get db() {
@@ -47,7 +43,7 @@ export class TaskAssignmentService {
   ): Promise<{ success: boolean; taskId?: string; error?: string }> {
     try {
       const timestamp = serverTimestamp()
-      
+
       const task: Omit<TaskAssignment, 'id'> = {
         ...taskData,
         createdAt: timestamp as any,
@@ -57,7 +53,7 @@ export class TaskAssignmentService {
       }
 
       const docRef = await addDoc(collection(this.db, 'task_assignments'), task)
-      
+
       // Create sync event
       await this.createSyncEvent(
         'staff_assigned',
@@ -117,7 +113,7 @@ export class TaskAssignmentService {
       // Get current task to increment sync version
       const taskRef = doc(this.db, 'task_assignments', taskId)
       const taskDoc = await getDoc(taskRef)
-      
+
       if (!taskDoc.exists()) {
         return { success: false, error: 'Task not found' }
       }
@@ -213,7 +209,7 @@ export class TaskAssignmentService {
       if (filters?.dateRange) {
         const startDate = new Date(filters.dateRange.start)
         const endDate = new Date(filters.dateRange.end)
-        
+
         return tasks.filter(task => {
           const taskDate = new Date(task.scheduledDate || task.createdAt)
           return taskDate >= startDate && taskDate <= endDate
@@ -267,7 +263,7 @@ export class TaskAssignmentService {
       if (filters?.dateRange) {
         const startDate = new Date(filters.dateRange.start)
         const endDate = new Date(filters.dateRange.end)
-        
+
         return tasks.filter(task => {
           const taskDate = new Date(task.scheduledDate || task.createdAt)
           return taskDate >= startDate && taskDate <= endDate
@@ -289,13 +285,13 @@ export class TaskAssignmentService {
       // Get task data before deletion for sync event
       const taskRef = doc(this.db, 'task_assignments', taskId)
       const taskDoc = await getDoc(taskRef)
-      
+
       if (!taskDoc.exists()) {
         return { success: false, error: 'Task not found' }
       }
 
       const taskData = taskDoc.data()
-      
+
       await deleteDoc(taskRef)
 
       // Create sync event
@@ -338,7 +334,7 @@ export class TaskAssignmentService {
   }> {
     try {
       const tasks = await this.getTasksForStaff(staffId)
-      
+
       const stats = {
         total: tasks.length,
         completed: tasks.filter(t => t.status === 'completed').length,
@@ -363,9 +359,9 @@ export class TaskAssignmentService {
       }
 
       // Calculate average completion time (in hours)
-      const completedTasks = tasks.filter(t => 
-        t.status === 'completed' && 
-        t.actualStartTime && 
+      const completedTasks = tasks.filter(t =>
+        t.status === 'completed' &&
+        t.actualStartTime &&
         t.actualEndTime
       )
 
@@ -375,7 +371,7 @@ export class TaskAssignmentService {
           const end = new Date(task.actualEndTime as any)
           return sum + (end.getTime() - start.getTime())
         }, 0)
-        
+
         stats.averageCompletionTime = totalTime / completedTasks.length / (1000 * 60 * 60) // Convert to hours
       }
 

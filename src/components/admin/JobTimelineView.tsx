@@ -1,49 +1,32 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
-import { toast } from 'sonner'
-import {
-  Clock,
-  User,
-  CheckCircle,
-  AlertTriangle,
-  Play,
-  Pause,
-  Square,
-  RotateCcw,
-  MapPin,
-  Camera,
-  MessageSquare,
-  Phone,
-  Mail,
-  Calendar,
-  Timer,
-  Zap,
-  Star,
-  FileText,
-  Image,
-  Navigation,
-  Activity,
-  TrendingUp,
-  BarChart3,
-  Eye,
-  Download,
-  ExternalLink,
-  X,
-  ChevronDown,
-  ChevronRight,
-  Filter,
-  Search,
-  Loader2
-} from 'lucide-react'
 import { JobData, JobStatus } from '@/services/JobAssignmentService'
-import { toDate, formatRelativeTime } from '@/utils/dateUtils'
+import { formatRelativeTime, toDate } from '@/utils/dateUtils'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+    Activity,
+    Camera,
+    CheckCircle,
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    FileText,
+    Loader2,
+    MapPin,
+    Play,
+    Search,
+    Square,
+    Star,
+    User,
+    Zap
+} from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface JobTimelineViewProps {
   isOpen: boolean
@@ -165,7 +148,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
       if (job.statusHistory) {
         job.statusHistory.forEach((statusChange, index) => {
           const previousStatus = index > 0 ? job.statusHistory![index - 1].status : 'pending'
-          
+
           events.push({
             id: `status_${index}`,
             type: 'status_change',
@@ -328,11 +311,11 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
   // Filter timeline events
   const filteredTimeline = timeline.filter(event => {
     const matchesType = filterType === 'all' || event.type === filterType
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.actor.name.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     return matchesType && matchesSearch
   })
 
@@ -398,7 +381,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
                     className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 text-sm"
                   />
                 </div>
-                
+
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
@@ -440,7 +423,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
                   >
                     {/* Timeline line */}
                     <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-500 via-blue-500 to-green-500"></div>
-                    
+
                     <div className="space-y-6">
                       <AnimatePresence>
                         {filteredTimeline.map((event, index) => (
@@ -456,7 +439,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
                             <div className={`relative z-10 w-12 h-12 rounded-full bg-gray-900 border-2 border-current ${event.color} flex items-center justify-center flex-shrink-0`}>
                               {event.icon}
                             </div>
-                            
+
                             {/* Event content */}
                             <Card className="flex-1 bg-gray-800/50 border-gray-700/50 hover:border-gray-600/70 transition-all duration-300">
                               <CardContent className="p-4">
@@ -472,9 +455,9 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
                                     {formatTimestamp(event.timestamp)}
                                   </div>
                                 </div>
-                                
+
                                 <p className="text-gray-300 text-sm mb-3">{event.description}</p>
-                                
+
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <Avatar className="w-6 h-6">
@@ -487,7 +470,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
                                       {event.actor.name} ({event.actor.role})
                                     </span>
                                   </div>
-                                  
+
                                   {event.metadata && (
                                     <Button
                                       size="sm"
@@ -503,7 +486,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
                                     </Button>
                                   )}
                                 </div>
-                                
+
                                 {/* Expanded metadata */}
                                 <AnimatePresence>
                                   {expandedEvents.has(event.id) && event.metadata && (

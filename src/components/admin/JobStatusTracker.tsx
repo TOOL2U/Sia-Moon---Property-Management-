@@ -1,47 +1,38 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Progress } from '@/components/ui/Progress'
-import { clientToast as toast } from '@/utils/clientToast'
-import {
-  Clock,
-  User,
-  CheckCircle,
-  AlertTriangle,
-  Camera,
-  MapPin,
-  Calendar,
-  Timer,
-  Eye,
-  RefreshCw,
-  TrendingUp,
-  Users,
-  Briefcase,
-  Image,
-  FileText,
-  Zap,
-  Play,
-  Pause,
-  Square,
-  RotateCcw,
-  Star,
-  MessageSquare,
-  Phone,
-  Mail,
-  ExternalLink,
-  Download,
-  Filter,
-  Search
-} from 'lucide-react'
 import JobAssignmentService, { JobData, JobStatus } from '@/services/JobAssignmentService'
-import { toDate, formatLocalDateTime, formatLocalDate, getDifferenceInMinutes } from '@/utils/dateUtils'
-import { PhotoProofGallery } from './PhotoProofGallery'
+import { clientToast as toast } from '@/utils/clientToast'
+import { formatLocalDate, formatLocalDateTime, getDifferenceInMinutes } from '@/utils/dateUtils'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  Briefcase,
+  Calendar,
+  Camera,
+  CheckCircle,
+  Clock,
+  Eye,
+  FileText,
+  Image,
+  Mail,
+  Phone,
+  Play,
+  RefreshCw,
+  Search,
+  Square,
+  Star,
+  Timer,
+  TrendingUp,
+  User,
+  Zap
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { JobTimelineView } from './JobTimelineView'
+import { PhotoProofGallery } from './PhotoProofGallery'
 
 interface JobStatusTrackerProps {
   bookingId?: string
@@ -107,11 +98,11 @@ const cardHoverVariants = {
   }
 }
 
-export function JobStatusTracker({ 
-  bookingId, 
-  className, 
+export function JobStatusTracker({
+  bookingId,
+  className,
   showAllJobs = false,
-  staffId 
+  staffId
 }: JobStatusTrackerProps) {
   // State management
   const [jobs, setJobs] = useState<JobTrackingData[]>([])
@@ -136,7 +127,7 @@ export function JobStatusTracker({
 
     const unsubscribeFn = JobAssignmentService.subscribeToJobs((updatedJobs) => {
       console.log(`✅ Received ${updatedJobs.length} jobs for tracking`)
-      
+
       // Transform jobs to tracking data
       const trackingData: JobTrackingData[] = updatedJobs.map(job => ({
         ...job,
@@ -196,7 +187,7 @@ export function JobStatusTracker({
   const calculateTimeRemaining = (job: JobData): number => {
     if (job.status === 'completed' || job.status === 'verified') return 0
     if (job.status === 'pending' || job.status === 'assigned') return job.estimatedDuration || 120
-    
+
     const elapsed = calculateTimeElapsed(job.createdAt, job.status)
     const estimated = job.estimatedDuration || 120
     return Math.max(0, estimated - elapsed)
@@ -297,7 +288,7 @@ export function JobStatusTracker({
   // Setup real-time subscription on mount
   useEffect(() => {
     const unsubscribeFn = loadJobs()
-    
+
     return () => {
       if (unsubscribeFn) {
         unsubscribeFn()
@@ -315,7 +306,7 @@ export function JobStatusTracker({
   }, [unsubscribe])
 
   return (
-    <motion.div 
+    <motion.div
       className={`space-y-6 ${className}`}
       variants={containerVariants}
       initial="hidden"
@@ -339,7 +330,7 @@ export function JobStatusTracker({
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                   <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
@@ -357,7 +348,7 @@ export function JobStatusTracker({
                 </Button>
               </div>
             </div>
-            
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mt-6">
               <div className="text-center">
@@ -404,7 +395,7 @@ export function JobStatusTracker({
                   className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400"
                 />
               </div>
-              
+
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as JobStatus | 'all')}

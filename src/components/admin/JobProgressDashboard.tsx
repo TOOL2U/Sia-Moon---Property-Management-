@@ -1,51 +1,39 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { Progress } from '@/components/ui/Progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import JobAssignmentService, { JobData } from '@/services/JobAssignmentService'
 import { clientToast as toast } from '@/utils/clientToast'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Activity,
-  Clock,
-  Users,
-  CheckCircle,
-  AlertTriangle,
-  Camera,
-  MapPin,
-  Calendar,
-  Timer,
-  TrendingUp,
-  BarChart3,
-  RefreshCw,
-  Filter,
-  Search,
-  Eye,
-  Play,
-  Pause,
-  Square,
-  Star,
-  Zap,
-  Briefcase,
-  Image,
-  Phone,
-  Mail,
-  ExternalLink,
-  Download,
-  FileText,
-  MessageSquare,
-  Navigation,
-  Target,
-  Award,
-  Loader2
+    Activity,
+    AlertTriangle,
+    Award,
+    BarChart3,
+    Briefcase,
+    Calendar,
+    Camera,
+    CheckCircle,
+    Clock,
+    Image,
+    Loader2,
+    MessageSquare,
+    Phone,
+    Play,
+    RefreshCw,
+    Star,
+    Target,
+    Timer,
+    TrendingUp,
+    Users,
+    Zap
 } from 'lucide-react'
-import JobAssignmentService, { JobData, JobStatus } from '@/services/JobAssignmentService'
+import { useCallback, useEffect, useState } from 'react'
 import { JobStatusTracker } from './JobStatusTracker'
 // TestJobService removed - was using mock data
-import { toDate, formatDuration, getDifferenceInMinutes, isToday } from '@/utils/dateUtils'
+import { formatDuration, toDate } from '@/utils/dateUtils'
 
 interface JobProgressDashboardProps {
   className?: string
@@ -124,7 +112,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
     onTimeCompletionRate: 0,
     urgentJobs: 0
   })
-  
+
   const [staffPerformance, setStaffPerformance] = useState<StaffPerformance[]>([])
   const [recentJobs, setRecentJobs] = useState<JobData[]>([])
   const [loading, setLoading] = useState(true)
@@ -141,7 +129,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
 
     const unsubscribeFn = JobAssignmentService.subscribeToJobs((updatedJobs) => {
       console.log(`✅ Received ${updatedJobs.length} jobs for dashboard`)
-      
+
       // Calculate dashboard statistics
       const dashboardStats = calculateDashboardStats(updatedJobs)
       setStats(dashboardStats)
@@ -167,7 +155,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
   const calculateDashboardStats = (jobs: JobData[]): DashboardStats => {
     const today = new Date().toISOString().split('T')[0]
     const now = new Date()
-    
+
     const totalJobs = jobs.length
     const activeJobs = jobs.filter(j => ['assigned', 'accepted', 'in_progress'].includes(j.status)).length
     const completedToday = jobs.filter(j =>
@@ -175,7 +163,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
       j.completedAt &&
       toDate(j.completedAt).toISOString().split('T')[0] === today
     ).length
-    
+
     const completedJobs = jobs.filter(j => j.status === 'completed' && j.completedAt)
     const averageCompletionTime = completedJobs.length > 0
       ? completedJobs.reduce((acc, job) => {
@@ -186,15 +174,15 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
       : 0
 
     const staffIds = Array.from(new Set(jobs.map(j => j.assignedStaffId)))
-    const activeStaff = staffIds.filter(staffId => 
+    const activeStaff = staffIds.filter(staffId =>
       jobs.some(j => j.assignedStaffId === staffId && ['assigned', 'accepted', 'in_progress'].includes(j.status))
     )
     const staffUtilization = staffIds.length > 0 ? (activeStaff.length / staffIds.length) * 100 : 0
 
     const jobsWithPhotos = jobs.filter(j => j.completionPhotos && j.completionPhotos.length > 0)
     const photoRequiredJobs = jobs.filter(j => ['cleaning', 'maintenance'].includes(j.jobType))
-    const photoComplianceRate = photoRequiredJobs.length > 0 
-      ? (jobsWithPhotos.length / photoRequiredJobs.length) * 100 
+    const photoComplianceRate = photoRequiredJobs.length > 0
+      ? (jobsWithPhotos.length / photoRequiredJobs.length) * 100
       : 100
 
     const onTimeJobs = completedJobs.filter(job => {
@@ -203,8 +191,8 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
       const completed = toDate(job.completedAt)
       return completed <= deadline
     })
-    const onTimeCompletionRate = completedJobs.length > 0 
-      ? (onTimeJobs.length / completedJobs.length) * 100 
+    const onTimeCompletionRate = completedJobs.length > 0
+      ? (onTimeJobs.length / completedJobs.length) * 100
       : 100
 
     const urgentJobs = jobs.filter(j => j.priority === 'urgent' && j.status !== 'completed').length
@@ -302,7 +290,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
   // Setup real-time subscription on mount
   useEffect(() => {
     const unsubscribeFn = loadDashboardData()
-    
+
     return () => {
       if (unsubscribeFn) {
         unsubscribeFn()
@@ -320,14 +308,14 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
   }, [unsubscribe])
 
   return (
-    <motion.div 
+    <motion.div
       className={`space-y-8 ${className}`}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Header */}
-      <motion.div 
+      <motion.div
         className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/20 via-purple-900/20 to-pink-900/20 border border-indigo-500/20 p-8"
         variants={itemVariants}
       >
@@ -347,7 +335,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
