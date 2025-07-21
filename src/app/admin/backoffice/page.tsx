@@ -8,11 +8,11 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { clientToast as toast } from '@/utils/clientToast'
@@ -25,11 +25,11 @@ import StaffCredentialManager from '@/components/staff/StaffCredentialManager'
 import WizardStaffModal from '@/components/staff/WizardStaffModal'
 import { FinancialDashboard, FinancialFilters } from '@/types/financial'
 import {
-  STAFF_ROLES,
-  STAFF_STATUSES,
-  StaffFilters,
-  StaffProfile,
-  StaffStats,
+    STAFF_ROLES,
+    STAFF_STATUSES,
+    StaffFilters,
+    StaffProfile,
+    StaffStats,
 } from '@/types/staff'
 
 import BookingApprovalModal from '@/components/booking/BookingApprovalModal'
@@ -49,11 +49,11 @@ import StaffImportExportModal from '@/components/staff/StaffImportExportModal'
 import AdvancedCalendarView from '@/components/admin/AdvancedCalendarView'
 import AIAuditLogViewer from '@/components/admin/AIAuditLogViewer'
 import AIAutomationToggle from '@/components/admin/AIAutomationToggle'
-
 import AIDisabledWarning from '@/components/admin/AIDisabledWarning'
 import CalendarSyncDashboard from '@/components/admin/CalendarSyncDashboard'
 import { CalendarView } from '@/components/admin/CalendarView'
 import ClearJobsUtility from '@/components/admin/ClearJobsUtility'
+import StaffAuditReports from '@/components/admin/StaffAuditReports'
 
 import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingManagement'
 import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
@@ -76,57 +76,57 @@ import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
 // BookingSyncService removed - unused
 // Real-time sync services removed - handled by individual components
 import {
-  Activity,
-  AlertCircle,
-  AlertTriangle,
-  ArrowDown,
-  // Removed unused icons
-  ArrowUp,
-  ArrowUpDown,
-  BarChart3,
-  Bell,
-  Building2,
-  Calendar,
-  Calendar as CalendarDays,
-  Calendar as CalendarIcon,
-  CheckCircle,
-  ChevronRight,
-  ClipboardList,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Edit,
-  ExternalLink,
-  Eye,
-  FileText,
-  Filter,
-  Home,
-  Key,
-  Loader2,
-  LogIn,
-  LogOut,
-  Mail,
-  Percent,
-  Phone,
-  PieChart,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings,
-  Star,
-  Target,
-  Trash2,
-  TrendingDown,
-  TrendingUp,
-  User,
-  UserCheck,
-  Users,
-  Wrench,
-  // MoreHorizontal removed - unused
-  X,
-  XCircle,
-  Zap
+    Activity,
+    AlertCircle,
+    AlertTriangle,
+    ArrowDown,
+    // Removed unused icons
+    ArrowUp,
+    ArrowUpDown,
+    BarChart3,
+    Bell,
+    Building2,
+    Calendar,
+    Calendar as CalendarDays,
+    Calendar as CalendarIcon,
+    CheckCircle,
+    ChevronRight,
+    ClipboardList,
+    Clock,
+    CreditCard,
+    DollarSign,
+    Download,
+    Edit,
+    ExternalLink,
+    Eye,
+    FileText,
+    Filter,
+    Home,
+    Key,
+    Loader2,
+    LogIn,
+    LogOut,
+    Mail,
+    Percent,
+    Phone,
+    PieChart,
+    Plus,
+    RefreshCw,
+    Search,
+    Settings,
+    Star,
+    Target,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
+    User,
+    UserCheck,
+    Users,
+    Wrench,
+    // MoreHorizontal removed - unused
+    X,
+    XCircle,
+    Zap
 } from 'lucide-react'
 
 // Note: Mock data removed - now using real Firebase data from API endpoints
@@ -5535,6 +5535,9 @@ export default function BackOfficePage() {
   function renderReports() {
     return (
       <div className="space-y-6">
+        {/* Staff Audit Reports */}
+        <StaffAuditReports staffList={staffList} />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-neutral-900 border-neutral-800">
             <CardHeader>
@@ -5566,6 +5569,14 @@ export default function BackOfficePage() {
                 <FileText className="h-4 w-4 mr-2" />
                 Monthly Financial Report
               </Button>
+              <Button
+                onClick={() => exportData('csv', 'staff-audit-summary')}
+                variant="outline"
+                className="w-full justify-start border-neutral-600 text-neutral-300 hover:bg-neutral-700"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Staff Audit Summary
+              </Button>
             </CardContent>
           </Card>
 
@@ -5592,6 +5603,12 @@ export default function BackOfficePage() {
               <div className="flex items-center justify-between">
                 <span className="text-neutral-400">Active Integrations</span>
                 <span className="text-white">3/3</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-400">AI Audit Reports</span>
+                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                  Active
+                </Badge>
               </div>
             </CardContent>
           </Card>

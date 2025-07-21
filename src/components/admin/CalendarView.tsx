@@ -60,6 +60,8 @@ interface CalendarEvent {
   endDate: string
   color: string
   status: string
+  type?: string
+  propertyId?: string
   propertyName?: string
   assignedStaff?: string
   bookingType?: string
@@ -418,7 +420,7 @@ export function CalendarView({ className }: CalendarViewProps) {
       // Conflict checking removed - manual verification required
 
       // Update event times in Firebase
-      const result = await CalendarEventService.updateEventTimes(
+      const result = await CalendarEventService.updateEvent(
         eventId,
         newStart,
         newEnd
@@ -452,7 +454,7 @@ export function CalendarView({ className }: CalendarViewProps) {
         ).toISOString()
 
       // Update event times in Firebase
-      const result = await CalendarEventService.updateEventTimes(
+      const result = await CalendarEventService.updateEvent(
         eventId,
         newStart,
         newEnd

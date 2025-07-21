@@ -134,19 +134,19 @@ export function PhotoProofGallery({ isOpen, onClose, job, className }: PhotoProo
       
       // Transform job completion photos to PhotoProof format
       const photoProofs: PhotoProof[] = job.completionPhotos.map((photo, index) => ({
-        id: photo.id || `photo_${index}`,
-        url: photo.url,
-        thumbnailUrl: photo.thumbnailUrl || photo.url,
-        filename: photo.filename || `photo_${index + 1}.jpg`,
-        uploadedAt: photo.uploadedAt || job.completedAt || new Date().toISOString(),
+        id: (photo as any).id || `photo_${index}`,
+        url: (photo as any).url || (typeof photo === 'string' ? photo : ''),
+        thumbnailUrl: (photo as any).thumbnailUrl || (photo as any).url || (typeof photo === 'string' ? photo : ''),
+        filename: (photo as any).filename || `photo_${index + 1}.jpg`,
+        uploadedAt: (photo as any).uploadedAt || job.completedAt || new Date().toISOString(),
         uploadedBy: job.assignedStaffRef?.name || 'Unknown Staff',
-        fileSize: photo.fileSize || 0,
-        dimensions: photo.dimensions,
-        location: photo.location,
-        notes: photo.notes,
-        verified: photo.verified || false,
-        verifiedAt: photo.verifiedAt,
-        verifiedBy: photo.verifiedBy
+        fileSize: (photo as any).fileSize || 0,
+        dimensions: (photo as any).dimensions,
+        location: (photo as any).location,
+        notes: (photo as any).notes,
+        verified: (photo as any).verified || false,
+        verifiedAt: (photo as any).verifiedAt,
+        verifiedBy: (photo as any).verifiedBy
       }))
 
       setPhotos(photoProofs)

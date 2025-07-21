@@ -19,6 +19,8 @@ interface AITestResult {
   simulated: boolean
   liveMode?: boolean
   realActionsTriggered?: boolean
+  bookingOrder?: number
+  bookingData?: any
 }
 
 // Interface for booking simulation

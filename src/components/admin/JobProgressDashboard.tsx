@@ -233,11 +233,11 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
       if (!staffMap.has(staffId)) {
         staffMap.set(staffId, {
           staffId,
-          name: job.assignedStaffRef?.name || job.assignedStaffName || 'Unknown Staff',
-          avatar: job.assignedStaffRef?.avatar || job.assignedStaffAvatar,
+          name: job.assignedStaffRef?.name || 'Unknown Staff',
+          avatar: (job.assignedStaffRef as any)?.avatar || '/default-avatar.png',
           activeJobs: 0,
           completedToday: 0,
-          averageRating: job.assignedStaffRef?.rating || 4.5,
+          averageRating: (job.assignedStaffRef as any)?.rating || 4.5,
           onTimeRate: 0,
           photoComplianceRate: 0,
           status: 'available'
@@ -573,7 +573,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
                                 size="sm"
                                 variant="ghost"
                                 className="w-6 h-6 p-0 text-gray-400 hover:text-white"
-                                onClick={() => toast.info('Contact feature coming soon')}
+                                onClick={() => toast.success('Contact feature coming soon')}
                               >
                                 <Phone className="w-3 h-3" />
                               </Button>
@@ -581,7 +581,7 @@ export function JobProgressDashboard({ className }: JobProgressDashboardProps) {
                                 size="sm"
                                 variant="ghost"
                                 className="w-6 h-6 p-0 text-gray-400 hover:text-white"
-                                onClick={() => toast.info('Message feature coming soon')}
+                                onClick={() => toast.success('Message feature coming soon')}
                               >
                                 <MessageSquare className="w-3 h-3" />
                               </Button>

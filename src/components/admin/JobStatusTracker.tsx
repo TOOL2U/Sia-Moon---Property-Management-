@@ -141,11 +141,11 @@ export function JobStatusTracker({
       const trackingData: JobTrackingData[] = updatedJobs.map(job => ({
         ...job,
         staffInfo: {
-          name: job.assignedStaffRef?.name || job.assignedStaffName || 'Unknown Staff',
-          email: job.assignedStaffRef?.email || job.assignedStaffEmail || '',
-          phone: job.assignedStaffRef?.phone || job.assignedStaffPhone,
-          avatar: job.assignedStaffRef?.avatar || job.assignedStaffAvatar,
-          rating: job.assignedStaffRef?.rating || 4.5
+          name: job.assignedStaffRef?.name || 'Unknown Staff',
+          email: (job.assignedStaffRef as any)?.email || '',
+          phone: job.assignedStaffRef?.phone,
+          avatar: (job.assignedStaffRef as any)?.avatar,
+          rating: (job.assignedStaffRef as any)?.rating || 4.5
         },
         progressPercentage: calculateProgressPercentage(job.status),
         timeElapsed: calculateTimeElapsed(job.createdAt, job.status),
@@ -154,12 +154,12 @@ export function JobStatusTracker({
           required: job.jobType === 'cleaning' || job.jobType === 'maintenance',
           uploaded: (job.completionPhotos?.length || 0) > 0,
           count: job.completionPhotos?.length || 0,
-          lastUploadedAt: job.completionPhotos?.[0]?.uploadedAt ? toDate(job.completionPhotos[0].uploadedAt) : undefined
+          lastUploadedAt: job.completionPhotos?.[0] ? new Date() : undefined
         },
         lastActivity: job.statusHistory?.[job.statusHistory.length - 1] ? {
           action: job.statusHistory[job.statusHistory.length - 1].status,
           timestamp: job.statusHistory[job.statusHistory.length - 1].timestamp,
-          location: job.lastKnownLocation
+          location: (job as any).lastKnownLocation
         } : undefined
       }))
 
@@ -279,7 +279,7 @@ export function JobStatusTracker({
       job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.staffInfo?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.propertyRef?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.propertyName?.toLowerCase().includes(searchTerm.toLowerCase())
+      (job as any).propertyName?.toLowerCase().includes(searchTerm.toLowerCase())
 
     return matchesStatus && matchesSearch
   })
@@ -474,7 +474,7 @@ export function JobStatusTracker({
                               {job.title}
                             </h3>
                             <p className="text-xs text-gray-400 truncate">
-                              {job.propertyRef?.name || job.propertyName || 'Unknown Property'}
+                              {job.propertyRef?.name || (job as any).propertyName || 'Unknown Property'}
                             </p>
                           </div>
                         </div>

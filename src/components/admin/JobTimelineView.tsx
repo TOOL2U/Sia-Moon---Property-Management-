@@ -150,9 +150,9 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
         title: 'Job Created',
         description: `Job "${job.title}" was created and assigned to ${job.assignedStaffRef?.name}`,
         actor: {
-          name: job.createdBy?.name || 'System',
+          name: (job as any).createdBy?.name || 'System',
           role: 'Admin',
-          avatar: job.createdBy?.avatar
+          avatar: (job as any).createdBy?.avatar
         },
         metadata: {
           systemAction: 'job_creation'
@@ -175,7 +175,7 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
             actor: {
               name: statusChange.updatedBy === 'mobile_app' ? job.assignedStaffRef?.name || 'Staff' : statusChange.updatedBy,
               role: statusChange.updatedBy === 'mobile_app' ? 'Staff' : 'Admin',
-              avatar: statusChange.updatedBy === 'mobile_app' ? job.assignedStaffRef?.avatar : undefined
+              avatar: statusChange.updatedBy === 'mobile_app' ? (job.assignedStaffRef as any)?.avatar : undefined
             },
             metadata: {
               oldStatus: previousStatus as JobStatus,
@@ -193,13 +193,13 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
           events.push({
             id: `photo_${index}`,
             type: 'photo_upload',
-            timestamp: photo.uploadedAt || job.completedAt as string,
+            timestamp: (photo as any).uploadedAt || job.completedAt as string,
             title: 'Photo Proof Uploaded',
-            description: `Photo "${photo.filename}" was uploaded as completion proof`,
+            description: `Photo "${(photo as any).filename || 'completion.jpg'}" was uploaded as completion proof`,
             actor: {
               name: job.assignedStaffRef?.name || 'Staff',
               role: 'Staff',
-              avatar: job.assignedStaffRef?.avatar
+              avatar: (job.assignedStaffRef as any)?.avatar
             },
             metadata: {
               photoCount: 1
@@ -231,22 +231,22 @@ export function JobTimelineView({ isOpen, onClose, job, className }: JobTimeline
       }
 
       // Location updates
-      if (job.lastKnownLocation) {
+      if ((job as any).lastKnownLocation) {
         events.push({
           id: 'location_update',
           type: 'location_update',
-          timestamp: job.lastKnownLocation.timestamp || job.updatedAt,
+          timestamp: (job as any).lastKnownLocation.timestamp || job.updatedAt,
           title: 'Location Updated',
           description: 'Staff location was updated during job execution',
           actor: {
             name: job.assignedStaffRef?.name || 'Staff',
             role: 'Staff',
-            avatar: job.assignedStaffRef?.avatar
+            avatar: (job.assignedStaffRef as any)?.avatar
           },
           metadata: {
             location: {
-              latitude: job.lastKnownLocation.latitude,
-              longitude: job.lastKnownLocation.longitude
+              latitude: (job as any).lastKnownLocation.latitude,
+              longitude: (job as any).lastKnownLocation.longitude
             }
           },
           icon: <MapPin className="w-4 h-4" />,

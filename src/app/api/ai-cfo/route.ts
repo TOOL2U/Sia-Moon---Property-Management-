@@ -274,7 +274,7 @@ Return summary, anomalies, insights, and any recommendations.`
         metadata: {
           summary: response.summary,
           escalate: response.escalate,
-          simulated: response.simulated || false,
+          simulated: false, // Default for real requests
           expenseCount: financialData.expenses?.length || 0
         }
       })
