@@ -57,6 +57,8 @@ export default function JobAcceptancePanel() {
   const loadJobs = async () => {
     setIsLoading(true)
     try {
+      if (!db) throw new Error("Firebase not initialized")
+      
       // Get jobs assigned but not yet accepted
       const pendingQuery = query(
         collection(db, 'jobs'),
@@ -158,9 +160,9 @@ export default function JobAcceptancePanel() {
       case 'high':
         return 'destructive'
       case 'medium':
-        return 'warning'
-      case 'low':
         return 'secondary'
+      case 'low':
+        return 'outline'
       default:
         return 'outline'
     }

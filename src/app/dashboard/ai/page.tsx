@@ -1,7 +1,7 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import {
     Activity,
     AlertTriangle,
@@ -15,7 +15,6 @@ import {
     RefreshCw,
     Settings,
     Shield,
-    TestTube,
     Users,
     X
 } from 'lucide-react'
@@ -34,7 +33,9 @@ import AIDecisionLog from '@/components/ai/AIDecisionLog'
 import AISettingsPanel from '@/components/ai/AISettingsPanel'
 import AISummaryPanel from '@/components/ai/AISummaryPanel'
 import EscalationReviewDialog from '@/components/ai/EscalationReviewDialog'
-import SimulationTester from '@/components/ai/SimulationTester'
+
+// AI Chat Interface
+import AIChatInterface from '@/components/ai/AIChatInterface'
 
 // Missing Components from Original Dashboard
 
@@ -47,6 +48,7 @@ import MonthlyFinancialReport from '@/components/ai/MonthlyFinancialReport'
 import RulesManager from '@/components/ai/RulesManager'
 import StaffScheduleMap from '@/components/ai/StaffScheduleMap'
 import TrainingLogViewer from '@/components/ai/TrainingLogViewer'
+import BookingApprovalWorkflowPanel from '@/components/dashboard/BookingApprovalWorkflowPanel'
 
 // AI Logging System
 import { AILogEntry } from '@/lib/ai/aiLogger'
@@ -120,27 +122,8 @@ export default function AIDashboardPage() {
         const data = await response.json()
         setEscalatedDecisions(data.logs || [])
       } else {
-        // Mock escalated decisions for development
-        setEscalatedDecisions([
-          {
-            id: 'esc-001',
-            agent: 'COO',
-            decision: 'Assign staff to Villa Paradise maintenance',
-            rule: 'Distance constraint exceeded (18km)',
-            confidence: 65,
-            timestamp: new Date().toISOString(),
-            context: { distance: 18, estimatedTime: 35 }
-          },
-          {
-            id: 'esc-002',
-            agent: 'CFO',
-            decision: 'Approve ฿12,000 emergency repair expense',
-            rule: 'Amount exceeds daily approval limit',
-            confidence: 72,
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            context: { amount: 12000, dailyLimit: 8000 }
-          }
-        ])
+        console.warn('⚠️ AI Dashboard: Failed to load escalated decisions')
+        setEscalatedDecisions([])
       }
     } catch (error) {
       console.error('Failed to load escalated decisions:', error)
@@ -175,19 +158,14 @@ export default function AIDashboardPage() {
         setLastUpdate(new Date())
         console.log('✅ AI Dashboard: Loaded', logs.length, 'AI log entries from API')
       } else {
-        console.warn('⚠️ AI Dashboard: API failed, using fallback data')
-        // Generate mock data for development
-        const mockLogs = generateMockLogs()
-        setAiLogs(mockLogs)
+        console.warn('⚠️ AI Dashboard: API failed to load logs')
+        setAiLogs([])
         setLastUpdate(new Date())
       }
     } catch (error) {
       console.error('❌ AI Dashboard: Error loading logs:', error)
-      // Fallback to mock data
-      const mockLogs = generateMockLogs()
-      setAiLogs(mockLogs)
+      setAiLogs([])
       setLastUpdate(new Date())
-      console.log('🔄 AI Dashboard: Using fallback mock data')
     } finally {
       setLoading(false)
     }
@@ -222,7 +200,7 @@ export default function AIDashboardPage() {
       if (result.success) {
         // Update the log status
         setAiLogs(logs => logs.map(l =>
-          l.timestamp === log.timestamp ? { ...l, escalation: false, status: 'approved' } : l
+          l.timestamp === log.timestamp ? { ...l, escalation: false, status: 'completed' } : l
         ))
         console.log('✅ Escalation approved successfully')
       } else {
@@ -259,7 +237,7 @@ export default function AIDashboardPage() {
       if (result.success) {
         // Update the log status
         setAiLogs(logs => logs.map(l =>
-          l.timestamp === log.timestamp ? { ...l, escalation: false, status: 'rejected' } : l
+          l.timestamp === log.timestamp ? { ...l, escalation: false, status: 'failed' } : l
         ))
         console.log('❌ Escalation rejected successfully')
       } else {
@@ -318,30 +296,7 @@ export default function AIDashboardPage() {
   }
 
   // Mock data generator for testing
-  const generateMockLogs = (): AILogEntry[] => {
-    const decisions = [
-      'Booking approved for Villa Lotus',
-      'Staff assigned to cleaning task',
-      'High-value expense flagged for review',
-      'Financial analysis completed',
-      'Emergency repair request escalated',
-      'Monthly budget analysis finished',
-      'Booking rejected - insufficient data',
-      'Duplicate expense detected'
-    ]
 
-    const agents: ('COO' | 'CFO')[] = ['COO', 'CFO']
-
-    return Array.from({ length: 15 }, (_, i) => ({
-      timestamp: new Date(Date.now() - i * 1000 * 60 * 30).toISOString(),
-      agent: agents[Math.floor(Math.random() * agents.length)],
-      decision: decisions[Math.floor(Math.random() * decisions.length)],
-      confidence: Math.floor(Math.random() * 40) + 60, // 60-100
-      source: 'auto' as const,
-      escalation: Math.random() < 0.3, // 30% escalation rate
-      notes: Math.random() < 0.5 ? `Generated at ${new Date().toLocaleTimeString()}` : undefined
-    }))
-  }
 
   // Sidebar navigation items - Enhanced with COO, CFO, and Escalations tabs
   const sidebarItems = React.useMemo(() => [
@@ -361,7 +316,7 @@ export default function AIDashboardPage() {
             </div>
           </div>
           <AIEscalationQueue
-            logs={aiLogs.filter(log => log.escalation)}
+            logs={aiLogs.filter(log => log.escalate)}
             onApprove={handleApproveEscalation}
             onReject={handleRejectEscalation}
           />
@@ -393,7 +348,7 @@ export default function AIDashboardPage() {
                     &nbsp;&nbsp;console.log("📌 AI Decision:", log.agent, log.decision, "🧠 Confidence:", log.confidence);<br />
                     &#125;);
                   </div>
-                  <div className="text-yellow-400">Run a live booking test to see results here.</div>
+                  <div className="text-yellow-400">AI logs will appear here when AI agents make decisions.</div>
                 </div>
               </div>
             </div>
@@ -644,7 +599,7 @@ export default function AIDashboardPage() {
       icon: FileText,
       component: (
         <div className="space-y-6">
-          <AIDecisionLog showTestRunner={true} />
+          <AIDecisionLog showTestRunner={false} />
           <AIEscalationQueue
             logs={aiLogs.filter(log => log.escalation)}
             onApprove={handleApproveEscalation}
@@ -683,11 +638,18 @@ export default function AIDashboardPage() {
       icon: Activity,
       component: <AIAPIMonitor maxHeight="600px" />
     },
+
     {
-      id: 'simulation',
-      label: 'Simulation',
-      icon: TestTube,
-      component: <SimulationTester />
+      id: 'chat',
+      label: 'AI Chat',
+      icon: Brain,
+      component: <AIChatInterface key="ai-chat-interface" className="h-full" />
+    },
+    {
+      id: 'workflow',
+      label: 'Booking Workflow',
+      icon: Activity,
+      component: <BookingApprovalWorkflowPanel />
     },
     {
       id: 'settings',
@@ -699,8 +661,8 @@ export default function AIDashboardPage() {
 
   // Filter sidebar items based on user permissions (role-based access control)
   const filteredSidebarItems = sidebarItems.filter(item => {
-    // Always show overview and decisions for any admin
-    if (item.id === 'overview' || item.id === 'decisions') return true
+    // Always show overview, decisions, and chat for any admin
+    if (item.id === 'overview' || item.id === 'decisions' || item.id === 'chat') return true
 
     // Check specific feature access
     const featureMap: Record<string, string> = {
@@ -940,19 +902,6 @@ export default function AIDashboardPage() {
             </div>
           </div>
         </header>
-
-        {/* Simulation Mode Banner */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-100 border-b border-yellow-200 px-4 py-3">
-            <div className="flex items-center justify-center">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <span className="text-lg">🧪</span>
-                <span className="font-medium">Simulation Mode is Active</span>
-                <span className="text-sm">— No live changes are being made.</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Mobile Escalation Alert */}
         {aiLogs.filter(log => log.escalation).length > 0 && (

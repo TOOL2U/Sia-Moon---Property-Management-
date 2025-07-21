@@ -49,6 +49,8 @@ class AIAutomationService {
       }
 
       // Fallback to legacy settings
+      if (!db) throw new Error("Firebase not initialized")
+      
       const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
       const docSnap = await getDoc(docRef)
 
@@ -97,6 +99,8 @@ class AIAutomationService {
       }
 
       // Also update legacy settings for backward compatibility
+      if (!db) throw new Error("Firebase not initialized")
+      
       const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
 
       const settings: AIAutomationSettings = {
@@ -132,6 +136,8 @@ class AIAutomationService {
     callback: (settings: AIAutomationSettings) => void,
     onError?: (error: Error) => void
   ): () => void {
+    if (!db) throw new Error("Firebase not initialized")
+    
     const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
 
     const unsubscribe = onSnapshot(
@@ -180,6 +186,8 @@ class AIAutomationService {
    */
   async initializeSettings(): Promise<void> {
     try {
+      if (!db) throw new Error("Firebase not initialized")
+      
       const docRef = doc(db, this.SETTINGS_COLLECTION, this.AI_AUTOMATION_DOC)
       const docSnap = await getDoc(docRef)
 

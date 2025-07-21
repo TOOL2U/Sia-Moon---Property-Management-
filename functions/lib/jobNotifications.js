@@ -41,8 +41,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanupExpiredNotifications = exports.onNotificationAcknowledged = exports.onJobAssigned = void 0;
 const admin = __importStar(require("firebase-admin"));
 const firestore_1 = require("firebase-admin/firestore");
-const firestore_2 = require("firebase-functions/v2/firestore");
-const scheduler_1 = require("firebase-functions/v2/scheduler");
+const functions = __importStar(require("firebase-functions"));
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
     admin.initializeApp();
@@ -52,13 +51,21 @@ const messaging = admin.messaging();
 /**
  * Cloud Function: Trigger on job assignment
  * Listens for new jobs or status changes to 'assigned'
+ * FIXED: Added deduplication and better trigger logic
  */
-exports.onJobAssigned = (0, firestore_2.onDocumentWritten)('jobs/{jobId}', async (event) => {
-    var _a, _b, _c, _d, _e, _f;
-    const jobId = event.params.jobId;
-    const beforeData = ((_b = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before) === null || _b === void 0 ? void 0 : _b.exists) ? event.data.before.data() : null;
-    const afterData = ((_d = (_c = event.data) === null || _c === void 0 ? void 0 : _c.after) === null || _d === void 0 ? void 0 : _d.exists) ? event.data.after.data() : null;
+exports.onJobAssigned = functions.firestore
+    .document('jobs/{jobId}')
+    .onWrite(async (change, context) => {
+    var _a, _b, _c;
     try {
+        const jobId = context.params.jobId;
+        const beforeData = change.before.exists ? change.before.data() : null;
+        const afterData = change.after.exists ? change.after.data() : null;
+        // IMPORTANT: Check if notification was already sent to prevent duplicates
+        if ((afterData === null || afterData === void 0 ? void 0 : afterData.notificationSent) === true) {
+            console.log(`⏭️ Notification already sent for job ${jobId} - skipping`);
+            return null;
+        }
         // Check if this is a job assignment (new job or status changed to assigned)
         const isNewAssignment = (!beforeData &&
             (afterData === null || afterData === void 0 ? void 0 : afterData.status) === 'assigned' &&
@@ -70,6 +77,18 @@ exports.onJobAssigned = (0, firestore_2.onDocumentWritten)('jobs/{jobId}', async
                 (afterData === null || afterData === void 0 ? void 0 : afterData.assignedStaffId)); // Staff reassigned
         if (!isNewAssignment || !(afterData === null || afterData === void 0 ? void 0 : afterData.assignedStaffId)) {
             console.log(`⏭️ Skipping notification for job ${jobId} - not a new assignment`);
+            return null;
+        }
+        // DEDUPLICATION: Check if notification already exists for this job/staff combination
+        const existingNotifications = await db
+            .collection('staff_notifications')
+            .where('jobId', '==', jobId)
+            .where('staffId', '==', afterData.assignedStaffId)
+            .where('type', '==', 'job_assigned')
+            .limit(1)
+            .get();
+        if (!existingNotifications.empty) {
+            console.log(`⏭️ Notification already exists for job ${jobId} - skipping duplicate`);
             return null;
         }
         console.log(`🔔 Processing job assignment notification for job ${jobId}`);
@@ -92,8 +111,8 @@ exports.onJobAssigned = (0, firestore_2.onDocumentWritten)('jobs/{jobId}', async
             jobTitle: afterData.title || 'New Job Assignment',
             jobType: afterData.jobType || 'general',
             priority: afterData.priority || 'medium',
-            propertyName: ((_e = afterData.propertyRef) === null || _e === void 0 ? void 0 : _e.name) || 'Unknown Property',
-            propertyAddress: ((_f = afterData.location) === null || _f === void 0 ? void 0 : _f.address) || 'Address not provided',
+            propertyName: ((_a = afterData.propertyRef) === null || _a === void 0 ? void 0 : _a.name) || 'Unknown Property',
+            propertyAddress: ((_b = afterData.location) === null || _b === void 0 ? void 0 : _b.address) || 'Address not provided',
             scheduledDate: afterData.scheduledDate || new Date().toISOString().split('T')[0],
             scheduledStartTime: afterData.scheduledStartTime,
             estimatedDuration: afterData.estimatedDuration || 120,
@@ -126,7 +145,7 @@ exports.onJobAssigned = (0, firestore_2.onDocumentWritten)('jobs/{jobId}', async
     catch (error) {
         console.error('❌ Error in job assignment notification:', error);
         // Log error for monitoring
-        await logNotificationEvent(event.params.jobId, (afterData === null || afterData === void 0 ? void 0 : afterData.assignedStaffId) || 'unknown', 'job_assigned', false, error instanceof Error ? error.message : 'Unknown error');
+        await logNotificationEvent(context.params.jobId, ((_c = change.after.data()) === null || _c === void 0 ? void 0 : _c.assignedStaffId) || 'unknown', 'job_assigned', false, error instanceof Error ? error.message : 'Unknown error');
         throw error;
     }
 });
@@ -176,7 +195,7 @@ async function sendPushNotification(notificationData) {
                     icon: 'ic_notification',
                     color: '#6366f1', // Indigo color matching app theme
                     channelId: 'job_assignments',
-                    priority: (notificationData.priority === 'urgent' || notificationData.priority === 'high') ? 'high' : 'default',
+                    priority: notificationData.priority === 'urgent' ? 'high' : 'default',
                     sound: 'default',
                 },
                 data: {
@@ -202,8 +221,8 @@ async function sendPushNotification(notificationData) {
             },
             tokens: deviceTokens,
         };
-        // Send multicast message using sendEachForMulticast (updated API)
-        const response = await messaging.sendEachForMulticast(message);
+        // Send multicast message
+        const response = await messaging.sendMulticast(message);
         console.log(`📤 Push notification sent: ${response.successCount}/${deviceTokens.length} successful`);
         // Handle failed tokens (remove invalid ones)
         if (response.failureCount > 0) {
@@ -306,14 +325,15 @@ async function logNotificationEvent(jobId, staffId, eventType, success, error) {
 /**
  * Cloud Function: Handle notification acknowledgment from mobile app
  */
-exports.onNotificationAcknowledged = (0, firestore_2.onDocumentUpdated)('staff_notifications/{notificationId}', async (event) => {
-    var _a, _b, _c, _d;
+exports.onNotificationAcknowledged = functions.firestore
+    .document('staff_notifications/{notificationId}')
+    .onUpdate(async (change, context) => {
     try {
-        const beforeData = (_b = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before) === null || _b === void 0 ? void 0 : _b.data();
-        const afterData = (_d = (_c = event.data) === null || _c === void 0 ? void 0 : _c.after) === null || _d === void 0 ? void 0 : _d.data();
+        const beforeData = change.before.data();
+        const afterData = change.after.data();
         // Check if notification was read/acknowledged
-        if (!(beforeData === null || beforeData === void 0 ? void 0 : beforeData.readAt) && (afterData === null || afterData === void 0 ? void 0 : afterData.readAt)) {
-            const notificationId = event.params.notificationId;
+        if (!beforeData.readAt && afterData.readAt) {
+            const notificationId = context.params.notificationId;
             console.log(`✅ Notification ${notificationId} acknowledged by staff ${afterData.staffId}`);
             // Update job document to clear mobile notification flag
             if (afterData.jobId) {
@@ -344,7 +364,9 @@ exports.onNotificationAcknowledged = (0, firestore_2.onDocumentUpdated)('staff_n
 /**
  * Scheduled function: Clean up expired notifications
  */
-exports.cleanupExpiredNotifications = (0, scheduler_1.onSchedule)({ schedule: 'every 24 hours' }, async (event) => {
+exports.cleanupExpiredNotifications = functions.pubsub
+    .schedule('every 24 hours')
+    .onRun(async (context) => {
     try {
         console.log('🧹 Starting cleanup of expired notifications');
         const expiredQuery = await db
@@ -364,7 +386,7 @@ exports.cleanupExpiredNotifications = (0, scheduler_1.onSchedule)({ schedule: 'e
         else {
             console.log('✨ No expired notifications to clean up');
         }
-        return;
+        return null;
     }
     catch (error) {
         console.error('❌ Error cleaning up expired notifications:', error);

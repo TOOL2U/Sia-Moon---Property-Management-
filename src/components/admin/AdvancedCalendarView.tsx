@@ -51,6 +51,8 @@ export default function AdvancedCalendarView({
   const loadCalendarEvents = async () => {
     setIsLoading(true)
     try {
+      if (!db) throw new Error("Firebase not initialized")
+      
       const { startDate, endDate } = getDateRange()
       
       let eventsQuery = query(
@@ -206,9 +208,9 @@ export default function AdvancedCalendarView({
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'success'
+        return 'default'
       case 'in_progress':
-        return 'warning'
+        return 'secondary'
       case 'completed':
         return 'secondary'
       case 'cancelled':

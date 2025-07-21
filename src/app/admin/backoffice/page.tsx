@@ -928,6 +928,9 @@ export default function BackOfficePage() {
       console.log('🧹 Cleaning up ALL test/mock calendar events...')
 
       // Direct Firebase cleanup using static imports
+      if (!db) {
+        throw new Error('Firebase not initialized')
+      }
       const calendarEventsRef = collection(db, 'calendarEvents')
       const allEventsSnapshot = await getDocs(calendarEventsRef)
 
@@ -963,7 +966,7 @@ export default function BackOfficePage() {
         for (let i = 0; i < allEventIds.length; i += batchSize) {
           const batch = allEventIds.slice(i, i + batchSize)
           const deletePromises = batch.map((eventId) =>
-            deleteDoc(doc(db, 'calendarEvents', eventId))
+            deleteDoc(doc(db!, 'calendarEvents', eventId))
           )
           await Promise.all(deletePromises)
           console.log(`🗑️ Deleted batch ${Math.floor(i / batchSize) + 1}`)
@@ -1043,7 +1046,7 @@ export default function BackOfficePage() {
       for (let i = 0; i < testEventIds.length; i += batchSize) {
         const batch = testEventIds.slice(i, i + batchSize)
         const deletePromises = batch.map((eventId) =>
-          deleteDoc(doc(db, 'calendarEvents', eventId))
+          deleteDoc(doc(db!, 'calendarEvents', eventId))
         )
         await Promise.all(deletePromises)
         console.log(`🗑️ Deleted batch ${Math.floor(i / batchSize) + 1}`)

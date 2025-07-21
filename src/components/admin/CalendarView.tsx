@@ -1,57 +1,56 @@
 'use client'
 
-import AIDisabledWarning from '@/components/admin/AIDisabledWarning'
+import SSRSafeCalendar from '@/components/admin/SSRSafeCalendar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import '@/styles/calendar.css'
-import './enhanced-calendar.css'
 import { clientToast as toast } from '@/utils/clientToast'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  AlertTriangle,
-  Building2,
-  Calendar as CalendarIcon,
-  Calendar as CalendarIconSmall,
-  CheckCircle,
-  Clock,
-  Edit,
-  Eye,
-  FileText,
-  Filter,
-  Loader2,
-  RefreshCw,
-  RotateCcw,
-  Save,
-  Settings,
-  Trash2,
-  User,
-  Users,
-  X,
+    AlertTriangle,
+    Building2,
+    Calendar as CalendarIcon,
+    Calendar as CalendarIconSmall,
+    CheckCircle,
+    Clock,
+    Edit,
+    Eye,
+    FileText,
+    Filter,
+    Loader2,
+    RefreshCw,
+    RotateCcw,
+    Save,
+    Settings,
+    Trash2,
+    User,
+    Users,
+    X,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import './enhanced-calendar.css'
 
 // Enhanced FullCalendar component
-import ClientOnlyCalendar from './ClientOnlyCalendar'
 
 // Firebase imports
 import { db } from '@/lib/firebase'
 import CalendarEventService from '@/services/CalendarEventService'
 import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  Unsubscribe,
+    collection,
+    onSnapshot,
+    orderBy,
+    query,
+    Unsubscribe,
 } from 'firebase/firestore'
 
 interface CalendarEvent {
@@ -109,14 +108,29 @@ export function CalendarView({ className }: CalendarViewProps) {
     { id: 'confirmed', name: 'Confirmed', color: 'bg-cyan-500' },
   ])
 
-  // Firebase subscription
-  const [unsubscribe, setUnsubscribe] = useState<Unsubscribe | null>(null)
+  // Firebase subscription ref (prevent re-render loops)
+  const unsubscribeRef = useRef<Unsubscribe | null>(null)
 
   // Load calendar events from Firebase
   const loadCalendarEvents = useCallback(() => {
     console.log('📅 Setting up calendar events listener...')
+    setLoading(true)
 
     try {
+      // Check if Firebase is initialized
+      if (!db) {
+        console.error('❌ Firebase not initialized')
+        toast.error('Firebase not available')
+        setLoading(false)
+        return
+      }
+
+      // Clean up existing subscription first
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        unsubscribeRef.current = null
+      }
+
       const eventsRef = collection(db, 'calendarEvents')
       const eventsQuery = query(eventsRef, orderBy('startDate', 'asc'))
 
@@ -129,16 +143,50 @@ export function CalendarView({ className }: CalendarViewProps) {
 
           snapshot.forEach((doc) => {
             const data = doc.data()
+
+            // Convert Firestore Timestamps to ISO strings
+            let startDateString = ''
+            let endDateString = ''
+
+            if (data.startDate) {
+              if (data.startDate.toDate) {
+                // It's a Firestore Timestamp
+                startDateString = data.startDate.toDate().toISOString()
+              } else if (typeof data.startDate === 'string') {
+                // It's already a string
+                startDateString = data.startDate
+              }
+            }
+
+            if (data.endDate) {
+              if (data.endDate.toDate) {
+                // It's a Firestore Timestamp
+                endDateString = data.endDate.toDate().toISOString()
+              } else if (typeof data.endDate === 'string') {
+                // It's already a string
+                endDateString = data.endDate
+              }
+            }
+
+            // Debug: Log each event data
+            console.log(`📅 Event ${doc.id}:`, {
+              title: data.title,
+              startDate: startDateString,
+              endDate: endDateString,
+              status: data.status,
+              propertyName: data.propertyName
+            })
+
             const event: CalendarEvent = {
               id: doc.id,
               title: data.title || 'Untitled Event',
-              startDate: data.startDate,
-              endDate: data.endDate,
+              startDate: startDateString,
+              endDate: endDateString,
               color: data.color || '#3b82f6',
               status: data.status || 'pending',
               propertyName: data.propertyName,
               assignedStaff: data.assignedStaff,
-              bookingType: data.bookingType,
+              bookingType: data.type || data.bookingType,
               description: data.description,
               resourceId: data.resourceId,
             }
@@ -165,6 +213,7 @@ export function CalendarView({ className }: CalendarViewProps) {
 
           setLoading(false)
           console.log(`✅ Loaded ${calendarEvents.length} calendar events`)
+          toast.success(`Calendar refreshed - ${calendarEvents.length} events loaded`)
         },
         (error) => {
           console.error('❌ Error loading calendar events:', error)
@@ -173,7 +222,7 @@ export function CalendarView({ className }: CalendarViewProps) {
         }
       )
 
-      setUnsubscribe(() => unsubscribeFn)
+      unsubscribeRef.current = unsubscribeFn
       return unsubscribeFn
     } catch (error) {
       console.error('❌ Error setting up calendar listener:', error)
@@ -530,21 +579,90 @@ export function CalendarView({ className }: CalendarViewProps) {
   // Cleanup subscription on unmount
   useEffect(() => {
     return () => {
-      if (unsubscribe) {
-        unsubscribe()
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
       }
     }
-  }, [unsubscribe])
+  }, [])
 
   // Update calendar view
   useEffect(() => {
     console.log(`📅 Calendar view changed to: ${currentView}`)
   }, [currentView])
 
+  // Setup job status change listener for automatic calendar cleanup
+  useEffect(() => {
+    console.log('📅 Setting up job status change listener for calendar cleanup...')
+
+    let unsubscribeJobListener: (() => void) | null = null
+
+    try {
+      if (!db) {
+        console.warn('❌ Firebase not initialized - cannot set up job status listener')
+        return
+      }
+
+      const jobsRef = collection(db, 'jobs')
+
+      unsubscribeJobListener = onSnapshot(
+        jobsRef,
+        async (snapshot) => {
+          for (const change of snapshot.docChanges()) {
+            const jobData = change.doc.data()
+            const jobId = change.doc.id
+
+            if (change.type === 'modified') {
+              // Check if job was completed or cancelled
+              const status = jobData?.status
+              if (status === 'completed' || status === 'verified' || status === 'cancelled') {
+                console.log(`✅ Job status changed to ${status}, removing calendar event: ${jobId}`)
+
+                try {
+                  const result = await CalendarEventService.removeEventByJobId(jobId)
+                  if (result.success && result.removedCount && result.removedCount > 0) {
+                    toast.success(`📅 Calendar updated - ${status} job removed (${result.removedCount} events)`)
+                  }
+                  // Reload calendar events to reflect changes
+                  loadCalendarEvents()
+                } catch (error) {
+                  console.error(`❌ Error removing calendar event for job ${jobId}:`, error)
+                }
+              }
+            } else if (change.type === 'removed') {
+              // Handle job deletion
+              console.log(`🗑️ Job deleted, removing calendar event: ${jobId}`)
+
+              try {
+                const result = await CalendarEventService.removeEventByJobId(jobId)
+                if (result.success && result.removedCount && result.removedCount > 0) {
+                  toast.success(`📅 Calendar updated - deleted job removed (${result.removedCount} events)`)
+                }
+                // Reload calendar events to reflect changes
+                loadCalendarEvents()
+              } catch (error) {
+                console.error(`❌ Error removing calendar event for deleted job ${jobId}:`, error)
+              }
+            }
+          }
+        },
+        (error) => {
+          console.error('❌ Error in job status listener:', error)
+        }
+      )
+    } catch (error) {
+      console.error('❌ Error setting up job status change listener:', error)
+    }
+
+    return () => {
+      if (unsubscribeJobListener) {
+        unsubscribeJobListener()
+        console.log('📅 Job status change listener cleaned up')
+      }
+    }
+  }, [loadCalendarEvents])
+
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* AI Disabled Warning */}
-      <AIDisabledWarning context="calendar" />
 
       {/* Header */}
       <Card className="bg-gradient-to-r from-indigo-900/20 via-purple-900/20 to-pink-900/20 border-indigo-500/20">
@@ -584,7 +702,7 @@ export function CalendarView({ className }: CalendarViewProps) {
                 <RefreshCw
                   className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
                 />
-                Refresh
+                {loading ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
           </div>
@@ -693,7 +811,10 @@ export function CalendarView({ className }: CalendarViewProps) {
           ) : (
             <div className="space-y-6">
               {/* Enhanced FullCalendar Component - Now Enabled! */}
-              <ClientOnlyCalendar />
+              <SSRSafeCalendar
+                className="w-full"
+                currentView={currentView}
+              />
             </div>
           )}
         </CardContent>

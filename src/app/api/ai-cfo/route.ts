@@ -96,12 +96,13 @@ interface CFOAnalysisResponse {
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now()
+  let financialData: any = null
 
   try {
     console.log('💰 AI CFO: Processing financial analysis request...')
 
     // Step 1: Parse and validate financial data
-    const financialData: FinancialData = await req.json()
+    financialData = await req.json()
     console.log('📊 AI CFO: Received financial data:', {
       expenseCount: financialData.expenses?.length || 0,
       period: financialData.period,

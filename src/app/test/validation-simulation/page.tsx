@@ -267,7 +267,7 @@ export default function ValidationSimulationPage() {
                     </h4>
                     <ul className="text-sm space-y-1 text-green-200">
                       <li>• Reject booking due to missing data</li>
-                      <li>• High confidence in rejection (>90%)</li>
+                      <li>• High confidence in rejection ({'>'}90%)</li>
                       <li>• Clear validation error messages</li>
                       <li>• No staff assignment attempted</li>
                       <li>• Proper error logging</li>

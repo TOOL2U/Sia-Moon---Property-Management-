@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import {
   Brain,
   AlertTriangle,
@@ -435,9 +435,9 @@ export default function AIDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                <div className="text-neutral-400">• Jobs >฿5000 require approval</div>
+                <div className="text-neutral-400">• Jobs {'>'}฿5000 require approval</div>
                 <div className="text-neutral-400">• Staff assignments within 5km</div>
-                <div className="text-neutral-400">• Confidence <80% escalates</div>
+                <div className="text-neutral-400">• Confidence {'<'}80% escalates</div>
                 <div className="text-neutral-400">• Emergency repairs flagged</div>
                 <div className="text-neutral-400">• Duplicate expenses detected</div>
               </div>

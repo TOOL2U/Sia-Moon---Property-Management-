@@ -33,7 +33,11 @@ import {
 } from '@/types/booking-sync'
 
 export class TaskAssignmentService {
-  private static db = getDb()
+  private static get db() {
+    const database = getDb()
+    if (!database) throw new Error("Firebase not initialized")
+    return database
+  }
 
   /**
    * Create a new task assignment

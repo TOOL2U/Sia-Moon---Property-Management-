@@ -7,19 +7,19 @@
 import { db } from '@/lib/firebase'
 import { clientToast as toast } from '@/utils/clientToast'
 import {
-  Timestamp,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where,
-  writeBatch,
+    Timestamp,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    onSnapshot,
+    query,
+    serverTimestamp,
+    setDoc,
+    updateDoc,
+    where,
+    writeBatch,
 } from 'firebase/firestore'
 import AIAutomationService from './AIAutomationService'
 
@@ -631,7 +631,7 @@ class CalendarEventService {
         title: title,
         propertyId: job.propertyId || null,
         staffId: job.assignedStaffId || null,
-        status: job.assignedStaffId ? 'assigned' : job.status || 'pending',
+        status: job.assignedStaffId ? 'assigned' : (job.status as 'pending' | 'assigned' | 'completed' | 'cancelled' | 'in-progress') || 'pending',
         type: jobType,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
@@ -852,6 +852,47 @@ class CalendarEventService {
     console.log(
       `🗑️ Removed ${eventsSnap.size} completed job events for ${jobId}`
     )
+  }
+
+  /**
+   * Remove calendar events by job ID (public method for job deletion/completion)
+   */
+  async removeEventByJobId(jobId: string): Promise<{ success: boolean; removedCount?: number; error?: string }> {
+    try {
+      if (!db) {
+        throw new Error('Firebase not initialized')
+      }
+
+      // Find all calendar events for this job
+      const eventsQuery = query(
+        collection(db, this.CALENDAR_EVENTS_COLLECTION),
+        where('sourceId', '==', jobId),
+        where('sourceType', '==', 'job')
+      )
+
+      const eventsSnap = await getDocs(eventsQuery)
+
+      if (eventsSnap.empty) {
+        console.log(`📅 No calendar events found for job ${jobId}`)
+        return { success: true, removedCount: 0 }
+      }
+
+      // Delete all events for this job
+      const batch = writeBatch(db)
+      eventsSnap.docs.forEach((eventDoc) => {
+        batch.delete(doc(db, this.CALENDAR_EVENTS_COLLECTION, eventDoc.id))
+      })
+
+      await batch.commit()
+
+      const removedCount = eventsSnap.size
+      console.log(`🗑️ Removed ${removedCount} calendar events for job ${jobId}`)
+
+      return { success: true, removedCount }
+    } catch (error) {
+      console.error(`❌ Error removing calendar events for job ${jobId}:`, error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
   }
 
   /**
@@ -1159,7 +1200,7 @@ class CalendarEventService {
       // Update all matching events (there should typically be only one)
       const updatePromises = eventsSnapshot.docs.map(async (eventDoc) => {
         const updateData: Partial<CalendarEventData> = {
-          status: status,
+          status: status as 'pending' | 'assigned' | 'completed' | 'cancelled' | 'in-progress',
           updatedAt: serverTimestamp(),
         }
 
@@ -1597,6 +1638,86 @@ class CalendarEventService {
       averageSyncTime: 0,
     }
     console.log('📊 Calendar sync metrics reset')
+  }
+
+  /**
+   * Check for conflicts with existing calendar events
+   */
+  async checkForConflicts(
+    propertyName: string,
+    checkInDate: Date,
+    checkOutDate: Date
+  ): Promise<any[]> {
+    try {
+      console.log(`🔍 Checking for calendar conflicts for ${propertyName}`)
+
+      if (!db) {
+        console.error('❌ Firebase not initialized')
+        return []
+      }
+
+      // Query for events that might overlap with the booking period
+      const eventsQuery = query(
+        collection(db, this.CALENDAR_EVENTS_COLLECTION),
+        where('propertyName', '==', propertyName)
+      )
+
+      const eventsSnapshot = await getDocs(eventsQuery)
+      const conflicts: any[] = []
+
+      eventsSnapshot.forEach((doc) => {
+        const event = doc.data()
+        const eventStart = new Date(event.startDate)
+        const eventEnd = new Date(event.endDate)
+
+        // Check for date overlap
+        if (
+          (checkInDate >= eventStart && checkInDate < eventEnd) ||
+          (checkOutDate > eventStart && checkOutDate <= eventEnd) ||
+          (checkInDate <= eventStart && checkOutDate >= eventEnd)
+        ) {
+          conflicts.push({
+            type: 'calendar_event_overlap',
+            conflictingEventId: doc.id,
+            conflictingEventTitle: event.title,
+            conflictingEventType: event.type,
+            conflictingDates: {
+              start: event.startDate,
+              end: event.endDate
+            },
+            severity: this.getConflictSeverity(event.type)
+          })
+        }
+      })
+
+      console.log(`🔍 Found ${conflicts.length} calendar conflicts`)
+      return conflicts
+
+    } catch (error) {
+      console.error('❌ Error checking for calendar conflicts:', error)
+      return []
+    }
+  }
+
+  /**
+   * Determine conflict severity based on event type
+   */
+  private getConflictSeverity(eventType: string): 'low' | 'medium' | 'high' | 'critical' {
+    switch (eventType) {
+      case 'reservation':
+      case 'booking':
+        return 'critical'
+      case 'maintenance':
+      case 'cleaning':
+        return 'high'
+      case 'inspection':
+        return 'medium'
+      case 'meeting':
+      case 'other':
+        return 'low'
+      default:
+        return 'medium'
+    }
   }
 
   /**

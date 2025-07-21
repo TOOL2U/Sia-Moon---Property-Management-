@@ -271,7 +271,7 @@ export default function EscalationSimulationPage() {
 
         <div className="mt-8 text-center">
           <p className="text-slate-400 text-sm">
-            💡 This test verifies that high-value bookings (>฿5,000) trigger proper escalation protocols
+            💡 This test verifies that high-value bookings ({'>'}฿5,000) trigger proper escalation protocols
           </p>
         </div>
       </div>

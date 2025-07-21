@@ -1,15 +1,15 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/Badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import {
-  AlertTriangle,
-  Brain,
-  CheckCircle,
-  DollarSign,
-  RefreshCw,
-  TrendingUp,
-  User
+    AlertTriangle,
+    Brain,
+    CheckCircle,
+    DollarSign,
+    RefreshCw,
+    TrendingUp,
+    User
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -76,55 +76,54 @@ export default function AISummaryPanel({ className }: AISummaryPanelProps) {
           successRate: rawData.averageConfidence || rawData.successRate || 0,
           lastUpdate: rawData.lastActivity || rawData.lastUpdate || new Date().toISOString(),
 
-          // Generate mock trends if not provided
+          // Use provided trends or default to zero
           trends: rawData.trends || {
-            cooChange: Math.floor(Math.random() * 10) + 5, // +5 to +15
-            cfoChange: Math.floor(Math.random() * 4) - 1,  // -1 to +3
-            escalationChange: Math.floor(Math.random() * 5) - 2 // -2 to +3
+            cooChange: 0,
+            cfoChange: 0,
+            escalationChange: 0
           }
         }
 
         setData(transformedData)
       } else {
-        // Mock data for development
+        console.warn('⚠️ AI Summary: Failed to load data')
         setData({
-          cooDecisionsToday: 16,
-          cfoUpdatesThisWeek: 2,
-          escalations: 3,
-          overrides: 1,
-          totalDecisions: 25,
-          averageConfidence: 87.5,
+          cooDecisionsToday: 0,
+          cfoUpdatesThisWeek: 0,
+          escalations: 0,
+          overrides: 0,
+          totalDecisions: 0,
+          averageConfidence: 0,
           lastActivity: new Date().toISOString(),
-          cooOperations: 16,
-          cfoReports: 2,
-          successRate: 87.5,
+          cooOperations: 0,
+          cfoReports: 0,
+          successRate: 0,
           lastUpdate: new Date().toISOString(),
           trends: {
-            cooChange: 12,
+            cooChange: 0,
             cfoChange: 0,
-            escalationChange: -1
+            escalationChange: 0
           }
         })
       }
     } catch (error) {
       console.error('Failed to load AI summary:', error)
-      // Fallback to mock data
       setData({
-        cooDecisionsToday: 16,
-        cfoUpdatesThisWeek: 2,
-        escalations: 3,
-        overrides: 1,
-        totalDecisions: 25,
-        averageConfidence: 87.5,
+        cooDecisionsToday: 0,
+        cfoUpdatesThisWeek: 0,
+        escalations: 0,
+        overrides: 0,
+        totalDecisions: 0,
+        averageConfidence: 0,
         lastActivity: new Date().toISOString(),
-        cooOperations: 16,
-        cfoReports: 2,
-        successRate: 87.5,
+        cooOperations: 0,
+        cfoReports: 0,
+        successRate: 0,
         lastUpdate: new Date().toISOString(),
         trends: {
-          cooChange: 12,
+          cooChange: 0,
           cfoChange: 0,
-          escalationChange: -1
+          escalationChange: 0
         }
       })
     } finally {

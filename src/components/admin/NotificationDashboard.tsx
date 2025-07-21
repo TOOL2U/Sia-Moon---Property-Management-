@@ -76,6 +76,8 @@ export default function NotificationDashboard() {
 
   const loadNotificationStats = async () => {
     try {
+      if (!db) throw new Error("Firebase not initialized")
+      
       // Get total notifications from last 24 hours
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
       
@@ -126,8 +128,8 @@ export default function NotificationDashboard() {
   }
 
   const getDeliveryRateBadge = (rate: number) => {
-    if (rate >= 95) return 'success'
-    if (rate >= 85) return 'warning'
+    if (rate >= 95) return 'default'
+    if (rate >= 85) return 'secondary'
     return 'destructive'
   }
 
@@ -166,9 +168,9 @@ export default function NotificationDashboard() {
       case 'high':
         return 'destructive'
       case 'medium':
-        return 'warning'
-      case 'low':
         return 'secondary'
+      case 'low':
+        return 'outline'
       default:
         return 'outline'
     }

@@ -1,22 +1,20 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  RefreshCw, 
-  Eye, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock,
-  Brain,
-  Code,
-  ChevronDown,
-  ChevronUp,
-  TestTube
+import {
+    AlertTriangle,
+    Brain,
+    ChevronDown,
+    ChevronUp,
+    Clock,
+    Code,
+    Eye,
+    RefreshCw
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 // Import AI system prompts for visibility
 const AI_COO_SYSTEM_PROMPT = `You are an AI Chief Operating Officer (COO) for a premium villa property management company in Thailand. Your role is to analyze booking requests, assign staff, ensure compliance, and optimize operations.`
@@ -45,10 +43,10 @@ interface AIDecisionLogProps {
   showTestRunner?: boolean
 }
 
-export default function AIDecisionLog({ 
+export default function AIDecisionLog({
   className,
   maxHeight = '600px',
-  showTestRunner = true 
+  showTestRunner = true
 }: AIDecisionLogProps) {
   const [logs, setLogs] = useState<AIDecisionEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -62,85 +60,15 @@ export default function AIDecisionLog({
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch('/api/ai-log')
-      
+
       if (response.ok) {
         const data = await response.json()
         setLogs(data.logs || [])
       } else {
-        // Mock data for development
-        const mockLogs: AIDecisionEntry[] = [
-          {
-            id: 'log-001',
-            timestamp: new Date(Date.now() - 300000).toISOString(),
-            agent: 'COO',
-            decision: 'approve',
-            confidence: 0.85,
-            rationale: 'Booking meets all company criteria. Staff available in area.',
-            escalate: false,
-            status: 'completed',
-            simulated: true,
-            processingTime: 1250,
-            metadata: {
-              jobType: 'Cleaning',
-              address: 'Test Villa',
-              value: 3000,
-              assignedStaff: ['staff_001']
-            },
-            rawResponse: {
-              success: true,
-              decision: 'approve',
-              confidence: 0.85,
-              assignedStaff: ['staff_001'],
-              reason: 'Booking meets all company criteria',
-              escalate: false,
-              simulated: true
-            }
-          },
-          {
-            id: 'log-002',
-            timestamp: new Date(Date.now() - 600000).toISOString(),
-            agent: 'CFO',
-            decision: 'approve',
-            confidence: 0.94,
-            rationale: 'Expense within budget limits and properly documented.',
-            escalate: false,
-            status: 'completed',
-            simulated: true,
-            processingTime: 890,
-            metadata: {
-              totalAmount: 2500,
-              expenseCount: 1,
-              category: 'Test'
-            },
-            rawResponse: {
-              success: true,
-              summary: 'Analyzed 1 expenses totaling ฿2,500',
-              confidence: 0.94,
-              escalate: false,
-              simulated: true
-            }
-          },
-          {
-            id: 'log-003',
-            timestamp: new Date(Date.now() - 900000).toISOString(),
-            agent: 'COO',
-            decision: 'escalate',
-            confidence: 0.45,
-            rationale: 'High-value booking requires human review due to special requirements.',
-            escalate: true,
-            status: 'escalated',
-            simulated: true,
-            processingTime: 1100,
-            metadata: {
-              jobType: 'Deep Cleaning',
-              value: 8500,
-              specialRequirements: true
-            }
-          }
-        ]
-        setLogs(mockLogs)
+        console.warn('⚠️ AI Decision Log: Failed to load logs')
+        setLogs([])
       }
     } catch (err) {
       console.error('Error loading AI logs:', err)
@@ -150,72 +78,7 @@ export default function AIDecisionLog({
     }
   }
 
-  // Test AI COO
-  const testAICOO = async () => {
-    try {
-      setLoading(true)
-      const testPayload = {
-        jobType: 'Test Cleaning',
-        address: 'Test Villa Bangkok',
-        value: 3500,
-        customerType: 'premium',
-        urgency: 'normal'
-      }
-      
-      const response = await fetch('/api/ai-coo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testPayload)
-      })
-      
-      const data = await response.json()
-      console.log('🧪 AI COO Test Response:', data)
-      
-      // Refresh logs to show new entry
-      setTimeout(loadLogs, 1000)
-      
-    } catch (err) {
-      console.error('Error testing AI COO:', err)
-      setError('Failed to test AI COO')
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  // Test AI CFO
-  const testAICFO = async () => {
-    try {
-      setLoading(true)
-      const testPayload = {
-        expenses: [
-          {
-            date: new Date().toISOString().split('T')[0],
-            category: 'Test Expense',
-            amount: 2800,
-            description: 'Test financial analysis'
-          }
-        ]
-      }
-      
-      const response = await fetch('/api/ai-cfo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testPayload)
-      })
-      
-      const data = await response.json()
-      console.log('🧪 AI CFO Test Response:', data)
-      
-      // Refresh logs to show new entry
-      setTimeout(loadLogs, 1000)
-      
-    } catch (err) {
-      console.error('Error testing AI CFO:', err)
-      setError('Failed to test AI CFO')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // Load logs on component mount
   useEffect(() => {
@@ -251,20 +114,8 @@ export default function AIDecisionLog({
             Track AI agent decisions, confidence levels, and reasoning
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {showTestRunner && (
-            <>
-              <Button variant="outline" size="sm" onClick={testAICOO} disabled={loading}>
-                <TestTube className="h-4 w-4 mr-1" />
-                Test COO
-              </Button>
-              <Button variant="outline" size="sm" onClick={testAICFO} disabled={loading}>
-                <TestTube className="h-4 w-4 mr-1" />
-                Test CFO
-              </Button>
-            </>
-          )}
           <Button variant="outline" size="sm" onClick={loadLogs} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -287,7 +138,7 @@ export default function AIDecisionLog({
             {showPrompts ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </CardHeader>
-        
+
         {showPrompts && (
           <CardContent className="space-y-4">
             <div>
@@ -329,19 +180,7 @@ export default function AIDecisionLog({
               <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">No AI decisions logged yet</p>
               <p className="text-sm mt-2">AI agent decisions will appear here</p>
-              {showTestRunner && (
-                <div className="mt-4">
-                  <p className="text-xs mb-2">Test the AI agents:</p>
-                  <div className="flex gap-2 justify-center">
-                    <Button variant="outline" size="sm" onClick={testAICOO}>
-                      Test COO
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={testAICFO}>
-                      Test CFO
-                    </Button>
-                  </div>
-                </div>
-              )}
+
             </CardContent>
           </Card>
         ) : (
@@ -375,9 +214,9 @@ export default function AIDecisionLog({
                       {Math.round(log.confidence * 100)}% confidence
                     </span>
                   </div>
-                  
+
                   <p className="text-sm text-gray-600">{log.rationale}</p>
-                  
+
                   {log.processingTime && (
                     <p className="text-xs text-muted-foreground">
                       Processing time: {log.processingTime}ms
@@ -395,7 +234,7 @@ export default function AIDecisionLog({
                     <Eye className="h-4 w-4 mr-1" />
                     {expandedLog === log.id ? 'Hide' : 'Show'} Details
                   </Button>
-                  
+
                   {process.env.NODE_ENV === 'development' && log.rawResponse && (
                     <Button
                       variant="ghost"

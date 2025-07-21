@@ -1,29 +1,51 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import listPlugin from '@fullcalendar/list';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { clientToast as toast } from '@/utils/clientToast';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  MapPin, 
-  User, 
-  Plus,
-  Filter,
-  Download,
-  RefreshCw
+import {
+    Clock,
+    Loader2,
+    MapPin,
+    User
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState } from 'react';
+
+// Dynamic imports for FullCalendar to avoid SSR issues
+const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-96 flex items-center justify-center border rounded-lg bg-gray-50">
+      <div className="flex items-center gap-2 text-gray-600">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span>Loading calendar...</span>
+      </div>
+    </div>
+  ),
+});
+
+// Dynamically import plugins to avoid SSR issues
+const loadCalendarPlugins = async () => {
+  const [
+    { default: dayGridPlugin },
+    { default: timeGridPlugin },
+    { default: interactionPlugin },
+    { default: listPlugin }
+  ] = await Promise.all([
+    import('@fullcalendar/daygrid'),
+    import('@fullcalendar/timegrid'),
+    import('@fullcalendar/interaction'),
+    import('@fullcalendar/list')
+  ]);
+
+  return { dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin };
+};
 
 // Firebase imports
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 
 interface CalendarEvent {
   id: string
@@ -48,26 +70,43 @@ interface CalendarEvent {
 
 interface EnhancedFullCalendarProps {
   className?: string
+  currentView?: string
 }
 
-export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
+export function EnhancedFullCalendar({ className, currentView: parentCurrentView }: EnhancedFullCalendarProps) {
   const calendarRef = useRef<any>(null)
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentView, setCurrentView] = useState('dayGridMonth')
+  const [currentView, setCurrentView] = useState(parentCurrentView || 'dayGridMonth')
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [calendarPlugins, setCalendarPlugins] = useState<any[]>([])
 
-  // Ensure we're on the client side
+  // Ensure we're on the client side and load plugins
   useEffect(() => {
     setIsClient(true)
+    loadCalendarPlugins().then(({ dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin }) => {
+      setCalendarPlugins([dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]);
+    });
   }, [])
+
+  // Sync currentView with parent
+  useEffect(() => {
+    if (parentCurrentView && parentCurrentView !== currentView) {
+      setCurrentView(parentCurrentView)
+      // Update the calendar view if it's already rendered
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi()
+        calendarApi.changeView(parentCurrentView)
+      }
+    }
+  }, [parentCurrentView, currentView])
 
   // Load events from Firebase
   useEffect(() => {
     console.log('🗓️ Loading calendar events from Firebase...')
-    
+
     const loadEvents = () => {
       // Check if Firebase is initialized
       if (!db) {
@@ -84,16 +123,16 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
         collection(db, 'jobs'),
         orderBy('scheduledDate', 'asc')
       )
-      
+
       const jobsUnsubscribe = onSnapshot(jobsQuery, (snapshot) => {
         const jobEvents: CalendarEvent[] = []
-        
+
         snapshot.forEach((doc) => {
           const job = doc.data()
           if (job.scheduledDate) {
             const startDate = new Date(job.scheduledDate)
             const endDate = new Date(startDate)
-            
+
             // Add duration if available
             if (job.estimatedDuration) {
               endDate.setMinutes(endDate.getMinutes() + job.estimatedDuration)
@@ -126,11 +165,11 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
             })
           }
         })
-        
+
         console.log(`📋 Loaded ${jobEvents.length} job events`)
         updateEvents('jobs', jobEvents)
       })
-      
+
       unsubscribers.push(jobsUnsubscribe)
 
       // 2. Listen to bookings collection
@@ -138,10 +177,10 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
         collection(db, 'bookings'),
         orderBy('checkIn', 'asc')
       )
-      
+
       const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
         const bookingEvents: CalendarEvent[] = []
-        
+
         snapshot.forEach((doc) => {
           const booking = doc.data()
           if (booking.checkIn && booking.checkOut) {
@@ -164,11 +203,11 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
             })
           }
         })
-        
+
         console.log(`🏠 Loaded ${bookingEvents.length} booking events`)
         updateEvents('bookings', bookingEvents)
       })
-      
+
       unsubscribers.push(bookingsUnsubscribe)
 
       // 3. Listen to calendar events collection
@@ -176,35 +215,78 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
         collection(db, 'calendarEvents'),
         orderBy('startDate', 'asc')
       )
-      
+
       const calendarEventsUnsubscribe = onSnapshot(calendarEventsQuery, (snapshot) => {
         const calendarEvents: CalendarEvent[] = []
-        
+
         snapshot.forEach((doc) => {
           const event = doc.data()
+          console.log(`📅 Processing calendar event ${doc.id}:`, {
+            title: event.title,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            startType: typeof event.startDate,
+            endType: typeof event.endDate
+          })
+
           if (event.startDate && event.endDate) {
-            calendarEvents.push({
-              id: `calendar-${doc.id}`,
-              title: `📅 ${event.title || 'Calendar Event'}`,
-              start: event.startDate,
-              end: event.endDate,
-              backgroundColor: event.color || '#6366f1',
-              borderColor: event.color || '#6366f1',
-              textColor: '#ffffff',
-              extendedProps: {
-                description: event.description,
-                propertyName: event.propertyName,
-                assignedStaff: event.assignedStaff,
-                status: event.status
-              }
-            })
+            // Convert Firestore Timestamps to ISO strings
+            let startDate = ''
+            let endDate = ''
+
+            if (event.startDate.toDate) {
+              // It's a Firestore Timestamp
+              startDate = event.startDate.toDate().toISOString()
+            } else if (typeof event.startDate === 'string') {
+              // It's already a string
+              startDate = event.startDate
+            }
+
+            if (event.endDate.toDate) {
+              // It's a Firestore Timestamp
+              endDate = event.endDate.toDate().toISOString()
+            } else if (typeof event.endDate === 'string') {
+              // It's already a string
+              endDate = event.endDate
+            }
+
+            if (startDate && endDate) {
+              console.log(`✅ Adding calendar event with converted dates:`, {
+                title: event.title,
+                start: startDate,
+                end: endDate
+              })
+
+              calendarEvents.push({
+                id: `calendar-${doc.id}`,
+                title: `📅 ${event.title || 'Calendar Event'}`,
+                start: startDate,
+                end: endDate,
+                backgroundColor: event.color || '#6366f1',
+                borderColor: event.color || '#6366f1',
+                textColor: '#ffffff',
+                extendedProps: {
+                  description: event.description,
+                  propertyName: event.propertyName,
+                  assignedStaff: event.assignedStaff,
+                  status: event.status
+                }
+              })
+            } else {
+              console.warn(`❌ Invalid date format for calendar event ${doc.id}:`, {
+                startDate: event.startDate,
+                endDate: event.endDate
+              })
+            }
+          } else {
+            console.warn(`❌ Missing startDate or endDate for calendar event ${doc.id}`)
           }
         })
-        
+
         console.log(`📅 Loaded ${calendarEvents.length} calendar events`)
         updateEvents('calendar', calendarEvents)
       })
-      
+
       unsubscribers.push(calendarEventsUnsubscribe)
 
       setLoading(false)
@@ -283,11 +365,11 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
         borderColor: '#6366f1',
         textColor: '#ffffff'
       }
-      
+
       setEvents(prev => [...prev, newEvent])
       toast.success('Event added successfully!')
     }
-    
+
     // Clear the selection
     if (calendarRef.current) {
       calendarRef.current.getApi().unselect()
@@ -330,140 +412,57 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Calendar Header */}
-      <Card className="bg-neutral-900 border-neutral-800">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CalendarIcon className="h-6 w-6 text-blue-400" />
-              <div>
-                <CardTitle className="text-white">Villa Management Calendar</CardTitle>
-                <p className="text-neutral-400 text-sm">
-                  Jobs, bookings, and events in one view
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshCalendar}
-                disabled={loading}
-                className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportCalendar}
-                className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
-      {/* View Controls */}
-      <Card className="bg-neutral-900 border-neutral-800">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-400 text-sm">View:</span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant={currentView === 'dayGridMonth' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleViewChange('dayGridMonth')}
-                  className="text-xs"
-                >
-                  Month
-                </Button>
-                <Button
-                  variant={currentView === 'timeGridWeek' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleViewChange('timeGridWeek')}
-                  className="text-xs"
-                >
-                  Week
-                </Button>
-                <Button
-                  variant={currentView === 'timeGridDay' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleViewChange('timeGridDay')}
-                  className="text-xs"
-                >
-                  Day
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                <span className="text-neutral-400">Jobs</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                <span className="text-neutral-400">Bookings</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span className="text-neutral-400">Completed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded"></div>
-                <span className="text-neutral-400">Urgent</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Main Calendar */}
       <Card className="bg-neutral-900 border-neutral-800">
         <CardContent className="p-6">
           <div className="calendar-container">
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              headerToolbar={{
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-              }}
-              initialView={currentView}
-              editable={true}
-              selectable={true}
-              selectMirror={true}
-              dayMaxEvents={true}
-              weekends={true}
-              events={events}
-              eventClick={handleEventClick}
-              select={handleDateSelect}
-              height="auto"
-              eventDisplay="block"
-              displayEventTime={true}
-              eventTimeFormat={{
-                hour: 'numeric',
-                minute: '2-digit',
-                meridiem: 'short'
-              }}
-              slotLabelFormat={{
-                hour: 'numeric',
-                minute: '2-digit',
-                meridiem: 'short'
-              }}
-              // Custom styling
-              eventClassNames="calendar-event"
-              dayCellClassNames="calendar-day-cell"
-              // Loading state
-              loading={setLoading}
-            />
+            {isClient && calendarPlugins.length > 0 ? (
+              <FullCalendar
+                ref={calendarRef}
+                plugins={calendarPlugins}
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                }}
+                initialView={currentView}
+                editable={true}
+                selectable={true}
+                selectMirror={true}
+                dayMaxEvents={true}
+                weekends={true}
+                events={events}
+                eventClick={handleEventClick}
+                select={handleDateSelect}
+                height="auto"
+                eventDisplay="block"
+                displayEventTime={true}
+                eventTimeFormat={{
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  meridiem: 'short'
+                }}
+                slotLabelFormat={{
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  meridiem: 'short'
+                }}
+                // Custom styling
+                eventClassNames="calendar-event"
+                dayCellClassNames="calendar-day-cell"
+                // Loading state
+                loading={setLoading}
+              />
+            ) : (
+              <div className="h-96 flex items-center justify-center border rounded-lg bg-gray-50">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span>Loading calendar...</span>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -490,11 +489,11 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-neutral-400" />
                   <span className="text-neutral-300 text-sm">
-                    {new Date(selectedEvent.start).toLocaleString()} - 
+                    {new Date(selectedEvent.start).toLocaleString()} -
                     {new Date(selectedEvent.end || selectedEvent.start).toLocaleString()}
                   </span>
                 </div>
-                
+
                 {selectedEvent.extendedProps?.propertyName && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-neutral-400" />
@@ -503,7 +502,7 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
                     </span>
                   </div>
                 )}
-                
+
                 {selectedEvent.extendedProps?.assignedStaff && (
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-neutral-400" />
@@ -512,22 +511,22 @@ export function EnhancedFullCalendar({ className }: EnhancedFullCalendarProps) {
                     </span>
                   </div>
                 )}
-                
+
                 {selectedEvent.extendedProps?.status && (
                   <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className="text-xs"
-                      style={{ 
+                      style={{
                         borderColor: selectedEvent.backgroundColor,
-                        color: selectedEvent.backgroundColor 
+                        color: selectedEvent.backgroundColor
                       }}
                     >
                       {selectedEvent.extendedProps.status}
                     </Badge>
                   </div>
                 )}
-                
+
                 {selectedEvent.extendedProps?.description && (
                   <div className="mt-3 p-3 bg-neutral-800 rounded-lg">
                     <p className="text-neutral-300 text-sm">

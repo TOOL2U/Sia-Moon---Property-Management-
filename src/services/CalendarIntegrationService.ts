@@ -49,6 +49,9 @@ class CalendarIntegrationService {
       // Set up job assignment workflow
       this.setupJobAssignmentWorkflow()
 
+      // Set up job status change listener
+      this.setupJobStatusChangeListener()
+
       console.log('✅ Calendar Integration Service initialized successfully')
     } catch (error) {
       console.error(
@@ -460,8 +463,109 @@ class CalendarIntegrationService {
   }
 
   /**
+   * 5. JOB STATUS CHANGE LISTENER
+   * Listen for job status changes and handle calendar event cleanup
+   */
+  private setupJobStatusChangeListener(): void {
+    console.log('📊 Setting up job status change listener...')
+
+    if (!db) {
+      console.error('❌ Firebase not initialized - cannot set up job status listener')
+      return
+    }
+
+    // Listen to jobs collection for status changes and deletions
+    const jobsQuery = collection(db, 'jobs')
+
+    this.jobListener = onSnapshot(
+      jobsQuery,
+      async (snapshot) => {
+        for (const change of snapshot.docChanges()) {
+          const job = { id: change.doc.id, ...change.doc.data() }
+
+          if (change.type === 'modified') {
+            // Handle job status changes
+            const previousData = change.doc.metadata.fromCache ? null : change.doc.data()
+            
+            // Check if job was completed or cancelled
+            if (job.status === 'completed' || job.status === 'verified' || job.status === 'cancelled') {
+              console.log(`✅ Job status changed to ${job.status}, removing calendar event: ${job.id}`)
+              
+              await CalendarEventService.removeEventByJobId(job.id)
+              toast.success(`📅 Calendar updated - ${job.status} job removed`)
+            }
+          } else if (change.type === 'removed') {
+            // Handle job deletion
+            console.log(`🗑️ Job deleted, removing calendar event: ${change.doc.id}`)
+            
+            await CalendarEventService.removeEventByJobId(change.doc.id)
+            toast.success('📅 Calendar updated - deleted job removed')
+          }
+        }
+      },
+      (error) => {
+        console.error('❌ Error in job status listener:', error)
+      }
+    )
+  }
+
+  /**
    * UTILITY METHODS
    */
+
+  /**
+   * Setup job status change listener (public method)
+   * Can be called from external components to enable real-time calendar cleanup
+   */
+  static setupJobStatusChangeListener(): (() => void) | null {
+    console.log('📊 Setting up job status change listener...')
+
+    if (!db) {
+      console.error('❌ Firebase not initialized - cannot set up job status listener')
+      return null
+    }
+
+    // Listen to jobs collection for status changes and deletions
+    const jobsQuery = collection(db, 'jobs')
+
+    const unsubscribe = onSnapshot(
+      jobsQuery,
+      async (snapshot) => {
+        for (const change of snapshot.docChanges()) {
+          const job = { id: change.doc.id, ...change.doc.data() }
+
+          if (change.type === 'modified') {
+            // Check if job was completed or cancelled
+            if (job.status === 'completed' || job.status === 'verified' || job.status === 'cancelled') {
+              console.log(`✅ Job status changed to ${job.status}, removing calendar event: ${job.id}`)
+              
+              try {
+                await CalendarEventService.removeEventByJobId(job.id)
+                toast.success(`📅 Calendar updated - ${job.status} job removed`)
+              } catch (error) {
+                console.error(`❌ Error removing calendar event for job ${job.id}:`, error)
+              }
+            }
+          } else if (change.type === 'removed') {
+            // Handle job deletion
+            console.log(`�️ Job deleted, removing calendar event: ${change.doc.id}`)
+            
+            try {
+              await CalendarEventService.removeEventByJobId(change.doc.id)
+              toast.success('📅 Calendar updated - deleted job removed')
+            } catch (error) {
+              console.error(`❌ Error removing calendar event for deleted job ${change.doc.id}:`, error)
+            }
+          }
+        }
+      },
+      (error) => {
+        console.error('❌ Error in job status listener:', error)
+      }
+    )
+    
+    return unsubscribe
+  }
 
   /**
    * Cleanup orphaned calendar events

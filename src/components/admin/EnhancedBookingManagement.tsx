@@ -539,21 +539,36 @@ export function EnhancedBookingManagement({
     return skillMap[jobType] || ['general']
   }
 
-  // Filter and sort bookings (show rejected bookings only when specifically filtered)
+  // Filter and sort bookings (exclude rejected, test, and error bookings)
   const filteredAndSortedBookings = allBookings
     .filter(booking => {
-      // Handle status filtering - show rejected bookings only when explicitly filtered
-      if (statusFilter === 'rejected') {
-        if (booking.status !== 'rejected') {
-          return false
-        }
-      } else if (statusFilter !== 'all') {
+      // Always exclude rejected bookings from all views
+      if (booking.status === 'rejected') {
+        return false
+      }
+
+      // Exclude test bookings (identified by various patterns)
+      const isTestBooking = 
+        booking.isTestBooking === true ||
+        booking.id?.includes('test') ||
+        booking.id?.includes('ai_test') ||
+        (booking.guestName || booking.guest_name || '').toLowerCase().includes('[test]') ||
+        (booking.guestName || booking.guest_name || '').toLowerCase().includes('test') ||
+        booking.status === 'error'
+
+      if (isTestBooking) {
+        return false
+      }
+
+      // Only show pending_approval, approved, pending, and confirmed bookings
+      const validStatuses = ['pending_approval', 'approved', 'pending', 'confirmed']
+      if (!validStatuses.includes(booking.status)) {
+        return false
+      }
+
+      // Handle status filtering for valid bookings only
+      if (statusFilter !== 'all') {
         if (booking.status !== statusFilter) {
-          return false
-        }
-      } else {
-        // For 'all' filter, exclude rejected bookings from main view
-        if (booking.status === 'rejected') {
           return false
         }
       }
@@ -622,6 +637,13 @@ export function EnhancedBookingManagement({
   useEffect(() => {
     loadAllBookings()
   }, [loadAllBookings])
+
+  // Safeguard: Reset statusFilter if it's set to 'rejected'
+  useEffect(() => {
+    if (statusFilter === 'rejected') {
+      setStatusFilter('all')
+    }
+  }, [statusFilter])
 
   return (
     <motion.div 
@@ -854,7 +876,6 @@ export function EnhancedBookingManagement({
                   <SelectItem value="pending_approval">Pending Approval</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
 

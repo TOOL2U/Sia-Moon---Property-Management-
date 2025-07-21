@@ -109,6 +109,11 @@ class AIBookingApprovalService {
       this.bookingListener = null
     }
 
+    if (!db) {
+      console.error("Firebase not initialized, cannot setup booking listener")
+      return
+    }
+
     // Create query for pending bookings
     const bookingsRef = collection(db, 'bookings')
     const pendingBookingsQuery = query(

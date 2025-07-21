@@ -1,9 +1,9 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { CheckCircle, Edit2, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

@@ -1260,6 +1260,201 @@ class NotificationService {
   }
 
   /**
+   * Notify property managers about booking approval workflow events
+   */
+  async notifyPropertyManagers(notification: {
+    type: 'booking_approved' | 'booking_conflict' | 'calendar_updated'
+    bookingId: string
+    propertyName: string
+    guestName: string
+    calendarUpdated?: boolean
+    hasConflicts?: boolean
+    priority?: 'low' | 'medium' | 'high' | 'urgent'
+  }): Promise<{ success: boolean; notificationId?: string; error?: string; recipientCount?: number }> {
+    try {
+      console.log('📧 Sending property manager notification:', notification.type)
+
+      const db = getDb()
+      if (!db) throw new Error('Database not initialized')
+
+      // Create notification for property managers
+      const notificationData: Omit<Notification, 'id'> = {
+        recipientId: 'property_managers',
+        recipientType: 'admin',
+        type: 'admin_alert',
+        priority: notification.priority || this.determinePriority(notification),
+        title: `Booking ${notification.type.replace('_', ' ')} - ${notification.propertyName}`,
+        message: this.generatePropertyManagerMessage(notification),
+        jobId: undefined,
+        propertyId: undefined,
+        propertyName: notification.propertyName,
+        scheduledFor: undefined,
+        deliveryChannels: ['in_app', 'email'],
+        deliveryStatus: 'pending',
+        read: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        metadata: {
+          bookingId: notification.bookingId,
+          guestName: notification.guestName,
+          calendarUpdated: notification.calendarUpdated,
+          hasConflicts: notification.hasConflicts,
+          workflowType: 'booking_approval'
+        }
+      }
+
+      const docRef = doc(collection(db, 'notifications'))
+      await setDoc(docRef, notificationData)
+
+      console.log('✅ Property manager notification created:', docRef.id)
+      return { success: true, notificationId: docRef.id, recipientCount: 1 }
+
+    } catch (error) {
+      console.error('❌ Failed to notify property managers:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+
+  /**
+   * Notify guests about booking confirmation
+   */
+  async notifyGuest(notification: {
+    type: 'booking_confirmed' | 'booking_conflict' | 'booking_rescheduled'
+    guestEmail: string
+    guestName: string
+    bookingId: string
+    propertyName: string
+    checkInDate: string
+    checkOutDate: string
+    additionalInfo?: string
+  }): Promise<{ success: boolean; notificationId?: string; error?: string }> {
+    try {
+      console.log('📧 Sending guest notification:', notification.type)
+
+      const db = getDb()
+      if (!db) throw new Error('Database not initialized')
+
+      // Create guest notification record
+      const guestNotificationData = {
+        type: 'guest_notification',
+        subType: notification.type,
+        timestamp: serverTimestamp(),
+        bookingId: notification.bookingId,
+        guestEmail: notification.guestEmail,
+        guestName: notification.guestName,
+        propertyName: notification.propertyName,
+        checkInDate: notification.checkInDate,
+        checkOutDate: notification.checkOutDate,
+        status: 'sent',
+        content: {
+          subject: `Booking Confirmation - ${notification.propertyName}`,
+          message: `Dear ${notification.guestName}, your booking at ${notification.propertyName} has been confirmed!`,
+          checkInDate: notification.checkInDate,
+          checkOutDate: notification.checkOutDate,
+          additionalInfo: notification.additionalInfo
+        }
+      }
+
+      const docRef = doc(collection(db, 'guest_notifications'))
+      await setDoc(docRef, guestNotificationData)
+
+      console.log('✅ Guest notification created:', docRef.id)
+      return { success: true, notificationId: docRef.id }
+
+    } catch (error) {
+      console.error('❌ Failed to notify guest:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+
+  /**
+   * Notify staff about booking conflicts or urgent matters
+   */
+  async notifyStaff(notification: {
+    type: 'booking_conflict' | 'event_rescheduled' | 'urgent_attention'
+    priority: 'low' | 'medium' | 'high' | 'urgent'
+    bookingId?: string
+    propertyName?: string
+    conflicts?: any[]
+    recommendations?: string[]
+    message?: string
+  }): Promise<{ success: boolean; notificationId?: string; error?: string }> {
+    try {
+      console.log('📧 Sending staff notification:', notification.type)
+
+      const db = getDb()
+      if (!db) throw new Error('Database not initialized')
+
+      const staffNotificationData: Omit<Notification, 'id'> = {
+        recipientId: 'all_staff',
+        recipientType: 'staff',
+        type: 'admin_alert',
+        priority: notification.priority as 'low' | 'medium' | 'high',
+        title: `${notification.type.replace('_', ' ').toUpperCase()} - ${notification.propertyName || 'System Alert'}`,
+        message: notification.message || this.generateStaffMessage(notification),
+        jobId: undefined,
+        propertyId: undefined,
+        propertyName: notification.propertyName,
+        scheduledFor: undefined,
+        deliveryChannels: ['in_app', 'push'],
+        deliveryStatus: 'pending',
+        read: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        metadata: {
+          bookingId: notification.bookingId,
+          conflicts: notification.conflicts,
+          recommendations: notification.recommendations,
+          workflowType: 'booking_approval'
+        }
+      }
+
+      const docRef = doc(collection(db, 'notifications'))
+      await setDoc(docRef, staffNotificationData)
+
+      console.log('✅ Staff notification created:', docRef.id)
+      return { success: true, notificationId: docRef.id }
+
+    } catch (error) {
+      console.error('❌ Failed to notify staff:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+
+  private determinePriority(notification: any): 'low' | 'medium' | 'high' {
+    if (notification.hasConflicts) return 'high'
+    if (notification.type === 'booking_conflict') return 'high'
+    if (notification.type === 'booking_approved') return 'medium'
+    return 'low'
+  }
+
+  private generatePropertyManagerMessage(notification: any): string {
+    switch (notification.type) {
+      case 'booking_approved':
+        return `Booking for ${notification.guestName} at ${notification.propertyName} has been automatically approved${notification.calendarUpdated ? ' and added to calendar' : ''}${notification.hasConflicts ? ' (conflicts detected - review required)' : ''}.`
+
+      case 'booking_conflict':
+        return `URGENT: Booking conflicts detected for ${notification.guestName} at ${notification.propertyName}. Manual intervention required.`
+
+      default:
+        return `Booking update for ${notification.guestName} at ${notification.propertyName}.`
+    }
+  }
+
+  private generateStaffMessage(notification: any): string {
+    switch (notification.type) {
+      case 'booking_conflict':
+        return `Booking conflicts detected at ${notification.propertyName}. Please review and coordinate resolution.`
+
+      case 'event_rescheduled':
+        return `Calendar events have been automatically rescheduled at ${notification.propertyName}. Please check your schedule.`
+
+      default:
+        return `Attention required for ${notification.propertyName || 'system alert'}.`
+    }
+  }
+
+  /**
    * Clean up listeners and intervals
    */
   cleanup(): void {

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { RefreshCw, Activity, Brain, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react'
-import { getAILogs, AILogEntry } from '@/lib/ai/aiLogger'
+import { AILogEntry, getAILogs } from '@/lib/ai/aiLogger'
+import { Activity, AlertTriangle, Brain, CheckCircle, RefreshCw, TrendingUp } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface LiveAILogsCheckerProps {
   className?: string
@@ -13,7 +13,7 @@ interface LiveAILogsCheckerProps {
   refreshInterval?: number
 }
 
-export default function LiveAILogsChecker({ 
+export default function LiveAILogsChecker({
   className = '',
   autoRefresh = true,
   refreshInterval = 30000 // 30 seconds
@@ -27,26 +27,26 @@ export default function LiveAILogsChecker({
   const loadLiveLogs = async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
       console.log('🔍 Checking live AI action logs...')
-      
+
       // Get logs with LIVE filter
-      const liveLogs = await getAILogs({ 
-        filter: "LIVE", 
-        limit: 10 
+      const liveLogs = await getAILogs({
+        filter: "LIVE",
+        limit: 10
       })
-      
+
       console.log(`📊 Found ${liveLogs.length} live AI action logs`)
-      
+
       // Log each decision as requested
       liveLogs.forEach((log) => {
         console.log("📌 AI Decision:", log.agent, log.decision, "🧠 Confidence:", log.confidence)
       })
-      
+
       setLogs(liveLogs)
       setLastUpdate(new Date())
-      
+
     } catch (err) {
       console.error('❌ Error loading live logs:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -58,7 +58,7 @@ export default function LiveAILogsChecker({
   // Auto-refresh effect
   useEffect(() => {
     loadLiveLogs()
-    
+
     if (autoRefresh) {
       const interval = setInterval(loadLiveLogs, refreshInterval)
       return () => clearInterval(interval)
@@ -258,7 +258,7 @@ export default function LiveAILogsChecker({
               &nbsp;&nbsp;console.log("📌 AI Decision:", log.agent, log.decision, "🧠 Confidence:", log.confidence);<br />
               &#125;);
             </div>
-            
+
             {logs.length > 0 ? (
               <div className="space-y-1">
                 {logs.map((log, index) => (
@@ -268,7 +268,7 @@ export default function LiveAILogsChecker({
                 ))}
               </div>
             ) : (
-              <div className="text-yellow-400">No live AI actions found. Run a live booking test to see results.</div>
+              <div className="text-yellow-400">No live AI actions found. AI logs will appear here when AI agents make decisions.</div>
             )}
           </div>
         </CardContent>

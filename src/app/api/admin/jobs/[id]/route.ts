@@ -4,7 +4,7 @@
  */
 
 import { getDb } from '@/lib/firebase'
-import { deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -33,7 +33,7 @@ export async function GET(
       )
     }
 
-    const jobData = { id: jobDoc.id, ...jobDoc.data() }
+    const jobData = { id: jobDoc.id, ...jobDoc.data() } as any
     console.log('✅ Retrieved job:', jobData.title)
 
     return NextResponse.json({
@@ -224,6 +224,44 @@ export async function DELETE(
     await deleteDoc(jobRef)
 
     console.log('✅ Job deleted successfully:', jobId)
+
+    // Remove related calendar events
+    try {
+      const calendarEventsRef = collection(db, 'calendarEvents')
+      const calendarEventsQuery = query(
+        calendarEventsRef,
+        where('sourceId', '==', jobId)
+      )
+      const calendarEventsSnapshot = await getDocs(calendarEventsQuery)
+      
+      // Also check for legacy events with jobId field
+      const legacyEventsQuery = query(
+        calendarEventsRef,
+        where('jobId', '==', jobId)
+      )
+      const legacyEventsSnapshot = await getDocs(legacyEventsQuery)
+      
+      const deleteBatch = writeBatch(db)
+      let eventCount = 0
+      
+      calendarEventsSnapshot.forEach((doc) => {
+        deleteBatch.delete(doc.ref)
+        eventCount++
+      })
+      
+      legacyEventsSnapshot.forEach((doc) => {
+        deleteBatch.delete(doc.ref)
+        eventCount++
+      })
+      
+      if (eventCount > 0) {
+        await deleteBatch.commit()
+        console.log(`✅ Removed ${eventCount} calendar events for job ${jobId}`)
+      }
+    } catch (calendarError) {
+      console.error('⚠️ Error removing calendar events:', calendarError)
+      // Don't fail the job deletion if calendar cleanup fails
+    }
 
     // TODO: Send notification to assigned staff about job cancellation
     // TODO: Update any related booking status if applicable

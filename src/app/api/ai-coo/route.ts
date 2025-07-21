@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { AILogEntry } from '@/lib/ai/aiLogger'
 
 // Dynamic rule loading function
 async function loadCompanyRules(): Promise<string[]> {
@@ -80,6 +81,7 @@ interface COODecisionResponse {
     name: string
     eta: string
     distance: number
+    phone?: string
   }
 }
 
@@ -89,12 +91,13 @@ interface COODecisionResponse {
  */
 export async function POST(req: NextRequest) {
   const startTime = Date.now()
+  let booking: any = null
 
   try {
     console.log('🤖 AI COO: Processing booking request...')
 
     // Step 1: Parse and validate booking data
-    const booking = await req.json()
+    booking = await req.json()
     console.log('📋 AI COO: Received booking:', {
       address: booking.address,
       jobType: booking.jobType,
@@ -184,7 +187,13 @@ export async function POST(req: NextRequest) {
     let decision = 'approve'
     let confidence = 0.85
     let reason = 'Booking meets all company criteria'
-    let assignedStaff = ['staff_001']
+    let assignedStaff = [{
+      id: 'staff_001',
+      name: 'Khun Somchai',
+      eta: '15 mins',
+      distance: 2.5,
+      phone: '+66 82 345 6789'
+    }]
 
     if (isHighValue) {
       confidence = 0.65
@@ -230,7 +239,7 @@ export async function POST(req: NextRequest) {
       success: true,
       decision,
       confidence,
-      assignedStaff: assignedStaff.length > 0 ? assignedStaff : undefined,
+      assignedStaff: assignedStaff.length > 0 ? assignedStaff[0] : undefined,
       reason,
       escalate: shouldEscalate,
       metadata: {
@@ -262,37 +271,39 @@ export async function POST(req: NextRequest) {
         const { sendBookingConfirmation, sendJobAssignment, sendEscalationAlert } = await import('@/lib/notifications/notificationService')
 
         if (response.decision === 'approved' && response.assignedStaff) {
+          const staff = response.assignedStaff
+          
           // Send booking confirmation to customer
           await sendBookingConfirmation({
-            bookingId: body.testBookingId || `BOOKING-${Date.now()}`,
-            customerName: body.customerName || 'Customer',
-            customerEmail: body.customerEmail || body.contactInfo || 'customer@example.com',
-            customerPhone: body.contactInfo || '+66 81 234 5678',
-            serviceName: body.jobType || 'Service',
-            serviceDate: body.scheduledDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-            serviceTime: body.scheduledDate?.split('T')[1]?.substring(0, 5) || '14:00',
-            propertyAddress: body.address || 'Property Address',
-            totalAmount: body.value || 0,
+            bookingId: booking.testBookingId || `BOOKING-${Date.now()}`,
+            customerName: booking.customerName || 'Customer',
+            customerEmail: booking.customerEmail || booking.contactInfo || 'customer@example.com',
+            customerPhone: booking.contactInfo || '+66 81 234 5678',
+            serviceName: booking.jobType || 'Service',
+            serviceDate: booking.scheduledDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+            serviceTime: booking.scheduledDate?.split('T')[1]?.substring(0, 5) || '14:00',
+            propertyAddress: booking.address || 'Property Address',
+            totalAmount: booking.value || 0,
             assignedStaff: {
-              name: response.assignedStaff.name,
-              phone: response.assignedStaff.phone || '+66 82 345 6789',
-              eta: response.assignedStaff.eta
+              name: staff.name,
+              phone: staff.phone || '+66 82 345 6789',
+              eta: staff.eta
             }
           })
 
           // Send job assignment to staff
           await sendJobAssignment({
-            staffName: response.assignedStaff.name,
-            staffEmail: `${response.assignedStaff.name.toLowerCase().replace(' ', '.')}@siamoon.com`,
-            staffPhone: response.assignedStaff.phone || '+66 82 345 6789',
-            bookingId: body.testBookingId || `BOOKING-${Date.now()}`,
-            serviceName: body.jobType || 'Service',
-            serviceDate: body.scheduledDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-            serviceTime: body.scheduledDate?.split('T')[1]?.substring(0, 5) || '14:00',
-            customerName: body.customerName || 'Customer',
-            customerPhone: body.contactInfo || '+66 81 234 5678',
-            propertyAddress: body.address || 'Property Address',
-            specialInstructions: body.notes,
+            staffName: staff.name,
+            staffEmail: `${staff.name.toLowerCase().replace(' ', '.')}@siamoon.com`,
+            staffPhone: staff.phone || '+66 82 345 6789',
+            bookingId: booking.testBookingId || `BOOKING-${Date.now()}`,
+            serviceName: booking.jobType || 'Service',
+            serviceDate: booking.scheduledDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+            serviceTime: booking.scheduledDate?.split('T')[1]?.substring(0, 5) || '14:00',
+            customerName: booking.customerName || 'Customer',
+            customerPhone: booking.contactInfo || '+66 81 234 5678',
+            propertyAddress: booking.address || 'Property Address',
+            specialInstructions: booking.notes,
             estimatedDuration: '2 hours'
           })
 
@@ -305,9 +316,9 @@ export async function POST(req: NextRequest) {
             type: 'high_value',
             severity: 'high',
             title: `High-Value Booking Requires Review`,
-            description: `Booking value of ฿${body.value?.toLocaleString()} requires management approval.`,
-            relatedBookingId: body.testBookingId || `BOOKING-${Date.now()}`,
-            relatedAmount: body.value,
+            description: `Booking value of ฿${booking.value?.toLocaleString()} requires management approval.`,
+            relatedBookingId: booking.testBookingId || `BOOKING-${Date.now()}`,
+            relatedAmount: booking.value,
             actionRequired: 'Review booking details and approve/reject within 2 hours',
             escalatedBy: 'AI COO System'
           })
@@ -341,7 +352,7 @@ export async function POST(req: NextRequest) {
           decision: response.decision,
           confidence: response.confidence,
           escalate: response.escalate,
-          simulated: response.simulated || false
+          simulated: false // Default for real requests
         }
       })
     } catch (logError) {
@@ -380,7 +391,7 @@ export async function POST(req: NextRequest) {
       await logAIAPICall({
         endpoint: "/api/ai-coo",
         method: "POST",
-        payload: booking,
+        payload: booking || { error: 'Failed to parse request' },
         status: 500,
         error: true,
         errorMessage: error instanceof Error ? error.message : 'Unknown error',

@@ -63,6 +63,8 @@ export default function JobCompletionAnalytics() {
   const loadAnalytics = async () => {
     setIsLoading(true)
     try {
+      if (!db) throw new Error("Firebase not initialized")
+      
       const { startDate, endDate } = getDateRange()
       
       // Query job completions for the selected time range
@@ -248,8 +250,8 @@ export default function JobCompletionAnalytics() {
   }
 
   const getEfficiencyBadge = (efficiency: number) => {
-    if (efficiency >= 100) return 'success'
-    if (efficiency >= 80) return 'warning'
+    if (efficiency >= 100) return 'default'
+    if (efficiency >= 80) return 'secondary'
     return 'destructive'
   }
 

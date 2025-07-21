@@ -36,6 +36,12 @@ export default function AIAuditLogViewer() {
   const [filter, setFilter] = useState<'all' | 'approved' | 'rejected' | 'error'>('all')
 
   useEffect(() => {
+    if (!db) {
+      console.error("Firebase not initialized")
+      setLoading(false)
+      return
+    }
+    
     // Set up real-time listener for audit logs
     const auditLogsRef = collection(db, 'auditLogs')
     let auditQuery = query(
@@ -100,11 +106,11 @@ export default function AIAuditLogViewer() {
   const getActionBadge = (action: string) => {
     switch (action) {
       case 'booking_approved':
-        return <Badge variant="success" className="text-xs">Approved</Badge>
+        return <Badge variant="default" className="text-xs bg-green-100 text-green-800">Approved</Badge>
       case 'booking_rejected':
         return <Badge variant="destructive" className="text-xs">Rejected</Badge>
       case 'booking_error':
-        return <Badge variant="warning" className="text-xs">Error</Badge>
+        return <Badge variant="destructive" className="text-xs">Error</Badge>
       default:
         return <Badge variant="secondary" className="text-xs">{action}</Badge>
     }
