@@ -58,6 +58,7 @@ import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobMa
 import JobAcceptancePanel from '@/components/admin/JobAcceptancePanel'
 import JobCompletionAnalytics from '@/components/admin/JobCompletionAnalytics'
 import KPIDashboard from '@/components/admin/KPIDashboard'
+import { StaffReports } from '@/components/admin/StaffReports'
 // MobileIntegrationStatus removed - dashboard-specific component
 import NotificationDashboard from '@/components/admin/NotificationDashboard'
 import OperationsMapDashboard from '@/components/admin/OperationsMapDashboard'

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { type AuditReport } from '@/services/AIAuditService'
 import { JobSessionService, type JobSessionData, type StaffAuditReport } from '@/services/JobSessionService'
 import { motion } from 'framer-motion'
 import {
@@ -26,6 +27,8 @@ interface StaffMember {
   name: string
   email: string
   role: string
+  status?: string
+  firebaseUid?: string
 }
 
 export function StaffReports() {
@@ -36,13 +39,51 @@ export function StaffReports() {
   const [aiAuditReport, setAiAuditReport] = useState<AuditReport | null>(null)
   const [recentSessions, setRecentSessions] = useState<JobSessionData[]>([])
   const [reportType, setReportType] = useState<'legacy' | 'ai'>('ai')
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const [staffLoading, setStaffLoading] = useState(false)
 
-  // Mock staff data - replace with actual staff fetching
-  const staffMembers: StaffMember[] = [
-    { id: 'gTtR5gSKOtUEweLwchSnVreylMy1', name: 'Staff Siamoon', email: 'staff@siamoon.com', role: 'Senior Cleaner' },
-    { id: 'staff_2', name: 'Maria Rodriguez', email: 'maria@siamoon.com', role: 'Housekeeper' },
-    { id: 'staff_3', name: 'John Smith', email: 'john@siamoon.com', role: 'Maintenance' }
-  ]
+  // Load real staff data from the same API used by backoffice
+  const loadStaffData = useCallback(async () => {
+    try {
+      setStaffLoading(true)
+      console.log('📋 Loading staff data for AI audit reports...')
+
+      const response = await fetch('/api/admin/staff-accounts')
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        // Filter only active staff members and map to our interface
+        const activeStaff: StaffMember[] = data.data
+          .filter((staff: any) => staff.status === 'active' || staff.isActive)
+          .map((staff: any) => ({
+            id: staff.firebaseUid || staff.id, // Use Firebase UID for job session matching
+            name: staff.name,
+            email: staff.email,
+            role: staff.role,
+            status: staff.status,
+            firebaseUid: staff.firebaseUid
+          }))
+
+        setStaffMembers(activeStaff)
+        console.log(`✅ Loaded ${activeStaff.length} active staff members for AI audit`)
+      } else {
+        console.error('❌ Failed to load staff data:', data.error)
+        toast.error('Failed to load staff data')
+        setStaffMembers([])
+      }
+    } catch (error) {
+      console.error('❌ Error loading staff data:', error)
+      toast.error('Error loading staff data')
+      setStaffMembers([])
+    } finally {
+      setStaffLoading(false)
+    }
+  }, [])
+
+  // Load staff data on component mount
+  useEffect(() => {
+    loadStaffData()
+  }, [])
 
   const generateReport = useCallback(async () => {
     if (!selectedStaff) {
@@ -61,8 +102,13 @@ export function StaffReports() {
       }
 
       if (reportType === 'ai') {
-        // Generate AI-powered audit report
-        const response = await fetch(`/api/ai-audit/reports/${selectedStaff}`, {
+        // Use Firebase UID for job session matching
+        const staffId = staffMember.firebaseUid || staffMember.id
+
+        console.log(`🤖 Generating AI audit for staff: ${staffMember.name} (ID: ${staffId})`)
+
+        // Generate AI-powered audit report (using simplified API for now)
+        const response = await fetch(`/api/ai-audit/simple-report/${staffId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -75,7 +121,10 @@ export function StaffReports() {
           setAiAuditReport(result.report)
           setAuditReport(null) // Clear legacy report
           toast.success(`🤖 AI audit report generated for ${staffMember.name}`)
+
+          console.log(`✅ AI audit completed with score: ${result.report.performanceScore}`)
         } else {
+          console.error('❌ AI audit failed:', result)
           throw new Error(result.message || 'Failed to generate AI audit report')
         }
       } else {
@@ -157,22 +206,40 @@ export function StaffReports() {
           <div className="flex gap-4 items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-300 mb-2">Staff Member</label>
-              <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+              <Select value={selectedStaff} onValueChange={setSelectedStaff} disabled={staffLoading}>
                 <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
-                  <SelectValue placeholder="Select staff member" />
+                  <SelectValue placeholder={staffLoading ? "Loading staff..." : "Select staff member"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {staffMembers.map((staff) => (
-                    <SelectItem key={staff.id} value={staff.id}>
-                      <div className="flex items-center gap-2">
+                  {staffMembers.length === 0 && !staffLoading ? (
+                    <SelectItem value="no-staff" disabled>
+                      <div className="flex items-center gap-2 text-gray-400">
                         <User className="w-4 h-4" />
-                        <span>{staff.name}</span>
-                        <span className="text-gray-400">({staff.role})</span>
+                        <span>No active staff found</span>
                       </div>
                     </SelectItem>
-                  ))}
+                  ) : (
+                    staffMembers.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          <span>{staff.name}</span>
+                          <span className="text-gray-400">({staff.role})</span>
+                          {staff.firebaseUid && (
+                            <span className="text-xs text-blue-400">✓</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {staffLoading && (
+                <p className="text-xs text-gray-400 mt-1">Loading staff members from Firestore...</p>
+              )}
+              {!staffLoading && staffMembers.length === 0 && (
+                <p className="text-xs text-red-400 mt-1">No active staff members found. Please add staff in the Staff tab.</p>
+              )}
             </div>
 
             <div>
