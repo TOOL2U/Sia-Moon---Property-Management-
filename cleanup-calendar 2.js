@@ -7,9 +7,9 @@
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs, writeBatch, doc } = require('firebase/firestore');
 
-// Firebase config
+// Firebase config - should use environment variables in production
 const firebaseConfig = {
-  apiKey: "AIzaSyCDaTQsNpWw0y-g6VeXDYG57eCNtfloxxw",
+  apiKey: "[REDACTED - Use environment variable]",
   authDomain: "operty-b54dc.firebaseapp.com",
   projectId: "operty-b54dc",
   storageBucket: "operty-b54dc.firebasestorage.app",

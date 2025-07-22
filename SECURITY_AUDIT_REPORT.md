@@ -30,7 +30,7 @@ Multiple hardcoded secrets, API keys, and credentials have been found committed 
 
 **Exposed Credentials:**
 ```
-Firebase API Key: AIzaSyCDaTQsNpWw0y-g6VeXDYG57eCNtfloxxw
+Firebase API Key: [REDACTED - Key has been regenerated]
 Project ID: operty-b54dc
 App ID: 1:914547669275:web:0897d32d59b17134a53bbe
 ```
@@ -123,10 +123,10 @@ Mobile Secret: mobile-app-sync-2025-secure
 
 **Exposed Credentials:**
 ```
-Google Maps API Key: AIzaSyBMiN2YG4RgAB-MdysGI3J6y0tLZDCs0X8
+Google Maps API Key: [REDACTED - Key has been regenerated]
 ```
 
-**Risk:** Unauthorized map usage, potential charges
+**Risk:** Unauthorized map usage, potential charges - **MITIGATED: Key regenerated**
 
 ---
 

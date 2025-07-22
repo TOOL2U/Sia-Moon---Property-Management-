@@ -5,7 +5,7 @@ import { getStorage } from 'firebase/storage'
 
 // Firebase configuration - same as webapp
 const firebaseConfig = {
-  apiKey: 'AIzaSyCDaTQsNpWw0y-g6VeXDYG57eCNtfloxxw',
+  apiKey: '[REDACTED - Use environment variable]',
   authDomain: 'operty-b54dc.firebaseapp.com',
   projectId: 'operty-b54dc',
   storageBucket: 'operty-b54dc.firebasestorage.app',

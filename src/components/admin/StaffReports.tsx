@@ -8,18 +8,20 @@ import { type AuditReport } from '@/services/AIAuditService'
 import { JobSessionService, type JobSessionData, type StaffAuditReport } from '@/services/JobSessionService'
 import { motion } from 'framer-motion'
 import {
+    AlertCircle,
     BarChart3,
     Brain,
     Calendar,
     CheckCircle,
     Clock,
     Loader2,
+    RefreshCw,
     Star,
     TrendingUp,
     User,
     Users
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface StaffMember {
