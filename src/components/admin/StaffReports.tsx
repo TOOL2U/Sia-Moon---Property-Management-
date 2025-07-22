@@ -33,7 +33,9 @@ export function StaffReports() {
   const [selectedStaff, setSelectedStaff] = useState<string>('')
   const [selectedPeriod, setSelectedPeriod] = useState<number>(30)
   const [auditReport, setAuditReport] = useState<StaffAuditReport | null>(null)
+  const [aiAuditReport, setAiAuditReport] = useState<AuditReport | null>(null)
   const [recentSessions, setRecentSessions] = useState<JobSessionData[]>([])
+  const [reportType, setReportType] = useState<'legacy' | 'ai'>('ai')
 
   // Mock staff data - replace with actual staff fetching
   const staffMembers: StaffMember[] = [
@@ -50,7 +52,7 @@ export function StaffReports() {
 
     try {
       setLoading(true)
-      console.log(`📊 Generating audit report for staff: ${selectedStaff}`)
+      console.log(`📊 Generating ${reportType} audit report for staff: ${selectedStaff}`)
 
       const staffMember = staffMembers.find(s => s.id === selectedStaff)
       if (!staffMember) {
@@ -58,23 +60,44 @@ export function StaffReports() {
         return
       }
 
-      const report = await JobSessionService.generateStaffAuditReport(
-        selectedStaff,
-        staffMember.name,
-        selectedPeriod
-      )
+      if (reportType === 'ai') {
+        // Generate AI-powered audit report
+        const response = await fetch(`/api/ai-audit/reports/${selectedStaff}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            staffName: staffMember.name
+          })
+        })
 
-      setAuditReport(report)
-      setRecentSessions(report.recentSessions)
+        const result = await response.json()
+        if (result.success) {
+          setAiAuditReport(result.report)
+          setAuditReport(null) // Clear legacy report
+          toast.success(`🤖 AI audit report generated for ${staffMember.name}`)
+        } else {
+          throw new Error(result.message || 'Failed to generate AI audit report')
+        }
+      } else {
+        // Generate legacy audit report
+        const report = await JobSessionService.generateStaffAuditReport(
+          selectedStaff,
+          staffMember.name,
+          selectedPeriod
+        )
 
-      toast.success(`✅ Generated audit report for ${staffMember.name}`)
+        setAuditReport(report)
+        setAiAuditReport(null) // Clear AI report
+        setRecentSessions(report.recentSessions)
+        toast.success(`✅ Legacy audit report generated for ${staffMember.name}`)
+      }
     } catch (error) {
       console.error('❌ Error generating audit report:', error)
       toast.error('Failed to generate audit report')
     } finally {
       setLoading(false)
     }
-  }, [selectedStaff, selectedPeriod])
+  }, [selectedStaff, selectedPeriod, reportType])
 
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60)
@@ -153,18 +176,43 @@ export function StaffReports() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Period</label>
-              <Select value={selectedPeriod.toString()} onValueChange={(value) => setSelectedPeriod(parseInt(value))}>
-                <SelectTrigger className="bg-slate-800 border-slate-600 text-white w-32">
+              <label className="block text-sm font-medium text-gray-300 mb-2">Report Type</label>
+              <Select value={reportType} onValueChange={(value: 'legacy' | 'ai') => setReportType(value)}>
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">7 days</SelectItem>
-                  <SelectItem value="30">30 days</SelectItem>
-                  <SelectItem value="90">90 days</SelectItem>
+                  <SelectItem value="ai">
+                    <div className="flex items-center gap-2">
+                      <Brain className="w-4 h-4" />
+                      <span>AI Audit</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="legacy">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Legacy</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {reportType === 'legacy' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Period</label>
+                <Select value={selectedPeriod.toString()} onValueChange={(value) => setSelectedPeriod(parseInt(value))}>
+                  <SelectTrigger className="bg-slate-800 border-slate-600 text-white w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <Button
               onClick={generateReport}
@@ -187,7 +235,149 @@ export function StaffReports() {
         </CardContent>
       </Card>
 
-      {/* Audit Report */}
+      {/* AI Audit Report */}
+      {aiAuditReport && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* AI Performance Score */}
+          <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-400 text-sm font-medium">AI Performance Score</p>
+                  <p className={`text-4xl font-bold ${getScoreColor(aiAuditReport.performanceScore)}`}>
+                    {aiAuditReport.performanceScore}
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Generated: {formatDate(new Date(aiAuditReport.generatedAt))}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <Brain className="w-12 h-12 text-purple-400 mx-auto mb-2" />
+                  <Badge className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-purple-400 border-purple-500/30">
+                    AI Analysis
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Analysis Summary */}
+          <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700/50">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Brain className="w-5 h-5" />
+                AI Performance Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-slate-800/50 rounded-lg">
+                  <h4 className="text-white font-medium mb-2">Executive Summary</h4>
+                  <p className="text-gray-300">{aiAuditReport.analysis.summary}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-900/20 rounded-lg border border-green-500/30">
+                    <h4 className="text-green-400 font-medium mb-2 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Strengths
+                    </h4>
+                    <ul className="space-y-1">
+                      {aiAuditReport.analysis.strengths.map((strength, index) => (
+                        <li key={index} className="text-gray-300 text-sm">• {strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-4 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
+                    <h4 className="text-yellow-400 font-medium mb-2 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      Improvements
+                    </h4>
+                    <ul className="space-y-1">
+                      {aiAuditReport.analysis.improvements.map((improvement, index) => (
+                        <li key={index} className="text-gray-300 text-sm">• {improvement}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Recommendations */}
+          <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700/50">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Star className="w-5 h-5" />
+                AI Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {aiAuditReport.recommendations.map((recommendation, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-xs font-bold">{index + 1}</span>
+                    </div>
+                    <p className="text-gray-300">{recommendation}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Performance Trends */}
+          {aiAuditReport.trends.length > 0 && (
+            <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-700/50">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Performance Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {aiAuditReport.trends.map((trend, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
+                      <p className="text-gray-300">{trend}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Anomalies Detection */}
+          {aiAuditReport.anomalies.length > 0 && (
+            <Card className="bg-gradient-to-br from-red-900/20 to-red-800/20 border-red-500/30">
+              <CardHeader>
+                <CardTitle className="text-red-400 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  Anomalies Detected
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {aiAuditReport.anomalies.map((anomaly, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-red-900/20 rounded-lg">
+                      <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0" />
+                      <p className="text-gray-300">{anomaly}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
+      )}
+
+      {/* Legacy Audit Report */}
       {auditReport && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
