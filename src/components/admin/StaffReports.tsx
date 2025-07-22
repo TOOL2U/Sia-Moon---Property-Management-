@@ -128,9 +128,14 @@ export function StaffReports() {
           throw new Error(result.message || 'Failed to generate AI audit report')
         }
       } else {
+        // Use Firebase UID for job session matching
+        const staffId = staffMember.firebaseUid || staffMember.id
+
+        console.log(`📊 Generating legacy audit for staff: ${staffMember.name} (ID: ${staffId})`)
+
         // Generate legacy audit report
         const report = await JobSessionService.generateStaffAuditReport(
-          selectedStaff,
+          staffId,
           staffMember.name,
           selectedPeriod
         )
@@ -188,10 +193,28 @@ export function StaffReports() {
             Staff Reports & AI Audits
           </h2>
           <p className="text-gray-400 mt-1">AI-powered performance analysis from mobile job sessions</p>
+          <p className="text-sm text-blue-400 mt-1">
+            {staffMembers.length} active staff members available for analysis
+          </p>
         </div>
-        <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30">
-          Live Mobile Data
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={loadStaffData}
+            disabled={staffLoading}
+            size="sm"
+            variant="outline"
+            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+          >
+            {staffLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </Button>
+          <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30">
+            Live Mobile Data
+          </Badge>
+        </div>
       </div>
 
       {/* Controls */}
