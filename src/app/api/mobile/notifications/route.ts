@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase'
-import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, limit, orderBy, query, updateDoc, where } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Mobile Notifications API
@@ -24,7 +24,14 @@ export async function GET(request: NextRequest) {
     console.log(`📱 Mobile API: Fetching notifications for staff UID: ${staffId}`)
 
     const db = getDb()
-    
+
+    if (!db) {
+      return NextResponse.json(
+        { success: false, error: 'Database not initialized' },
+        { status: 500 }
+      )
+    }
+
     // Query notifications for this staff member
     let notificationQuery = query(
       collection(db, 'notifications'),
@@ -51,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     const notificationDocs = await getDocs(notificationQuery)
-    
+
     const notifications = notificationDocs.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -72,7 +79,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error fetching mobile notifications:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch notifications',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -129,9 +136,9 @@ export async function POST(request: NextRequest) {
         )
 
         const unreadDocs = await getDocs(unreadQuery)
-        
+
         // Update all unread notifications
-        const updatePromises = unreadDocs.docs.map(doc => 
+        const updatePromises = unreadDocs.docs.map(doc =>
           updateDoc(doc.ref, {
             read: true,
             readAt: new Date(),
@@ -161,7 +168,7 @@ export async function POST(request: NextRequest) {
 
         // Import MobileNotificationService dynamically
         const { MobileNotificationService } = await import('@/services/MobileNotificationService')
-        
+
         const result = await MobileNotificationService.registerFCMToken(
           staffId,
           fcmToken,
@@ -180,7 +187,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error processing mobile notification action:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to process action',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

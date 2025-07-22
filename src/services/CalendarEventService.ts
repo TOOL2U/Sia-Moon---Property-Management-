@@ -7,19 +7,19 @@
 import { db } from '@/lib/firebase'
 import { clientToast as toast } from '@/utils/clientToast'
 import {
-    Timestamp,
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    onSnapshot,
-    query,
-    serverTimestamp,
-    setDoc,
-    updateDoc,
-    where,
-    writeBatch,
+  Timestamp,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
 } from 'firebase/firestore'
 import AIAutomationService from './AIAutomationService'
 
@@ -174,6 +174,10 @@ class CalendarEventService {
   private readonly STAFF_COLLECTION = 'staff_accounts'
   private readonly PROPERTIES_COLLECTION = 'properties'
 
+  // DISABLE calendar event creation to prevent duplicates
+  // Calendar now reads directly from jobs and bookings collections
+  private readonly DISABLE_CALENDAR_EVENT_CREATION = true
+
   // Real-time listeners for synchronization
   private bookingListener: (() => void) | null = null
   private jobListener: (() => void) | null = null
@@ -290,6 +294,12 @@ class CalendarEventService {
     try {
       console.log(`📅 Creating calendar events for booking: ${bookingId}`)
 
+      // DISABLED: Calendar event creation to prevent duplicates
+      if (this.DISABLE_CALENDAR_EVENT_CREATION) {
+        console.log(`⏭️ Calendar event creation disabled - calendar reads directly from bookings`)
+        return { success: true, eventIds: [] }
+      }
+
       // Skip test/mock bookings
       if (this.isTestData({ id: bookingId })) {
         console.log(`⏭️ Skipping test/mock booking: ${bookingId}`)
@@ -297,7 +307,7 @@ class CalendarEventService {
       }
 
       // Try to find booking in multiple collections
-      const collections = ['bookings', 'pending_bookings', 'live_bookings']
+      const collections = ['bookings', 'pending_bookings', 'live_bookings', 'bookings_approved']
       let booking: BookingData | null = null
 
       for (const collectionName of collections) {
@@ -446,6 +456,12 @@ class CalendarEventService {
       console.log(
         `📅 Creating calendar event for job: ${jobId} from ${collection}`
       )
+
+      // DISABLED: Calendar event creation to prevent duplicates
+      if (this.DISABLE_CALENDAR_EVENT_CREATION) {
+        console.log(`⏭️ Calendar event creation disabled - calendar reads directly from jobs`)
+        return { success: true, eventId: undefined }
+      }
 
       // Skip test/mock jobs
       if (this.isTestData({ id: jobId })) {

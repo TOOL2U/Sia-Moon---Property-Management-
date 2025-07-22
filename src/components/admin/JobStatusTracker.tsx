@@ -31,7 +31,7 @@ import {
   Zap
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { JobTimelineView } from './JobTimelineView'
+// JobTimelineView removed - component not available
 import { PhotoProofGallery } from './PhotoProofGallery'
 
 interface JobStatusTrackerProps {
@@ -688,12 +688,16 @@ export function JobStatusTracker({
         job={photoGalleryJob}
       />
 
-      {/* Job Timeline View */}
-      <JobTimelineView
-        isOpen={!!timelineJob}
-        onClose={() => setTimelineJob(null)}
-        job={timelineJob}
-      />
+      {/* Job Timeline View - temporarily disabled */}
+      {timelineJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Job Timeline</h3>
+            <p className="text-gray-600 mb-4">Timeline view temporarily unavailable</p>
+            <Button onClick={() => setTimelineJob(null)}>Close</Button>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }

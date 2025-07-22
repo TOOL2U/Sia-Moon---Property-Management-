@@ -11,7 +11,7 @@ import {
     User
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Dynamic imports for FullCalendar to avoid SSR issues
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
@@ -45,7 +45,7 @@ const loadCalendarPlugins = async () => {
 
 // Firebase imports
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 
 interface CalendarEvent {
   id: string
@@ -74,9 +74,8 @@ interface EnhancedFullCalendarProps {
 }
 
 export function EnhancedFullCalendar({ className, currentView: parentCurrentView }: EnhancedFullCalendarProps) {
-  const calendarRef = useRef<any>(null)
   const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [currentView, setCurrentView] = useState(parentCurrentView || 'dayGridMonth')
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
@@ -95,11 +94,6 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
   useEffect(() => {
     if (parentCurrentView && parentCurrentView !== currentView) {
       setCurrentView(parentCurrentView)
-      // Update the calendar view if it's already rendered
-      if (calendarRef.current) {
-        const calendarApi = calendarRef.current.getApi()
-        calendarApi.changeView(parentCurrentView)
-      }
     }
   }, [parentCurrentView, currentView])
 
@@ -115,7 +109,7 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
         return () => {}
       }
 
-      // Listen to multiple collections for comprehensive calendar data
+      // Listen to ONLY jobs and confirmed bookings for calendar data
       const unsubscribers: (() => void)[] = []
 
       // 1. Listen to jobs collection
@@ -172,10 +166,10 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
 
       unsubscribers.push(jobsUnsubscribe)
 
-      // 2. Listen to bookings collection
+      // 2. Listen to bookings collection (approved and confirmed bookings)
       const bookingsQuery = query(
         collection(db, 'bookings'),
-        orderBy('checkIn', 'asc')
+        where('status', 'in', ['approved', 'confirmed'])
       )
 
       const bookingsUnsubscribe = onSnapshot(bookingsQuery, (snapshot) => {
@@ -204,90 +198,51 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
           }
         })
 
-        console.log(`🏠 Loaded ${bookingEvents.length} booking events`)
+        console.log(`🏠 Loaded ${bookingEvents.length} approved/confirmed booking events`)
         updateEvents('bookings', bookingEvents)
       })
 
       unsubscribers.push(bookingsUnsubscribe)
 
-      // 3. Listen to calendar events collection
-      const calendarEventsQuery = query(
-        collection(db, 'calendarEvents'),
-        orderBy('startDate', 'asc')
-      )
+      // 3. Listen to bookings_approved collection (all approved bookings)
+      const approvedBookingsQuery = query(collection(db, 'bookings_approved'))
 
-      const calendarEventsUnsubscribe = onSnapshot(calendarEventsQuery, (snapshot) => {
-        const calendarEvents: CalendarEvent[] = []
+      const approvedBookingsUnsubscribe = onSnapshot(approvedBookingsQuery, (snapshot) => {
+        const approvedBookingEvents: CalendarEvent[] = []
 
         snapshot.forEach((doc) => {
-          const event = doc.data()
-          console.log(`📅 Processing calendar event ${doc.id}:`, {
-            title: event.title,
-            startDate: event.startDate,
-            endDate: event.endDate,
-            startType: typeof event.startDate,
-            endType: typeof event.endDate
-          })
-
-          if (event.startDate && event.endDate) {
-            // Convert Firestore Timestamps to ISO strings
-            let startDate = ''
-            let endDate = ''
-
-            if (event.startDate.toDate) {
-              // It's a Firestore Timestamp
-              startDate = event.startDate.toDate().toISOString()
-            } else if (typeof event.startDate === 'string') {
-              // It's already a string
-              startDate = event.startDate
-            }
-
-            if (event.endDate.toDate) {
-              // It's a Firestore Timestamp
-              endDate = event.endDate.toDate().toISOString()
-            } else if (typeof event.endDate === 'string') {
-              // It's already a string
-              endDate = event.endDate
-            }
-
-            if (startDate && endDate) {
-              console.log(`✅ Adding calendar event with converted dates:`, {
-                title: event.title,
-                start: startDate,
-                end: endDate
-              })
-
-              calendarEvents.push({
-                id: `calendar-${doc.id}`,
-                title: `📅 ${event.title || 'Calendar Event'}`,
-                start: startDate,
-                end: endDate,
-                backgroundColor: event.color || '#6366f1',
-                borderColor: event.color || '#6366f1',
-                textColor: '#ffffff',
-                extendedProps: {
-                  description: event.description,
-                  propertyName: event.propertyName,
-                  assignedStaff: event.assignedStaff,
-                  status: event.status
-                }
-              })
-            } else {
-              console.warn(`❌ Invalid date format for calendar event ${doc.id}:`, {
-                startDate: event.startDate,
-                endDate: event.endDate
-              })
-            }
-          } else {
-            console.warn(`❌ Missing startDate or endDate for calendar event ${doc.id}`)
+          const booking = doc.data()
+          if (booking.checkIn && booking.checkOut) {
+            approvedBookingEvents.push({
+              id: `approved-booking-${doc.id}`,
+              title: `✅ ${booking.guestName || 'Guest'} - ${booking.propertyName || 'Property'}`,
+              start: booking.checkIn,
+              end: booking.checkOut,
+              backgroundColor: '#10B981', // Green for approved bookings
+              borderColor: '#059669',
+              textColor: '#ffffff',
+              extendedProps: {
+                description: `Approved Booking - Check-in: ${booking.checkIn}, Check-out: ${booking.checkOut}`,
+                propertyName: booking.propertyName,
+                guestName: booking.guestName,
+                status: 'approved',
+                checkIn: booking.checkIn,
+                checkOut: booking.checkOut,
+                originalBookingId: booking.originalBookingId,
+                approvedAt: booking.movedToApprovedAt
+              }
+            })
           }
         })
 
-        console.log(`📅 Loaded ${calendarEvents.length} calendar events`)
-        updateEvents('calendar', calendarEvents)
+        console.log(`✅ Loaded ${approvedBookingEvents.length} approved booking events`)
+        updateEvents('approved_bookings', approvedBookingEvents)
       })
 
-      unsubscribers.push(calendarEventsUnsubscribe)
+      unsubscribers.push(approvedBookingsUnsubscribe)
+
+      // REMOVED: calendarEvents collection listener to prevent duplicates
+      // Calendar now only shows jobs, confirmed bookings, and approved bookings directly
 
       setLoading(false)
 
@@ -304,17 +259,17 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
   const [eventsByType, setEventsByType] = useState<{
     jobs: CalendarEvent[]
     bookings: CalendarEvent[]
-    calendar: CalendarEvent[]
+    approved_bookings: CalendarEvent[]
   }>({
     jobs: [],
     bookings: [],
-    calendar: []
+    approved_bookings: []
   })
 
-  const updateEvents = (type: 'jobs' | 'bookings' | 'calendar', newEvents: CalendarEvent[]) => {
+  const updateEvents = (type: 'jobs' | 'bookings' | 'approved_bookings', newEvents: CalendarEvent[]) => {
     setEventsByType(prev => {
       const updated = { ...prev, [type]: newEvents }
-      const allEvents = [...updated.jobs, ...updated.bookings, ...updated.calendar]
+      const allEvents = [...updated.jobs, ...updated.bookings, ...updated.approved_bookings]
       setEvents(allEvents)
       return updated
     })
@@ -370,29 +325,10 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
       toast.success('Event added successfully!')
     }
 
-    // Clear the selection
-    if (calendarRef.current) {
-      calendarRef.current.getApi().unselect()
-    }
+    // Selection cleared automatically
   }
 
-  const handleViewChange = (view: string) => {
-    setCurrentView(view)
-    if (calendarRef.current) {
-      calendarRef.current.getApi().changeView(view)
-    }
-  }
-
-  const exportCalendar = () => {
-    toast.success('Calendar export feature coming soon!')
-  }
-
-  const refreshCalendar = () => {
-    setLoading(true)
-    toast.success('Refreshing calendar data...')
-    // Events will auto-refresh via Firebase listeners
-    setTimeout(() => setLoading(false), 1000)
-  }
+  // Removed unused functions: handleViewChange, exportCalendar, refreshCalendar
 
   // If not client-side, show loading state
   if (!isClient) {
@@ -420,7 +356,6 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
           <div className="calendar-container">
             {isClient && calendarPlugins.length > 0 ? (
               <FullCalendar
-                ref={calendarRef}
                 plugins={calendarPlugins}
                 headerToolbar={{
                   left: 'prev,next today',
@@ -561,9 +496,9 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">
-                {eventsByType.calendar.length}
+                {eventsByType.approved_bookings.length}
               </div>
-              <div className="text-neutral-400 text-sm">Events</div>
+              <div className="text-neutral-400 text-sm">Approved</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">

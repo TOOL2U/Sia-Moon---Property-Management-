@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, deleteDoc, doc, writeBatch } from 'firebase/firestore'
+import { collection, getDocs, writeBatch } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * 🧹 Test Data Cleanup API
- * 
+ *
  * This API endpoint removes all test data from Firestore collections
  * to reset the system to a clean state for production-ready workflow testing.
  */
@@ -12,34 +12,37 @@ import { collection, getDocs, deleteDoc, doc, writeBatch } from 'firebase/firest
 // Collections to clean up
 const COLLECTIONS_TO_CLEANUP = [
   'pending_bookings',
-  'job_assignments', 
+  'job_assignments',
   'calendarEvents',
   'ai_action_logs'
 ]
 
 async function analyzeCollection(collectionName: string) {
   try {
+    if (!db) {
+      throw new Error('Database not initialized')
+    }
     const collectionRef = collection(db, collectionName)
     const snapshot = await getDocs(collectionRef)
-    
+
     const sampleDocs: any[] = []
     let sampleCount = 0
-    
+
     snapshot.forEach((docSnap) => {
       if (sampleCount < 3) {
         const data = docSnap.data()
         sampleDocs.push({
           id: docSnap.id,
           title: data.title || data.guestName || data.type || 'Unknown',
-          date: data.createdAt?.toDate?.()?.toISOString() || 
-                data.checkInDate || 
-                data.startDate || 
+          date: data.createdAt?.toDate?.()?.toISOString() ||
+                data.checkInDate ||
+                data.startDate ||
                 'No date'
         })
         sampleCount++
       }
     })
-    
+
     return {
       count: snapshot.size,
       sampleDocs
@@ -55,27 +58,30 @@ async function analyzeCollection(collectionName: string) {
 
 async function cleanupCollection(collectionName: string) {
   try {
+    if (!db) {
+      throw new Error('Database not initialized')
+    }
     const collectionRef = collection(db, collectionName)
     const snapshot = await getDocs(collectionRef)
-    
+
     if (snapshot.empty) {
       return { deleted: 0, errors: 0 }
     }
-    
+
     // Delete in batches (Firestore batch limit is 500)
     const batchSize = 500
     let totalDeleted = 0
     let totalErrors = 0
-    
+
     const docs = snapshot.docs
     for (let i = 0; i < docs.length; i += batchSize) {
-      const batch = writeBatch(db)
+      const batch = writeBatch(db!)
       const batchDocs = docs.slice(i, i + batchSize)
-      
+
       batchDocs.forEach((docSnap) => {
         batch.delete(docSnap.ref)
       })
-      
+
       try {
         await batch.commit()
         totalDeleted += batchDocs.length
@@ -84,7 +90,7 @@ async function cleanupCollection(collectionName: string) {
         totalErrors += batchDocs.length
       }
     }
-    
+
     return { deleted: totalDeleted, errors: totalErrors }
   } catch (error) {
     console.error(`Error cleaning ${collectionName}:`, error)
@@ -95,15 +101,15 @@ async function cleanupCollection(collectionName: string) {
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Analyzing test data...')
-    
+
     const analysis: Record<string, any> = {}
-    
+
     for (const collectionName of COLLECTIONS_TO_CLEANUP) {
       analysis[collectionName] = await analyzeCollection(collectionName)
     }
-    
+
     const totalDocs = Object.values(analysis).reduce((sum: number, data: any) => sum + (data.count || 0), 0)
-    
+
     return NextResponse.json({
       success: true,
       message: 'Test data analysis complete',
@@ -111,7 +117,7 @@ export async function GET(request: NextRequest) {
       totalDocuments: totalDocs,
       collectionsToCleanup: COLLECTIONS_TO_CLEANUP
     })
-    
+
   } catch (error) {
     console.error('Error analyzing test data:', error)
     return NextResponse.json({
@@ -124,19 +130,19 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     console.log('🧹 Starting test data cleanup...')
-    
+
     const results: Record<string, any> = {}
-    
+
     for (const collectionName of COLLECTIONS_TO_CLEANUP) {
       console.log(`Cleaning up ${collectionName}...`)
       results[collectionName] = await cleanupCollection(collectionName)
     }
-    
+
     const totalDeleted = Object.values(results).reduce((sum: number, result: any) => sum + (result.deleted || 0), 0)
     const totalErrors = Object.values(results).reduce((sum: number, result: any) => sum + (result.errors || 0), 0)
-    
+
     console.log(`✅ Cleanup complete: ${totalDeleted} documents deleted, ${totalErrors} errors`)
-    
+
     return NextResponse.json({
       success: true,
       message: 'Test data cleanup complete',
@@ -146,7 +152,7 @@ export async function DELETE(request: NextRequest) {
         totalErrors
       }
     })
-    
+
   } catch (error) {
     console.error('Error during cleanup:', error)
     return NextResponse.json({

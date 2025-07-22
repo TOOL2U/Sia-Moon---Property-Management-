@@ -250,6 +250,21 @@ export async function POST(req: NextRequest) {
 
     console.log(`✅ AI COO: Request processed successfully in ${Date.now() - startTime}ms`)
 
+    // Log AI decision to activity feed
+    try {
+      const { aiActivityLogger } = await import('@/services/AIActivityLogger')
+      await aiActivityLogger.logBookingDecision({
+        bookingId: booking.id || 'unknown',
+        decision: decision === 'approve' ? 'approved' : decision === 'reject' ? 'rejected' : 'escalated',
+        reasoning: reason,
+        confidence: Math.round(confidence * 100),
+        assignedStaffId: assignedStaff.length > 0 ? assignedStaff[0].id : undefined,
+        revenueImpact: booking.estimatedCost || 0
+      })
+    } catch (logError) {
+      console.warn('⚠️ AI COO: Failed to log activity:', logError)
+    }
+
     // Check if simulation mode is enabled - 🟢 LIVE MODE ACTIVE
     const SIMULATION_MODE = false // Live mode enabled - real actions will be triggered
 

@@ -1,40 +1,38 @@
 /**
  * Enhanced Staff Service with Firebase Integration
- * 
+ *
  * Comprehensive staff management service that integrates Firebase Authentication,
  * user document creation, and staff profile management for cross-platform sync.
  */
 
-import {
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-  serverTimestamp,
-  Timestamp
-} from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
-import { FirebaseAuthService, CreateStaffUserData, UserCreationResult } from './firebaseAuthService'
-import { UserDocumentService } from './userDocumentService'
-import { StaffProfile, CreateStaffData, UpdateStaffData } from '@/types/staff'
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+    Timestamp,
+    updateDoc
+} from 'firebase/firestore'
+import { CreateStaffUserData, FirebaseAuthService } from './firebaseAuthService'
+// UserDocumentService removed - service not available
+// import { UserDocumentService } from './userDocumentService'
+import { CreateStaffData, StaffProfile } from '@/types/staff'
 
 export interface EnhancedCreateStaffData extends CreateStaffData {
   // Authentication credentials
   email: string
   temporaryPassword?: string
   mustChangePassword?: boolean
-  
+
   // Additional Firebase-specific fields
   firebaseUid?: string
   userRole?: 'staff' | 'admin'
-  
+
   // Enhanced profile data
   profilePicture?: string
   certifications?: Array<{
@@ -44,7 +42,7 @@ export interface EnhancedCreateStaffData extends CreateStaffData {
     expiryDate?: string
     certificateUrl?: string
   }>
-  
+
   // Work history
   workHistory?: Array<{
     company: string
@@ -53,7 +51,7 @@ export interface EnhancedCreateStaffData extends CreateStaffData {
     endDate?: string
     description?: string
   }>
-  
+
   // Training records
   trainingRecords?: Array<{
     trainingName: string
@@ -124,7 +122,7 @@ export class EnhancedStaffService {
       console.log('📋 Staff data received:', staffData)
 
       // Generate temporary password if not provided
-      const temporaryPassword = staffData.temporaryPassword || 
+      const temporaryPassword = staffData.temporaryPassword ||
         FirebaseAuthService.generateTemporaryPassword(12)
 
       // Prepare Firebase Auth user data
@@ -176,18 +174,18 @@ export class EnhancedStaffService {
         employment: staffData.employment,
         personalDetails: staffData.personalDetails,
         profilePicture: staffData.profilePicture,
-        
+
         // Enhanced fields with IDs
         certifications: staffData.certifications?.map((cert, index) => ({
           id: `cert_${Date.now()}_${index}`,
           ...cert
         })) || [],
-        
+
         workHistory: staffData.workHistory?.map((work, index) => ({
           id: `work_${Date.now()}_${index}`,
           ...work
         })) || [],
-        
+
         trainingRecords: staffData.trainingRecords?.map((training, index) => ({
           id: `training_${Date.now()}_${index}`,
           ...training
@@ -201,7 +199,7 @@ export class EnhancedStaffService {
           completionRate: 0,
           punctualityScore: 0
         },
-        
+
         availability: {
           status: 'available',
           schedule: {},
@@ -292,7 +290,7 @@ export class EnhancedStaffService {
   }> {
     try {
       const staffDoc = await getDoc(doc(this.db, 'staff', staffId))
-      
+
       if (!staffDoc.exists()) {
         return {
           success: false,
@@ -323,7 +321,7 @@ export class EnhancedStaffService {
    * Update enhanced staff profile
    */
   static async updateEnhancedStaffProfile(
-    staffId: string, 
+    staffId: string,
     updates: Partial<EnhancedStaffProfile>
   ): Promise<StaffCreationResult> {
     try {
@@ -343,9 +341,9 @@ export class EnhancedStaffService {
 
       // If email is updated, also update user document
       if (updates.email) {
-        await UserDocumentService.updateUserProfile(staffId, {
-          email: updates.email
-        })
+        // UserDocumentService temporarily disabled - service removed during cleanup
+        // TODO: Implement user profile update using available services
+        console.log('User profile update requested for:', staffId, { email: updates.email })
       }
 
       // Create sync event
@@ -420,7 +418,7 @@ export class EnhancedStaffService {
 
       // Delete from Firebase Auth and user documents
       const authResult = await FirebaseAuthService.deleteStaffUser(staffId)
-      
+
       if (!authResult.success) {
         return {
           success: false,

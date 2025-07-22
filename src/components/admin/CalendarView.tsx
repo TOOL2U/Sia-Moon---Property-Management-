@@ -1,6 +1,7 @@
 'use client'
 
-import SSRSafeCalendar from '@/components/admin/SSRSafeCalendar'
+// SSRSafeCalendar removed - using EnhancedFullCalendar instead
+import EnhancedFullCalendar from '@/components/admin/EnhancedFullCalendar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -17,7 +18,6 @@ import '@/styles/calendar.css'
 import { clientToast as toast } from '@/utils/clientToast'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-    AlertTriangle,
     Building2,
     Calendar as CalendarIcon,
     Calendar as CalendarIconSmall,
@@ -35,7 +35,7 @@ import {
     Trash2,
     User,
     Users,
-    X,
+    X
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './enhanced-calendar.css'
@@ -84,8 +84,7 @@ export function CalendarView({ className }: CalendarViewProps) {
     status: 'all',
   })
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [conflictCheck, setConflictCheck] = useState<any>(null)
-  const [showConflictDialog, setShowConflictDialog] = useState(false)
+  // Removed unused conflict detection state
   const [showEventDetails, setShowEventDetails] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [editFormData, setEditFormData] = useState<any>({})
@@ -420,11 +419,10 @@ export function CalendarView({ className }: CalendarViewProps) {
       // Conflict checking removed - manual verification required
 
       // Update event times in Firebase
-      const result = await CalendarEventService.updateEvent(
-        eventId,
-        newStart,
-        newEnd
-      )
+      const result = await CalendarEventService.updateEvent(eventId, {
+        startDate: newStart,
+        endDate: newEnd
+      })
 
       if (result.success) {
         toast.success('✅ Event rescheduled successfully')
@@ -454,11 +452,10 @@ export function CalendarView({ className }: CalendarViewProps) {
         ).toISOString()
 
       // Update event times in Firebase
-      const result = await CalendarEventService.updateEvent(
-        eventId,
-        newStart,
-        newEnd
-      )
+      const result = await CalendarEventService.updateEvent(eventId, {
+        startDate: newStart,
+        endDate: newEnd
+      })
 
       if (result.success) {
         toast.success('✅ Event duration updated')
@@ -488,7 +485,7 @@ export function CalendarView({ className }: CalendarViewProps) {
 
   // Handle form field changes
   const handleFormChange = (field: string, value: string) => {
-    setEditFormData((prev) => ({
+    setEditFormData((prev: any) => ({
       ...prev,
       [field]: value,
     }))
@@ -813,7 +810,7 @@ export function CalendarView({ className }: CalendarViewProps) {
           ) : (
             <div className="space-y-6">
               {/* Enhanced FullCalendar Component - Now Enabled! */}
-              <SSRSafeCalendar
+              <EnhancedFullCalendar
                 className="w-full"
                 currentView={currentView}
               />
@@ -852,74 +849,7 @@ export function CalendarView({ className }: CalendarViewProps) {
 
       {/* AI Staff Suggestions Modal removed - use manual assignment */}
 
-      {/* Conflict Detection Dialog */}
-      {showConflictDialog && conflictCheck && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-red-500/50 rounded-xl p-6 max-w-lg w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">
-                  Scheduling Conflict
-                </h3>
-                <p className="text-red-400 text-sm">
-                  Staff member is already assigned during this time
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3 mb-6">
-              {conflictCheck.conflictingEvents.map((conflict: any) => (
-                <div
-                  key={conflict.id}
-                  className="bg-red-500/10 border border-red-500/30 rounded-lg p-3"
-                >
-                  <div className="font-medium text-white">{conflict.title}</div>
-                  <div className="text-sm text-red-300">
-                    {new Date(conflict.startDate).toLocaleString()} -{' '}
-                    {new Date(conflict.endDate).toLocaleString()}
-                  </div>
-                  <div className="text-xs text-red-400 mt-1">
-                    Status: {conflict.status}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-6">
-              <h4 className="font-medium text-yellow-300 mb-2">Suggestions:</h4>
-              <ul className="text-sm text-yellow-200 space-y-1">
-                {conflictCheck.suggestions.map(
-                  (suggestion: string, index: number) => (
-                    <li key={index}>• {suggestion}</li>
-                  )
-                )}
-              </ul>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setShowConflictDialog(false)}
-                variant="outline"
-                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowConflictDialog(false)
-                  setSelectedEvent(null)
-                }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                Find Alternative Staff
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Conflict Detection Dialog - Removed unused feature */}
 
       {/* Event Details Modal */}
       <AnimatePresence>

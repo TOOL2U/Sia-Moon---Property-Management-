@@ -37,9 +37,27 @@ yarn-error.log*
 # vercel
 .vercel
 
+# turbo
+.turbo
+
+# swc
+.swc
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# webpack bundle analyzer
+.next/analyze/
+
+# jest cache
+.jest-cache
+
+# build caches
+node_modules/.cache/
+.cache/
+.eslintcache
+.tsbuildinfo
 
 # firebase
 .firebase/

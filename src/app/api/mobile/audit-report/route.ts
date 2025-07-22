@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
-import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * 📱 Mobile App - Audit Report Submission API
- * 
+ *
  * Receives completed audit reports from mobile app AI system
  * Stores them in the ai_audits collection for webapp consumption
  */
@@ -15,7 +15,7 @@ interface MobileAuditReport {
   weekEnd: string          // ISO date (Sunday)
   trustScore: number       // 0-100
   qualityScore: number     // 0-100
-  
+
   metrics: {
     jobsCompleted: number
     jobsAccepted: number
@@ -26,24 +26,24 @@ interface MobileAuditReport {
     aiUsageCount: number
     responseTime: number             // average response time
   }
-  
+
   insights: {
     strengths: string[]
     concerns: string[]
     recommendations: string[]
     behavioralPatterns: string[]
   }
-  
+
   trends: {
     trustScoreTrend: 'improving' | 'declining' | 'stable'
     qualityTrend: 'improving' | 'declining' | 'stable'
     productivityTrend: 'improving' | 'declining' | 'stable'
   }
-  
+
   aiAnalysis: string       // Full AI-generated analysis
   weekNumber: number       // Week number of the year
   year: number
-  
+
   // Mobile app specific fields
   generatedBy: string      // Mobile app version/identifier
   dataPoints: number       // Number of data points used in analysis
@@ -90,9 +90,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Store in the ai_audits collection using the structure from the guide
+    if (!db) {
+      throw new Error('Database not initialized')
+    }
+
     const reportId = `report_${auditReport.weekStart}`
     const reportRef = doc(db, 'ai_audits', auditReport.staffId, 'reports', reportId)
-    
+
     await setDoc(reportRef, completeReport)
     console.log('✅ Audit report stored:', `${auditReport.staffId}/${reportId}`)
 
@@ -156,16 +160,18 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Mobile App Audit Report Error:', error)
-    
+
     // Log the error
     try {
-      await addDoc(collection(db, 'ai_action_logs'), {
-        timestamp: serverTimestamp(),
-        agent: 'mobile-audit-system',
-        action: 'audit_report_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        success: false
-      })
+      if (db) {
+        await addDoc(collection(db, 'ai_action_logs'), {
+          timestamp: serverTimestamp(),
+          agent: 'mobile-audit-system',
+          action: 'audit_report_error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          success: false
+        })
+      }
     } catch (logError) {
       console.error('Failed to log error:', logError)
     }

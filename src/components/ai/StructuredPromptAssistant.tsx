@@ -1,22 +1,22 @@
 'use client'
 
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Input } from '@/components/ui/Input'
-import { Label } from '@/components/ui/Label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import { Textarea } from '@/components/ui/Textarea'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/Dialog'
-import { 
-  UserPlus, 
-  CheckCircle, 
-  Calendar, 
-  Briefcase,
-  Settings,
-  Send,
-  X
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import {
+    Briefcase,
+    Calendar,
+    CheckCircle,
+    Send,
+    Settings,
+    UserPlus,
+    X
 } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 interface StructuredPromptAssistantProps {
   onSubmitPrompt: (prompt: string, metadata: any) => void
@@ -29,9 +29,9 @@ interface PromptForm {
   isOpen: boolean
 }
 
-export function StructuredPromptAssistant({ 
-  onSubmitPrompt, 
-  className = '' 
+export function StructuredPromptAssistant({
+  onSubmitPrompt,
+  className = ''
 }: StructuredPromptAssistantProps) {
   const [activeForm, setActiveForm] = useState<PromptForm>({
     type: '',
@@ -145,7 +145,7 @@ export function StructuredPromptAssistant({
     // Validate required fields
     const requiredFields = template.fields.filter(f => f.required)
     const missingFields = requiredFields.filter(f => !activeForm.data[f.name])
-    
+
     if (missingFields.length > 0) {
       alert(`Please fill in required fields: ${missingFields.map(f => f.label).join(', ')}`)
       return
@@ -153,7 +153,7 @@ export function StructuredPromptAssistant({
 
     // Generate structured prompt
     const prompt = generatePrompt(template, activeForm.data)
-    
+
     // Submit with metadata
     onSubmitPrompt(prompt, {
       type: 'structured',
@@ -168,19 +168,19 @@ export function StructuredPromptAssistant({
     switch (template.id) {
       case 'assign_job':
         return `Please assign staff member "${data.staffName}" to job "${data.jobId}"${data.priority ? ` with ${data.priority} priority` : ''}${data.notes ? `. Additional notes: ${data.notes}` : ''}.`
-      
+
       case 'approve_booking':
         return `Please approve booking "${data.bookingId}"${data.sendConfirmation === 'yes' ? ' and send confirmation email' : ''}${data.specialInstructions ? `. Special instructions: ${data.specialInstructions}` : ''}.`
-      
+
       case 'update_calendar':
         return `Please add a ${data.eventType || 'calendar'} event for property "${data.property}" on ${data.date}${data.duration ? ` for ${data.duration} hours` : ''}${data.description ? `. Description: ${data.description}` : ''}.`
-      
+
       case 'create_job':
         return `Please create a new ${data.jobType || 'job'} job titled "${data.title}" for property "${data.property}"${data.scheduledDate ? ` scheduled for ${data.scheduledDate}` : ''}${data.estimatedDuration ? ` (estimated ${data.estimatedDuration} minutes)` : ''}. Description: ${data.description}.`
-      
+
       case 'custom_action':
         return `Please perform the following action: ${data.action}${data.target ? ` on ${data.target}` : ''}${data.parameters ? ` with parameters: ${data.parameters}` : ''}. Instructions: ${data.instructions}.`
-      
+
       default:
         return 'Please process this structured request.'
     }
@@ -205,7 +205,7 @@ export function StructuredPromptAssistant({
             </SelectContent>
           </Select>
         )
-      
+
       case 'textarea':
         return (
           <Textarea
@@ -216,7 +216,7 @@ export function StructuredPromptAssistant({
             rows={3}
           />
         )
-      
+
       case 'date':
         return (
           <Input
@@ -226,7 +226,7 @@ export function StructuredPromptAssistant({
             className="bg-slate-700 border-slate-600 text-white"
           />
         )
-      
+
       case 'number':
         return (
           <Input
@@ -237,7 +237,7 @@ export function StructuredPromptAssistant({
             className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
           />
         )
-      
+
       default:
         return (
           <Input
@@ -286,11 +286,11 @@ export function StructuredPromptAssistant({
               {activeTemplate?.title}
             </DialogTitle>
           </DialogHeader>
-          
+
           {activeTemplate && (
             <div className="space-y-4">
               <p className="text-sm text-slate-400">{activeTemplate.description}</p>
-              
+
               <div className="space-y-3">
                 {activeTemplate.fields.map((field) => (
                   <div key={field.name} className="space-y-1">

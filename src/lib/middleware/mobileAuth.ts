@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 // Mobile API authentication configuration
 const MOBILE_API_CONFIG = {
@@ -66,10 +66,10 @@ export function validateMobileAuth(request: NextRequest): MobileAuthResult {
 export function checkRateLimit(apiKey: string): { allowed: boolean; error?: string } {
   const now = Date.now()
   const key = `mobile_api_${apiKey}`
-  
+
   // Get current rate limit data
   const current = rateLimitStore.get(key)
-  
+
   // Reset if window has expired
   if (!current || now > current.resetTime) {
     rateLimitStore.set(key, {
@@ -78,7 +78,7 @@ export function checkRateLimit(apiKey: string): { allowed: boolean; error?: stri
     })
     return { allowed: true }
   }
-  
+
   // Check if limit exceeded
   if (current.count >= MOBILE_API_CONFIG.RATE_LIMIT.MAX_REQUESTS) {
     return {
@@ -86,11 +86,11 @@ export function checkRateLimit(apiKey: string): { allowed: boolean; error?: stri
       error: `Rate limit exceeded. Maximum ${MOBILE_API_CONFIG.RATE_LIMIT.MAX_REQUESTS} requests per hour.`
     }
   }
-  
+
   // Increment counter
   current.count++
   rateLimitStore.set(key, current)
-  
+
   return { allowed: true }
 }
 
@@ -102,7 +102,7 @@ export function withMobileAuth(handler: (request: NextRequest, auth: MobileAuthR
     try {
       // Log mobile API request
       console.log(`📱 Mobile API Request: ${request.method} ${request.url}`)
-      
+
       // Validate authentication
       const auth = validateMobileAuth(request)
       if (!auth.success) {
@@ -127,7 +127,7 @@ export function withMobileAuth(handler: (request: NextRequest, auth: MobileAuthR
 
       // Add CORS headers for mobile app
       const response = await handler(request, auth)
-      
+
       // Add mobile-specific headers
       response.headers.set('Access-Control-Allow-Origin', '*')
       response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS')

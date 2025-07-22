@@ -3,7 +3,8 @@
  * Provides real-time staff availability data for job assignment
  */
 
-import { AdminJobAssignmentService } from '@/lib/services/adminJobAssignmentService'
+// AdminJobAssignmentService removed - service not available
+// import { AdminJobAssignmentService } from '@/lib/services/adminJobAssignmentService'
 import { JobAssignmentService } from '@/lib/services/jobAssignmentService'
 import { NextRequest, NextResponse } from 'next/server'
 

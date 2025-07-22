@@ -26,17 +26,27 @@ const nextConfig: NextConfig = {
 
   // ESLint configuration for build
   eslint: {
-    // Allow production builds to complete even if there are ESLint errors
     ignoreDuringBuilds: true,
   },
 
   // TypeScript configuration for build
   typescript: {
-    // Allow production builds to complete even if there are TypeScript errors
     ignoreBuildErrors: true,
   },
 
-  // Webpack configuration to handle chunk loading issues
+  // Server external packages (for Node.js compatibility)
+  serverExternalPackages: [
+    'firebase-admin',
+    'node-fetch',
+    'googleapis'
+  ],
+
+  // Experimental features (cleaned up)
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+
+  // Webpack configuration
   webpack: (config, { dev, isServer }) => {
     // Fix for chunk loading errors
     if (!isServer) {
@@ -48,18 +58,7 @@ const nextConfig: NextConfig = {
       }
     }
 
-    // Exclude problematic browser-only libraries from server bundle
-    if (isServer) {
-      config.externals = config.externals || []
-      // Temporarily comment out externals to test
-      // config.externals.push({
-      //   'lenis': 'lenis',
-      //   'framer-motion': 'framer-motion',
-      //   'recharts': 'recharts'
-      // });
-    }
-
-    // Optimize chunk splitting
+    // Optimize chunk splitting (fixed for Next.js 15)
     if (!dev) {
       config.optimization = {
         ...config.optimization,
@@ -85,16 +84,12 @@ const nextConfig: NextConfig = {
             },
           },
         },
+        // Remove usedExports to fix cacheUnaffected conflict
+        usedExports: false,
       }
     }
 
     return config
-  },
-
-  // Experimental features for better performance
-  experimental: {
-    optimizePackageImports: ['lucide-react'],
-    // Remove turbo as it can cause chunk loading issues
   },
 
   // Build-time optimizations
@@ -111,7 +106,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     const redirects = []
 
-    // Redirect test pages in production
     if (process.env.NODE_ENV === 'production') {
       redirects.push(
         {
@@ -137,8 +131,6 @@ const nextConfig: NextConfig = {
 
   // Output configuration
   output: 'standalone',
-
-  // Disable static optimization for pages with dynamic imports
   staticPageGenerationTimeout: 1000,
 }
 

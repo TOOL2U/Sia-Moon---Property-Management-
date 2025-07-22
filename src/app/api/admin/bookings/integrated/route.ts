@@ -1,17 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  where,
-  limit as firestoreLimit,
-  startAfter,
-  doc,
-  getDoc,
-  addDoc
-} from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
+import {
+    addDoc,
+    collection,
+    limit as firestoreLimit,
+    getDocs,
+    orderBy,
+    query,
+    where
+} from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/admin/bookings/integrated
@@ -96,11 +93,22 @@ export async function GET(request: NextRequest) {
 
     // 3. Load from live_bookings collection (real-time bookings)
     try {
-      let liveQuery = query(
-        collection(db, 'live_bookings'),
-        orderBy('timestamp', 'desc'),
-        firestoreLimit(limit)
-      )
+      let liveQuery
+      try {
+        // Try with createdAt ordering first
+        liveQuery = query(
+          collection(db, 'live_bookings'),
+          orderBy('createdAt', 'desc'),
+          firestoreLimit(limit)
+        )
+      } catch (orderError) {
+        // Fallback to simple query without ordering if index doesn't exist
+        console.warn('⚠️ createdAt index not found for live_bookings, using simple query')
+        liveQuery = query(
+          collection(db, 'live_bookings'),
+          firestoreLimit(limit)
+        )
+      }
 
       const liveSnapshot = await getDocs(liveQuery)
       const liveBookings = liveSnapshot.docs.map(doc => ({
@@ -112,26 +120,63 @@ export async function GET(request: NextRequest) {
 
       allBookings.push(...liveBookings)
       console.log(`✅ Loaded ${liveBookings.length} live bookings`)
+
+      // Debug: Log first live booking if any exist
+      if (liveBookings.length > 0) {
+        console.log('📋 Sample live booking:', {
+          id: liveBookings[0].id,
+          guestName: liveBookings[0].guestName,
+          status: liveBookings[0].status,
+          source: liveBookings[0].source,
+          propertyName: liveBookings[0].propertyName
+        })
+      }
     } catch (error) {
       console.error('❌ Error loading live bookings:', error)
+      // Try a simple query without any ordering as final fallback
+      try {
+        const simpleQuery = query(collection(db, 'live_bookings'), firestoreLimit(limit))
+        const simpleSnapshot = await getDocs(simpleQuery)
+        const simpleLiveBookings = simpleSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          source: 'live_collection',
+          priority: 'medium'
+        }))
+        allBookings.push(...simpleLiveBookings)
+        console.log(`✅ Loaded ${simpleLiveBookings.length} live bookings (fallback query)`)
+
+        // Debug: Log first live booking from fallback if any exist
+        if (simpleLiveBookings.length > 0) {
+          console.log('📋 Sample live booking (fallback):', {
+            id: simpleLiveBookings[0].id,
+            guestName: simpleLiveBookings[0].guestName,
+            status: simpleLiveBookings[0].status,
+            source: simpleLiveBookings[0].source,
+            propertyName: simpleLiveBookings[0].propertyName
+          })
+        }
+      } catch (fallbackError) {
+        console.error('❌ Even fallback query failed for live_bookings:', fallbackError)
+      }
     }
 
     // 4. Remove duplicates (prefer pending > main > live)
     const uniqueBookings = allBookings.reduce((acc, booking) => {
       const existingIndex = acc.findIndex((b: any) => b.id === booking.id)
-      
+
       if (existingIndex === -1) {
         acc.push(booking)
       } else {
         // Keep the booking with higher priority
         const existing = acc[existingIndex]
         const priorityOrder = { high: 3, medium: 2, low: 1 }
-        
+
         if (priorityOrder[booking.priority as keyof typeof priorityOrder] > priorityOrder[existing.priority as keyof typeof priorityOrder]) {
           acc[existingIndex] = booking
         }
       }
-      
+
       return acc
     }, [] as any[])
 
@@ -156,13 +201,13 @@ export async function GET(request: NextRequest) {
     filteredBookings.sort((a: any, b: any) => {
       const priorityOrder = { high: 3, medium: 2, low: 1 }
       const priorityDiff = priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder]
-      
+
       if (priorityDiff !== 0) return priorityDiff
-      
+
       // If same priority, sort by date (newest first)
       const dateA = new Date(a.createdAt?.toDate?.() || a.createdAt || a.timestamp?.toDate?.() || a.timestamp || 0)
       const dateB = new Date(b.createdAt?.toDate?.() || b.createdAt || b.timestamp?.toDate?.() || b.timestamp || 0)
-      
+
       return dateB.getTime() - dateA.getTime()
     })
 
@@ -212,7 +257,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in integrated bookings endpoint:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to load integrated bookings',
@@ -228,13 +273,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     console.log('📝 Creating new booking for Back Office approval...')
-    
+
     // Validate required fields
     const requiredFields = ['guestName', 'propertyName', 'checkInDate', 'checkOutDate']
     const missingFields = requiredFields.filter(field => !body[field])
-    
+
     if (missingFields.length > 0) {
       return NextResponse.json({
         success: false,
@@ -243,7 +288,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb()
-    
+
     // Create booking in pending_bookings collection for Back Office approval
     const bookingData = {
       guestName: body.guestName,
@@ -268,7 +313,7 @@ export async function POST(request: NextRequest) {
 
     // Add to pending_bookings collection
     const docRef = await addDoc(collection(db, 'pending_bookings'), bookingData)
-    
+
     console.log(`✅ Booking created for Back Office approval: ${docRef.id}`)
 
     return NextResponse.json({
@@ -282,7 +327,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error creating booking for Back Office:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to create booking',

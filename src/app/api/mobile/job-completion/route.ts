@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
-import { addDoc, collection, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * 📱 Mobile App - Job Completion API
- * 
+ *
  * Receives job completion data from mobile app for audit report generation
  */
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Store in mobile_job_completions collection for audit processing
     const jobCompletionRef = await addDoc(
-      collection(db, 'mobile_job_completions'), 
+      collection(db, 'mobile_job_completions'),
       jobCompletionRecord
     )
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     try {
       const jobRef = doc(db, 'job_assignments', jobData.jobId)
       const jobDoc = await getDoc(jobRef)
-      
+
       if (jobDoc.exists()) {
         await updateDoc(jobRef, {
           status: jobData.completionStatus,
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Mobile App Job Completion Error:', error)
-    
+
     // Log the error
     try {
       await addDoc(collection(db, 'ai_action_logs'), {

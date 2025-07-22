@@ -12,34 +12,34 @@ import { Textarea } from '@/components/ui/Textarea'
 import { JobPriority, JobType } from '@/services/JobAssignmentService'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-    AlertCircle,
-    AlertTriangle,
-    BarChart3,
-    Bot,
-    Brain,
-    Briefcase,
-    Calendar,
-    CheckCircle,
-    ChevronDown,
-    ChevronRight,
-    Clock,
-    DollarSign,
-    Download,
-    Home,
-    Loader2,
-    Mail,
-    MapPin,
-    MessageSquare,
-    Phone,
-    RefreshCw,
-    Search,
-    Sparkles,
-    TrendingUp,
-    User,
-    UserCheck,
-    Users,
-    XCircle,
-    Zap
+  AlertCircle,
+  AlertTriangle,
+  BarChart3,
+  Bot,
+  Brain,
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  Download,
+  Home,
+  Loader2,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  RefreshCw,
+  Search,
+  Sparkles,
+  TrendingUp,
+  User,
+  UserCheck,
+  Users,
+  XCircle,
+  Zap
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -533,6 +533,16 @@ export function EnhancedBookingManagement({
   // Filter and sort bookings (exclude rejected, test, and error bookings)
   const filteredAndSortedBookings = allBookings
     .filter(booking => {
+      // Debug: Log booking details for troubleshooting
+      if (booking.source === 'live_collection') {
+        console.log('🔍 Processing live booking:', {
+          id: booking.id,
+          status: booking.status,
+          source: booking.source,
+          guestName: booking.guestName
+        })
+      }
+
       // Always exclude rejected bookings from all views
       if (booking.status === 'rejected') {
         return false
@@ -554,6 +564,9 @@ export function EnhancedBookingManagement({
       // Only show pending_approval, approved, pending, and confirmed bookings
       const validStatuses = ['pending_approval', 'approved', 'pending', 'confirmed']
       if (!validStatuses.includes(booking.status)) {
+        if (booking.source === 'live_collection') {
+          console.log('❌ Live booking filtered out due to invalid status:', booking.status)
+        }
         return false
       }
 
@@ -577,7 +590,23 @@ export function EnhancedBookingManagement({
         booking.propertyName === propertyFilter ||
         booking.property === propertyFilter
 
-      return matchesSearch && matchesStatus && matchesProperty
+      const finalResult = matchesSearch && matchesStatus && matchesProperty
+
+      // Debug: Log final filtering result for live bookings
+      if (booking.source === 'live_collection') {
+        console.log('🎯 Live booking final filter result:', {
+          id: booking.id,
+          matchesSearch,
+          matchesStatus,
+          matchesProperty,
+          finalResult,
+          searchTerm,
+          statusFilter,
+          propertyFilter
+        })
+      }
+
+      return finalResult
     })
     .sort((a, b) => {
       const aValue = a[sortBy] || ''
@@ -589,6 +618,18 @@ export function EnhancedBookingManagement({
         return aValue < bValue ? 1 : -1
       }
     })
+
+  // Debug: Log final filtered results
+  console.log('📊 Final filtered bookings:', {
+    total: filteredAndSortedBookings.length,
+    liveBookings: filteredAndSortedBookings.filter(b => b.source === 'live_collection').length,
+    allSources: filteredAndSortedBookings.map(b => b.source),
+    sampleBooking: filteredAndSortedBookings[0] ? {
+      id: filteredAndSortedBookings[0].id,
+      source: filteredAndSortedBookings[0].source,
+      status: filteredAndSortedBookings[0].status
+    } : null
+  })
 
   // Get status color with enhanced styling
   const getStatusColor = (status: string) => {
@@ -951,7 +992,22 @@ export function EnhancedBookingManagement({
                 <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30">
                   Live Data
                 </Badge>
+                <Badge className="bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 border-blue-500/30">
+                  Live: {filteredAndSortedBookings.filter(b => b.source === 'live_collection').length}
+                </Badge>
               </CardTitle>
+              <Button
+                onClick={loadAllBookings}
+                disabled={loading}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+              </Button>
 
               <div className="flex items-center gap-2">
                 <Button

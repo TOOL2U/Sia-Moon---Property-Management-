@@ -1,0 +1,243 @@
+name: 🧹 Build & Cache Hygiene
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly cleanup check on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      cleanup_type:
+        description: 'Type of cleanup to perform'
+        required: true
+        default: 'check'
+        type: choice
+        options:
+          - check
+          - clean
+          - analyze
+          - full
+
+jobs:
+  hygiene-check:
+    name: 🔍 Hygiene Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Run hygiene checks
+        run: npm run hygiene:check
+      
+      - name: 📊 Check bundle size
+        run: |
+          npm run build:analyze
+          echo "## Bundle Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "Build completed successfully with analysis enabled." >> $GITHUB_STEP_SUMMARY
+      
+      - name: 🔍 Check for unused dependencies
+        run: |
+          npm run deps:check || echo "Depcheck completed with warnings"
+          echo "## Dependency Check" >> $GITHUB_STEP_SUMMARY
+          echo "Dependency analysis completed." >> $GITHUB_STEP_SUMMARY
+      
+      - name: 🛡️ Security audit
+        run: |
+          npm audit --audit-level moderate || echo "Security audit completed with warnings"
+          echo "## Security Audit" >> $GITHUB_STEP_SUMMARY
+          echo "Security audit completed." >> $GITHUB_STEP_SUMMARY
+
+  cache-cleanup:
+    name: 🧹 Cache Cleanup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.cleanup_type != 'check')
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 🧹 Clean build artifacts
+        run: npm run clean:production
+      
+      - name: 📊 Show disk usage before cleanup
+        run: |
+          echo "## Disk Usage Before Cleanup" >> $GITHUB_STEP_SUMMARY
+          du -sh .next node_modules .vercel .turbo 2>/dev/null || echo "Some directories not found" >> $GITHUB_STEP_SUMMARY
+      
+      - name: 🧹 Full cleanup (if requested)
+        if: github.event.inputs.cleanup_type == 'full' || github.event.inputs.cleanup_type == 'clean'
+        run: npm run hygiene:clean
+      
+      - name: 📊 Show disk usage after cleanup
+        run: |
+          echo "## Disk Usage After Cleanup" >> $GITHUB_STEP_SUMMARY
+          du -sh . 2>/dev/null || echo "Cleanup completed" >> $GITHUB_STEP_SUMMARY
+
+  bundle-analysis:
+    name: 📊 Bundle Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.cleanup_type == 'analyze')
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 📊 Run bundle analysis
+        run: npm run analyze:report
+      
+      - name: 📊 Generate bundle stats
+        run: |
+          npm run build:analyze
+          echo "## Bundle Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "Bundle analysis completed. Check the build logs for details." >> $GITHUB_STEP_SUMMARY
+      
+      - name: 📤 Upload bundle analysis
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-analysis
+          path: .next/analyze/
+          retention-days: 7
+
+  dependency-audit:
+    name: 📦 Dependency Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Check for unused dependencies
+        run: |
+          npx depcheck --json > depcheck-results.json || true
+          echo "## Dependency Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "Dependency check completed." >> $GITHUB_STEP_SUMMARY
+      
+      - name: 🛡️ Security audit
+        run: |
+          npm audit --json > audit-results.json || true
+          echo "## Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "Security audit completed." >> $GITHUB_STEP_SUMMARY
+      
+      - name: 📊 Check package sizes
+        run: |
+          npm run analyze:deps
+          echo "## Package Size Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "Package size analysis completed." >> $GITHUB_STEP_SUMMARY
+      
+      - name: 📤 Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit
+          path: |
+            depcheck-results.json
+            audit-results.json
+          retention-days: 30
+
+  performance-check:
+    name: ⚡ Performance Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 🏗️ Build application
+        run: npm run build
+      
+      - name: 📏 Check build size
+        run: |
+          BUILD_SIZE=$(du -sm .next | cut -f1)
+          echo "Build size: ${BUILD_SIZE}MB"
+          echo "## Build Performance" >> $GITHUB_STEP_SUMMARY
+          echo "- Build size: ${BUILD_SIZE}MB" >> $GITHUB_STEP_SUMMARY
+          
+          # Warn if build is too large
+          if [ $BUILD_SIZE -gt 100 ]; then
+            echo "⚠️ Warning: Build size is larger than 100MB" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Build size is within acceptable limits" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: 🔍 Check for large files
+        run: |
+          echo "## Large Files Check" >> $GITHUB_STEP_SUMMARY
+          find .next -type f -size +1M -exec ls -lh {} \; | head -10 >> $GITHUB_STEP_SUMMARY || echo "No large files found" >> $GITHUB_STEP_SUMMARY
+
+  cleanup-summary:
+    name: 📋 Cleanup Summary
+    runs-on: ubuntu-latest
+    needs: [hygiene-check, cache-cleanup, bundle-analysis, dependency-audit]
+    if: always()
+    
+    steps:
+      - name: 📋 Generate summary
+        run: |
+          echo "# 🧹 Build & Cache Hygiene Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- Hygiene Check: ${{ needs.hygiene-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Cache Cleanup: ${{ needs.cache-cleanup.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Bundle Analysis: ${{ needs.bundle-analysis.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Audit: ${{ needs.dependency-audit.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Recommendations:" >> $GITHUB_STEP_SUMMARY
+          echo "- Run \`npm run hygiene:clean\` locally to clean build artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Use \`npm run analyze\` to analyze bundle size" >> $GITHUB_STEP_SUMMARY
+          echo "- Check \`npm run deps:check\` for unused dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Automated by Villa Management Build Hygiene Workflow*" >> $GITHUB_STEP_SUMMARY

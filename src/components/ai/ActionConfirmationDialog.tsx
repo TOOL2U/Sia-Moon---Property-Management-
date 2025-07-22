@@ -1,10 +1,9 @@
 'use client'
 
-import { Button } from '@/components/ui/Button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
-import { Badge } from '@/components/ui/Badge'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertTriangle, CheckCircle, Shield, X } from 'lucide-react'
-import React from 'react'
 
 interface ActionConfirmationDialogProps {
   isOpen: boolean
@@ -88,32 +87,32 @@ export function ActionConfirmationDialog({
           <DialogTitle className="flex items-center gap-3">
             {getSafetyIcon(intent.safetyLevel)}
             <span>Confirm Action</span>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={`text-xs ${getSafetyColor(intent.safetyLevel)} text-white border-none`}
             >
               {intent.safetyLevel.toUpperCase()}
             </Badge>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="bg-slate-700 rounded p-4 space-y-3">
             <div>
               <h4 className="font-medium text-white mb-1">Action</h4>
               <p className="text-slate-300 text-sm">{getActionTitle(intent.action)}</p>
             </div>
-            
+
             <div>
               <h4 className="font-medium text-white mb-1">Description</h4>
               <p className="text-slate-300 text-sm">{intent.description}</p>
             </div>
-            
+
             <div>
               <h4 className="font-medium text-white mb-1">Confidence</h4>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-slate-600 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${intent.confidence * 100}%` }}
                   />
@@ -123,7 +122,7 @@ export function ActionConfirmationDialog({
                 </span>
               </div>
             </div>
-            
+
             {formatParameters(intent.parameters).length > 0 && (
               <div>
                 <h4 className="font-medium text-white mb-2">Parameters</h4>
@@ -138,7 +137,7 @@ export function ActionConfirmationDialog({
               </div>
             )}
           </div>
-          
+
           {intent.safetyLevel === 'dangerous' && (
             <div className="bg-red-900/20 border border-red-500/30 rounded p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -150,7 +149,7 @@ export function ActionConfirmationDialog({
               </p>
             </div>
           )}
-          
+
           {intent.safetyLevel === 'caution' && (
             <div className="bg-yellow-900/20 border border-yellow-500/30 rounded p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -162,7 +161,7 @@ export function ActionConfirmationDialog({
               </p>
             </div>
           )}
-          
+
           <div className="flex justify-end gap-3 pt-4">
             <Button
               variant="outline"
@@ -177,8 +176,8 @@ export function ActionConfirmationDialog({
               size="sm"
               onClick={onConfirm}
               className={`${
-                intent.safetyLevel === 'dangerous' 
-                  ? 'bg-red-600 hover:bg-red-700' 
+                intent.safetyLevel === 'dangerous'
+                  ? 'bg-red-600 hover:bg-red-700'
                   : intent.safetyLevel === 'caution'
                   ? 'bg-yellow-600 hover:bg-yellow-700'
                   : 'bg-green-600 hover:bg-green-700'

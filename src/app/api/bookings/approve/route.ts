@@ -1,20 +1,20 @@
 import { getDb } from '@/lib/firebase'
 import {
-  BookingApprovalAction,
-  BookingApprovalResponse,
-  BookingStatus,
-  SyncEvent,
+    BookingApprovalAction,
+    BookingApprovalResponse,
+    BookingStatus,
+    SyncEvent,
 } from '@/types/booking-sync'
 import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where
 } from 'firebase/firestore'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -192,6 +192,24 @@ export async function POST(request: NextRequest) {
     console.log(
       `✅ Updated booking ${bookingId} in ${bookingCollection} collection`
     )
+
+    // If booking is approved, also copy it to bookings_approved collection
+    if (action === 'approve') {
+      try {
+        const approvedBookingData = {
+          ...bookingData,
+          ...updates,
+          originalCollection: bookingCollection,
+          movedToApprovedAt: serverTimestamp()
+        }
+
+        await addDoc(collection(database, 'bookings_approved'), approvedBookingData)
+        console.log(`✅ Copied approved booking ${bookingId} to bookings_approved collection`)
+      } catch (error) {
+        console.error('❌ Error copying to bookings_approved:', error)
+        // Don't fail the whole operation if this fails
+      }
+    }
 
     // Also try to update in other collections for consistency (optional)
     await updateBookingInAllCollections(bookingId, updates)

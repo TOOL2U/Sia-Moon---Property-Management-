@@ -117,13 +117,15 @@ export async function POST(request: NextRequest) {
 
     // Log the error
     try {
-      await addDoc(collection(db, 'ai_action_logs'), {
-        timestamp: serverTimestamp(),
-        agent: 'booking-confirmation-webhook',
-        action: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        success: false
-      })
+      if (db) {
+        await addDoc(collection(db, 'ai_action_logs'), {
+          timestamp: serverTimestamp(),
+          agent: 'booking-confirmation-webhook',
+          action: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          success: false
+        })
+      }
     } catch (logError) {
       console.error('Failed to log error:', logError)
     }

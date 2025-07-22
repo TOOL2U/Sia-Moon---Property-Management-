@@ -3,11 +3,11 @@
  * Handle manual confirmation of AI actions
  */
 
-import { NextRequest, NextResponse } from 'next/server'
 import { executeAction } from '@/lib/ai/actionRouter'
 import { getAIAutomationSettingsService } from '@/lib/ai/aiAutomationSettings'
 import { getDb } from '@/lib/firebase'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
       console.error('❌ Failed to execute confirmed action:', error)
-      
+
       return NextResponse.json({
         success: false,
         message: `Failed to execute action: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Action confirmation API error:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Internal server error',
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Failed to get confirmation status:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to get confirmation status',
@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Failed to update automation settings:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to update automation settings',

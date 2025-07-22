@@ -3,11 +3,11 @@
  * Handles job assignments for mobile app staff interface
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
 import { getDb } from '@/lib/firebase'
-import { withMobileAuth, createMobileSuccessResponse, createMobileErrorResponse } from '@/lib/middleware/mobileAuth'
+import { createMobileErrorResponse, createMobileSuccessResponse, withMobileAuth } from '@/lib/middleware/mobileAuth'
 import { JobAssignment } from '@/types/jobAssignment'
+import { collection, getDocs, orderBy, query, where } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/mobile/job-assignments
@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
       const limit_param = searchParams.get('limit')
 
       const db = getDb()
+
+      if (!db) {
+        return NextResponse.json(
+          { success: false, error: 'Database not initialized' },
+          { status: 500 }
+        )
+      }
+
       let q = query(
         collection(db, 'job_assignments'),
         where('assignedStaffId', '==', auth.staffId),
@@ -32,7 +40,7 @@ export async function GET(request: NextRequest) {
         const statusArray = status.split(',')
         q = query(
           collection(db, 'job_assignments'),
-          where('assignedStaffId', '==', staffId),
+          where('assignedStaffId', '==', auth.staffId),
           where('status', 'in', statusArray),
           orderBy('createdAt', 'desc')
         )
@@ -40,7 +48,7 @@ export async function GET(request: NextRequest) {
 
       const snapshot = await getDocs(q)
       const assignments: JobAssignment[] = []
-      
+
       snapshot.forEach(doc => {
         assignments.push({ id: doc.id, ...doc.data() } as JobAssignment)
       })

@@ -7,24 +7,24 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 // TODO: Replace with new auth system when implemented
 import {
-  CountUpNumber,
-  PercentageCounter,
+    CountUpNumber,
+    PercentageCounter,
 } from '@/components/animations/CountUpNumber'
 import {
-  heroAnimationVariants,
-  heroStaggerContainer,
-  usePageLoadAnimation,
+    heroAnimationVariants,
+    heroStaggerContainer,
+    usePageLoadAnimation,
 } from '@/hooks/usePageAnimations'
 import { motion } from 'framer-motion'
 import {
-  ArrowRight,
-  BarChart3,
-  Building2,
-  Calendar,
-  ChevronRight,
-  Globe,
-  Shield,
-  Star,
+    ArrowRight,
+    BarChart3,
+    Building2,
+    Calendar,
+    ChevronRight,
+    Globe,
+    Shield,
+    Star,
 } from 'lucide-react'
 
 export default function Home() {

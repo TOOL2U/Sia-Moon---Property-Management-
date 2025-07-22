@@ -69,21 +69,23 @@ export async function POST(request: NextRequest) {
     })
 
     // Log the workflow execution
-    await addDoc(collection(db, 'ai_action_logs'), {
-      timestamp: serverTimestamp(),
-      agent: 'booking-approval-workflow',
-      action: 'process_approved_booking',
-      bookingId,
-      result,
-      triggeredBy: triggeredBy || 'system',
-      success: result.success,
-      details: {
-        availabilityCheck: result.availabilityCheck,
-        calendarIntegration: result.calendarIntegration,
-        conflictResolution: result.conflictResolution || null,
-        notifications: result.notifications
-      }
-    })
+    if (db) {
+      await addDoc(collection(db, 'ai_action_logs'), {
+        timestamp: serverTimestamp(),
+        agent: 'booking-approval-workflow',
+        action: 'process_approved_booking',
+        bookingId,
+        result,
+        triggeredBy: triggeredBy || 'system',
+        success: result.success,
+        details: {
+          availabilityCheck: result.availabilityCheck,
+          calendarIntegration: result.calendarIntegration,
+          conflictResolution: result.conflictResolution || null,
+          notifications: result.notifications
+        }
+      })
+    }
 
     console.log('🎉 Booking approval workflow completed:', result)
 

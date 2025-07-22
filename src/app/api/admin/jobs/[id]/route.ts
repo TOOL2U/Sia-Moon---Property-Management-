@@ -227,6 +227,10 @@ export async function DELETE(
 
     // Remove related calendar events
     try {
+      if (!db) {
+        throw new Error('Database not initialized')
+      }
+
       const calendarEventsRef = collection(db, 'calendarEvents')
       const calendarEventsQuery = query(
         calendarEventsRef,

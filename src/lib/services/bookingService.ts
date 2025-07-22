@@ -1,7 +1,8 @@
-import { collection, getDocs, doc, updateDoc, query, where, addDoc, Timestamp, Firestore, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { addDoc, collection, doc, Firestore, getDoc, getDocs, query, Timestamp, updateDoc, where } from 'firebase/firestore'
 import { AIPropertyMatchingService } from './aiPropertyMatchingService'
-import { StaffTaskService } from './staffTaskService'
+// StaffTaskService removed - using enhancedStaffService instead
+// import { StaffTaskService } from './staffTaskService'
 
 // Use the centralized Firebase db instance
 
@@ -284,7 +285,7 @@ export class BookingService {
       return []
     }
   }
-  
+
   /**
    * Get all pending bookings for admin approval
    */
@@ -325,7 +326,7 @@ export class BookingService {
       return []
     }
   }
-  
+
   /**
    * Get all live bookings (for admin overview)
    */
@@ -363,7 +364,7 @@ export class BookingService {
       return []
     }
   }
-  
+
   /**
    * Update booking client matching information
    */
@@ -418,7 +419,7 @@ export class BookingService {
 
       console.log(`🔍 Creating document reference for booking: ${bookingId}`)
       const bookingRef = doc(getDb(), 'live_bookings', bookingId)
-      
+
       // Update the booking status
       await updateDoc(bookingRef, {
         status,
@@ -426,16 +427,47 @@ export class BookingService {
         reviewedAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       })
-      
+
       console.log(`✅ Booking ${bookingId} status updated to ${status}`)
+
+      // If approved, also copy to bookings_approved collection
+      if (status === 'approved') {
+        try {
+          // Get the updated booking data
+          const updatedBookingSnap = await getDoc(bookingRef)
+          if (updatedBookingSnap.exists()) {
+            const bookingData = updatedBookingSnap.data()
+
+            const approvedBookingData = {
+              ...bookingData,
+              originalBookingId: bookingId,
+              originalCollection: 'live_bookings',
+              movedToApprovedAt: Timestamp.now()
+            }
+
+            await addDoc(collection(getDb(), 'bookings_approved'), approvedBookingData)
+            console.log(`✅ Copied approved booking ${bookingId} to bookings_approved collection`)
+          }
+        } catch (error) {
+          console.error('❌ Error copying to bookings_approved:', error)
+          // Don't fail the whole operation if this fails
+        }
+      }
 
       // 🚀 NEW: Trigger client profile matching AND staff task creation when booking is approved
       if (status === 'approved') {
         await this.triggerApprovalAutomation(bookingId)
+        // 🚀 ALSO trigger automatic job creation when booking is approved
+        await this.triggerJobCreation(bookingId)
       }
-      
+
+      // 🚀 NEW: Trigger automatic job creation when booking is confirmed (backup trigger)
+      if (status === 'confirmed') {
+        await this.triggerJobCreation(bookingId)
+      }
+
       return true
-      
+
     } catch (error) {
       console.error('❌ Error updating booking status:', error)
       return false
@@ -511,7 +543,7 @@ export class BookingService {
         console.log(`🎉 Booking successfully assigned to user: ${matchResult.match.userEmail}`)
       } else {
         console.log(`⚠️ AI MATCHING: No property match found for: ${propertyName}`)
-        
+
         // Update booking to indicate no match was found
         await updateDoc(bookingRef, {
           status: 'unassigned',
@@ -525,7 +557,10 @@ export class BookingService {
 
       // Step 2: Create automated staff tasks
       console.log('👷 Step 2: Creating automated staff tasks...')
-      const taskResult = await StaffTaskService.createTasksForApprovedBooking({
+      // StaffTaskService temporarily disabled - service removed during cleanup
+      // TODO: Implement task creation using available services
+      const taskResult = { success: true, message: 'Task creation temporarily disabled' }
+      console.log('Task creation requested for booking:', {
         id: bookingId,
         guestName: booking.guestName as string || 'Unknown Guest',
         guestEmail: booking.guestEmail as string,
@@ -540,7 +575,7 @@ export class BookingService {
 
       if (taskResult.success && taskResult.taskIds) {
         console.log(`✅ STAFF TASKS: Created ${taskResult.taskIds.length} automated tasks`)
-        
+
         // Update booking with task creation info
         await updateDoc(bookingRef, {
           staffTasksCreated: true,
@@ -549,11 +584,11 @@ export class BookingService {
           automationCompleted: true,
           automationCompletedAt: Timestamp.now()
         })
-        
+
         console.log('🎉 AUTOMATION COMPLETE: All approval automation steps completed successfully!')
       } else {
         console.error('❌ STAFF TASKS: Failed to create automated tasks:', taskResult.error)
-        
+
         // Update booking with task creation error
         await updateDoc(bookingRef, {
           staffTasksCreated: false,
@@ -561,10 +596,10 @@ export class BookingService {
           staffTasksAttemptedAt: Timestamp.now()
         })
       }
-      
+
     } catch (error) {
       console.error('❌ Error in approval automation:', error)
-      
+
       // Update booking to indicate automation failed
       try {
         const bookingRef = doc(getDb(), 'live_bookings', bookingId)
@@ -578,14 +613,14 @@ export class BookingService {
       }
     }
   }
-  
+
   /**
    * Get booking statistics for dashboard
    */
   static async getBookingStats(clientId?: string): Promise<BookingStats> {
     try {
       console.log('📊 Calculating booking statistics', clientId ? `for client ${clientId}` : 'for all clients')
-      
+
       let bookingsQuery
       if (clientId) {
         bookingsQuery = query(
@@ -595,36 +630,36 @@ export class BookingService {
       } else {
         bookingsQuery = collection(getDb(), 'live_bookings')
       }
-      
+
       const snapshot = await getDocs(bookingsQuery)
       const bookings: LiveBooking[] = []
-      
+
       snapshot.forEach(doc => {
         bookings.push({
           id: doc.id,
           ...doc.data()
         } as LiveBooking)
       })
-      
+
       // Calculate statistics
       const totalBookings = bookings.length
       const pendingApproval = bookings.filter(b => b.status === 'pending_approval').length
       const approved = bookings.filter(b => b.status === 'approved').length
       const totalRevenue = bookings.reduce((sum, b) => sum + (b.revenue || 0), 0)
       const averageBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0
-      
+
       // Calculate occupancy rate (simplified - based on approved bookings)
       const currentDate = new Date()
       const currentMonth = currentDate.getMonth()
       const currentYear = currentDate.getFullYear()
-      
+
       const currentMonthBookings = bookings.filter(booking => {
         const checkIn = new Date(booking.checkInDate)
-        return checkIn.getMonth() === currentMonth && 
+        return checkIn.getMonth() === currentMonth &&
                checkIn.getFullYear() === currentYear &&
                booking.status === 'approved'
       })
-      
+
       // Simplified occupancy calculation (assumes 30 days per month)
       const totalBookingDays = currentMonthBookings.reduce((sum, booking) => {
         const checkIn = new Date(booking.checkInDate)
@@ -632,9 +667,9 @@ export class BookingService {
         const days = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
         return sum + days
       }, 0)
-      
+
       const occupancyRate = (totalBookingDays / 30) * 100 // Simplified calculation
-      
+
       const stats: BookingStats = {
         totalBookings,
         pendingApproval,
@@ -643,10 +678,10 @@ export class BookingService {
         averageBookingValue,
         occupancyRate: Math.min(occupancyRate, 100) // Cap at 100%
       }
-      
+
       console.log('✅ Booking statistics calculated:', stats)
       return stats
-      
+
     } catch (error) {
       console.error('❌ Error calculating booking statistics:', error)
       return {
@@ -659,7 +694,7 @@ export class BookingService {
       }
     }
   }
-  
+
   /**
    * Get bookings for a specific date range
    */
@@ -707,6 +742,47 @@ export class BookingService {
     } catch (error) {
       console.error('❌ Error fetching bookings by date range:', error)
       return []
+    }
+  }
+
+  /**
+   * Trigger automatic job creation when booking is confirmed
+   */
+  private async triggerJobCreation(bookingId: string): Promise<void> {
+    try {
+      console.log(`🏗️ Triggering automatic job creation for booking: ${bookingId}`)
+
+      // Import the service dynamically to avoid circular dependencies
+      const { automaticJobCreationService } = await import('@/services/AutomaticJobCreationService')
+
+      // Get booking data
+      const bookingRef = doc(getDb(), 'bookings', bookingId)
+      const bookingSnap = await getDoc(bookingRef)
+
+      if (!bookingSnap.exists()) {
+        console.error(`❌ Booking ${bookingId} not found for job creation`)
+        return
+      }
+
+      const bookingData = { id: bookingSnap.id, ...bookingSnap.data() }
+
+      // Check if jobs already created
+      if (bookingData.jobsCreated) {
+        console.log(`⏭️ Jobs already created for booking ${bookingId}`)
+        return
+      }
+
+      // Create standard jobs
+      const result = await automaticJobCreationService.createJobsForBooking(bookingData)
+
+      if (result.success) {
+        console.log(`✅ JOB CREATION: Created ${result.jobsCreated} standard jobs for booking ${bookingId}`)
+      } else {
+        console.error(`❌ JOB CREATION: Failed to create jobs for booking ${bookingId}:`, result.error)
+      }
+
+    } catch (error) {
+      console.error('❌ Error in job creation automation:', error)
     }
   }
 }

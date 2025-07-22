@@ -1,22 +1,22 @@
 'use client'
 
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Shield, 
-  X, 
-  Clock,
-  Database,
-  User,
-  Calendar,
-  Briefcase,
-  Trash2
-} from 'lucide-react'
-import React, { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ParsedCommand } from '@/lib/ai/commandParser'
+import {
+    AlertTriangle,
+    Briefcase,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Database,
+    Shield,
+    Trash2,
+    User,
+    X
+} from 'lucide-react'
+import { useState } from 'react'
 
 interface CommandConfirmationModalProps {
   commands: ParsedCommand[]
@@ -126,7 +126,7 @@ export default function CommandConfirmationModal({
         <CardContent className="space-y-4">
           {commands.map((command) => {
             const isExecuting = executingCommands.has(command.id)
-            
+
             return (
               <Card key={command.id} className="bg-slate-800 border-slate-600">
                 <CardContent className="p-4">
@@ -134,7 +134,7 @@ export default function CommandConfirmationModal({
                     <div className="flex-shrink-0 mt-1">
                       {getCommandIcon(command.type)}
                     </div>
-                    
+
                     <div className="flex-1 space-y-3">
                       {/* Command Header */}
                       <div className="flex items-center justify-between">
@@ -142,8 +142,8 @@ export default function CommandConfirmationModal({
                           {command.description}
                         </h3>
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className={`${getSafetyColor(command.safetyLevel)} text-white`}
                           >
                             {getSafetyIcon(command.safetyLevel)}
@@ -173,7 +173,7 @@ export default function CommandConfirmationModal({
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Data Preview */}
                         <div>
                           <span className="text-slate-400 text-sm">Data:</span>
@@ -181,7 +181,7 @@ export default function CommandConfirmationModal({
                             {JSON.stringify(command.data, null, 2)}
                           </div>
                         </div>
-                        
+
                         {/* Original Text */}
                         <div>
                           <span className="text-slate-400 text-sm">Original AI Response:</span>
@@ -235,7 +235,7 @@ export default function CommandConfirmationModal({
                             </>
                           )}
                         </Button>
-                        
+
                         <Button
                           variant="outline"
                           onClick={() => onReject(command.id)}

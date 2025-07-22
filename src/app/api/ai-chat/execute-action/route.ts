@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase'
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore'
+import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * POST /api/ai-chat/execute-action
@@ -68,9 +68,9 @@ async function executeStaffReassignment(actionData: any) {
   // 1. Analyze current staff workloads
   // 2. Find optimal reassignments
   // 3. Update job assignments in Firestore
-  
+
   console.log('🔄 Executing staff reassignment:', actionData)
-  
+
   // Simulate staff optimization
   const optimizationResult = {
     reassignments: 2,
@@ -90,9 +90,9 @@ async function executeBookingModification(actionData: any) {
   // 1. Validate the booking modification request
   // 2. Update booking details in Firestore
   // 3. Trigger calendar updates if needed
-  
+
   console.log('🔄 Executing booking modification:', actionData)
-  
+
   const modificationResult = {
     bookingsUpdated: 1,
     calendarEventsUpdated: 2,
@@ -111,11 +111,11 @@ async function executeFirestoreUpdate(actionData: any) {
   // 1. Validate the update request
   // 2. Apply the changes to the specified collection
   // 3. Ensure data integrity
-  
+
   console.log('🔄 Executing Firestore update:', actionData)
-  
+
   const db = getDb()
-  
+
   // Example: Update a document (this would be more specific in real implementation)
   if (actionData.collection && actionData.documentId && actionData.updates) {
     const docRef = doc(db, actionData.collection, actionData.documentId)
@@ -139,24 +139,26 @@ async function executeFirestoreUpdate(actionData: any) {
 async function logActionExecution(action: any, result: any, messageId: string) {
   try {
     const db = getDb()
-    
-    await addDoc(collection(db, 'audit_logs'), {
-      actionBy: 'AI Agent',
-      type: 'AI_COMMAND_EXECUTION',
-      timestamp: serverTimestamp(),
-      originalMessage: messageId,
-      action: {
-        type: action.type,
-        description: action.description,
-        data: action.data
-      },
-      result: {
-        success: true,
-        message: result.message,
+
+    if (db) {
+      await addDoc(collection(db, 'audit_logs'), {
+        actionBy: 'AI Agent',
+        type: 'AI_COMMAND_EXECUTION',
+        timestamp: serverTimestamp(),
+        originalMessage: messageId,
+        action: {
+          type: action.type,
+          description: action.description,
+          data: action.data
+        },
+        result: {
+          success: true,
+          message: result.message,
         details: result.details
       },
       source: 'ai_chat_interface'
     })
+    }
 
     console.log('✅ AI CHAT ACTION: Action execution logged to audit trail')
   } catch (error) {

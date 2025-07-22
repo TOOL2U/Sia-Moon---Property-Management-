@@ -7,14 +7,14 @@
 importScripts('https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.5.0/firebase-messaging-compat.js')
 
-// Firebase configuration
+// Firebase configuration - using real values from .env.local
 const firebaseConfig = {
-  apiKey: "AIzaSyBqHGVJHGVJHGVJHGVJHGVJHGVJHGVJHGV",
-  authDomain: "sia-moon-property.firebaseapp.com",
+  apiKey: "AIzaSyCDaTQsNpWw0y-g6VeXDYG57eCNtfloxxw",
+  authDomain: "operty-b54dc.firebaseapp.com",
   projectId: "operty-b54dc",
-  storageBucket: "operty-b54dc.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdefghijklmnop"
+  storageBucket: "operty-b54dc.firebasestorage.app",
+  messagingSenderId: "914547669275",
+  appId: "1:914547669275:web:0897d32d59b17134a53bbe"
 }
 
 // Initialize Firebase
@@ -111,7 +111,7 @@ self.addEventListener('notificationclick', (event) => {
 // Handle notification close events
 self.addEventListener('notificationclose', (event) => {
   console.log('🔔 Notification closed:', event)
-  
+
   const data = event.notification.data || {}
   trackNotificationInteraction(data.jobId, 'close')
 })
@@ -153,7 +153,7 @@ async function storeNotificationAction(jobId, action) {
   try {
     // Store in IndexedDB for persistence
     const request = indexedDB.open('SiaMoonNotifications', 1)
-    
+
     request.onupgradeneeded = (event) => {
       const db = event.target.result
       if (!db.objectStoreNames.contains('actions')) {
@@ -165,7 +165,7 @@ async function storeNotificationAction(jobId, action) {
       const db = event.target.result
       const transaction = db.transaction(['actions'], 'readwrite')
       const store = transaction.objectStore('actions')
-      
+
       store.add({
         jobId,
         action,
@@ -208,7 +208,7 @@ function trackNotificationInteraction(jobId, action) {
 // Handle push subscription changes
 self.addEventListener('pushsubscriptionchange', (event) => {
   console.log('🔄 Push subscription changed:', event)
-  
+
   event.waitUntil(
     // Re-subscribe with new endpoint
     self.registration.pushManager.subscribe({
@@ -230,7 +230,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 // Handle service worker activation
 self.addEventListener('activate', (event) => {
   console.log('🚀 Service worker activated')
-  
+
   // Clean up old caches if needed
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -248,7 +248,7 @@ self.addEventListener('activate', (event) => {
 // Handle service worker installation
 self.addEventListener('install', (event) => {
   console.log('📦 Service worker installed')
-  
+
   // Skip waiting to activate immediately
   self.skipWaiting()
 })
@@ -256,7 +256,7 @@ self.addEventListener('install', (event) => {
 // Handle sync events for offline functionality
 self.addEventListener('sync', (event) => {
   console.log('🔄 Background sync triggered:', event.tag)
-  
+
   if (event.tag === 'job-status-sync') {
     event.waitUntil(syncJobStatuses())
   }
@@ -269,17 +269,17 @@ async function syncJobStatuses() {
   try {
     // Get pending job status updates from IndexedDB
     const request = indexedDB.open('SiaMoonJobs', 1)
-    
+
     request.onsuccess = async (event) => {
       const db = event.target.result
       const transaction = db.transaction(['pending_updates'], 'readonly')
       const store = transaction.objectStore('pending_updates')
-      
+
       const getAllRequest = store.getAll()
-      
+
       getAllRequest.onsuccess = async () => {
         const pendingUpdates = getAllRequest.result
-        
+
         // Sync each pending update
         for (const update of pendingUpdates) {
           try {
@@ -292,12 +292,12 @@ async function syncJobStatuses() {
               },
               body: JSON.stringify(update)
             })
-            
+
             // Remove from pending updates after successful sync
             const deleteTransaction = db.transaction(['pending_updates'], 'readwrite')
             const deleteStore = deleteTransaction.objectStore('pending_updates')
             deleteStore.delete(update.id)
-            
+
           } catch (error) {
             console.error('❌ Error syncing job status:', error)
           }

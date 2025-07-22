@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MandatoryStaffAssignmentService } from '@/lib/services/mandatoryStaffAssignmentService'
+// MandatoryStaffAssignmentService removed - service not available
+// import { MandatoryStaffAssignmentService } from '@/lib/services/mandatoryStaffAssignmentService'
 
 /**
  * POST /api/bookings/assign-staff-enhanced
@@ -8,7 +9,7 @@ import { MandatoryStaffAssignmentService } from '@/lib/services/mandatoryStaffAs
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     // Validate required fields
     const requiredFields = [
       'bookingId',
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       'assignedStaffIds',
       'assignedBy'
     ]
-    
+
     const missingFields = requiredFields.filter(field => !body[field])
     if (missingFields.length > 0) {
       return NextResponse.json({
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in enhanced staff assignment:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Internal server error during staff assignment',
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const availableStaff = await MandatoryStaffAssignmentService.getAvailableStaffForSelection()
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('❌ Error getting available staff:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to get available staff',

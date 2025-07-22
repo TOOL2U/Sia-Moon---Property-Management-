@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/layout/Navbar';
+import AutomaticJobInitializer from '@/components/system/AutomaticJobInitializer';
 import FloatingAIIcon from '@/components/ui/FloatingAIIcon';
 import { ToastProvider } from '@/components/ui/SimpleToast';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ToastProvider>
+            <AutomaticJobInitializer />
             <Navbar />
             <main className="page-transition">{children}</main>
             <FloatingAIIcon />

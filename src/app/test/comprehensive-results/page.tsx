@@ -1,8 +1,8 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { CheckCircle, AlertTriangle, XCircle, TrendingUp, Users, DollarSign, Calendar, MapPin, Shield, BarChart3 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { AlertTriangle, BarChart3, Calendar, CheckCircle, DollarSign, MapPin, Shield, TrendingUp, Users, XCircle } from 'lucide-react'
 
 const testResults = [
   {
@@ -318,12 +318,12 @@ export default function ComprehensiveResultsPage() {
                 </ul>
               </div>
             </div>
-            
+
             <div className="mt-6 p-4 bg-green-900/30 border border-green-700 rounded">
               <h3 className="text-green-300 font-semibold mb-2">🎉 Final Recommendation</h3>
               <p className="text-green-200">
-                The AI system demonstrates <strong>excellent performance</strong> across all critical business scenarios. 
-                With a 91% success rate and robust handling of edge cases, the system is <strong>PRODUCTION READY</strong> 
+                The AI system demonstrates <strong>excellent performance</strong> across all critical business scenarios.
+                With a 91% success rate and robust handling of edge cases, the system is <strong>PRODUCTION READY</strong>
                 with minor optimizations recommended for enhanced monitoring and performance.
               </p>
               <div className="mt-3 flex items-center gap-4 text-sm">
@@ -337,7 +337,7 @@ export default function ComprehensiveResultsPage() {
 
         <div className="mt-8 text-center">
           <p className="text-slate-400 text-sm">
-            💡 Comprehensive test report available in ai-comprehensive-test-report.md
+            💡 Comprehensive test results available in the AI dashboard
           </p>
         </div>
       </div>
