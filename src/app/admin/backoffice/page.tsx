@@ -57,6 +57,7 @@ import { EnhancedBookingManagement } from '@/components/admin/EnhancedBookingMan
 import { EnhancedJobManagementDashboard } from '@/components/admin/EnhancedJobManagementDashboard'
 import JobAcceptancePanel from '@/components/admin/JobAcceptancePanel'
 import JobCompletionAnalytics from '@/components/admin/JobCompletionAnalytics'
+import { JobWorkflowTester } from '@/components/admin/JobWorkflowTester'
 import KPIDashboard from '@/components/admin/KPIDashboard'
 import { StaffReports } from '@/components/admin/StaffReports'
 // MobileIntegrationStatus removed - dashboard-specific component
@@ -5250,6 +5251,9 @@ export default function BackOfficePage() {
   function renderReports() {
     return (
       <div className="space-y-6">
+        {/* Job Workflow Integration Tester */}
+        <JobWorkflowTester />
+
         {/* AI-Powered Staff Reports from Mobile Job Sessions */}
         <StaffReports />
 

@@ -6,14 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { motion } from 'framer-motion'
 import {
-  CheckCircle,
-  Clock,
-  Loader2,
-  Play,
-  RefreshCw,
-  TestTube,
-  Users,
-  Zap
+    CheckCircle,
+    Loader2,
+    Play,
+    TestTube,
+    Users,
+    Zap
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -45,6 +43,7 @@ export function JobWorkflowTester() {
   const [selectedPerformance, setSelectedPerformance] = useState<string>('excellent')
   const [testResults, setTestResults] = useState<TestResult[]>([])
   const [staffLoading, setStaffLoading] = useState(false)
+  const [showRequirements, setShowRequirements] = useState(false)
 
   // Load staff data
   const loadStaffData = useCallback(async () => {
@@ -108,7 +107,7 @@ export function JobWorkflowTester() {
       })
 
       const result = await response.json()
-      
+
       if (result.success) {
         const testResult: TestResult = {
           success: true,
@@ -119,9 +118,9 @@ export function JobWorkflowTester() {
           jobType: result.data.jobType,
           performance: result.data.performance
         }
-        
+
         setTestResults(prev => [testResult, ...prev.slice(0, 9)]) // Keep last 10 results
-        
+
         toast.success(`✅ Job workflow created for ${staffMember.name}`)
         console.log(`✅ Test completed:`, testResult)
       } else {
@@ -279,7 +278,7 @@ export function JobWorkflowTester() {
                   <Play className="w-4 h-4" />
                 )}
               </Button>
-              
+
               <Button
                 onClick={createTestScenarios}
                 disabled={loading}
