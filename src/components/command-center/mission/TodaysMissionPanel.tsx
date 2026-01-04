@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Clock, AlertTriangle, TrendingUp, Users, Calendar } from 'lucide-react'
 import CriticalJobCard from './CriticalJobCard'
 import UpcomingJobsList from './UpcomingJobsList'
@@ -26,11 +26,14 @@ export default function TodaysMissionPanel({ className = '' }: TodaysMissionPane
     error: jobsError 
   } = useTodaysJobs()
   
+  // Memoize job IDs to prevent unnecessary re-renders
+  const jobIds = useMemo(() => todaysJobs.map(job => job.id), [todaysJobs])
+  
   const { 
     jobProgress, 
     delayedJobs, 
     loading: progressLoading 
-  } = useJobProgress(todaysJobs.map(job => job.id))
+  } = useJobProgress(jobIds)
 
   // Update time every minute
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   collection, 
   query, 
@@ -115,72 +115,76 @@ export function useTodaysJobs() {
     }
   }, [])
 
-  // Calculate critical jobs
-  const criticalJobs = todaysJobs.filter(job => {
-    // Job is critical if:
-    // 1. High or urgent priority
-    if (job.priority === 'urgent' || job.priority === 'high') return true
+  // Calculate critical and upcoming jobs with memoization
+  const criticalJobs = useMemo(() => {
+    const jobs = todaysJobs.filter(job => {
+      // Job is critical if:
+      // 1. High or urgent priority
+      if (job.priority === 'urgent' || job.priority === 'high') return true
+      
+      // 2. Has a deadline within 2 hours
+      if (job.deadline) {
+        const deadline = new Date(job.deadline)
+        const now = new Date()
+        const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
+        if (hoursUntilDeadline <= 2) return true
+      }
+      
+      // 3. High-value booking (>฿5000)
+      if (job.bookingRef?.totalAmount && job.bookingRef.totalAmount > 5000) return true
+      
+      // 4. Checkout deadline today
+      if (job.bookingRef?.checkOutDate) {
+        const checkoutDate = new Date(job.bookingRef.checkOutDate)
+        const today = new Date()
+        if (checkoutDate.toDateString() === today.toDateString()) return true
+      }
+      
+      // 5. Status indicates urgency
+      if (job.status === 'in_progress' && job.priority === 'medium') return true
+      
+      return false
+    })
     
-    // 2. Has a deadline within 2 hours
-    if (job.deadline) {
-      const deadline = new Date(job.deadline)
-      const now = new Date()
-      const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
-      if (hoursUntilDeadline <= 2) return true
-    }
-    
-    // 3. High-value booking (>฿5000)
-    if (job.bookingRef?.totalAmount && job.bookingRef.totalAmount > 5000) return true
-    
-    // 4. Checkout deadline today
-    if (job.bookingRef?.checkOutDate) {
-      const checkoutDate = new Date(job.bookingRef.checkOutDate)
-      const today = new Date()
-      if (checkoutDate.toDateString() === today.toDateString()) return true
-    }
-    
-    // 5. Status indicates urgency
-    if (job.status === 'in_progress' && job.priority === 'medium') return true
-    
-    return false
-  })
+    // Sort by urgency
+    return jobs.sort((a, b) => {
+      // Sort by priority first
+      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 }
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
+      if (priorityDiff !== 0) return priorityDiff
+      
+      // Then by deadline proximity
+      if (a.deadline && b.deadline) {
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+      }
+      if (a.deadline) return -1
+      if (b.deadline) return 1
+      
+      // Finally by scheduled time
+      return a.scheduledDate.toMillis() - b.scheduledDate.toMillis()
+    })
+  }, [todaysJobs])
 
   // Calculate upcoming jobs (next 4 hours)
-  const upcomingJobs = todaysJobs.filter(job => {
-    const now = new Date()
-    const fourHoursLater = new Date(now.getTime() + (4 * 60 * 60 * 1000))
-    const scheduledTime = job.scheduledDate.toDate()
+  const upcomingJobs = useMemo(() => {
+    const jobs = todaysJobs.filter(job => {
+      const now = new Date()
+      const fourHoursLater = new Date(now.getTime() + (4 * 60 * 60 * 1000))
+      const scheduledTime = job.scheduledDate.toDate()
+      
+      return scheduledTime >= now && scheduledTime <= fourHoursLater
+    })
     
-    return scheduledTime >= now && scheduledTime <= fourHoursLater
-  })
-
-  // Sort critical jobs by urgency
-  const sortedCriticalJobs = criticalJobs.sort((a, b) => {
-    // Sort by priority first
-    const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 }
-    const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
-    if (priorityDiff !== 0) return priorityDiff
-    
-    // Then by deadline proximity
-    if (a.deadline && b.deadline) {
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-    }
-    if (a.deadline) return -1
-    if (b.deadline) return 1
-    
-    // Finally by scheduled time
-    return a.scheduledDate.toMillis() - b.scheduledDate.toMillis()
-  })
-
-  // Sort upcoming jobs by scheduled time
-  const sortedUpcomingJobs = upcomingJobs.sort((a, b) => 
-    a.scheduledDate.toMillis() - b.scheduledDate.toMillis()
-  )
+    // Sort by scheduled time
+    return jobs.sort((a, b) => 
+      a.scheduledDate.toMillis() - b.scheduledDate.toMillis()
+    )
+  }, [todaysJobs])
 
   return {
     todaysJobs,
-    criticalJobs: sortedCriticalJobs,
-    upcomingJobs: sortedUpcomingJobs,
+    criticalJobs,
+    upcomingJobs,
     loading,
     error
   }

@@ -152,6 +152,8 @@ class StaffGPSService {
       return () => {}
     }
 
+    console.log('🏠 Setting up property status subscription...')
+
     const q = query(
       collection(db, 'property_status'),
       orderBy('lastUpdated', 'desc')
@@ -162,24 +164,30 @@ class StaffGPSService {
 
       snapshot.docs.forEach((doc) => {
         const data = doc.data()
+        console.log('🏠 Property data:', data) // Debug log
         const property: PropertyStatus = {
           id: doc.id,
           propertyId: data.propertyId,
           status: data.status,
-          guestCount: data.guestCount,
+          guestCount: data.guestCount || 0,
           lastUpdated: data.lastUpdated,
-          nextEvent: data.nextEvent
-        }
+          ...(data.nextEvent && { nextEvent: data.nextEvent }),
+          ...(data.coordinates && { coordinates: data.coordinates }),
+          ...(data.name && { name: data.name }),
+          ...(data.address && { address: data.address }),
+          ...(data.area && { area: data.area })
+        } as any
 
-        // Keep only the latest status per property
+        // Keep most recent status per property
         const existing = propertiesMap.get(property.propertyId)
         if (!existing || property.lastUpdated.toMillis() > existing.lastUpdated.toMillis()) {
           propertiesMap.set(property.propertyId, property)
         }
       })
 
-      const uniqueProperties = Array.from(propertiesMap.values())
-      callback(uniqueProperties)
+      const properties = Array.from(propertiesMap.values())
+      console.log(`🏠 Loaded ${properties.length} properties with coordinates`)
+      callback(properties)
     }, (error) => {
       console.error('❌ Error in property status subscription:', error)
     })

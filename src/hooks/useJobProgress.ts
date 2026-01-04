@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   collection, 
   query, 
@@ -49,8 +49,21 @@ export function useJobProgress(jobIds: string[]) {
   const [delayedJobs, setDelayedJobs] = useState<DelayedJob[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Use ref to track previous jobIds to prevent unnecessary re-renders
+  const previousJobIdsRef = useRef<string>('')
 
   useEffect(() => {
+    // Create a stable string representation of jobIds for comparison
+    const jobIdsString = jobIds.sort().join(',')
+    
+    // Skip if jobIds haven't actually changed
+    if (previousJobIdsRef.current === jobIdsString) {
+      return
+    }
+    
+    previousJobIdsRef.current = jobIdsString
+
     if (jobIds.length === 0) {
       setJobProgress({})
       setDelayedJobs([])
@@ -127,7 +140,7 @@ export function useJobProgress(jobIds: string[]) {
       console.log('🔄 Cleaning up job progress listeners')
       unsubscribeProgress()
     }
-  }, [jobIds])
+  }, [jobIds.join(',')]) // Use stable string representation
 
   // Generate mock progress data for development
   const generateMockProgress = (jobId: string): JobProgress => {

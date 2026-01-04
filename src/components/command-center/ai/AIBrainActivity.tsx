@@ -18,6 +18,7 @@ export default function AIBrainActivity({ className = '' }: AIBrainActivityProps
   const [error, setError] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const mockGeneratedRef = useRef(false)
 
   // Set up real-time activity listener
   useEffect(() => {
@@ -48,14 +49,17 @@ export default function AIBrainActivity({ className = '' }: AIBrainActivityProps
       })
 
     // Simulate some initial activities if none exist (for development)
-    setTimeout(() => {
-      if (activities.length === 0) {
+    // Only run once using ref to prevent infinite loops
+    const mockTimer = setTimeout(() => {
+      if (!mockGeneratedRef.current) {
+        mockGeneratedRef.current = true
         generateMockActivities()
       }
     }, 2000)
 
     return () => {
       console.log('🔄 Cleaning up AI Brain Activity listener')
+      clearTimeout(mockTimer)
       unsubscribe()
     }
   }, [])

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { db } from '@/lib/firebase'
 
 interface SystemHealth {
@@ -15,9 +15,12 @@ export default function SystemHealthIndicator() {
     api: 'checking',
     realtime: 'checking'
   })
+  const isMountedRef = useRef(true)
 
-  useEffect(() => {
-    const checkSystemHealth = async () => {
+  const checkSystemHealth = useCallback(async () => {
+    if (!isMountedRef.current) return
+
+    try {
       // Check Firebase connection
       const firebaseStatus = db ? 'online' : 'offline'
       
@@ -33,19 +36,32 @@ export default function SystemHealthIndicator() {
       // Check real-time capabilities (placeholder)
       const realtimeStatus = 'online' // Will be implemented with actual real-time checks
 
-      setHealth({
-        firebase: firebaseStatus,
-        api: apiStatus,
-        realtime: realtimeStatus
-      })
+      if (isMountedRef.current) {
+        setHealth({
+          firebase: firebaseStatus,
+          api: apiStatus,
+          realtime: realtimeStatus
+        })
+      }
+    } catch (error) {
+      console.error('Error checking system health:', error)
     }
+  }, [])
 
+  useEffect(() => {
+    isMountedRef.current = true
+    
+    // Initial check
     checkSystemHealth()
     
     // Check health every 30 seconds
     const interval = setInterval(checkSystemHealth, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    
+    return () => {
+      isMountedRef.current = false
+      clearInterval(interval)
+    }
+  }, [checkSystemHealth])
 
   const getStatusColor = (status: string) => {
     switch (status) {

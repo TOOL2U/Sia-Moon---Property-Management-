@@ -13,8 +13,8 @@ interface LiveOperationsMapProps {
   className?: string
 }
 
-// Bali center coordinates
-const BALI_CENTER = { lat: -8.3405, lng: 115.0920 }
+// Koh Phangan, Thailand center coordinates
+const KOH_PHANGAN_CENTER = { lat: 9.7380, lng: 100.0194 }
 
 // Dark map theme
 const DARK_MAP_STYLE = [
@@ -117,7 +117,10 @@ export default function LiveOperationsMap({ className }: LiveOperationsMapProps)
     try {
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
       if (!apiKey) {
-        throw new Error('Google Maps API key not found')
+        console.warn('⚠️ Google Maps API key not configured')
+        setMapError('Google Maps is not configured. Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to .env.local to enable maps.')
+        setIsLoaded(true) // Set loaded to hide loading spinner
+        return
       }
 
       const loader = new Loader({
@@ -129,8 +132,8 @@ export default function LiveOperationsMap({ className }: LiveOperationsMapProps)
       const google = await loader.load()
 
       const map = new google.maps.Map(mapRef.current, {
-        center: BALI_CENTER,
-        zoom: 12,
+        center: KOH_PHANGAN_CENTER,
+        zoom: 13,
         styles: DARK_MAP_STYLE,
         mapTypeControl: false,
         streetViewControl: false,
@@ -147,6 +150,7 @@ export default function LiveOperationsMap({ className }: LiveOperationsMapProps)
     } catch (error) {
       console.error('❌ Error initializing Google Maps:', error)
       setMapError(error instanceof Error ? error.message : 'Failed to load map')
+      setIsLoaded(true) // Set loaded to hide loading spinner
     }
   }, [])
 
@@ -224,14 +228,22 @@ export default function LiveOperationsMap({ className }: LiveOperationsMapProps)
   if (mapError) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-900 rounded-lg border border-gray-700">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div className="text-center p-6 max-w-md">
+          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">Map Error</h3>
-          <p className="text-red-400 text-sm">{mapError}</p>
+          <h3 className="text-lg font-semibold text-white mb-2">Maps Unavailable</h3>
+          <p className="text-gray-400 text-sm mb-4">{mapError}</p>
+          <div className="text-xs text-gray-500 bg-gray-800 rounded p-3 text-left">
+            <p className="font-semibold mb-1">To enable maps:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Enable billing in Google Cloud Console</li>
+              <li>Enable Maps JavaScript API</li>
+              <li>Add API key to .env.local</li>
+            </ol>
+          </div>
         </div>
       </div>
     )
