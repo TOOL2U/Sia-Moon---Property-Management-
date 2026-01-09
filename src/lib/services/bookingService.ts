@@ -212,7 +212,7 @@ export class BookingService {
     for (let i = 0; i < hashString.length; i++) {
       const char = hashString.charCodeAt(i)
       hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32-bit integer
+      hash |= 0 // Convert to 32-bit integer
     }
 
     return Math.abs(hash).toString(36)
