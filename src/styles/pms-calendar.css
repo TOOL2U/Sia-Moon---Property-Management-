@@ -1,0 +1,262 @@
+/* PMS Resource Timeline Calendar Styles */
+
+/* Calendar Container */
+.pms-calendar-container {
+  min-height: 600px;
+}
+
+.pms-calendar-container .fc {
+  font-family: inherit;
+}
+
+/* Resource Area (Property Column) */
+.pms-calendar-container .fc-datagrid-header {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border-color: #374151 !important;
+}
+
+.pms-calendar-container .fc-datagrid-header-cell {
+  background: transparent;
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-color: #374151 !important;
+}
+
+/* Resource Label Cells */
+.pms-calendar-container .fc-datagrid-cell {
+  background: #1f2937;
+  border-color: #374151 !important;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  transition: background 0.2s ease;
+}
+
+.pms-calendar-container .fc-datagrid-cell:hover {
+  background: #374151;
+}
+
+/* Property Name Styling */
+.pms-calendar-container .pms-resource-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Timeline Header */
+.pms-calendar-container .fc-timeline-header-row {
+  background: #111827;
+  border-color: #374151 !important;
+}
+
+.pms-calendar-container .fc-timeline-slot {
+  border-color: #374151 !important;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.pms-calendar-container .fc-timeline-slot-label {
+  padding: 0.5rem;
+}
+
+/* Today Highlight */
+.pms-calendar-container .fc-day-today {
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+.pms-calendar-container .fc-timeline-slot.fc-day-today {
+  background: rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Timeline Body */
+.pms-calendar-container .fc-timeline-body {
+  background: #111827;
+}
+
+.pms-calendar-container .fc-timeline-lane {
+  background: #0f172a;
+  border-color: #374151 !important;
+}
+
+.pms-calendar-container .fc-timeline-lane:nth-child(even) {
+  background: #1e293b;
+}
+
+/* Events */
+.pms-calendar-container .pms-event {
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-width: 2px;
+  border-style: solid;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pms-calendar-container .pms-event:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.pms-calendar-container .fc-event-title {
+  font-weight: 600;
+}
+
+.pms-calendar-container .fc-event-time {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+/* Scrollbar Styling */
+.pms-calendar-container .fc-scroller::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.pms-calendar-container .fc-scroller::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 5px;
+}
+
+.pms-calendar-container .fc-scroller::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 5px;
+}
+
+.pms-calendar-container .fc-scroller::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Toolbar */
+.pms-calendar-container .fc-toolbar {
+  background: #1f2937;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #374151;
+}
+
+.pms-calendar-container .fc-toolbar-title {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.pms-calendar-container .fc-button {
+  background: #374151;
+  border-color: #4b5563;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pms-calendar-container .fc-button:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.pms-calendar-container .fc-button:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.pms-calendar-container .fc-button-active {
+  background: #6366f1 !important;
+  border-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+.pms-calendar-container .fc-button-primary:not(:disabled):active,
+.pms-calendar-container .fc-button-primary:not(:disabled).fc-button-active {
+  background: #6366f1;
+  border-color: #4f46e5;
+}
+
+/* Grid Lines */
+.pms-calendar-container .fc-timeline-slot {
+  border-right: 1px solid #374151;
+}
+
+.pms-calendar-container .fc-timeline-lane-frame {
+  border-bottom: 1px solid #374151;
+}
+
+/* Loading State */
+.pms-calendar-container .fc-loading {
+  opacity: 0.6;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .pms-calendar-container .fc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .pms-calendar-container .fc-toolbar-chunk {
+    margin: 0.25rem 0;
+  }
+  
+  .pms-calendar-container .fc-datagrid-cell {
+    font-size: 0.8rem;
+    padding: 0.5rem;
+  }
+  
+  .pms-calendar-container .fc-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Professional Touch - Subtle Animations */
+.pms-calendar-container .fc-event-dragging {
+  opacity: 0.7;
+}
+
+.pms-calendar-container .fc-event-resizing {
+  opacity: 0.8;
+}
+
+/* Status Color Overrides (matching existing logic) */
+.pms-calendar-container .fc-event[style*="background-color: rgb(147, 112, 219)"] {
+  /* Purple - In Progress */
+  box-shadow: 0 0 0 2px rgba(147, 112, 219, 0.2);
+}
+
+.pms-calendar-container .fc-event[style*="background-color: rgb(65, 105, 225)"] {
+  /* Blue - Accepted */
+  box-shadow: 0 0 0 2px rgba(65, 105, 225, 0.2);
+}
+
+.pms-calendar-container .fc-event[style*="background-color: rgb(34, 139, 34)"] {
+  /* Green - Completed */
+  box-shadow: 0 0 0 2px rgba(34, 139, 34, 0.2);
+}
+
+.pms-calendar-container .fc-event[style*="background-color: rgb(255, 165, 0)"] {
+  /* Orange - Pending */
+  box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.2);
+}
+
+/* Booking Colors */
+.pms-calendar-container .fc-event[style*="background-color: rgb(16, 185, 129)"] {
+  /* Green - Approved/Confirmed */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.pms-calendar-container .fc-event[style*="background-color: rgb(139, 92, 246)"] {
+  /* Purple - Other Booking */
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}

@@ -2,6 +2,7 @@
 
 // EnhancedFullCalendar is our ONLY calendar component
 import EnhancedFullCalendar from '@/components/admin/EnhancedFullCalendar'
+import PMSResourceCalendar from '@/components/admin/PMSResourceCalendar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -64,7 +65,7 @@ interface CalendarViewProps {
 export function CalendarView({ className }: CalendarViewProps) {
   // State management - simplified (EnhancedFullCalendar handles event loading)
   const [loading] = useState(false) // Always false - EnhancedFullCalendar handles its own loading
-  const [currentView, setCurrentView] = useState('dayGridMonth')
+  const [currentView, setCurrentView] = useState('resourceTimelineMonth') // Default to PMS view
   const [selectedFilters] = useState({
     staff: 'all',
     property: 'all',
@@ -330,6 +331,7 @@ export function CalendarView({ className }: CalendarViewProps) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-400 mr-2">View:</span>
               {[
+                { id: 'resourceTimelineMonth', name: 'PMS Timeline', icon: CalendarIcon },
                 { id: 'dayGridMonth', name: 'Month', icon: CalendarIcon },
                 { id: 'timeGridWeek', name: 'Week', icon: Clock },
                 { id: 'timeGridDay', name: 'Day', icon: Eye },
@@ -369,11 +371,19 @@ export function CalendarView({ className }: CalendarViewProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Enhanced FullCalendar Component - Our ONLY Calendar! */}
-              <EnhancedFullCalendar
-                className="w-full"
-                currentView={currentView}
-              />
+              {/* Show PMS Resource Timeline for PMS view */}
+              {currentView === 'resourceTimelineMonth' ? (
+                <PMSResourceCalendar
+                  className="w-full"
+                  currentView={currentView}
+                />
+              ) : (
+                /* Enhanced FullCalendar Component - Legacy views */
+                <EnhancedFullCalendar
+                  className="w-full"
+                  currentView={currentView}
+                />
+              )}
             </div>
           )}
         </CardContent>
