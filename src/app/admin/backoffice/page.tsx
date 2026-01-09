@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 // BookingService and EnhancedBookingService removed - now using direct API calls
 // FinancialService removed - was using mock data
@@ -136,6 +136,7 @@ import {
 export default function BackOfficePage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeSection, setActiveSection] = useState('dashboard')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -275,7 +276,7 @@ export default function BackOfficePage() {
   }
 
   const handleCreateProperty = () => {
-    toast.success('Opening property creation form')
+    router.push('/properties/add?from=admin')
   }
   const [financialFilters, setFinancialFilters] = useState<FinancialFilters>({
     dateRange: {
@@ -329,6 +330,14 @@ export default function BackOfficePage() {
       console.log('✅ Admin user verified, loading back office')
     }
   }, [user, authLoading, router])
+
+  // Handle URL section parameter
+  useEffect(() => {
+    const sectionParam = searchParams.get('section')
+    if (sectionParam && sectionParam !== activeSection) {
+      setActiveSection(sectionParam)
+    }
+  }, [searchParams, activeSection])
 
   // Load real data on component mount and setup real-time sync
   useEffect(() => {
@@ -892,14 +901,14 @@ export default function BackOfficePage() {
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'command-center', label: 'Command Center', icon: Target, href: '/command-center' },
-    { id: 'bookings', label: 'Bookings', icon: Calendar },
-    { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
+    { id: 'bookings', label: 'Bookings', icon: Calendar, href: '/admin/bookings' },
+    { id: 'calendar', label: 'Calendar', icon: CalendarIcon, href: '/calendar' },
     { id: 'kpi-dashboard', label: 'KPI Dashboard', icon: BarChart3 },
     { id: 'job-assignments', label: 'Job Assignments', icon: ClipboardList },
-    { id: 'staff', label: 'Staff', icon: Users },
+    { id: 'staff', label: 'Staff', icon: Users, href: '/admin/staff' },
     { id: 'onboarding', label: 'Onboarding Submissions', icon: FileText },
     { id: 'financial', label: 'Financial', icon: DollarSign },
-    { id: 'properties', label: 'Properties', icon: Building2 },
+    { id: 'properties', label: 'Properties', icon: Building2, href: '/properties' },
     { id: 'operations', label: 'Operations', icon: ClipboardList },
     { id: 'reports', label: 'Reports', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -5152,6 +5161,7 @@ export default function BackOfficePage() {
             onViewProperty={handleViewProperty}
             onEditProperty={handleEditProperty}
             onBulkAction={handleBulkAction}
+            onCreateProperty={handleCreateProperty}
           />
         )}
       </div>

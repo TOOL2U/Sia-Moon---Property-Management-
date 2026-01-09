@@ -247,56 +247,80 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Generate automatic staff assignments if booking is approved
-    let assignmentResults = null
+    // Generate automatic jobs if booking is approved
+    let jobCreationResult = null
     if (action === 'approve') {
-      console.log('🚀 BOOKING APPROVAL: Basic approval only - all workflows temporarily disabled')
+      console.log('🚀 BOOKING APPROVAL: Creating automatic jobs for approved booking')
 
-      // TODO: Temporarily disabled ALL workflows to fix hanging approval button
-      // Will re-enable after basic approval is working
-      assignmentResults = { success: true, assignmentsCreated: 0, assignments: [] }
+      try {
+        // Import the job creation service
+        const { default: AutomaticJobCreationService } = await import('@/services/AutomaticJobCreationService')
+        
+        // Prepare booking data for job creation
+        const bookingForJobs = {
+          id: bookingId,
+          status: 'approved',
+          propertyId: bookingData.propertyId || bookingData.property_id || '',
+          propertyName: bookingData.propertyName || bookingData.property || '',
+          property: bookingData.property || bookingData.propertyName || '',
+          address: bookingData.address || '',
+          guestName: bookingData.guestName || bookingData.guest_name || '',
+          guestEmail: bookingData.guestEmail || bookingData.guest_email || '',
+          guestPhone: bookingData.guestPhone || bookingData.guest_phone || '',
+          checkIn: bookingData.checkIn || bookingData.checkInDate || bookingData.check_in,
+          checkOut: bookingData.checkOut || bookingData.checkOutDate || bookingData.check_out,
+          checkInDate: bookingData.checkInDate || bookingData.checkIn || bookingData.check_in,
+          checkOutDate: bookingData.checkOutDate || bookingData.checkOut || bookingData.check_out,
+          guests: bookingData.guests || bookingData.guestCount || 2,
+          specialRequests: bookingData.specialRequests || bookingData.special_requests || '',
+        }
 
-      // Skip all additional workflows for now
-      console.log('✅ BOOKING APPROVAL: Status updated successfully (workflows disabled)')
+        console.log('📋 Booking data prepared for job creation:', {
+          bookingId,
+          propertyId: bookingForJobs.propertyId,
+          propertyName: bookingForJobs.propertyName,
+          checkIn: bookingForJobs.checkIn,
+          checkOut: bookingForJobs.checkOut,
+        })
+
+        // Create jobs
+        jobCreationResult = await AutomaticJobCreationService.createJobsForBooking(bookingForJobs)
+
+        if (jobCreationResult.success) {
+          console.log(`✅ Created ${jobCreationResult.jobIds?.length || 0} jobs for booking ${bookingId}`)
+        } else {
+          console.error(`❌ Job creation failed:`, jobCreationResult.error)
+        }
+      } catch (error) {
+        console.error('❌ Error creating jobs:', error)
+        jobCreationResult = {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          jobIds: []
+        }
+      }
+
+      // Create calendar events for approved booking
+      try {
+        console.log('📅 Creating calendar events for approved booking')
+        const { default: CalendarEventService } = await import('@/services/CalendarEventService')
+        
+        const calendarResult = await CalendarEventService.createEventsFromBooking(bookingId)
+        
+        if (calendarResult.success) {
+          console.log(`✅ Created ${calendarResult.eventIds?.length || 0} calendar events`)
+        } else {
+          console.error('❌ Calendar event creation failed:', calendarResult.error)
+        }
+      } catch (error) {
+        console.error('❌ Error creating calendar events:', error)
+      }
     }
 
-      /*
-      console.log(
-        '🏗️ BOOKING APPROVAL: Generating automatic staff assignments...'
-      )
+    console.log(`✅ BOOKING APPROVAL: Booking ${bookingId} ${action}d successfully`)
 
-      const bookingForAssignments = {
-        id: bookingId,
-        property: bookingData.property || '',
-        propertyName: bookingData.propertyName || bookingData.property || '',
-        address: bookingData.address || '',
-        guestName: bookingData.guestName || '',
-        checkInDate: bookingData.checkInDate || '',
-        checkOutDate: bookingData.checkOutDate || '',
-        status: newStatus,
-      }
-
-      assignmentResults = await generateAutomaticAssignments(
-        bookingId,
-        bookingForAssignments
-      )
-      */
-
-      // All workflows temporarily disabled - just log success
-      console.log('✅ BOOKING APPROVAL: Basic status update completed')
-
-      // Calendar integration - using background service approach
-      if (action === 'approve') {
-        console.log('📅 BOOKING APPROVAL: Calendar events will be created by CalendarIntegrationService')
-        console.log('   → Background service monitors approved bookings')
-        console.log('   → Calendar events created automatically via Firestore listeners')
-        console.log('   → Check calendar view in 5-10 seconds for events')
-
-        // The CalendarIntegrationService will detect this approval and create events automatically
-        // This prevents API hanging while still enabling calendar integration
-      }
-
-      console.log(`✅ BOOKING APPROVAL: Booking ${bookingId} ${action}d successfully`)
+    const jobCount = jobCreationResult?.jobIds?.length || 0
+      const jobStatus = jobCreationResult?.success ? 'created' : 'failed'
 
       const response: BookingApprovalResponse = {
         success: true,
@@ -304,14 +328,9 @@ export async function POST(request: NextRequest) {
         newStatus,
         approvedBy: adminId,
         approvedAt: timestamp as any,
-        message: `Booking ${action}d successfully • Calendar events created • Synced across platforms`,
+        message: `Booking ${action}d successfully • ${jobCount} jobs ${jobStatus} • Synced across platforms`,
         syncedToMobile: true,
         notificationsSent: ['admin', 'mobile_app'],
-        assignments: {
-          generated: 0,
-          assignmentIds: [],
-          errors: [],
-        },
       }
 
       return NextResponse.json(response)

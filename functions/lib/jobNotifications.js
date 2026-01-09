@@ -195,7 +195,9 @@ async function sendPushNotification(notificationData) {
                     icon: 'ic_notification',
                     color: '#6366f1', // Indigo color matching app theme
                     channelId: 'job_assignments',
-                    priority: notificationData.priority === 'urgent' ? 'high' : 'default',
+                    priority: (notificationData.priority === 'urgent' ? 'high' :
+                        notificationData.priority === 'low' ? 'low' :
+                            'default'),
                     sound: 'default',
                 },
                 data: {
@@ -222,7 +224,7 @@ async function sendPushNotification(notificationData) {
             tokens: deviceTokens,
         };
         // Send multicast message
-        const response = await messaging.sendMulticast(message);
+        const response = await messaging.sendEachForMulticast(message);
         console.log(`📤 Push notification sent: ${response.successCount}/${deviceTokens.length} successful`);
         // Handle failed tokens (remove invalid ones)
         if (response.failureCount > 0) {

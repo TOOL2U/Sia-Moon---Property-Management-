@@ -1,6 +1,6 @@
 'use client'
 
-// SSRSafeCalendar removed - using EnhancedFullCalendar instead
+// EnhancedFullCalendar is our ONLY calendar component
 import EnhancedFullCalendar from '@/components/admin/EnhancedFullCalendar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -18,7 +18,6 @@ import '@/styles/calendar.css'
 import { clientToast as toast } from '@/utils/clientToast'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-    Building2,
     Calendar as CalendarIcon,
     Calendar as CalendarIconSmall,
     CheckCircle,
@@ -26,32 +25,21 @@ import {
     Edit,
     Eye,
     FileText,
-    Filter,
     Loader2,
-    RefreshCw,
     RotateCcw,
     Save,
     Settings,
     Trash2,
     User,
     Users,
-    X
+    X,
+    Building2
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import './enhanced-calendar.css'
 
-// Enhanced FullCalendar component
-
-// Firebase imports
-import { db } from '@/lib/firebase'
+// Firebase imports - only for event updates
 import CalendarEventService from '@/services/CalendarEventService'
-import {
-    collection,
-    onSnapshot,
-    orderBy,
-    query,
-    Unsubscribe,
-} from 'firebase/firestore'
 
 interface CalendarEvent {
   id: string
@@ -74,289 +62,27 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ className }: CalendarViewProps) {
-  // State management
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [loading, setLoading] = useState(true)
+  // State management - simplified (EnhancedFullCalendar handles event loading)
+  const [loading] = useState(false) // Always false - EnhancedFullCalendar handles its own loading
   const [currentView, setCurrentView] = useState('dayGridMonth')
-  const [selectedFilters, setSelectedFilters] = useState({
+  const [selectedFilters] = useState({
     staff: 'all',
     property: 'all',
     status: 'all',
   })
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  // Removed unused conflict detection state
   const [showEventDetails, setShowEventDetails] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [editFormData, setEditFormData] = useState<any>({})
 
-  // Auto-assignment removed - use manual assignment
-
-  // Filter options
-  const [staffOptions, setStaffOptions] = useState<
-    Array<{ id: string; name: string }>
-  >([])
-  const [propertyOptions, setPropertyOptions] = useState<
-    Array<{ id: string; name: string }>
-  >([])
-  const [statusOptions] = useState([
-    { id: 'pending', name: 'Pending', color: 'bg-yellow-500' },
-    { id: 'assigned', name: 'Assigned', color: 'bg-blue-500' },
-    { id: 'accepted', name: 'Accepted', color: 'bg-green-500' },
-    { id: 'in_progress', name: 'In Progress', color: 'bg-purple-500' },
-    { id: 'completed', name: 'Completed', color: 'bg-emerald-500' },
-    { id: 'declined', name: 'Declined', color: 'bg-orange-500' },
-    { id: 'cancelled', name: 'Cancelled', color: 'bg-red-500' },
-    { id: 'confirmed', name: 'Confirmed', color: 'bg-cyan-500' },
-  ])
-
-  // Firebase subscription ref (prevent re-render loops)
-  const unsubscribeRef = useRef<Unsubscribe | null>(null)
-
-  // Load calendar events from Firebase
-  const loadCalendarEvents = useCallback(() => {
-    console.log('📅 Setting up calendar events listener...')
-    setLoading(true)
-
-    try {
-      // Check if Firebase is initialized
-      if (!db) {
-        console.error('❌ Firebase not initialized')
-        toast.error('Firebase not available')
-        setLoading(false)
-        return
-      }
-
-      // Clean up existing subscription first
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-        unsubscribeRef.current = null
-      }
-
-      const eventsRef = collection(db, 'calendarEvents')
-      const eventsQuery = query(eventsRef, orderBy('startDate', 'asc'))
-
-      const unsubscribeFn = onSnapshot(
-        eventsQuery,
-        (snapshot) => {
-          const calendarEvents: CalendarEvent[] = []
-          const staffSet = new Set<string>()
-          const propertySet = new Set<string>()
-
-          snapshot.forEach((doc) => {
-            const data = doc.data()
-
-            // Convert Firestore Timestamps to ISO strings
-            let startDateString = ''
-            let endDateString = ''
-
-            if (data.startDate) {
-              if (data.startDate.toDate) {
-                // It's a Firestore Timestamp
-                startDateString = data.startDate.toDate().toISOString()
-              } else if (typeof data.startDate === 'string') {
-                // It's already a string
-                startDateString = data.startDate
-              }
-            }
-
-            if (data.endDate) {
-              if (data.endDate.toDate) {
-                // It's a Firestore Timestamp
-                endDateString = data.endDate.toDate().toISOString()
-              } else if (typeof data.endDate === 'string') {
-                // It's already a string
-                endDateString = data.endDate
-              }
-            }
-
-            // Debug: Log each event data
-            console.log(`📅 Event ${doc.id}:`, {
-              title: data.title,
-              startDate: startDateString,
-              endDate: endDateString,
-              status: data.status,
-              propertyName: data.propertyName
-            })
-
-            const event: CalendarEvent = {
-              id: doc.id,
-              title: data.title || 'Untitled Event',
-              startDate: startDateString,
-              endDate: endDateString,
-              color: data.color || '#3b82f6',
-              status: data.status || 'pending',
-              propertyName: data.propertyName,
-              assignedStaff: data.assignedStaff,
-              bookingType: data.type || data.bookingType,
-              description: data.description,
-              resourceId: data.resourceId,
-            }
-
-            calendarEvents.push(event)
-
-            // Collect unique staff and properties for filters
-            if (data.assignedStaff) staffSet.add(data.assignedStaff)
-            if (data.propertyName) propertySet.add(data.propertyName)
-          })
-
-          setEvents(calendarEvents)
-
-          // Update filter options
-          setStaffOptions(
-            Array.from(staffSet).map((staff) => ({ id: staff, name: staff }))
-          )
-          setPropertyOptions(
-            Array.from(propertySet).map((property) => ({
-              id: property,
-              name: property,
-            }))
-          )
-
-          setLoading(false)
-          console.log(`✅ Loaded ${calendarEvents.length} calendar events`)
-          toast.success(`Calendar refreshed - ${calendarEvents.length} events loaded`)
-        },
-        (error) => {
-          console.error('❌ Error loading calendar events:', error)
-          toast.error('Failed to load calendar events')
-          setLoading(false)
-        }
-      )
-
-      unsubscribeRef.current = unsubscribeFn
-      return unsubscribeFn
-    } catch (error) {
-      console.error('❌ Error setting up calendar listener:', error)
-      toast.error('Failed to initialize calendar')
-      setLoading(false)
-    }
-  }, [])
-
-  // Filter events based on selected filters
-  const getFilteredEvents = useCallback(() => {
-    return events.filter((event) => {
-      const staffMatch =
-        selectedFilters.staff === 'all' ||
-        event.assignedStaff === selectedFilters.staff
-      const propertyMatch =
-        selectedFilters.property === 'all' ||
-        event.propertyName === selectedFilters.property
-      const statusMatch =
-        selectedFilters.status === 'all' ||
-        event.status === selectedFilters.status
-
-      return staffMatch && propertyMatch && statusMatch
-    })
-  }, [events, selectedFilters])
-
-  // Get enhanced event color based on type and status
-  const getEventColor = (event: CalendarEvent) => {
-    // Base colors by type - enhanced for job assignments
-    const typeColors: Record<string, string> = {
-      // Booking types
-      'Check-in': '#2196F3', // Blue
-      'check-in': '#2196F3', // Blue
-      'Check-out': '#FF9800', // Orange
-      'check-out': '#FF9800', // Orange
-
-      // Job types
-      Cleaning: '#4CAF50', // Green
-      cleaning: '#4CAF50', // Green
-      Maintenance: '#F44336', // Red
-      maintenance: '#F44336', // Red
-      Inspection: '#9C27B0', // Purple
-      inspection: '#9C27B0', // Purple
-      Setup: '#00BCD4', // Cyan
-      setup: '#00BCD4', // Cyan
-      Checkout: '#FF5722', // Deep Orange
-      checkout: '#FF5722', // Deep Orange
-      Task: '#795548', // Brown
-      task: '#795548', // Brown
-      'Villa Service': '#607D8B', // Blue Grey
-      default: '#3b82f6', // Default blue
-    }
-
-    // Status modifiers with more granular control
-    const statusModifiers: Record<string, number> = {
-      completed: 0.7, // Darker
-      accepted: 1.0, // Normal
-      assigned: 1.0, // Normal
-      pending: 0.8, // Slightly darker
-      in_progress: 1.2, // Brighter
-      declined: 0.4, // Much darker
-      cancelled: 0.4, // Much darker
-    }
-
-    const baseColor =
-      typeColors[event.bookingType || event.type || 'Villa Service'] ||
-      event.color ||
-      typeColors.default
-    const modifier = statusModifiers[event.status] || 1.0
-
-    // Apply opacity modifier for status
-    if (modifier < 1.0) {
-      const hex = baseColor.replace('#', '')
-      const r = parseInt(hex.substr(0, 2), 16)
-      const g = parseInt(hex.substr(2, 2), 16)
-      const b = parseInt(hex.substr(4, 2), 16)
-      return `rgba(${r}, ${g}, ${b}, ${modifier})`
-    }
-
-    return baseColor
-  }
-
-  // Convert events to FullCalendar format
-  const getFullCalendarEvents = useCallback(() => {
-    const filteredEvents = getFilteredEvents()
-
-    return filteredEvents.map((event) => {
-      const eventColor = getEventColor(event)
-      const staffIndicator = event.assignedStaff
-        ? `👤 ${event.assignedStaff}`
-        : '🔍 Unassigned'
-
-      return {
-        id: event.id,
-        title: `${event.bookingType || 'Event'} - ${event.propertyName || 'Property'}`,
-        start: event.startDate,
-        end: event.endDate,
-        backgroundColor: eventColor,
-        borderColor: eventColor,
-        textColor: '#ffffff',
-        extendedProps: {
-          propertyName: event.propertyName,
-          assignedStaff: event.assignedStaff,
-          bookingType: event.bookingType,
-          status: event.status,
-          description: event.description,
-          staffIndicator,
-        },
-        resourceId: event.resourceId,
-        // Add visual indicators
-        classNames: [
-          'enhanced-event',
-          `event-${event.status}`,
-          `event-type-${(event.bookingType || 'service').toLowerCase().replace(/[^a-z]/g, '')}`,
-        ],
-      }
-    })
-  }, [getFilteredEvents])
+  // REMOVED: All duplicate calendar event loading - EnhancedFullCalendar handles everything now
 
   // Handle view change
   const handleViewChange = (view: string) => {
     setCurrentView(view)
   }
 
-  // Handle filter change
-  const handleFilterChange = (
-    filterType: 'staff' | 'property' | 'status',
-    value: string
-  ) => {
-    setSelectedFilters((prev) => ({
-      ...prev,
-      [filterType]: value,
-    }))
-  }
+  // REMOVED: Filter functions - EnhancedFullCalendar handles filtering
 
   // Handle event click
   const handleEventClick = (clickInfo: any) => {
@@ -531,9 +257,6 @@ export function CalendarView({ className }: CalendarViewProps) {
         }
         setSelectedEvent(updatedEvent)
         setIsEditMode(false)
-
-        // Refresh calendar events
-        loadCalendarEvents()
       } else {
         toast.error(`❌ Failed to update event: ${result.error}`)
       }
@@ -564,101 +287,9 @@ export function CalendarView({ className }: CalendarViewProps) {
     }
   }
 
-  // Setup Firebase listener on mount
-  useEffect(() => {
-    const unsubscribeFn = loadCalendarEvents()
+    // REMOVED: All Firebase listener logic - EnhancedFullCalendar handles everything
 
-    return () => {
-      if (unsubscribeFn) {
-        unsubscribeFn()
-      }
-    }
-  }, [loadCalendarEvents])
-
-  // Cleanup subscription on unmount
-  useEffect(() => {
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-      }
-    }
-  }, [])
-
-  // Update calendar view
-  useEffect(() => {
-    console.log(`📅 Calendar view changed to: ${currentView}`)
-  }, [currentView])
-
-  // Setup job status change listener for automatic calendar cleanup
-  useEffect(() => {
-    console.log('📅 Setting up job status change listener for calendar cleanup...')
-
-    let unsubscribeJobListener: (() => void) | null = null
-
-    try {
-      if (!db) {
-        console.warn('❌ Firebase not initialized - cannot set up job status listener')
-        return
-      }
-
-      const jobsRef = collection(db, 'jobs')
-
-      unsubscribeJobListener = onSnapshot(
-        jobsRef,
-        async (snapshot) => {
-          for (const change of snapshot.docChanges()) {
-            const jobData = change.doc.data()
-            const jobId = change.doc.id
-
-            if (change.type === 'modified') {
-              // Check if job was completed or cancelled
-              const status = jobData?.status
-              if (status === 'completed' || status === 'verified' || status === 'cancelled') {
-                console.log(`✅ Job status changed to ${status}, removing calendar event: ${jobId}`)
-
-                try {
-                  const result = await CalendarEventService.removeEventByJobId(jobId)
-                  if (result.success && result.removedCount && result.removedCount > 0) {
-                    toast.success(`📅 Calendar updated - ${status} job removed (${result.removedCount} events)`)
-                  }
-                  // Reload calendar events to reflect changes
-                  loadCalendarEvents()
-                } catch (error) {
-                  console.error(`❌ Error removing calendar event for job ${jobId}:`, error)
-                }
-              }
-            } else if (change.type === 'removed') {
-              // Handle job deletion
-              console.log(`🗑️ Job deleted, removing calendar event: ${jobId}`)
-
-              try {
-                const result = await CalendarEventService.removeEventByJobId(jobId)
-                if (result.success && result.removedCount && result.removedCount > 0) {
-                  toast.success(`📅 Calendar updated - deleted job removed (${result.removedCount} events)`)
-                }
-                // Reload calendar events to reflect changes
-                loadCalendarEvents()
-              } catch (error) {
-                console.error(`❌ Error removing calendar event for deleted job ${jobId}:`, error)
-              }
-            }
-          }
-        },
-        (error) => {
-          console.error('❌ Error in job status listener:', error)
-        }
-      )
-    } catch (error) {
-      console.error('❌ Error setting up job status change listener:', error)
-    }
-
-    return () => {
-      if (unsubscribeJobListener) {
-        unsubscribeJobListener()
-        console.log('📅 Job status change listener cleaned up')
-      }
-    }
-  }, [loadCalendarEvents])
+  // Handle view change
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -686,23 +317,6 @@ export function CalendarView({ className }: CalendarViewProps) {
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
                 Live Updates
               </Badge>
-
-              {/* Sample events creation removed - use real booking data */}
-
-              {/* Auto-assignment removed - use manual assignment */}
-
-              <Button
-                onClick={loadCalendarEvents}
-                variant="outline"
-                size="sm"
-                disabled={loading}
-                className="border-indigo-500/50 text-indigo-300 hover:bg-indigo-500/10"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-                />
-                {loading ? 'Refreshing...' : 'Refresh'}
-              </Button>
             </div>
           </div>
         </CardHeader>
@@ -738,61 +352,7 @@ export function CalendarView({ className }: CalendarViewProps) {
               ))}
             </div>
 
-            {/* Filters */}
-            <div className="flex items-center gap-4">
-              {/* Staff Filter */}
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-gray-400" />
-                <select
-                  value={selectedFilters.staff}
-                  onChange={(e) => handleFilterChange('staff', e.target.value)}
-                  className="bg-gray-800 border border-gray-600 rounded-md px-3 py-1 text-white text-sm"
-                >
-                  <option value="all">All Staff</option>
-                  {staffOptions.map((staff) => (
-                    <option key={staff.id} value={staff.id}>
-                      {staff.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Property Filter */}
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-gray-400" />
-                <select
-                  value={selectedFilters.property}
-                  onChange={(e) =>
-                    handleFilterChange('property', e.target.value)
-                  }
-                  className="bg-gray-800 border border-gray-600 rounded-md px-3 py-1 text-white text-sm"
-                >
-                  <option value="all">All Properties</option>
-                  {propertyOptions.map((property) => (
-                    <option key={property.id} value={property.id}>
-                      {property.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={selectedFilters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="bg-gray-800 border border-gray-600 rounded-md px-3 py-1 text-white text-sm"
-                >
-                  <option value="all">All Status</option>
-                  {statusOptions.map((status) => (
-                    <option key={status.id} value={status.id}>
-                      {status.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            {/* Filters removed - EnhancedFullCalendar handles filtering */}
           </div>
         </CardContent>
       </Card>
@@ -809,41 +369,13 @@ export function CalendarView({ className }: CalendarViewProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Enhanced FullCalendar Component - Now Enabled! */}
+              {/* Enhanced FullCalendar Component - Our ONLY Calendar! */}
               <EnhancedFullCalendar
                 className="w-full"
                 currentView={currentView}
               />
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Event Summary */}
-      <Card className="bg-gray-900/30 border-gray-700/30">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5" />
-            Event Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {statusOptions.map((status) => {
-              const count = getFilteredEvents().filter(
-                (event) => event.status === status.id
-              ).length
-              return (
-                <div key={status.id} className="text-center">
-                  <div
-                    className={`w-8 h-8 ${status.color} rounded-full mx-auto mb-2`}
-                  ></div>
-                  <div className="text-2xl font-bold text-white">{count}</div>
-                  <div className="text-sm text-gray-400">{status.name}</div>
-                </div>
-              )
-            })}
-          </div>
         </CardContent>
       </Card>
 

@@ -18,11 +18,12 @@ import {
   ChevronRight,
   Bell,
   ClipboardList,
-  UserCheck,
-  Briefcase,
+  CheckSquare,
   Target,
   Activity,
-  FileText
+  User,
+  Command,
+  Briefcase
 } from 'lucide-react'
 
 interface DashboardSidebarProps {
@@ -37,6 +38,9 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
 
   // Define navigation items based on user role
   const getNavigationItems = () => {
+    console.log('🔍 Sidebar - User role:', user?.role)
+    console.log('🔍 Sidebar - User object:', user)
+    
     const baseItems = [
       {
         name: 'Dashboard',
@@ -46,37 +50,50 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       }
     ]
 
-    // Admin-specific navigation
+    // Admin-specific navigation - Clean and essential only
     if (user?.role === 'admin') {
+      console.log('✅ Showing ADMIN navigation')
       return [
         ...baseItems,
         {
-          name: 'Properties',
-          href: '/dashboard/properties',
-          icon: Building2,
+          name: 'Command Center',
+          href: '/admin/backoffice',
+          icon: Command,
           badge: null
         },
         {
-          name: 'Staff Management',
-          href: '/app/staff',
-          icon: Users,
-          badge: null
-        },
-        {
-          name: 'Staff Tasks',
-          href: '/staff',
+          name: 'Bookings',
+          href: '/admin/bookings',
           icon: ClipboardList,
           badge: null
         },
         {
-          name: 'Back Office',
-          href: '/admin/backoffice',
-          icon: FileText,
+          name: 'Calendar',
+          href: '/admin/calendar',
+          icon: Calendar,
+          badge: null
+        },
+        {
+          name: 'Tasks',
+          href: '/admin/tasks',
+          icon: CheckSquare,
+          badge: null
+        },
+        {
+          name: 'Staff',
+          href: '/admin/staff',
+          icon: Users,
+          badge: null
+        },
+        {
+          name: 'Properties',
+          href: '/admin/properties',
+          icon: Building2,
           badge: null
         },
         {
           name: 'Reports',
-          href: '/reports',
+          href: '/admin/reports',
           icon: BarChart3,
           badge: null
         },
@@ -91,6 +108,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
 
     // Staff-specific navigation
     if (user?.role === 'staff') {
+      console.log('✅ Showing STAFF navigation')
       return [
         {
           name: 'My Tasks',
@@ -120,8 +138,21 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
     }
 
     // Client-specific navigation (removed bookings for clients)
+    console.log('✅ Showing CLIENT navigation (default)')
     return [
       ...baseItems,
+      {
+        name: 'Command Center',
+        href: '/dashboard/command-center',
+        icon: Command,
+        badge: null
+      },
+      {
+        name: 'Job Assignment',
+        href: '/dashboard/client',
+        icon: Briefcase,
+        badge: null
+      },
       {
         name: 'My Properties',
         href: '/dashboard/properties',
@@ -190,7 +221,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           <div className="p-4 border-b border-neutral-800">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-white" />
+                <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">

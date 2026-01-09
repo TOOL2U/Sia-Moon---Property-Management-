@@ -43,6 +43,9 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now()
       }, 'connection')
 
+      // 🔄 NEW: Activate job-to-calendar sync
+      realTimeCalendarService.subscribeToJobUpdates()
+
       // Subscribe to calendar updates
       const calendarSubscription = realTimeCalendarService.subscribeToCalendarUpdates(
         (update: CalendarUpdate) => {

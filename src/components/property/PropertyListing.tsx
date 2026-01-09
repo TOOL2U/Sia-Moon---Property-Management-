@@ -28,7 +28,8 @@ import {
   Loader2,
   Grid3X3,
   List,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from 'lucide-react'
 import { Property, PropertyFilters, PropertySearchResult, PropertyStatus, PROPERTY_STATUSES } from '@/types/property'
 import { PropertyService } from '@/lib/services/propertyService'
@@ -38,9 +39,10 @@ interface PropertyListingProps {
   onViewProperty?: (property: Property) => void
   onEditProperty?: (property: Property) => void
   onBulkAction?: (propertyIds: string[], action: string) => void
+  onCreateProperty?: () => void
 }
 
-export default function PropertyListing({ onViewProperty, onEditProperty, onBulkAction }: PropertyListingProps) {
+export default function PropertyListing({ onViewProperty, onEditProperty, onBulkAction, onCreateProperty }: PropertyListingProps) {
   const [properties, setProperties] = useState<PropertySearchResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -207,6 +209,15 @@ export default function PropertyListing({ onViewProperty, onEditProperty, onBulk
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {onCreateProperty && (
+            <Button
+              onClick={onCreateProperty}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Property
+            </Button>
+          )}
           <Button
             onClick={handleRefresh}
             disabled={refreshing}

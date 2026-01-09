@@ -238,3 +238,4 @@ ai-system/aiDevHelper.ts
 ai-test-*.json
 ai-simulation-*.log
 dev-ai-*.js
+serviceAccountKey.json

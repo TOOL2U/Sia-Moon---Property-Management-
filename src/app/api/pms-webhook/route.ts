@@ -11,6 +11,8 @@ export const runtime = 'nodejs' // Required for crypto and proper body parsing
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase'
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { CalendarAvailabilityService } from '@/services/CalendarAvailabilityService'
+import { operationsAutomationService } from '@/services/OperationsAutomationService'
 
 // Security configuration - Using token-based auth instead of HMAC for reliability
 const WEBHOOK_SECRET_TOKEN = process.env.PMS_WEBHOOK_SECRET || 'default-secret-change-in-production'
@@ -87,7 +89,7 @@ function normalizePMSData(data: PMSBookingData): any {
     sourceDetails: {
       platform: data.source,
       originalId: data.externalBookingId,
-      makeComFlowId: data.makeComFlowId
+      ...(data.makeComFlowId && { makeComFlowId: data.makeComFlowId })
     },
     
     // Core booking data
@@ -132,8 +134,70 @@ function normalizePMSData(data: PMSBookingData): any {
 }
 
 /**
- * Check for existing booking by external ID to prevent duplicates
+ * Generate idempotency key for webhook processing
+ * Format: source + externalBookingId + action + timestamp_hour
  */
+function generateIdempotencyKey(data: PMSBookingData): string {
+  // Round timestamp to hour to handle minor timing differences
+  const hourTimestamp = new Date(data.webhookTimestamp)
+  hourTimestamp.setMinutes(0, 0, 0)
+  
+  return `${data.source}-${data.externalBookingId}-${data.action}-${hourTimestamp.getTime()}`
+}
+
+/**
+ * Check if webhook has been processed before using idempotency key
+ */
+async function checkWebhookIdempotency(idempotencyKey: string) {
+  try {
+    const db = getDb()
+    const q = query(
+      collection(db, 'webhook_events'),
+      where('idempotencyKey', '==', idempotencyKey)
+    )
+    
+    const snapshot = await getDocs(q)
+    if (!snapshot.empty) {
+      const existingEvent = snapshot.docs[0].data()
+      console.log('🔄 Duplicate webhook detected, returning existing result')
+      return {
+        isDuplicate: true,
+        existingResult: existingEvent.result
+      }
+    }
+    
+    return { isDuplicate: false }
+  } catch (error) {
+    console.error('❌ Error checking webhook idempotency:', error)
+    return { isDuplicate: false } // Fail open to allow processing
+  }
+}
+
+/**
+ * Store webhook event for idempotency tracking
+ */
+async function storeWebhookEvent(idempotencyKey: string, data: PMSBookingData, result: any) {
+  try {
+    const db = getDb()
+    await addDoc(collection(db, 'webhook_events'), {
+      idempotencyKey,
+      source: data.source,
+      externalBookingId: data.externalBookingId,
+      action: data.action,
+      webhookTimestamp: new Date(data.webhookTimestamp),
+      processedAt: serverTimestamp(),
+      result: {
+        success: result.success,
+        bookingId: result.bookingId,
+        action: result.action
+      }
+    })
+    console.log('📝 Webhook event stored for idempotency tracking')
+  } catch (error) {
+    console.error('⚠️ Warning: Could not store webhook event for idempotency:', error)
+    // Don't fail the webhook processing if we can't store the event
+  }
+}
 async function findExistingBooking(externalBookingId: string, source: string) {
   const db = getDb()
   const collections = ['bookings', 'pending_bookings', 'live_bookings']
@@ -173,13 +237,64 @@ async function handleCreateBooking(data: PMSBookingData): Promise<any> {
   const db = getDb()
   const normalizedData = normalizePMSData(data)
   
+  // CRITICAL: Check calendar availability first - Calendar is the single source of truth
+  const availabilityCheck = await CalendarAvailabilityService.checkAvailability({
+    propertyId: data.propertyId,
+    startDate: data.checkInDate,
+    endDate: data.checkOutDate
+  })
+  
+  const propertyResult = availabilityCheck.find(r => r.propertyId === data.propertyId)
+  if (!propertyResult?.isAvailable) {
+    console.log('❌ Booking rejected - calendar unavailable:', propertyResult?.conflicts)
+    throw new Error(`Calendar unavailable: ${propertyResult?.conflicts?.map((c: any) => c.reason).join(', ')}`)
+  }
+  
+  // Block the dates in calendar BEFORE creating booking records
+  const blockResult = await CalendarAvailabilityService.blockProperty({
+    propertyId: data.propertyId,
+    propertyName: data.propertyName,
+    startDate: data.checkInDate,
+    endDate: data.checkOutDate,
+    blockType: 'booking',
+    reason: 'Guest Booking',
+    status: 'active',
+    sourceType: 'pms_webhook',
+    sourceId: data.externalBookingId,
+    createdBy: 'pms_webhook',
+    guestName: data.guestName,
+    externalBookingId: data.externalBookingId,
+    priority: 'high'
+  })
+  
+  if (!blockResult.success) {
+    console.log('❌ Calendar blocking failed:', blockResult.conflicts)
+    throw new Error(`Calendar blocking failed: ${blockResult.conflicts?.map((c: any) => c.reason).join(', ')}`)
+  }
+  
+  console.log('✅ Calendar dates blocked:', blockResult.blockId)
+  
   // Create in multiple collections for compatibility
-  const bookingDoc = await addDoc(collection(db, 'bookings'), normalizedData)
+  const bookingDoc = await addDoc(collection(db, 'bookings'), {
+    ...normalizedData,
+    calendarBlockId: blockResult.blockId // Link to calendar block
+  })
   const pendingDoc = await addDoc(collection(db, 'pending_bookings'), {
     ...normalizedData,
     priority: 'high',
-    source: 'pms_webhook'
+    source: 'pms_webhook',
+    calendarBlockId: blockResult.blockId // Link to calendar block
   })
+
+  // 🎯 PHASE 3: Create operational timeline for automated property management
+  try {
+    console.log('🎯 Creating operational timeline for booking:', bookingDoc.id)
+    await operationsAutomationService.createOperationalTimeline(bookingDoc.id, normalizedData)
+    console.log('✅ Operational timeline created successfully')
+  } catch (timelineError) {
+    console.error('⚠️ Failed to create operational timeline:', timelineError)
+    // Don't fail the entire booking - timeline can be created manually
+  }
   
   console.log('✅ Booking created:', { bookingId: bookingDoc.id, pendingId: pendingDoc.id })
   
@@ -205,14 +320,74 @@ async function handleUpdateBooking(data: PMSBookingData): Promise<any> {
   }
   
   const db = getDb()
+  const existingData = existing.doc.data()
   const normalizedData = normalizePMSData(data)
+  
+  // Check if dates are changing
+  const dateChanged = (
+    existingData.checkInDate !== data.checkInDate ||
+    existingData.checkOutDate !== data.checkOutDate
+  )
+  
+  if (dateChanged) {
+    console.log('📅 Dates changed, updating calendar blocks')
+    
+    // Check availability for new dates first
+    const availabilityCheck = await CalendarAvailabilityService.checkAvailability({
+      propertyId: data.propertyId,
+      startDate: data.checkInDate,
+      endDate: data.checkOutDate,
+      excludeBlockIds: existingData.calendarBlockId ? [existingData.calendarBlockId] : []
+    })
+    
+    const propertyResult = availabilityCheck.find(r => r.propertyId === data.propertyId)
+    if (!propertyResult?.isAvailable) {
+      console.log('❌ Date change rejected - calendar unavailable:', propertyResult?.conflicts)
+      throw new Error(`Calendar unavailable for new dates: ${propertyResult?.conflicts?.map((c: any) => c.reason).join(', ')}`)
+    }
+    
+    // Remove old calendar block if it exists
+    if (existingData.calendarBlockId) {
+      console.log('🗑️ Removing old calendar block for booking:', data.externalBookingId)
+      await CalendarAvailabilityService.unblockProperty(
+        data.externalBookingId, 
+        'pms_webhook',
+        'Date modification'
+      )
+    }
+    
+    // Create new calendar block
+    const blockResult = await CalendarAvailabilityService.blockProperty({
+      propertyId: data.propertyId,
+      propertyName: data.propertyName,
+      startDate: data.checkInDate,
+      endDate: data.checkOutDate,
+      blockType: 'booking',
+      reason: 'Guest Booking (Modified)',
+      status: 'active',
+      sourceType: 'pms_webhook',
+      sourceId: data.externalBookingId,
+      createdBy: 'pms_webhook',
+      guestName: data.guestName,
+      externalBookingId: data.externalBookingId,
+      priority: 'high'
+    })
+    
+    if (!blockResult.success) {
+      console.log('❌ Calendar reblocking failed:', blockResult.conflicts)
+      throw new Error(`Calendar reblocking failed: ${blockResult.conflicts?.map((c: any) => c.reason).join(', ')}`)
+    }
+    
+    console.log('✅ Calendar dates reblocked:', blockResult.blockId)
+    normalizedData.calendarBlockId = blockResult.blockId
+  }
   
   // Track the modification
   const updateData = {
     ...normalizedData,
     modifiedAt: serverTimestamp(),
-    originalCheckInDate: data.originalCheckInDate,
-    originalCheckOutDate: data.originalCheckOutDate,
+    ...(data.originalCheckInDate && { originalCheckInDate: data.originalCheckInDate }),
+    ...(data.originalCheckOutDate && { originalCheckOutDate: data.originalCheckOutDate }),
     modificationSource: 'pms_webhook',
     requiresReapproval: true,
     status: 'pending_approval' // Require reapproval for modifications
@@ -227,7 +402,9 @@ async function handleUpdateBooking(data: PMSBookingData): Promise<any> {
     action: 'updated',
     bookingId: existing.doc.id,
     collection: existing.collection,
-    requiresReapproval: true
+    requiresReapproval: true,
+    dateChanged,
+    ...(dateChanged && { newCalendarBlockId: normalizedData.calendarBlockId })
   }
 }
 
@@ -249,12 +426,24 @@ async function handleCancelBooking(data: PMSBookingData) {
   
   const db = getDb()
   
+  // CRITICAL: Release calendar dates first
+  console.log('🔓 Releasing calendar dates for cancelled booking')
+  const unblockResult = await CalendarAvailabilityService.unblockProperty(
+    data.externalBookingId,
+    'pms_webhook', 
+    'Booking cancelled'
+  )
+  
+  console.log(`✅ Released ${unblockResult.unblockedCount} calendar blocks`)
+  
   // Update status instead of deleting to maintain audit trail
   await updateDoc(doc(db, existing.collection, existing.doc.id), {
     status: 'cancelled',
     cancelledAt: serverTimestamp(),
     cancellationSource: 'pms_webhook',
-    cancellationReason: 'External PMS cancellation'
+    cancellationReason: 'External PMS cancellation',
+    calendarReleased: true,
+    releasedBlocks: unblockResult.unblockedCount
   })
   
   console.log('✅ Booking cancelled:', existing.doc.id)
@@ -263,7 +452,8 @@ async function handleCancelBooking(data: PMSBookingData) {
     success: true,
     action: 'cancelled',
     bookingId: existing.doc.id,
-    collection: existing.collection
+    collection: existing.collection,
+    releasedBlocks: unblockResult.unblockedCount
   }
 }
 
@@ -309,7 +499,17 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // 🔴 CRITICAL SECURITY: Check webhook idempotency to prevent duplicate processing
+    const idempotencyKey = generateIdempotencyKey(data)
+    const idempotencyCheck = await checkWebhookIdempotency(idempotencyKey)
+    
+    if (idempotencyCheck.isDuplicate) {
+      console.log('✅ Returning existing result for duplicate webhook')
+      return NextResponse.json(idempotencyCheck.existingResult)
+    }
+    
     console.log(`📋 Processing ${data.action} for booking ${data.externalBookingId} from ${data.source}`)
+    console.log(`🔑 Idempotency key: ${idempotencyKey}`)
     
     // Route to appropriate handler
     let result
@@ -339,8 +539,12 @@ export async function POST(request: NextRequest) {
       externalBookingId: data.externalBookingId,
       result,
       processingTime: Date.now() - startTime,
-      success: result.success
+      success: result.success,
+      idempotencyKey
     })
+    
+    // 🔴 CRITICAL: Store webhook event for idempotency tracking
+    await storeWebhookEvent(idempotencyKey, data, result)
     
     return NextResponse.json({
       success: true,

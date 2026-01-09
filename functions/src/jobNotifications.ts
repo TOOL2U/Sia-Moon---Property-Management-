@@ -53,7 +53,7 @@ interface StaffDeviceToken {
  */
 export const onJobAssigned = functions.firestore
   .document('jobs/{jobId}')
-  .onWrite(async (change, context) => {
+  .onWrite(async (change: any, context: any) => {
     try {
       const jobId = context.params.jobId
       const beforeData = change.before.exists ? change.before.data() : null
@@ -245,7 +245,9 @@ async function sendPushNotification(
           icon: 'ic_notification',
           color: '#6366f1', // Indigo color matching app theme
           channelId: 'job_assignments',
-          priority: notificationData.priority === 'urgent' ? 'high' : 'default',
+          priority: (notificationData.priority === 'urgent' ? 'high' : 
+                   notificationData.priority === 'low' ? 'low' : 
+                   'default') as 'low' | 'high' | 'default',
           sound: 'default',
         },
         data: {
@@ -273,7 +275,7 @@ async function sendPushNotification(
     }
 
     // Send multicast message
-    const response = await messaging.sendMulticast(message)
+    const response = await messaging.sendEachForMulticast(message)
 
     console.log(
       `📤 Push notification sent: ${response.successCount}/${deviceTokens.length} successful`
@@ -283,7 +285,7 @@ async function sendPushNotification(
     if (response.failureCount > 0) {
       const failedTokens: string[] = []
 
-      response.responses.forEach((resp, idx) => {
+      response.responses.forEach((resp: any, idx: number) => {
         if (!resp.success) {
           console.error(`❌ Failed to send to token ${idx}:`, resp.error)
 
@@ -401,7 +403,7 @@ async function logNotificationEvent(
  */
 export const onNotificationAcknowledged = functions.firestore
   .document('staff_notifications/{notificationId}')
-  .onUpdate(async (change, context) => {
+  .onUpdate(async (change: any, context: any) => {
     try {
       const beforeData = change.before.data()
       const afterData = change.after.data()
@@ -453,7 +455,7 @@ export const onNotificationAcknowledged = functions.firestore
  */
 export const cleanupExpiredNotifications = functions.pubsub
   .schedule('every 24 hours')
-  .onRun(async (context) => {
+  .onRun(async (context: any) => {
     try {
       console.log('🧹 Starting cleanup of expired notifications')
 

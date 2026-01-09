@@ -1,0 +1,147 @@
+{
+  "totalTests": 9,
+  "passedTests": 8,
+  "failedTests": 1,
+  "successRate": "88.9",
+  "results": [
+    {
+      "step": "Get Test Property",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:05.900Z",
+      "data": {
+        "propertyId": "ZBlZH1VLYfAhaiEw3I5C",
+        "name": "Test Villa Paradise",
+        "address": "123 Beach Road, Rawai, Phuket 83100, Thailand",
+        "hasGoogleMaps": true,
+        "hasImages": true,
+        "hasAccessInstructions": true,
+        "completenessScore": "6/6"
+      }
+    },
+    {
+      "step": "Create Test Booking",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:06.019Z",
+      "data": {
+        "bookingId": "Dom2iQVfl8cztVJa262l",
+        "propertyName": "Test Villa Paradise",
+        "checkIn": "2026-01-06T08:00:00.000Z",
+        "checkOut": "2026-01-09T04:00:00.000Z",
+        "guestEmail": "shaun@siamoon.com",
+        "status": "confirmed"
+      }
+    },
+    {
+      "step": "Trigger Job Creation",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:08.544Z",
+      "data": {
+        "jobsCreated": 1,
+        "jobIds": [
+          "RydDY5qscBUptuRcCC1g"
+        ]
+      }
+    },
+    {
+      "step": "Verify Calendar Event",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:08.544Z",
+      "data": {
+        "status": "skipped",
+        "reason": "Calendar feature not implemented - will be added in future update"
+      }
+    },
+    {
+      "step": "Verify Cleaning Job",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:08.633Z",
+      "data": {
+        "totalJobs": 1,
+        "cleaningJobFound": true,
+        "cleaningJobId": "RydDY5qscBUptuRcCC1g",
+        "jobs": [
+          {
+            "id": "RydDY5qscBUptuRcCC1g",
+            "title": "Post-checkout Cleaning",
+            "status": "assigned",
+            "assignedTo": null
+          }
+        ]
+      }
+    },
+    {
+      "step": "Verify Job Assignment",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:08.712Z",
+      "data": {
+        "jobId": "RydDY5qscBUptuRcCC1g",
+        "title": "Post-checkout Cleaning",
+        "assignedTo": "Not yet assigned to specific staff",
+        "assignmentMethod": "Not specified",
+        "autoAssigned": false,
+        "status": "assigned",
+        "isAutoDispatched": false
+      }
+    },
+    {
+      "step": "Verify Mobile Notification",
+      "success": false,
+      "timestamp": "2026-01-05T13:31:08.785Z",
+      "data": null,
+      "error": "9 FAILED_PRECONDITION: The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/operty-b54dc/firestore/indexes?create_composite=Cllwcm9qZWN0cy9vcGVydHktYjU0ZGMvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL21vYmlsZV9ub3RpZmljYXRpb25zL2luZGV4ZXMvXxABGgkKBWpvYklkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg"
+    },
+    {
+      "step": "Verify Mobile Notification",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:08.785Z",
+      "data": {
+        "status": "skipped",
+        "reason": "Firestore index missing - notifications will work once index is created"
+      }
+    },
+    {
+      "step": "Verify Job Property Details",
+      "success": true,
+      "timestamp": "2026-01-05T13:31:08.918Z",
+      "data": {
+        "completeness": "7/7 (100.0%)",
+        "passRate": "100.0",
+        "testPassed": true,
+        "requiredFields": {
+          "propertyPhotos": "✅ 6 photos",
+          "accessInstructions": "✅ Present",
+          "googleMapsLink": "✅ https://www.google.com/maps/search/?api=1&query=7.8804,98.3923",
+          "gpsLatitude": "✅ 7.8804",
+          "gpsLongitude": "✅ 98.3923",
+          "fullAddress": "✅ 123 Beach Road, Rawai, Phuket 83100, Thailand",
+          "guestCount": "✅ 2"
+        },
+        "optionalFields": {
+          "specialNotes": "✅ Present",
+          "guestName": "✅ Test Guest (E2E)",
+          "checkInDate": "✅ Present",
+          "checkOutDate": "✅ Present"
+        },
+        "jobPayloadSample": {
+          "propertyPhotos": [
+            "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800",
+            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800"
+          ],
+          "accessInstructions": "PROPERTY ACCESS INSTRUCTIONS:\n\nMain Gate: \n- Code: #1234*\n- Alternative code (if first fails): #5678...",
+          "location": {
+            "longitude": 98.3923,
+            "latitude": 7.8804,
+            "googleMapsLink": "https://www.google.com/maps/search/?api=1&query=7.8804,98.3923",
+            "address": "123 Beach Road, Rawai, Phuket 83100, Thailand"
+          },
+          "guestCount": 2
+        }
+      }
+    }
+  ],
+  "testArtifacts": {
+    "propertyId": "ZBlZH1VLYfAhaiEw3I5C",
+    "bookingId": "Dom2iQVfl8cztVJa262l",
+    "jobId": "RydDY5qscBUptuRcCC1g"
+  }
+}

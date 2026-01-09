@@ -1,6 +1,6 @@
 /**
  * Firebase Cloud Functions Entry Point
- * Sia Moon Property Management - Job Assignment Notifications
+ * Sia Moon Property Management - Job Assignment Notifications & Timeout Monitoring
  */
 
 import * as functions from 'firebase-functions'
@@ -12,11 +12,23 @@ import {
   cleanupExpiredNotifications
 } from './jobNotifications'
 
+// Import job timeout monitoring functions
+import {
+  jobTimeoutMonitor,
+  triggerTimeoutCheck
+} from './jobTimeoutMonitor'
+
 // Export job notification functions
 export {
   onJobAssigned,
   onNotificationAcknowledged,
   cleanupExpiredNotifications
+}
+
+// Export job timeout monitoring functions  
+export {
+  jobTimeoutMonitor,
+  triggerTimeoutCheck
 }
 
 // Health check function
@@ -27,10 +39,12 @@ export const healthCheck = functions.https.onRequest((request, response) => {
     functions: [
       'onJobAssigned',
       'onNotificationAcknowledged', 
-      'cleanupExpiredNotifications'
+      'cleanupExpiredNotifications',
+      'jobTimeoutMonitor',
+      'triggerTimeoutCheck'
     ]
   })
 })
 
 // Configure function settings
-functions.logger.info('🚀 Sia Moon Job Notification Functions initialized')
+functions.logger.info('🚀 Sia Moon Job Notification & Timeout Monitoring Functions initialized')

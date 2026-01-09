@@ -46,12 +46,13 @@ export function JobProvider({ children }: { children: React.ReactNode }) {
     }
 
     console.log('📱 Setting up job listener for staff:', staffProfile.id);
+    console.log('📱 Staff role:', (staffProfile as any)?.role || 'unknown');
     setLoading(true);
 
-    // Query jobs assigned to this staff member
+    // ✅ SIMPLIFIED: Get all jobs, filter client-side
+    // This avoids Firebase composite index requirements
     const jobsQuery = query(
       collection(db, 'jobs'),
-      where('assignedStaffId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
 
@@ -61,25 +62,52 @@ export function JobProvider({ children }: { children: React.ReactNode }) {
         console.log('🔄 Jobs updated, received', snapshot.size, 'jobs');
         
         const jobList: JobAssignment[] = [];
+        const staffRole = (staffProfile as any)?.role || (staffProfile as any)?.staffType || 'cleaner';
+        
+        console.log(`📱 Filtering jobs for role: ${staffRole}, uid: ${user.uid}`);
+        
         snapshot.forEach((doc) => {
           const data = doc.data();
-          jobList.push({
+          const job = {
             id: doc.id,
             ...data
-          } as JobAssignment);
+          } as JobAssignment;
+          
+          // ✅ Client-side filtering for all active statuses
+          const validStatuses = ['pending', 'assigned', 'accepted', 'in_progress'];
+          if (!validStatuses.includes(job.status)) {
+            return; // Skip completed/cancelled jobs
+          }
+          
+          // Filter logic:
+          // 1. Show jobs assigned to this staff (accepted/in_progress)
+          // 2. Show pending jobs that match staff role AND not declined
+          const isAssignedToMe = job.assignedStaffId === user.uid;
+          const isPending = job.status === 'pending';
+          const hasDeclined = (data.declinedBy && data.declinedBy[user.uid]);
+          
+          // ✅ Check if job role matches staff role (for pending jobs)
+          const jobRole = data.requiredRole || data.requiredStaffType || 'cleaner';
+          const roleMatches = jobRole.toLowerCase() === staffRole.toLowerCase();
+          
+          console.log(`Job ${doc.id}: role=${jobRole}, staffRole=${staffRole}, matches=${roleMatches}, pending=${isPending}, assigned=${isAssignedToMe}`);
+          
+          if (isAssignedToMe || (isPending && !hasDeclined && roleMatches)) {
+            jobList.push(job);
+          }
         });
 
+        console.log(`✅ Filtered to ${jobList.length} jobs for role: ${staffRole}`);
         setJobs(jobList);
         setLoading(false);
 
         // Check for new pending jobs to show notifications
         const newPendingJobs = jobList.filter(job => 
-          (job.status === 'pending' || job.status === 'assigned') && 
-          !job.staffResponse
+          job.status === 'pending' && !job.staffResponse
         );
 
         if (newPendingJobs.length > 0) {
-          console.log('🔔 Found', newPendingJobs.length, 'new pending jobs');
+          console.log('🔔 Found', newPendingJobs.length, 'new available jobs');
           // Notification will be handled by NotificationContext
         }
       },
@@ -97,27 +125,75 @@ export function JobProvider({ children }: { children: React.ReactNode }) {
 
   // Respond to job assignment (accept/decline)
   const respondToJob = async (response: JobResponse) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    
     try {
       console.log('📱 Responding to job:', response.jobId, response.accepted ? 'ACCEPT' : 'DECLINE');
       
       const jobRef = doc(db, 'jobs', response.jobId);
       
-      const updateData: any = {
-        staffResponse: response,
-        status: response.accepted ? 'accepted' : 'declined',
-        updatedAt: serverTimestamp(),
-        lastMobileSync: serverTimestamp()
-      };
-
       if (response.accepted) {
-        updateData.acceptedAt = serverTimestamp();
-      } else {
-        updateData.declinedAt = serverTimestamp();
-      }
+        // ✅ ACCEPTING JOB: Assign to this cleaner
+        console.log('👍 Cleaner accepting job, assigning to:', user.uid);
+        
+        const updateData: any = {
+          // Assign job to this cleaner
+          assignedStaffId: user.uid,
+          assignedTo: user.uid,
+          assignedStaffRef: {
+            id: user.uid,
+            name: (staffProfile as any)?.name || 'Staff Member',
+            email: user.email || '',
+            phone: (staffProfile as any)?.phone || ''
+          },
+          
+          // ✅ Update status: pending → assigned (cleaner accepted it)
+          status: 'assigned',
+          
+          // Record response
+          staffResponse: response,
+          acceptedAt: serverTimestamp(),
+          acceptedBy: user.uid,
+          
+          // Remove broadcast flag
+          broadcastToAll: false,
+          
+          // Timestamps
+          updatedAt: serverTimestamp(),
+          lastMobileSync: serverTimestamp()
+        };
 
-      await updateDoc(jobRef, updateData);
+        await updateDoc(jobRef, updateData);
+        
+        console.log('✅ Job accepted and assigned to', user.email);
+        console.log('🔄 Job will disappear from other cleaners\' lists');
+        
+      } else {
+        // ❌ DECLINING JOB: Don't assign, keep it available for others
+        console.log('👎 Cleaner declining job, keeping it available for others');
+        
+        const updateData: any = {
+          // Record this cleaner's decline (so they don't see it again)
+          [`declinedBy.${user.uid}`]: {
+            declinedAt: serverTimestamp(),
+            reason: (response as any).declineReason || 'No reason provided'
+          },
+          
+          // Keep status as pending for other cleaners
+          status: 'pending',
+          
+          // Timestamps
+          updatedAt: serverTimestamp(),
+          lastMobileSync: serverTimestamp()
+        };
+
+        await updateDoc(jobRef, updateData);
+        
+        console.log('✅ Job decline recorded, still available for other cleaners');
+      }
       
-      console.log('✅ Job response saved successfully');
     } catch (error) {
       console.error('❌ Error responding to job:', error);
       throw error;

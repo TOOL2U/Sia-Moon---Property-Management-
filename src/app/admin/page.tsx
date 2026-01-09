@@ -21,10 +21,14 @@ import {
   Shield,
   TrendingUp,
   AlertTriangle,
-  Brain
+  Brain,
+  Smartphone,
+  MapPin
 } from 'lucide-react'
 import BookingApprovalPanel from '@/components/admin/BookingApprovalPanel'
 import { clientToast as toast } from '@/utils/clientToast'
+import { collection, addDoc, Timestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -33,6 +37,292 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sendingTestJob, setSendingTestJob] = useState(false)
+
+  // Send test job to mobile app
+  const sendTestJobToMobile = async () => {
+    setSendingTestJob(true)
+    try {
+      const now = Date.now()
+      const scheduledTime = new Date(now + 2 * 60 * 60 * 1000) // 2 hours from now
+      const checkOutTime = new Date(now) // Just checked out
+      const checkInTime = new Date(now - 24 * 60 * 60 * 1000) // Checked in yesterday
+      const deadline = new Date(scheduledTime.getTime() + 120 * 60 * 1000) // 2 hours after start
+
+      const testJob = {
+        // === PROPERTY INFORMATION ===
+        propertyId: 'xapwbYmKxzyKH23gcq9L',
+        propertyName: 'Mountain Retreat Cabin',
+        propertyAddress: '456 Ban Tai Road, Ban Tai, Koh Phangan, Surat Thani 84280, Thailand',
+        propertyRef: {
+          id: 'xapwbYmKxzyKH23gcq9L',
+          name: 'Mountain Retreat Cabin',
+          address: 'Ban Tai, Koh Phangan, Thailand',
+          type: 'villa',
+          bedrooms: 3,
+          bathrooms: 2,
+          size: '150 sqm'
+        },
+        
+        // === LOCATION & NAVIGATION ===
+        location: {
+          address: '456 Ban Tai Road, Ban Tai, Koh Phangan, Surat Thani 84280, Thailand',
+          googleMapsLink: 'https://www.google.com/maps?q=9.705,100.045',
+          latitude: 9.705,
+          longitude: 100.045,
+          instructions: 'Take the main road from Thong Sala towards Ban Tai. Turn right at the 7-Eleven. Property is 500m on the left with blue gate.',
+          parkingInfo: 'Free parking available in front of property',
+          nearbyLandmarks: 'Near Ban Tai Beach, 5 min from Thong Sala Pier'
+        },
+        
+        // === JOB DETAILS ===
+        jobType: 'cleaning',
+        type: 'cleaning', // Alternate field name
+        title: 'Post-Checkout Deep Cleaning - Mountain Retreat Cabin',
+        description: `Complete deep cleaning following guest checkout. Property has 3 bedrooms, 2 bathrooms, full kitchen, living room, and outdoor terrace.\n\nGuests checked out at ${checkOutTime.toLocaleTimeString()}. Next guests arrive tomorrow at 3 PM.\n\nTest job created: ${new Date().toLocaleString()}`,
+        priority: 'high',
+        status: 'pending',
+        
+        // === SCHEDULING ===
+        scheduledDate: Timestamp.fromDate(scheduledTime),
+        scheduledStart: Timestamp.fromDate(scheduledTime),
+        scheduledEnd: Timestamp.fromDate(deadline),
+        estimatedDuration: 120, // 2 hours
+        duration: 120, // Alternate field name
+        deadline: Timestamp.fromDate(deadline),
+        
+        // === ASSIGNMENT ===
+        assignedStaffId: null,
+        assignedTo: null, // Alternate field name
+        assignedStaffName: null,
+        requiredRole: 'cleaner',
+        requiredStaffType: 'cleaner',
+        
+        // === GUEST & BOOKING INFO ===
+        guestName: 'Sarah Johnson',
+        guestCount: 2,
+        guestContact: '+66 89 123 4567',
+        guestNationality: 'American',
+        bookingId: 'BKG-' + Date.now(),
+        bookingRef: {
+          id: 'BKG-' + Date.now(),
+          guestName: 'Sarah Johnson',
+          guestCount: 2,
+          checkInDate: checkInTime.toISOString().split('T')[0],
+          checkOutDate: checkOutTime.toISOString().split('T')[0],
+          totalAmount: 5000,
+          platform: 'Airbnb',
+          confirmationCode: 'HMABCD1234'
+        },
+        checkInDate: Timestamp.fromDate(checkInTime),
+        checkOutDate: Timestamp.fromDate(checkOutTime),
+        
+        // === JOB REQUIREMENTS ===
+        requirements: [
+          'cleaning',
+          'housekeeping', 
+          'laundry',
+          'inventory_check'
+        ],
+        requiredSkills: [
+          'Deep cleaning',
+          'Bathroom sanitization',
+          'Kitchen deep clean',
+          'Linen change',
+          'Inventory management'
+        ],
+        requiredSupplies: [
+          'All-purpose cleaner',
+          'Bathroom cleaner',
+          'Glass cleaner',
+          'Floor cleaner',
+          'Fresh linens (3 bedroom sets)',
+          'Fresh towels (6 bath, 6 hand)',
+          'Toilet paper',
+          'Hand soap',
+          'Shampoo/conditioner',
+          'Dish soap',
+          'Trash bags'
+        ],
+        
+        // === DETAILED INSTRUCTIONS ===
+        specialInstructions: `🏠 DEEP CLEANING CHECKLIST:
+
+BEDROOMS (3):
+✓ Change all bed linens
+✓ Vacuum and mop floors
+✓ Dust all surfaces
+✓ Clean windows and mirrors
+✓ Check closets and drawers
+✓ Empty trash bins
+
+BATHROOMS (2):
+✓ Deep clean toilets, sinks, showers
+✓ Replace towels (bath & hand)
+✓ Restock toiletries
+✓ Clean mirrors and glass
+✓ Mop floors with disinfectant
+
+KITCHEN:
+✓ Clean all appliances (inside & out)
+✓ Wipe down cabinets and counters
+✓ Clean sink and faucet
+✓ Empty refrigerator and clean
+✓ Restock dish soap, sponges
+✓ Take out trash and recycling
+
+LIVING AREAS:
+✓ Vacuum sofas and cushions
+✓ Dust all surfaces and decorations
+✓ Clean windows and glass doors
+✓ Mop all floor areas
+✓ Arrange furniture neatly
+
+OUTDOOR:
+✓ Sweep terrace and entrance
+✓ Clean outdoor furniture
+✓ Check pool area (if applicable)
+✓ Tidy garden/entrance
+
+FINAL CHECKS:
+✓ Test all lights and appliances
+✓ Check A/C units working
+✓ Verify hot water working
+✓ Lock all windows and doors
+✓ Take before/after photos`,
+        
+        accessInstructions: `🔑 PROPERTY ACCESS:
+- Key location: Lockbox on right side of blue gate
+- Lockbox code: 4287
+- Main door code: 5693
+- WiFi: MountainRetreat_Guest / Password: Welcome2024
+- Alarm: DISARMED (no alarm system)
+- Emergency contact: Property Manager +66 87 654 3210`,
+        
+        specialNotes: `⚠️ IMPORTANT NOTES:
+- Guests were generally tidy but used kitchen heavily
+- Check refrigerator for leftover food
+- Master bedroom A/C filter may need cleaning
+- Guest mentioned slow drain in bathroom 2 - please check
+- Next guests arrive tomorrow at 3 PM - MUST be completed today
+- Take photos of any damage or issues and report immediately`,
+        
+        // === CHECKLIST FOR MOBILE APP ===
+        checklist: [
+          { id: '1', task: 'Change all bedroom linens', completed: false, required: true },
+          { id: '2', task: 'Deep clean all bathrooms', completed: false, required: true },
+          { id: '3', task: 'Kitchen deep clean + appliances', completed: false, required: true },
+          { id: '4', task: 'Vacuum and mop all floors', completed: false, required: true },
+          { id: '5', task: 'Clean all windows and mirrors', completed: false, required: true },
+          { id: '6', task: 'Restock all supplies', completed: false, required: true },
+          { id: '7', task: 'Empty all trash bins', completed: false, required: true },
+          { id: '8', task: 'Outdoor area cleaning', completed: false, required: true },
+          { id: '9', task: 'Final inspection & testing', completed: false, required: true },
+          { id: '10', task: 'Take completion photos', completed: false, required: true }
+        ],
+        
+        // === PHOTOS & MEDIA ===
+        propertyPhotos: [
+          'https://example.com/property/living-room.jpg',
+          'https://example.com/property/kitchen.jpg',
+          'https://example.com/property/master-bedroom.jpg',
+          'https://example.com/property/bathroom.jpg'
+        ],
+        
+        // === ISSUES TO CHECK ===
+        issuesReported: [
+          {
+            description: 'Slow drain in bathroom 2',
+            severity: 'low',
+            reportedBy: 'guest',
+            status: 'needs_inspection'
+          }
+        ],
+        
+        // === EQUIPMENT NEEDED ===
+        equipmentNeeded: [
+          'Vacuum cleaner',
+          'Mop and bucket',
+          'Cleaning caddy with supplies',
+          'Ladder (for high windows)',
+          'Trash bags (large)'
+        ],
+        
+        // === SAFETY & POLICIES ===
+        safetyNotes: [
+          'Wear gloves when handling cleaning chemicals',
+          'Ensure proper ventilation when using strong cleaners',
+          'Report any electrical issues immediately',
+          'Do not use property appliances for personal use'
+        ],
+        
+        // === PAYMENT & COMPENSATION ===
+        compensation: {
+          amount: 1200,
+          currency: 'THB',
+          paymentMethod: 'bank_transfer',
+          paymentTiming: 'completion'
+        },
+        
+        // === TRACKING & METADATA ===
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        createdBy: 'admin_dashboard',
+        source: 'test_job_button',
+        version: '2.0',
+        
+        // === CONTACT INFORMATION ===
+        contacts: {
+          propertyManager: {
+            name: 'John Smith',
+            phone: '+66 87 654 3210',
+            email: 'john@siamoon.com',
+            availability: '8 AM - 8 PM daily'
+          },
+          emergencyContact: {
+            name: 'Sia Moon Emergency Line',
+            phone: '+66 89 999 8888',
+            available: '24/7'
+          },
+          maintenanceTeam: {
+            name: 'Koh Phangan Maintenance',
+            phone: '+66 87 111 2222',
+            email: 'maintenance@siamoon.com'
+          }
+        }
+      }
+
+      if (!db) {
+        throw new Error('Firebase not initialized')
+      }
+
+      const jobRef = await addDoc(collection(db, 'operational_jobs'), testJob)
+
+      toast.success(
+        `✅ Complete Test Job Created!\nID: ${jobRef.id}\nProperty: Mountain Retreat Cabin\nLocation: Ban Tai (9.705, 100.045)\nScheduled: ${scheduledTime.toLocaleTimeString()}`
+      )
+
+      console.log('✅ COMPREHENSIVE TEST JOB CREATED')
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      console.log('📝 Job ID:', jobRef.id)
+      console.log('🏠 Property: Mountain Retreat Cabin')
+      console.log('📍 Location: 9.705, 100.045')
+      console.log('🗺️ Google Maps: https://www.google.com/maps?q=9.705,100.045')
+      console.log('⏰ Scheduled:', scheduledTime.toLocaleString())
+      console.log('⏱️ Duration: 120 minutes')
+      console.log('👤 Guest: Sarah Johnson (2 guests)')
+      console.log('📅 Checkout:', checkOutTime.toLocaleString())
+      console.log('🔑 Access Code: 4287 (lockbox)')
+      console.log('💰 Payment: 1,200 THB on completion')
+      console.log('✓ Includes: Full checklist, access instructions, contacts')
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    } catch (error) {
+      console.error('❌ Error sending test job:', error)
+      toast.error('Failed to send test job to mobile app')
+    } finally {
+      setSendingTestJob(false)
+    }
+  }
 
   // Route protection - admin only
   useEffect(() => {
@@ -114,9 +404,31 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-neutral-400">Manage onboarding submissions, bookings, and system settings</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+            <p className="text-neutral-400">Manage onboarding submissions, bookings, and system settings</p>
+          </div>
+          
+          {/* Test Job Button */}
+          <Button
+            onClick={sendTestJobToMobile}
+            disabled={sendingTestJob}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+          >
+            {sendingTestJob ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                Sending...
+              </>
+            ) : (
+              <>
+                <Smartphone className="h-4 w-4 mr-2" />
+                <MapPin className="h-4 w-4 mr-2" />
+                Send Test Job to Mobile
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Stats Cards */}

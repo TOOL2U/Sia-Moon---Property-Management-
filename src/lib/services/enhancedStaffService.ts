@@ -9,14 +9,16 @@ import { getDb } from '@/lib/firebase'
 import {
     collection,
     doc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
     getDoc,
     getDocs,
-    orderBy,
     query,
+    where,
+    orderBy,
     serverTimestamp,
-    setDoc,
-    Timestamp,
-    updateDoc
+    Timestamp
 } from 'firebase/firestore'
 import { CreateStaffUserData, FirebaseAuthService } from './firebaseAuthService'
 // UserDocumentService removed - service not available
@@ -376,6 +378,44 @@ export class EnhancedStaffService {
 
   /**
    * Get all staff members with enhanced profiles
+   */
+  /**
+   * Get staff members by role
+   */
+  static async getStaffByRole(role: string): Promise<{
+    success: boolean
+    message: string
+    error?: string
+    staff?: EnhancedStaffProfile[]
+  }> {
+    try {
+      const staffRef = collection(this.db, 'staff')
+      const q = query(staffRef, where('role', '==', role), orderBy('createdAt', 'desc'))
+      const querySnapshot = await getDocs(q)
+
+      const staff: EnhancedStaffProfile[] = []
+      querySnapshot.forEach((doc) => {
+        staff.push({ id: doc.id, ...doc.data() } as EnhancedStaffProfile)
+      })
+
+      return {
+        success: true,
+        message: `Retrieved ${staff.length} staff members with role: ${role}`,
+        staff
+      }
+
+    } catch (error: any) {
+      console.error(`❌ Error getting staff by role ${role}:`, error)
+      return {
+        success: false,
+        message: `Failed to retrieve staff members with role: ${role}`,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * Get all enhanced staff members
    */
   static async getAllEnhancedStaff(): Promise<{
     success: boolean

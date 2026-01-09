@@ -168,37 +168,54 @@ export function EnhancedBookingManagement({
     rejectionReason: ''
   })
 
-  // Load all bookings with enhanced data
+  // Load all bookings from API (admin SDK has full access)
   const loadAllBookings = useCallback(async () => {
+    console.log('📋 Loading bookings from API...')
+    setLoading(true)
+    
     try {
-      setLoading(true)
-      console.log('📋 Loading enhanced booking data...')
-
-      const response = await fetch('/api/admin/bookings/integrated?limit=100&enhanced=true')
-
-      if (response.ok) {
-        const data = await response.json()
-
-        if (data.success) {
-          const bookings = data.data.bookings || []
-          setAllBookings(bookings)
-          console.log(`✅ Loaded ${bookings.length} enhanced bookings`)
-          generateAISummary(bookings)
-        } else {
-          console.error('❌ Failed to load bookings:', data.error)
-          toast.error('Failed to load bookings')
-        }
+      const response = await fetch('/api/admin/bookings/integrated', {
+        method: 'GET',
+        cache: 'no-store', // Disable caching for fresh data
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      console.log('📊 API Response:', result)
+      
+      if (result.success && result.data) {
+        const bookings = result.data.bookings || []
+        setAllBookings(bookings)
+        console.log(`✅ Loaded ${bookings.length} bookings from API`)
+        generateAISummary(bookings)
       } else {
-        console.error('❌ API request failed:', response.status)
-        toast.error('Failed to connect to booking service')
+        console.warn('⚠️ API returned no bookings:', result)
+        setAllBookings([])
       }
     } catch (error) {
       console.error('❌ Error loading bookings:', error)
-      toast.error('Error loading bookings')
+      toast.error('Failed to load bookings')
+      setAllBookings([])
     } finally {
       setLoading(false)
     }
   }, [])
+  
+  // Load bookings on mount and set up polling for updates
+  useEffect(() => {
+    loadAllBookings()
+    
+    // Poll for updates every 30 seconds for a more reasonable refresh rate
+    const interval = setInterval(loadAllBookings, 30000)
+    
+    return () => clearInterval(interval)
+  }, [loadAllBookings])
 
   // Generate AI summary with enhanced insights
   const generateAISummary = (bookings: any[]) => {
@@ -549,15 +566,14 @@ export function EnhancedBookingManagement({
       }
 
       // Exclude test bookings (identified by various patterns)
+      // NOTE: Only filter out obvious test/error bookings, allow real test bookings for demo
       const isTestBooking =
-        booking.isTestBooking === true ||
-        booking.id?.includes('test') ||
         booking.id?.includes('ai_test') ||
         (booking.guestName || booking.guest_name || '').toLowerCase().includes('[test]') ||
-        (booking.guestName || booking.guest_name || '').toLowerCase().includes('test') ||
         booking.status === 'error'
 
       if (isTestBooking) {
+        console.log('🚫 Filtered out test/error booking:', booking.id)
         return false
       }
 
@@ -665,10 +681,7 @@ export function EnhancedBookingManagement({
     avgBookingValue: activeBookings.length > 0 ? activeBookings.reduce((sum, b) => sum + (b.price || b.amount || b.total || 0), 0) / activeBookings.length : 0
   }
 
-  // Load data on mount
-  useEffect(() => {
-    loadAllBookings()
-  }, [loadAllBookings])
+  // Real-time listener is set up in useEffect above - no manual load needed
 
   // Safeguard: Reset statusFilter if it's set to 'rejected'
   useEffect(() => {
@@ -1408,8 +1421,7 @@ export function EnhancedBookingManagement({
             priority: 'medium'
           })
 
-          // Refresh booking data to show updated assignments
-          loadAllBookings()
+          // Real-time listener will automatically refresh data - no manual reload needed
 
           // Enhanced success feedback
           toast.success('🎉 Job assigned to staff successfully!', {

@@ -42,6 +42,7 @@ import {
     User,
     Zap
 } from 'lucide-react'
+import AdminSidebarLayout from '@/components/layout/AdminSidebarLayout'
 
 export default function StaffDashboard() {
   const { user } = useAuth()
@@ -51,6 +52,7 @@ export default function StaffDashboard() {
     total: 0,
     active: 0,
     inactive: 0,
+    onLeave: 0,
     byRole: {},
     totalTasks: 0,
     pendingTasks: 0,
@@ -60,7 +62,15 @@ export default function StaffDashboard() {
     todayTasks: 0,
     upcomingTasks: 0,
     averageCompletionTime: 0,
-    completionRate: 0
+    averageRating: 0,
+    completionRate: 0,
+    performanceMetrics: {
+      topPerformers: [],
+      lowPerformers: [],
+      recentHires: [],
+      staffUtilization: 0,
+      averageTasksPerStaff: 0
+    }
   })
   const [loading, setLoading] = useState(true)
   const [processingTaskId, setProcessingTaskId] = useState<string | null>(null)
@@ -100,16 +110,38 @@ export default function StaffDashboard() {
       const staffId = user.id
       // StaffTaskService temporarily disabled - service removed during cleanup
       // TODO: Implement task retrieval using available services
-      const response = { tasks: [], stats: { total: 0, pending: 0, inProgress: 0, completed: 0 } }
-
-      if (response.success) {
-        setTasks(response.data)
-        setStats(response.stats)
-        console.log(`✅ Loaded ${response.data.length} tasks`)
-      } else {
-        console.error('❌ Failed to load tasks:', response.error)
-        toast.error('Failed to load tasks')
+      
+      // Temporary placeholder until task service is restored
+      const tempTasks: StaffTask[] = []
+      const tempStats: StaffStats = {
+        total: 0,
+        active: 0,
+        inactive: 0,
+        onLeave: 0,
+        byRole: {},
+        totalTasks: 0,
+        pendingTasks: 0,
+        inProgressTasks: 0,
+        completedTasks: 0,
+        overdueeTasks: 0,
+        todayTasks: 0,
+        upcomingTasks: 0,
+        averageCompletionTime: 0,
+        averageRating: 0,
+        completionRate: 0,
+        performanceMetrics: {
+          topPerformers: [],
+          lowPerformers: [],
+          recentHires: [],
+          staffUtilization: 0,
+          averageTasksPerStaff: 0
+        }
       }
+      
+      setTasks(tempTasks)
+      setStats(tempStats)
+      console.log(`✅ Staff dashboard loaded (task service temporarily disabled)`)
+      toast.success('Dashboard loaded - Task service will be restored soon')
 
     } catch (error) {
       console.error('❌ Error loading tasks:', error)
@@ -200,7 +232,7 @@ export default function StaffDashboard() {
         // Reload stats
         loadTasks()
       } else {
-        toast.error(response.error || 'Failed to update task')
+        toast.error(response.message || 'Failed to update task')
       }
 
     } catch (error) {
@@ -290,37 +322,42 @@ export default function StaffDashboard() {
   // Redirect non-staff users
   if (user && user.role !== 'staff' && user.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-          <p className="text-gray-400">This dashboard is only accessible to staff members.</p>
+      <AdminSidebarLayout>
+        <div className="min-h-screen bg-black text-white flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+            <p className="text-gray-400">This dashboard is only accessible to staff members.</p>
+          </div>
         </div>
-      </div>
+      </AdminSidebarLayout>
     )
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="relative">
-              <Loader2 className="w-12 h-12 animate-spin text-blue-400" />
-              <div className="absolute inset-0 w-12 h-12 border-4 border-blue-400/20 rounded-full animate-ping"></div>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-semibold text-white">Loading Your Tasks</h3>
-              <p className="text-neutral-400">Fetching your daily assignments...</p>
+      <AdminSidebarLayout>
+        <div className="min-h-screen bg-black text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center py-12">
+              <div className="relative">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-400" />
+                <div className="absolute inset-0 w-12 h-12 border-4 border-blue-400/20 rounded-full animate-ping"></div>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-white">Loading Your Tasks</h3>
+                <p className="text-neutral-400">Fetching your daily assignments...</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </AdminSidebarLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <AdminSidebarLayout>
+      <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <motion.div
@@ -744,7 +781,8 @@ export default function StaffDashboard() {
             </CardContent>
           </Card>
         </motion.div>
+        </div>
       </div>
-    </div>
+    </AdminSidebarLayout>
   )
 }

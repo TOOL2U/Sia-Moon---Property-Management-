@@ -329,26 +329,74 @@ export class BookingService {
 
   /**
    * Get all live bookings (for admin overview)
+   * Now reads from 'bookings' collection for E2E test compatibility
    */
   static async getAllBookings(): Promise<LiveBooking[]> {
     try {
-      console.log('📋 Fetching all live bookings')
+      console.log('📋 Fetching all live bookings from both collections')
 
-      // Use simple query without orderBy to avoid index requirement
-      const allBookingsQuery = collection(getDb(), 'live_bookings')
+      const allBookings: LiveBooking[] = []
 
-      const snapshot = await getDocs(allBookingsQuery)
-      const bookings: LiveBooking[] = []
+      // PRIORITY 1: Read from 'bookings' collection (E2E tests, job creation)
+      try {
+        const bookingsQuery = collection(getDb(), 'bookings')
+        const bookingsSnapshot = await getDocs(bookingsQuery)
+        
+        bookingsSnapshot.forEach(doc => {
+          const data = doc.data()
+          // Transform 'bookings' format to 'live_bookings' format
+          allBookings.push({
+            id: doc.id,
+            villaName: data.propertyName || data.villaName || 'Unknown Property',
+            guestName: data.guestName || 'Unknown Guest',
+            checkInDate: data.checkInDate?.toDate?.()?.toISOString() || data.checkIn?.toDate?.()?.toISOString() || data.checkInDate || data.checkIn,
+            checkOutDate: data.checkOutDate?.toDate?.()?.toISOString() || data.checkOut?.toDate?.()?.toISOString() || data.checkOutDate || data.checkOut,
+            price: data.totalAmount || data.price || data.revenue || 0,
+            revenue: data.totalAmount || data.price || data.revenue || 0,
+            currency: data.currency || 'USD',
+            specialRequests: data.specialRequests || data.notes || '',
+            clientId: data.clientId,
+            propertyId: data.propertyId,
+            matchConfidence: data.matchConfidence || 1.0,
+            bookingSource: data.bookingSource || 'webapp',
+            bookingType: data.bookingType || 'direct_booking',
+            status: data.status === 'confirmed' ? 'approved' : data.status || 'pending_approval',
+            receivedAt: data.createdAt || Timestamp.now(),
+            processedAt: data.updatedAt || Timestamp.now(),
+            approvedAt: data.approvedAt,
+            guestEmail: data.guestEmail || data.guestContact || '',
+            bookingReference: data.bookingReference || doc.id,
+            guests: data.numberOfGuests || data.guests || 2,
+            paymentStatus: data.paymentStatus || 'pending',
+            adminNotes: data.notes || '',
+            originalPayload: data
+          } as LiveBooking)
+        })
+        
+        console.log(`✅ Found ${bookingsSnapshot.size} bookings from 'bookings' collection`)
+      } catch (error) {
+        console.error('⚠️ Error reading from bookings collection:', error)
+      }
 
-      snapshot.forEach(doc => {
-        bookings.push({
-          id: doc.id,
-          ...doc.data()
-        } as LiveBooking)
-      })
+      // PRIORITY 2: Also read from 'live_bookings' collection (legacy Make.com bookings)
+      try {
+        const liveBookingsQuery = collection(getDb(), 'live_bookings')
+        const liveSnapshot = await getDocs(liveBookingsQuery)
+        
+        liveSnapshot.forEach(doc => {
+          allBookings.push({
+            id: doc.id,
+            ...doc.data()
+          } as LiveBooking)
+        })
+        
+        console.log(`✅ Found ${liveSnapshot.size} bookings from 'live_bookings' collection`)
+      } catch (error) {
+        console.error('⚠️ Error reading from live_bookings collection:', error)
+      }
 
       // Sort in memory by receivedAt (most recent first)
-      bookings.sort((a, b) => {
+      allBookings.sort((a, b) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const aTime = (a.receivedAt as any)?.toDate?.() || new Date(a.receivedAt as any)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -356,8 +404,8 @@ export class BookingService {
         return bTime.getTime() - aTime.getTime()
       })
 
-      console.log(`✅ Found ${bookings.length} total live bookings`)
-      return bookings
+      console.log(`✅ Total ${allBookings.length} bookings loaded from all sources`)
+      return allBookings
 
     } catch (error) {
       console.error('❌ Error fetching all bookings:', error)

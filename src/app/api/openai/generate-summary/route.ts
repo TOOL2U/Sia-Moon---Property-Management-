@@ -1,26 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialize OpenAI client
+function getOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'placeholder-key-not-configured') {
+    return null
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
     const { bookings } = await request.json()
-    
+
     console.log('📊 OPENAI API: Generating booking summary...')
-    
+
     const totalBookings = bookings.length
     const pendingBookings = bookings.filter((b: any) => b.status === 'pending_approval').length
     const totalRevenue = bookings.reduce((sum: number, b: any) => sum + (b.price || 0), 0)
     const avgBookingValue = totalRevenue / totalBookings
-    
+
     const urgentBookings = bookings.filter((b: any) => {
       const daysUntil = Math.ceil((new Date(b.checkInDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
       return daysUntil <= 3
     }).length
-    
+
+    const openai = getOpenAIClient()
+
+    // If OpenAI is not configured, return a basic summary
+    if (!openai) {
+      console.log('⚠️ OpenAI not configured, using basic summary')
+      return NextResponse.json({
+        success: true,
+        summary: `Current Status: ${totalBookings} total bookings with ${pendingBookings} pending approval. Total revenue: $${totalRevenue.toLocaleString()}. ${urgentBookings} urgent bookings require immediate attention. Priority: Review and approve pending bookings, especially those with check-in dates within 3 days.`
+      })
+    }
+
     const prompt = `
 Generate a concise executive summary for villa booking management:
 

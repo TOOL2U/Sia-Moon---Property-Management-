@@ -1,0 +1,76 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules
+// Controls who can read and write files in Cloud Storage
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ========================================
+    // JOB PHOTOS (Mobile Staff Uploads)
+    // ========================================
+    
+    // Allow authenticated staff to upload and read job photos
+    match /jobs/{jobId}/{filename} {
+      // Anyone authenticated can read job photos
+      allow read: if request.auth != null;
+      
+      // Only authenticated staff can upload photos
+      allow write: if request.auth != null
+                   && request.resource.size < 10 * 1024 * 1024  // Max 10MB per photo
+                   && request.resource.contentType.matches('image/.*'); // Images only (jpg, png, etc.)
+    }
+    
+    // Allow job sub-folders (before, during, after photos)
+    match /jobs/{jobId}/{photoType}/{filename} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // ========================================
+    // PROPERTY PHOTOS
+    // ========================================
+    
+    // Allow authenticated users to read property photos
+    // Only admin/manager can upload
+    match /properties/{propertyId}/{filename} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null; // Can restrict to admin role if needed
+    }
+    
+    // ========================================
+    // STAFF PROFILE PHOTOS
+    // ========================================
+    
+    // Staff members can upload their own profile photos
+    match /staff/{staffId}/profile/{filename} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null 
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB for profile photos
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // ========================================
+    // BOOKING DOCUMENTS
+    // ========================================
+    
+    // Allow authenticated users to read booking documents
+    match /bookings/{bookingId}/{filename} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // ========================================
+    // GENERAL FILES (Admin Only)
+    // ========================================
+    
+    // Catch-all: By default, deny access to everything else
+    // This ensures security by default
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Deny all writes to unknown paths
+    }
+  }
+}

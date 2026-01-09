@@ -7,7 +7,12 @@ import {
   orderBy, 
   addDoc, 
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  setDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc
 } from 'firebase/firestore'
 
 /**
@@ -62,6 +67,163 @@ class RealTimeCalendarService {
   private eventCallbacks: Map<string, (update: CalendarUpdate) => void> = new Map()
   private conflictCallbacks: Map<string, (conflict: ConflictAlert) => void> = new Map()
   private activeEvents: Map<string, CalendarEvent> = new Map()
+  private jobSyncActive = false
+
+  /**
+   * 🔄 NEW: Subscribe to job updates and sync to calendar
+   * This creates/updates calendar events automatically when jobs change status
+   */
+  subscribeToJobUpdates(): string {
+    if (this.jobSyncActive) {
+      console.log('⚠️ Job sync already active')
+      return 'job_sync_active'
+    }
+
+    const subscriptionId = `job_sync_${Date.now()}`
+
+    if (!db) {
+      console.error('❌ Firebase not initialized')
+      return subscriptionId
+    }
+
+    const jobsQuery = query(
+      collection(db, 'operational_jobs'),
+      orderBy('createdAt', 'desc')
+    )
+
+    const unsubscribe = onSnapshot(jobsQuery, async (snapshot) => {
+      console.log(`🔄 Job sync: Processing ${snapshot.docChanges().length} changes`)
+
+      for (const change of snapshot.docChanges()) {
+        const jobData = { id: change.doc.id, ...change.doc.data() } as any
+
+        try {
+          if (change.type === 'added') {
+            await this.createCalendarEventFromJob(jobData)
+          } else if (change.type === 'modified') {
+            await this.updateCalendarEventFromJob(jobData)
+          } else if (change.type === 'removed') {
+            await this.deleteCalendarEventForJob(jobData.id)
+          }
+        } catch (error) {
+          console.error(`❌ Error syncing job ${jobData.id} to calendar:`, error)
+        }
+      }
+    }, (error) => {
+      console.error('❌ Job sync subscription error:', error)
+    })
+
+    this.listeners.set(subscriptionId, unsubscribe)
+    this.jobSyncActive = true
+
+    console.log('✅ Job sync to calendar activated')
+    return subscriptionId
+  }
+
+  /**
+   * Create calendar event from job
+   */
+  private async createCalendarEventFromJob(job: any) {
+    if (!db) return
+
+    const calendarEventId = `job-${job.id}`
+
+    // Check if calendar event already exists
+    const existingEvent = await getDoc(doc(db, 'calendar_events', calendarEventId))
+    if (existingEvent.exists()) {
+      console.log(`⏭️ Calendar event already exists for job ${job.id}`)
+      return
+    }
+
+    const startDate = job.scheduledStart?.toDate ? job.scheduledStart.toDate() : new Date(job.scheduledStart || Date.now())
+    const durationMinutes = job.duration || 120 // Default 2 hours
+    const endDate = new Date(startDate.getTime() + durationMinutes * 60000)
+
+    const calendarEvent = {
+      title: job.title || job.jobType || 'Cleaning Job',
+      type: 'job',
+      start: Timestamp.fromDate(startDate),
+      end: Timestamp.fromDate(endDate),
+      propertyName: job.propertyName || 'Unknown Property',
+      propertyId: job.propertyId || '',
+      assignedStaff: job.assignedStaffName || '',
+      staffId: job.assignedStaffId || '',
+      status: job.status || 'pending',
+      color: this.getJobStatusColor(job.status || 'pending'),
+      description: job.description || job.specialInstructions || '',
+      jobId: job.id,
+      priority: job.priority || 'medium',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }
+
+    await setDoc(doc(db, 'calendar_events', calendarEventId), calendarEvent)
+    console.log(`✅ Calendar event created for job ${job.id} (${job.status}) - Color: ${calendarEvent.color}`)
+  }
+
+  /**
+   * Update calendar event when job status changes
+   */
+  private async updateCalendarEventFromJob(job: any) {
+    if (!db) return
+
+    const calendarEventId = `job-${job.id}`
+    const eventRef = doc(db, 'calendar_events', calendarEventId)
+    
+    const existingEvent = await getDoc(eventRef)
+    if (!existingEvent.exists()) {
+      console.log(`📝 Creating calendar event for existing job ${job.id}`)
+      await this.createCalendarEventFromJob(job)
+      return
+    }
+
+    const newColor = this.getJobStatusColor(job.status || 'pending')
+    const updates: any = {
+      status: job.status || 'pending',
+      color: newColor,
+      updatedAt: serverTimestamp()
+    }
+
+    // Update other fields if changed
+    if (job.assignedStaffName) updates.assignedStaff = job.assignedStaffName
+    if (job.assignedStaffId) updates.staffId = job.assignedStaffId
+    if (job.title) updates.title = job.title
+
+    await updateDoc(eventRef, updates)
+    console.log(`🔄 Calendar event updated for job ${job.id}: ${job.status} → ${newColor}`)
+  }
+
+  /**
+   * Delete calendar event when job is deleted
+   */
+  private async deleteCalendarEventForJob(jobId: string) {
+    if (!db) return
+
+    const calendarEventId = `job-${jobId}`
+    const eventRef = doc(db, 'calendar_events', calendarEventId)
+    
+    const existingEvent = await getDoc(eventRef)
+    if (existingEvent.exists()) {
+      await deleteDoc(eventRef)
+      console.log(`🗑️ Calendar event deleted for job ${jobId}`)
+    }
+  }
+
+  /**
+   * Get color based on job status
+   */
+  private getJobStatusColor(status: string): string {
+    const colors: Record<string, string> = {
+      pending: '#FFA500',      // 🟠 Orange - Job pending assignment/acceptance
+      accepted: '#4169E1',     // 🔵 Royal Blue - Staff accepted, not started
+      in_progress: '#9370DB',  // 🟣 Purple - Staff actively working
+      completed: '#228B22',    // 🟢 Forest Green - Job finished
+      cancelled: '#808080',    // ⚫ Gray - Job cancelled
+      failed: '#DC143C'        // 🔴 Crimson - Job failed
+    }
+
+    return colors[status] || colors.pending
+  }
 
   /**
    * Subscribe to real-time calendar updates
@@ -78,8 +240,8 @@ class RealTimeCalendarService {
     
     // Build query based on filters
     let calendarQuery = query(
-      collection(db, 'calendarEvents'),
-      orderBy('startDate', 'asc')
+      collection(db, 'calendar_events'),
+      orderBy('start', 'asc')
     )
 
     if (filters?.propertyName) {

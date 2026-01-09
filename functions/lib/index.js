@@ -1,7 +1,7 @@
 "use strict";
 /**
  * Firebase Cloud Functions Entry Point
- * Sia Moon Property Management - Job Assignment Notifications
+ * Sia Moon Property Management - Job Assignment Notifications & Timeout Monitoring
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -37,13 +37,17 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.healthCheck = exports.cleanupExpiredNotifications = exports.onNotificationAcknowledged = exports.onJobAssigned = void 0;
+exports.healthCheck = exports.triggerTimeoutCheck = exports.jobTimeoutMonitor = exports.cleanupExpiredNotifications = exports.onNotificationAcknowledged = exports.onJobAssigned = void 0;
 const functions = __importStar(require("firebase-functions"));
 // Import job notification functions
 const jobNotifications_1 = require("./jobNotifications");
 Object.defineProperty(exports, "onJobAssigned", { enumerable: true, get: function () { return jobNotifications_1.onJobAssigned; } });
 Object.defineProperty(exports, "onNotificationAcknowledged", { enumerable: true, get: function () { return jobNotifications_1.onNotificationAcknowledged; } });
 Object.defineProperty(exports, "cleanupExpiredNotifications", { enumerable: true, get: function () { return jobNotifications_1.cleanupExpiredNotifications; } });
+// Import job timeout monitoring functions
+const jobTimeoutMonitor_1 = require("./jobTimeoutMonitor");
+Object.defineProperty(exports, "jobTimeoutMonitor", { enumerable: true, get: function () { return jobTimeoutMonitor_1.jobTimeoutMonitor; } });
+Object.defineProperty(exports, "triggerTimeoutCheck", { enumerable: true, get: function () { return jobTimeoutMonitor_1.triggerTimeoutCheck; } });
 // Health check function
 exports.healthCheck = functions.https.onRequest((request, response) => {
     response.json({
@@ -52,10 +56,12 @@ exports.healthCheck = functions.https.onRequest((request, response) => {
         functions: [
             'onJobAssigned',
             'onNotificationAcknowledged',
-            'cleanupExpiredNotifications'
+            'cleanupExpiredNotifications',
+            'jobTimeoutMonitor',
+            'triggerTimeoutCheck'
         ]
     });
 });
 // Configure function settings
-functions.logger.info('🚀 Sia Moon Job Notification Functions initialized');
+functions.logger.info('🚀 Sia Moon Job Notification & Timeout Monitoring Functions initialized');
 //# sourceMappingURL=index.js.map

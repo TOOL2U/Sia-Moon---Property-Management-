@@ -4,6 +4,18 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
+    // 🔴 CRITICAL SECURITY: Prevent test endpoint access in production
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🚫 Test endpoint blocked in production environment')
+      return NextResponse.json(
+        { 
+          error: 'Test endpoints are disabled in production',
+          message: 'This endpoint is only available in development mode'
+        },
+        { status: 403 }
+      )
+    }
+
     console.log('🧪 Testing complete booking approval workflow...')
 
     const body = await request.json()
@@ -51,7 +63,6 @@ export async function POST(request: NextRequest) {
       testBooking: true
     }
 
-    if (!db) {
     if (!db) {
       return NextResponse.json({ success: false, error: 'Firebase not initialized' }, { status: 500 })
     }

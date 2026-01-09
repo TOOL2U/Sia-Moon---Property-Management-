@@ -3,6 +3,7 @@
 /**
  * Enhanced Job Management Dashboard
  * Comprehensive job management interface with full CRUD operations
+ * NOW WITH REAL-TIME MOBILE APP SYNC! 🔥
  */
 
 import { Badge } from '@/components/ui/Badge'
@@ -47,6 +48,10 @@ import JobAssignmentService, {
   JobStatus,
   JobType,
 } from '@/services/JobAssignmentService'
+
+// Real-time job sync
+import { useAllJobs } from '@/hooks/useRealtimeJobs'
+import { JobStatusBadge } from '@/components/jobs/JobStatusBadge'
 
 // Components
 import { CreateJobWizardModal } from './CreateJobWizardModal'
@@ -94,10 +99,33 @@ const cardHoverVariants = {
 export function EnhancedJobManagementDashboard({
   className,
 }: EnhancedJobManagementDashboardProps) {
-  // State management
+  // 🔥 REAL-TIME MOBILE APP SYNC - Jobs update live when mobile staff changes status!
+  const { 
+    jobs: realtimeJobs, 
+    loading: realtimeLoading, 
+    error: realtimeError,
+    getJobsByStatus,
+    refresh 
+  } = useAllJobs({
+    showNotifications: true,  // Show toast when mobile staff accepts/starts/completes jobs
+    onJobStatusChange: (job, previousStatus) => {
+      console.log(`🔔 Job ${job.title}: ${previousStatus} → ${job.status}`);
+    }
+  });
+
+  // Convert real-time jobs to JobData format for compatibility
   const [jobs, setJobs] = useState<JobData[]>([])
-  const [filteredJobs, setFilteredJobs] = useState<JobData[]>([])
   const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    // Map real-time jobs to JobData format - types are compatible, just need assertion
+    const mappedJobs = realtimeJobs as unknown as JobData[];
+    setJobs(mappedJobs);
+    setLoading(realtimeLoading);
+  }, [realtimeJobs, realtimeLoading]);
+
+  // State management
+  const [filteredJobs, setFilteredJobs] = useState<JobData[]>([])
   const [updating, setUpdating] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>('all')
@@ -108,7 +136,6 @@ export function EnhancedJobManagementDashboard({
   const [dateFilter, setDateFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [selectedJobs, setSelectedJobs] = useState<string[]>([])
-  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null)
 
   // Modal states
   const [showCreateJobModal, setShowCreateJobModal] = useState(false)
@@ -118,24 +145,6 @@ export function EnhancedJobManagementDashboard({
   const [showDeleteJobModal, setShowDeleteJobModal] = useState<JobData | null>(
     null
   )
-
-  // Load jobs with real-time updates
-  const loadJobs = useCallback(() => {
-    console.log('📋 Setting up real-time job subscription...')
-
-    const unsubscribeFn = JobAssignmentService.subscribeToJobs(
-      (updatedJobs) => {
-        console.log(
-          `✅ Received ${updatedJobs.length} jobs via real-time subscription`
-        )
-        setJobs(updatedJobs)
-        setLoading(false)
-      }
-    )
-
-    setUnsubscribe(() => unsubscribeFn)
-    return unsubscribeFn
-  }, [])
 
   // Filter jobs based on search and filters
   useEffect(() => {
@@ -204,26 +213,6 @@ export function EnhancedJobManagementDashboard({
     setFilteredJobs(filtered)
   }, [jobs, searchQuery, statusFilter, priorityFilter, staffFilter, dateFilter])
 
-  // Setup real-time subscription on mount
-  useEffect(() => {
-    const unsubscribeFn = loadJobs()
-
-    return () => {
-      if (unsubscribeFn) {
-        unsubscribeFn()
-      }
-    }
-  }, [loadJobs])
-
-  // Cleanup subscription on unmount
-  useEffect(() => {
-    return () => {
-      if (unsubscribe) {
-        unsubscribe()
-      }
-    }
-  }, [unsubscribe])
-
   // Calculate statistics
   const stats = {
     total: jobs.length,
@@ -279,14 +268,8 @@ export function EnhancedJobManagementDashboard({
   const handleJobCreated = (jobId: string) => {
     toast.success('Job created successfully!')
     setShowCreateJobModal(false)
-
-    // Force a refresh of the job subscription to ensure new job appears
-    console.log('🔄 Refreshing job subscription after creation...')
-    if (unsubscribe) {
-      unsubscribe()
-    }
-    const newUnsubscribe = loadJobs()
-    setUnsubscribe(() => newUnsubscribe)
+    // Jobs will be updated automatically via real-time subscription 🔥
+    refresh() // Force immediate refresh
   }
 
   const handleJobUpdated = (jobId: string) => {
@@ -384,11 +367,7 @@ export function EnhancedJobManagementDashboard({
   // Manual refresh function
   const handleRefresh = () => {
     console.log('🔄 Manual refresh triggered...')
-    if (unsubscribe) {
-      unsubscribe()
-    }
-    const newUnsubscribe = loadJobs()
-    setUnsubscribe(() => newUnsubscribe)
+    refresh() // Use the new real-time hook's refresh function
     toast.success('Jobs refreshed!')
   }
 
@@ -959,11 +938,8 @@ function JobCard({
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Badge
-                  className={`text-xs px-2 py-1 ${getStatusColor(job.status)}`}
-                >
-                  {job.status.replace('_', ' ')}
-                </Badge>
+                {/* 🔥 NEW: Real-time status badge with live indicator */}
+                <JobStatusBadge status={job.status} />
               </div>
             </div>
 
@@ -1161,9 +1137,8 @@ function JobCard({
                 </span>
               </div>
 
-              <Badge className={`${getStatusColor(job.status)}`}>
-                {job.status.replace('_', ' ')}
-              </Badge>
+              {/* 🔥 NEW: Real-time status badge with live indicator */}
+              <JobStatusBadge status={job.status} />
 
               <span className="text-sm text-gray-400 min-w-[60px]">
                 {job.estimatedDuration}min

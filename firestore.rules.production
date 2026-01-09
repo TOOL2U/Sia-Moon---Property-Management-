@@ -1,0 +1,218 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== AUTHENTICATION HELPER FUNCTIONS =====
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get user role from custom claims or user document
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+    
+    // Get user ID
+    function getUserId() {
+      return request.auth.uid;
+    }
+    
+    // Check if user is admin or manager
+    function isAdmin() {
+      return isAuthenticated() && 
+        (getUserRole() == 'admin' || 
+         getUserRole() == 'manager' || 
+         getUserRole() == 'supervisor' ||
+         request.auth.token.admin == true);
+    }
+    
+    // Check if user is staff
+    function isStaff() {
+      return isAuthenticated() && 
+        (getUserRole() == 'staff' || 
+         getUserRole() == 'cleaner' || 
+         getUserRole() == 'inspector' || 
+         getUserRole() == 'maintenance');
+    }
+    
+    // Check if accessing own staff document
+    function isOwnStaffDocument(staffId) {
+      return isAuthenticated() && getUserId() == staffId;
+    }
+    
+    // Check if resource belongs to user's company
+    function belongsToSameCompany() {
+      return isAuthenticated() && 
+        resource.data.companyId == request.auth.token.companyId;
+    }
+    
+    // ===== COLLECTION RULES =====
+    
+    // Users collection - users can read/write their own data, admins can read all
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && 
+        (getUserId() == userId || isAdmin());
+    }
+    
+    // Staff accounts - staff can read their own, admins can read/write all
+    match /staff/{staffId} {
+      allow read: if isAuthenticated() && 
+        (isOwnStaffDocument(staffId) || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    match /staff_accounts/{staffId} {
+      allow read: if isAuthenticated() && 
+        (isOwnStaffDocument(staffId) || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    // Staff locations - staff can update their own, admins can read all
+    match /staff_locations/{locationId} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && 
+        request.resource.data.staffId == getUserId();
+      allow update, delete: if isAdmin() || 
+        (isStaff() && resource.data.staffId == getUserId());
+    }
+    
+    // Staff availability - staff can update their own, admins can read all
+    match /staff_availability/{availabilityId} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && 
+        request.resource.data.staffId == getUserId();
+      allow update, delete: if isAdmin() || 
+        (isStaff() && resource.data.staffId == getUserId());
+    }
+    
+    // Jobs - staff can read jobs assigned to them, admins can read/write all
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated() && 
+        (isAdmin() || 
+         (isStaff() && resource.data.assignedStaffId == getUserId()));
+      allow write: if isAdmin();
+    }
+    
+    // Job assignments - similar to jobs
+    match /job_assignments/{assignmentId} {
+      allow read: if isAuthenticated() && 
+        (isAdmin() || 
+         (isStaff() && resource.data.staffId == getUserId()));
+      allow write: if isAdmin();
+    }
+    
+    // Job progress - staff can update their own jobs, admins can read all
+    match /job_progress/{progressId} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && 
+        request.resource.data.assignedStaffId == getUserId();
+      allow update: if isAdmin() || 
+        (isStaff() && resource.data.assignedStaffId == getUserId());
+      allow delete: if isAdmin();
+    }
+    
+    // Job events - staff can create for their jobs, admins can read all
+    match /job_events/{eventId} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && 
+        request.resource.data.staffId == getUserId();
+      allow update, delete: if isAdmin();
+    }
+    
+    // Job sessions - staff can create/update their own, admins can read all
+    match /job_sessions/{sessionId} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && 
+        request.resource.data.staffId == getUserId();
+      allow update: if isAdmin() || 
+        (isStaff() && resource.data.staffId == getUserId());
+      allow delete: if isAdmin();
+    }
+    
+    // Bookings - admins can read/write all, staff cannot access
+    match /bookings/{bookingId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /pending_bookings/{bookingId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /live_bookings/{bookingId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Calendar events - admins can read/write all, staff can read only
+    match /calendarEvents/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Property status - staff can update, admins can read/write all
+    match /property_status/{statusId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isStaff();
+    }
+    
+    // Operational tasks - staff can read assigned tasks, admins can read/write all
+    match /operational_tasks/{taskId} {
+      allow read: if isAuthenticated() && 
+        (isAdmin() || 
+         (isStaff() && resource.data.assignedStaffId == getUserId()));
+      allow write: if isAdmin();
+    }
+    
+    // Notifications - users can read their own, admins can read/write all
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && 
+        (isAdmin() || resource.data.recipientId == getUserId());
+      allow write: if isAdmin();
+    }
+    
+    // Audit logs - admin read-only
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Audit logs should only be written by server-side code
+    }
+    
+    // AI action logs - admin read-only
+    match /ai_action_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // AI logs should only be written by server-side code
+    }
+    
+    // Webhook logs - admin read-only
+    match /webhook_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Webhook logs should only be written by server-side code
+    }
+    
+    // Sync events - admin read-only
+    match /sync_events/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false; // Sync events should only be written by server-side code
+    }
+    
+    // Properties - read-only for staff, read/write for admins
+    match /properties/{propertyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // User subcollections (e.g., user bookings)
+    match /users/{userId}/{subcollection}/{docId} {
+      allow read, write: if isAuthenticated() && 
+        (getUserId() == userId || isAdmin());
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

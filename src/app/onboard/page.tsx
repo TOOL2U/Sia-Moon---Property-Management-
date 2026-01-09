@@ -449,7 +449,19 @@ function OnboardYourVillaContent() {
     // Add validation errors from Zod schema
     if (!validation.success && validation.errors) {
       console.log('🔍 Zod validation errors:', validation.errors)
-      Object.assign(newErrors, validation.errors)
+      try {
+        Object.assign(newErrors || {}, validation.errors || {})
+      } catch (error) {
+        console.error('Error assigning validation errors:', error)
+        // Fallback: manually copy properties
+        if (validation.errors && typeof validation.errors === 'object') {
+          for (const [key, value] of Object.entries(validation.errors)) {
+            if (newErrors && typeof newErrors === 'object') {
+              newErrors[key] = value as string
+            }
+          }
+        }
+      }
     }
 
     console.log('🔍 Final validation errors:', newErrors)

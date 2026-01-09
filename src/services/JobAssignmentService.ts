@@ -237,6 +237,18 @@ class JobAssignmentService {
       const jobId = jobRef.id
 
       // Prepare job data
+      // Helper to convert any date format to ISO string for mobile app
+      const formatDateForMobile = (dateField: any): string => {
+        if (!dateField) return '';
+        if (dateField.toDate) return dateField.toDate().toISOString().split('T')[0]; // Firestore Timestamp
+        if (typeof dateField === 'string') {
+          const date = new Date(dateField);
+          return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : dateField;
+        }
+        if (dateField instanceof Date) return dateField.toISOString().split('T')[0];
+        return String(dateField);
+      };
+
       const jobData: JobData = {
         id: jobId,
         
@@ -246,8 +258,8 @@ class JobAssignmentService {
           id: bookingData.id,
           guestName: bookingData.guestName || bookingData.guest_name || 'Unknown Guest',
           propertyName: bookingData.propertyName || bookingData.property || 'Unknown Property',
-          checkInDate: bookingData.checkInDate || bookingData.checkIn || bookingData.check_in || '',
-          checkOutDate: bookingData.checkOutDate || bookingData.checkOut || bookingData.check_out || '',
+          checkInDate: formatDateForMobile(bookingData.checkInDate || bookingData.checkIn || bookingData.check_in),
+          checkOutDate: formatDateForMobile(bookingData.checkOutDate || bookingData.checkOut || bookingData.check_out),
           guestCount: bookingData.guestCount || bookingData.numberOfGuests || bookingData.guests || 1,
           totalAmount: bookingData.price || bookingData.amount || bookingData.total || 0
         },

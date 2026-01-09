@@ -174,9 +174,9 @@ class CalendarEventService {
   private readonly STAFF_COLLECTION = 'staff_accounts'
   private readonly PROPERTIES_COLLECTION = 'properties'
 
-  // DISABLE calendar event creation to prevent duplicates
-  // Calendar now reads directly from jobs and bookings collections
-  private readonly DISABLE_CALENDAR_EVENT_CREATION = true
+  // Enable calendar event creation for bookings and jobs
+  // Creates calendar events in 'calendar_events' collection for display
+  private readonly DISABLE_CALENDAR_EVENT_CREATION = false
 
   // Real-time listeners for synchronization
   private bookingListener: (() => void) | null = null

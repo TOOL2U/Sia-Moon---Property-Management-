@@ -9,7 +9,9 @@ export async function middleware(request: NextRequest) {
     pathname === '/api/booking-test' ||
     pathname.startsWith('/api/booking-test/') ||
     pathname === '/api/bookings' ||
-    pathname.startsWith('/api/bookings/')
+    pathname.startsWith('/api/bookings/') ||
+    pathname === '/api/pms-webhook' ||
+    pathname.startsWith('/api/pms-webhook/')
   ) {
     console.log(
       '🔓 MIDDLEWARE: Booking API endpoint detected, allowing access immediately'

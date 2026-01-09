@@ -11,6 +11,19 @@ export interface Property {
   ownerName: string
   ownerEmail: string
   
+  // PMS Integration (External Property Matching)
+  pmsIntegration?: {
+    provider: PMSProvider           // Which PMS system
+    pmsListingId?: string           // PRIMARY matching key from PMS
+    airbnbListingId?: string        // Airbnb-specific listing ID
+    bookingComListingId?: string    // Booking.com listing ID
+    vrboListingId?: string          // VRBO/HomeAway listing ID
+    externalIds?: Record<string, string>  // Future channels: { "expedia": "EXP123", ... }
+    lastSyncedAt?: string
+    syncEnabled: boolean
+    syncErrors?: PMSSyncError[]
+  }
+  
   // Location Information
   location: PropertyLocation
   
@@ -84,6 +97,28 @@ export type ComplianceStatus =
   | 'pending_review'
   | 'requires_action'
 
+// PMS Provider Types (Flexible for future expansion)
+export type PMSProvider = 
+  | 'hostaway'
+  | 'guesty' 
+  | 'smoobu'
+  | 'lodgify'
+  | 'cloudbeds'
+  | 'hostfully'
+  | 'streamline'
+  | 'manual'      // Manual property management (no PMS)
+  | 'other'
+
+// PMS Sync Error Tracking
+export interface PMSSyncError {
+  timestamp: string
+  error: string
+  severity: 'info' | 'warning' | 'error' | 'critical'
+  resolved: boolean
+  resolvedAt?: string
+  resolvedBy?: string
+}
+
 export interface PropertyLocation {
   address: string
   city: string
@@ -99,6 +134,18 @@ export interface PropertyLocation {
   distanceToBeach?: number
   distanceToAirport?: number
   distanceToCenter?: number
+  
+  // Navigation & Access (for mobile job dispatch)
+  googleMapsLink?: string         // Direct Google Maps link
+  accessInstructions?: string     // How to get there / find the property
+  parkingInstructions?: string    // Where to park
+  entryCode?: string              // Door/gate access code
+  wifiPassword?: string           // WiFi for staff
+  emergencyContact?: {            // On-site contact
+    name: string
+    phone: string
+    relationship: string
+  }
 }
 
 export interface PropertyDetails {

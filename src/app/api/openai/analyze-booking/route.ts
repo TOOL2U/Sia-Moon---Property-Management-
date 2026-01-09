@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialize OpenAI client
+function getOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'placeholder-key-not-configured') {
+    return null
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+}
 
 export interface BookingAIAnalysis {
   tags: string[]
@@ -22,11 +28,19 @@ export async function POST(request: NextRequest) {
     bookingData = await request.json()
 
     console.log('🤖 OPENAI API: Analyzing booking with AI...')
-    
+
     const checkInDate = new Date(bookingData.checkInDate)
     const now = new Date()
     const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    
+
+    const openai = getOpenAIClient()
+
+    // If OpenAI is not configured, use fallback analysis immediately
+    if (!openai) {
+      console.log('⚠️ OpenAI not configured, using fallback analysis')
+      throw new Error('OpenAI not configured')
+    }
+
     const prompt = `
 Analyze this villa booking and provide insights:
 

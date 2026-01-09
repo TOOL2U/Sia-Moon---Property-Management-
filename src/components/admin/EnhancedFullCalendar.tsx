@@ -65,6 +65,8 @@ interface CalendarEvent {
     guestName?: string
     checkIn?: string
     checkOut?: string
+    originalBookingId?: string
+    approvedAt?: any
   }
 }
 
@@ -112,10 +114,10 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
       // Listen to ONLY jobs and confirmed bookings for calendar data
       const unsubscribers: (() => void)[] = []
 
-      // 1. Listen to jobs collection
+      // 1. Listen to operational_jobs collection
       const jobsQuery = query(
-        collection(db, 'jobs'),
-        orderBy('scheduledDate', 'asc')
+        collection(db, 'operational_jobs'),
+        orderBy('createdAt', 'desc')
       )
 
       const jobsUnsubscribe = onSnapshot(jobsQuery, (snapshot) => {
@@ -123,44 +125,104 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
 
         snapshot.forEach((doc) => {
           const job = doc.data()
-          if (job.scheduledDate) {
-            const startDate = new Date(job.scheduledDate)
-            const endDate = new Date(startDate)
-
-            // Add duration if available
-            if (job.estimatedDuration) {
-              endDate.setMinutes(endDate.getMinutes() + job.estimatedDuration)
-            } else {
-              endDate.setHours(endDate.getHours() + 2) // Default 2 hours
-            }
-
-            // Add start time if available
-            if (job.scheduledStartTime) {
-              const [hours, minutes] = job.scheduledStartTime.split(':')
-              startDate.setHours(parseInt(hours), parseInt(minutes))
-            }
-
-            jobEvents.push({
-              id: `job-${doc.id}`,
-              title: `🔧 ${job.title || 'Job Assignment'}`,
-              start: startDate.toISOString(),
-              end: endDate.toISOString(),
-              backgroundColor: getJobColor(job.priority, job.status),
-              borderColor: getJobBorderColor(job.priority, job.status),
-              textColor: '#ffffff',
-              extendedProps: {
-                description: job.description,
-                propertyName: job.propertyRef?.name || job.propertyName,
-                assignedStaff: job.assignedStaffRef?.name || job.assignedStaffName,
-                jobType: job.jobType,
-                priority: job.priority,
-                status: job.status
+          // Support multiple date field names: scheduledFor, scheduledDate, scheduledStart
+          const dateField = job.scheduledFor || job.scheduledDate || job.scheduledStart
+          
+          if (dateField) {
+            try {
+              // Handle Firestore Timestamp or Date string
+              let startDate: Date;
+              if (dateField.toDate) {
+                // It's a Firestore Timestamp
+                startDate = dateField.toDate()
+              } else if (typeof dateField === 'string') {
+                // It's a date string
+                startDate = new Date(dateField)
+              } else if (dateField instanceof Date) {
+                // It's already a Date
+                startDate = dateField
+              } else {
+                // Skip invalid dates
+                console.warn('Invalid scheduled date format for job:', doc.id, dateField)
+                return
               }
-            })
+
+              // Validate the date
+              if (isNaN(startDate.getTime())) {
+                console.warn('Invalid date for job:', doc.id)
+                return
+              }
+
+              const endDate = new Date(startDate)
+
+              // Add duration if available
+              if (job.estimatedDuration) {
+                endDate.setMinutes(endDate.getMinutes() + job.estimatedDuration)
+              } else {
+                endDate.setHours(endDate.getHours() + 2) // Default 2 hours
+              }
+
+              // Add start time if available
+              if (job.scheduledStartTime) {
+                const [hours, minutes] = job.scheduledStartTime.split(':')
+                startDate.setHours(parseInt(hours), parseInt(minutes))
+              }
+
+              // Extract property name from title or use field
+              let propertyName = job.propertyName || job.propertyRef?.name
+              if (!propertyName && job.title) {
+                const parts = job.title.split(' - ')
+                if (parts.length > 1) {
+                  propertyName = parts.slice(1).join(' - ')
+                }
+              }
+
+              // Determine color based on JOB STATUS (not type!)
+              let backgroundColor = '#FFA500' // Default orange for pending
+              let borderColor = '#FF8C00'
+              
+              // Status-based colors (matching RealTimeCalendarService)
+              if (job.status === 'in_progress') {
+                backgroundColor = '#9370DB' // Purple - actively working
+                borderColor = '#8A2BE2'
+              } else if (job.status === 'accepted') {
+                backgroundColor = '#4169E1' // Royal Blue - accepted
+                borderColor = '#1E90FF'
+              } else if (job.status === 'completed') {
+                backgroundColor = '#228B22' // Forest Green - finished
+                borderColor = '#006400'
+              } else if (job.status === 'cancelled') {
+                backgroundColor = '#808080' // Gray - cancelled
+                borderColor = '#696969'
+              } else if (job.status === 'pending') {
+                backgroundColor = '#FFA500' // Orange - pending
+                borderColor = '#FF8C00'
+              }
+
+              jobEvents.push({
+                id: `job-${doc.id}`,
+                title: `🔧 ${job.title || job.jobType?.replace(/_/g, ' ') || 'Job Assignment'}`,
+                start: startDate.toISOString(),
+                end: endDate.toISOString(),
+                backgroundColor: backgroundColor,
+                borderColor: borderColor,
+                textColor: '#ffffff',
+                extendedProps: {
+                  description: job.description,
+                  propertyName: propertyName,
+                  assignedStaff: job.assignedStaffRef?.name || job.assignedStaffName,
+                  jobType: job.jobType,
+                  priority: job.priority,
+                  status: job.status
+                }
+              })
+            } catch (error) {
+              console.error('Error processing job date for job:', doc.id, error)
+            }
           }
         })
 
-        console.log(`📋 Loaded ${jobEvents.length} job events`)
+        console.log(`📋 Loaded ${jobEvents.length} job events from operational_jobs`)
         updateEvents('jobs', jobEvents)
       })
 
@@ -177,24 +239,52 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
 
         snapshot.forEach((doc) => {
           const booking = doc.data()
-          if (booking.checkIn && booking.checkOut) {
-            bookingEvents.push({
-              id: `booking-${doc.id}`,
-              title: `🏠 ${booking.guestName || 'Guest'} - ${booking.propertyName || 'Property'}`,
-              start: booking.checkIn,
-              end: booking.checkOut,
-              backgroundColor: getBookingColor(booking.status),
-              borderColor: getBookingBorderColor(booking.status),
-              textColor: '#ffffff',
-              extendedProps: {
-                description: `Check-in: ${booking.checkIn}, Check-out: ${booking.checkOut}`,
-                propertyName: booking.propertyName,
-                guestName: booking.guestName,
-                status: booking.status,
-                checkIn: booking.checkIn,
-                checkOut: booking.checkOut
+          // Support both field name formats: checkIn/checkOut and checkInDate/checkOutDate
+          const checkIn = booking.checkIn || booking.checkInDate;
+          const checkOut = booking.checkOut || booking.checkOutDate;
+          
+          if (checkIn && checkOut) {
+            // Convert Firestore Timestamps to ISO strings
+            let startDateStr: string;
+            let endDateStr: string;
+            
+            try {
+              if (checkIn.toDate) {
+                startDateStr = checkIn.toDate().toISOString();
+              } else if (typeof checkIn === 'string') {
+                startDateStr = new Date(checkIn).toISOString();
+              } else {
+                startDateStr = checkIn.toISOString();
               }
-            })
+              
+              if (checkOut.toDate) {
+                endDateStr = checkOut.toDate().toISOString();
+              } else if (typeof checkOut === 'string') {
+                endDateStr = new Date(checkOut).toISOString();
+              } else {
+                endDateStr = checkOut.toISOString();
+              }
+              
+              bookingEvents.push({
+                id: `booking-${doc.id}`,
+                title: `🏠 ${booking.guestName || 'Guest'} - ${booking.propertyName || booking.propertyRef?.name || 'Property'}`,
+                start: startDateStr,
+                end: endDateStr,
+                backgroundColor: getBookingColor(booking.status),
+                borderColor: getBookingBorderColor(booking.status),
+                textColor: '#ffffff',
+                extendedProps: {
+                  description: `Check-in: ${startDateStr}, Check-out: ${endDateStr}`,
+                  propertyName: booking.propertyName || booking.propertyRef?.name,
+                  guestName: booking.guestName,
+                  status: booking.status,
+                  checkIn: startDateStr,
+                  checkOut: endDateStr
+                }
+              })
+            } catch (error) {
+              console.error(`Error converting dates for booking ${doc.id}:`, error);
+            }
           }
         })
 
@@ -212,26 +302,54 @@ export function EnhancedFullCalendar({ className, currentView: parentCurrentView
 
         snapshot.forEach((doc) => {
           const booking = doc.data()
-          if (booking.checkIn && booking.checkOut) {
-            approvedBookingEvents.push({
-              id: `approved-booking-${doc.id}`,
-              title: `✅ ${booking.guestName || 'Guest'} - ${booking.propertyName || 'Property'}`,
-              start: booking.checkIn,
-              end: booking.checkOut,
-              backgroundColor: '#10B981', // Green for approved bookings
-              borderColor: '#059669',
-              textColor: '#ffffff',
-              extendedProps: {
-                description: `Approved Booking - Check-in: ${booking.checkIn}, Check-out: ${booking.checkOut}`,
-                propertyName: booking.propertyName,
-                guestName: booking.guestName,
-                status: 'approved',
-                checkIn: booking.checkIn,
-                checkOut: booking.checkOut,
-                originalBookingId: booking.originalBookingId,
-                approvedAt: booking.movedToApprovedAt
+          // Support both field name formats: checkIn/checkOut and checkInDate/checkOutDate
+          const checkIn = booking.checkIn || booking.checkInDate;
+          const checkOut = booking.checkOut || booking.checkOutDate;
+          
+          if (checkIn && checkOut) {
+            // Convert Firestore Timestamps to ISO strings
+            let startDateStr: string;
+            let endDateStr: string;
+            
+            try {
+              if (checkIn.toDate) {
+                startDateStr = checkIn.toDate().toISOString();
+              } else if (typeof checkIn === 'string') {
+                startDateStr = new Date(checkIn).toISOString();
+              } else {
+                startDateStr = checkIn.toISOString();
               }
-            })
+              
+              if (checkOut.toDate) {
+                endDateStr = checkOut.toDate().toISOString();
+              } else if (typeof checkOut === 'string') {
+                endDateStr = new Date(checkOut).toISOString();
+              } else {
+                endDateStr = checkOut.toISOString();
+              }
+              
+              approvedBookingEvents.push({
+                id: `approved-booking-${doc.id}`,
+                title: `✅ ${booking.guestName || 'Guest'} - ${booking.propertyName || booking.propertyRef?.name || 'Property'}`,
+                start: startDateStr,
+                end: endDateStr,
+                backgroundColor: '#10B981', // Green for approved bookings
+                borderColor: '#059669',
+                textColor: '#ffffff',
+                extendedProps: {
+                  description: `Approved Booking - Check-in: ${startDateStr}, Check-out: ${endDateStr}`,
+                  propertyName: booking.propertyName || booking.propertyRef?.name,
+                  guestName: booking.guestName,
+                  status: 'approved',
+                  checkIn: startDateStr,
+                  checkOut: endDateStr,
+                  originalBookingId: booking.originalBookingId,
+                  approvedAt: booking.movedToApprovedAt
+                }
+              })
+            } catch (error) {
+              console.error(`Error converting dates for approved booking ${doc.id}:`, error);
+            }
           }
         })
 
